@@ -2,11 +2,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/auth-provider";
-import { Settings as SettingsIcon, Building, Bell, Shield } from "lucide-react";
+import { useListCustomers, getListCustomersQueryKey } from "@workspace/api-client-react";
+import { Settings as SettingsIcon, Building2, Bell, Shield } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Settings() {
   const { user } = useAuth();
+
+  const { data: customers, isLoading: customersLoading } = useListCustomers(
+    {},
+    { query: { queryKey: getListCustomersQueryKey({}) } }
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
@@ -41,17 +49,29 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5" />
-            Organization Settings
+            <Building2 className="h-5 w-5" />
+            My Companies
           </CardTitle>
-          <CardDescription>Settings applicable to all users in your organization</CardDescription>
+          <CardDescription>Customers you currently have access to</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label>Organization Name</Label>
-            <Input defaultValue="Elevator Systems Inc." disabled />
-            <p className="text-xs text-muted-foreground mt-1">Contact support to change your organization name.</p>
-          </div>
+        <CardContent>
+          {customersLoading ? (
+            <div className="flex items-center gap-2 py-2 text-muted-foreground">
+              <Spinner size="sm" />
+              <span className="text-sm">Loading…</span>
+            </div>
+          ) : customers && customers.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {customers.map(c => (
+                <Badge key={c.id} variant="outline" className="text-sm px-3 py-1.5 gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  {c.name}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No customers assigned to your account.</p>
+          )}
         </CardContent>
       </Card>
 
