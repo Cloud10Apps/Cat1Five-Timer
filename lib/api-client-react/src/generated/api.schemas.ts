@@ -110,6 +110,8 @@ export const ElevatorType = {
 export interface Elevator {
   id: number;
   name: string;
+  internalId?: string;
+  stateId?: string;
   description?: string;
   bank?: string;
   type: ElevatorType;
@@ -132,6 +134,8 @@ export const CreateElevatorBodyType = {
 
 export interface CreateElevatorBody {
   name: string;
+  internalId?: string;
+  stateId?: string;
   description?: string;
   bank?: string;
   type: CreateElevatorBodyType;

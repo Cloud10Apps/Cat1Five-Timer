@@ -181,8 +181,8 @@ export default function Elevators() {
     setEditingElevator(elevator);
     form.reset({
       name: elevator.name,
-      internalId: (elevator as any).internalId || "",
-      stateId: (elevator as any).stateId || "",
+      internalId: elevator.internalId || "",
+      stateId: elevator.stateId || "",
       buildingId: elevator.buildingId,
       description: elevator.description || "",
       bank: elevator.bank || "",
@@ -480,11 +480,11 @@ export default function Elevators() {
                   <TableCell>
                     <div className="font-medium">{elevator.name}</div>
                     <div className="flex gap-2 mt-0.5">
-                      {(elevator as any).internalId && (
-                        <span className="text-xs text-muted-foreground">Int: {(elevator as any).internalId}</span>
+                      {elevator.internalId && (
+                        <span className="text-xs text-muted-foreground">Int: {elevator.internalId}</span>
                       )}
-                      {(elevator as any).stateId && (
-                        <span className="text-xs text-muted-foreground">State: {(elevator as any).stateId}</span>
+                      {elevator.stateId && (
+                        <span className="text-xs text-muted-foreground">State: {elevator.stateId}</span>
                       )}
                     </div>
                   </TableCell>
