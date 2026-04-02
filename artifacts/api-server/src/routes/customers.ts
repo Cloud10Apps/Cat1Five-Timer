@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, customersTable } from "@workspace/db";
 import { eq, and, ilike, inArray } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { CreateCustomerBody, ListCustomersQueryParams, GetCustomerParams, UpdateCustomerParams, DeleteCustomerParams } from "@workspace/api-zod";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
 
@@ -30,7 +30,7 @@ router.get("/", async (req, res) => {
   })));
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   const parsed = CreateCustomerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -68,7 +68,7 @@ router.get("/:id", async (req, res) => {
   res.json({ id: c.id, name: c.name, organizationId: c.organizationId, createdAt: c.createdAt.toISOString() });
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAdmin, async (req, res) => {
   const params = UpdateCustomerParams.safeParse({ id: Number(req.params.id) });
   const body = CreateCustomerBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -88,7 +88,7 @@ router.put("/:id", async (req, res) => {
   res.json({ id: c.id, name: c.name, organizationId: c.organizationId, createdAt: c.createdAt.toISOString() });
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   const params = DeleteCustomerParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });

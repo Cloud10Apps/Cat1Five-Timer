@@ -40,7 +40,8 @@ import { Plus, Search, Pencil, Trash2, Building } from "lucide-react";
 import dayjs from "dayjs";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
-import { useDebounce } from "@/hooks/use-debounce"; // Assuming we will create or have a standard useDebounce hook
+import { useAuth } from "@/components/auth-provider";
+import { useDebounce } from "@/hooks/use-debounce";
 
 const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -50,14 +51,16 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 
 export default function Customers() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  
-  // We'll manually debounce the search string or just pass it in
-  // Let's just use it directly for simplicity or implement a small delay if needed.
+
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   const { data: customers, isLoading } = useListCustomers(
-    { search: search || undefined },
-    { query: { queryKey: getListCustomersQueryKey({ search: search || undefined }) } }
+    { search: debouncedSearch || undefined },
+    { query: { queryKey: getListCustomersQueryKey({ search: debouncedSearch || undefined }) } }
   );
 
   const queryClient = useQueryClient();
@@ -136,45 +139,47 @@ export default function Customers() {
           <p className="text-muted-foreground">Manage your customer portfolio.</p>
         </div>
 
-        <Dialog open={isAddOpen} onOpenChange={(open) => {
-          setIsAddOpen(open);
-          if (!open) {
-            form.reset({ name: "" });
-            setEditingCustomer(null);
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Customer
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Customer</DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Customer Company Name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Saving..." : "Save Customer"}
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        {isAdmin && (
+          <Dialog open={isAddOpen} onOpenChange={(open) => {
+            setIsAddOpen(open);
+            if (!open) {
+              form.reset({ name: "" });
+              setEditingCustomer(null);
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Customer
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Customer</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Customer Company Name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Saving..." : "Save Customer"}
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
@@ -195,19 +200,19 @@ export default function Customers() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Created At</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8">
+                <TableCell colSpan={isAdmin ? 3 : 2} className="text-center py-8">
                   <Spinner />
                 </TableCell>
               </TableRow>
             ) : customers?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 3 : 2} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <Building className="h-10 w-10 mb-2 opacity-20" />
                     <p>No customers found.</p>
@@ -219,56 +224,58 @@ export default function Customers() {
                 <TableRow key={customer.id}>
                   <TableCell className="font-medium">{customer.name}</TableCell>
                   <TableCell>{dayjs(customer.createdAt).format("MMM D, YYYY")}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Dialog
-                      open={editingCustomer?.id === customer.id}
-                      onOpenChange={(open) => {
-                        if (!open) {
-                          setEditingCustomer(null);
-                          form.reset({ name: "" });
-                        }
-                      }}
-                    >
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(customer)}>
-                          <Pencil className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Edit Customer</DialogTitle>
-                        </DialogHeader>
-                        <Form {...form}>
-                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            <FormField
-                              control={form.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Name</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
-                              {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                            </Button>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(customer.id)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right space-x-2">
+                      <Dialog
+                        open={editingCustomer?.id === customer.id}
+                        onOpenChange={(open) => {
+                          if (!open) {
+                            setEditingCustomer(null);
+                            form.reset({ name: "" });
+                          }
+                        }}
+                      >
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(customer)}>
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Customer</DialogTitle>
+                          </DialogHeader>
+                          <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                              <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
+                                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                              </Button>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(customer.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
