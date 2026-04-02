@@ -58,6 +58,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X } from "lucide-react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -639,7 +640,7 @@ export default function Elevators() {
                                   <FormItem>
                                     <FormLabel>Last Inspection Date</FormLabel>
                                     <FormControl>
-                                      <Input type="date" {...field} />
+                                      <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -658,7 +659,7 @@ export default function Elevators() {
                                   <FormItem>
                                     <FormLabel>Scheduled Date</FormLabel>
                                     <FormControl>
-                                      <Input type="date" {...field} />
+                                      <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -671,7 +672,12 @@ export default function Elevators() {
                                   <FormItem>
                                     <FormLabel>Completion Date</FormLabel>
                                     <FormControl>
-                                      <Input type="date" {...field} />
+                                      <DatePickerField
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Pick a date"
+                                        disabled={watchInspStatus !== "COMPLETED"}
+                                      />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>

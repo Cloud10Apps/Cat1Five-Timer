@@ -50,6 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, ClipboardCheck, Download, Filter, X } from "lucide-react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -431,7 +432,7 @@ export default function Inspections() {
                         <FormItem>
                           <FormLabel>Last Inspection Date</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -447,7 +448,7 @@ export default function Inspections() {
                         <FormItem>
                           <FormLabel>Scheduled Date (Optional)</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -460,7 +461,12 @@ export default function Inspections() {
                         <FormItem>
                           <FormLabel>Completion Date (Optional)</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Pick a date"
+                              disabled={watchStatus !== "COMPLETED"}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
