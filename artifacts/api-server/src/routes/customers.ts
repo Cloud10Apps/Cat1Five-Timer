@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db, customersTable } from "@workspace/db";
-import { eq, and, ilike } from "drizzle-orm";
+import { eq, and, ilike, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateCustomerBody, ListCustomersQueryParams, GetCustomerParams, UpdateCustomerParams, DeleteCustomerParams } from "@workspace/api-zod";
+import { getAccessibleCustomerIds } from "../lib/user-access.js";
 
 const router = Router();
 
@@ -13,10 +14,12 @@ router.get("/", async (req, res) => {
   const search = params.success ? params.data.search : undefined;
   const orgId = req.user!.organizationId;
 
-  const conditions = [eq(customersTable.organizationId, orgId)];
-  if (search) {
-    conditions.push(ilike(customersTable.name, `%${search}%`));
-  }
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+  if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
+
+  const conditions: any[] = [eq(customersTable.organizationId, orgId)];
+  if (search) conditions.push(ilike(customersTable.name, `%${search}%`));
+  if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));
 
   const customers = await db.select().from(customersTable).where(and(...conditions)).orderBy(customersTable.name);
   res.json(customers.map(c => ({

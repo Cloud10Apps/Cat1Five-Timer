@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, ilike, gte, lte } from "drizzle-orm";
+import { eq, and, ilike, gte, lte, inArray } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams } from "@workspace/api-zod";
+import { getAccessibleCustomerIds } from "../lib/user-access.js";
 
 const router = Router();
 
@@ -82,7 +83,11 @@ router.get("/", async (req, res) => {
   const params = ListInspectionsQueryParams.safeParse(req.query);
   const orgId = req.user!.organizationId;
 
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+  if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
+
   const conditions: any[] = [eq(inspectionsTable.organizationId, orgId)];
+  if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));
   if (params.success) {
     if (params.data.elevatorId) conditions.push(eq(inspectionsTable.elevatorId, params.data.elevatorId));
     if (params.data.buildingId) conditions.push(eq(buildingsTable.id, params.data.buildingId));

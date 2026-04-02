@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, ilike } from "drizzle-orm";
+import { eq, and, ilike, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateBuildingBody, ListBuildingsQueryParams, GetBuildingParams, UpdateBuildingParams, DeleteBuildingParams } from "@workspace/api-zod";
+import { getAccessibleCustomerIds } from "../lib/user-access.js";
 
 const router = Router();
 
@@ -11,6 +12,14 @@ router.use(requireAuth);
 router.get("/", async (req, res) => {
   const params = ListBuildingsQueryParams.safeParse(req.query);
   const orgId = req.user!.organizationId;
+
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+  if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
+
+  const conditions: any[] = [eq(buildingsTable.organizationId, orgId)];
+  if (params.success && params.data.customerId) conditions.push(eq(buildingsTable.customerId, params.data.customerId));
+  if (params.success && params.data.search) conditions.push(ilike(buildingsTable.name, `%${params.data.search}%`));
+  if (allowedIds !== null) conditions.push(inArray(buildingsTable.customerId, allowedIds));
 
   const buildings = await db
     .select({
@@ -27,17 +36,7 @@ router.get("/", async (req, res) => {
     })
     .from(buildingsTable)
     .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
-    .where(
-      and(
-        eq(buildingsTable.organizationId, orgId),
-        params.success && params.data.customerId
-          ? eq(buildingsTable.customerId, params.data.customerId)
-          : undefined,
-        params.success && params.data.search
-          ? ilike(buildingsTable.name, `%${params.data.search}%`)
-          : undefined,
-      )
-    )
+    .where(and(...conditions))
     .orderBy(buildingsTable.name);
 
   res.json(buildings.map(b => ({

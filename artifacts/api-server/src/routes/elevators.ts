@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, ilike } from "drizzle-orm";
+import { eq, and, ilike, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateElevatorBody, ListElevatorsQueryParams, GetElevatorParams, UpdateElevatorParams, DeleteElevatorParams } from "@workspace/api-zod";
+import { getAccessibleCustomerIds } from "../lib/user-access.js";
 
 const router = Router();
 
@@ -52,6 +53,9 @@ router.get("/", async (req, res) => {
   const params = ListElevatorsQueryParams.safeParse(req.query);
   const orgId = req.user!.organizationId;
 
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+  if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
+
   const conditions: any[] = [eq(elevatorsTable.organizationId, orgId)];
   if (params.success) {
     if (params.data.buildingId) conditions.push(eq(elevatorsTable.buildingId, params.data.buildingId));
@@ -60,6 +64,7 @@ router.get("/", async (req, res) => {
     if (params.data.customerId) conditions.push(eq(buildingsTable.customerId, params.data.customerId));
     if (params.data.bank) conditions.push(eq(elevatorsTable.bank, params.data.bank));
   }
+  if (allowedIds !== null) conditions.push(inArray(buildingsTable.customerId, allowedIds));
 
   const rows = await db
     .select({
