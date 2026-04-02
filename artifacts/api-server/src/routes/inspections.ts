@@ -138,6 +138,7 @@ router.get("/", async (req, res) => {
     if (params.data.status) conditions.push(eq(inspectionsTable.status, params.data.status));
     if (params.data.inspectionType) conditions.push(eq(inspectionsTable.inspectionType, params.data.inspectionType));
     if (params.data.elevatorType) conditions.push(eq(elevatorsTable.type, params.data.elevatorType));
+    if (params.data.bank) conditions.push(eq(elevatorsTable.bank, params.data.bank));
     if (params.data.search) conditions.push(ilike(elevatorsTable.name, `%${params.data.search}%`));
     if (params.data.month && params.data.year) {
       const startDate = dayjs().year(params.data.year).month(params.data.month - 1).startOf("month").format("YYYY-MM-DD");

@@ -267,6 +267,15 @@ export type ListInspectionsParams = {
   search?: string;
   month?: number;
   year?: number;
+  bank?: string;
+  lastInspectionDateFrom?: string;
+  lastInspectionDateTo?: string;
+  nextDueDateFrom?: string;
+  nextDueDateTo?: string;
+  scheduledDateFrom?: string;
+  scheduledDateTo?: string;
+  completionDateFrom?: string;
+  completionDateTo?: string;
 };
 
 export type ListInspectionsStatus =

@@ -10,6 +10,10 @@ import {
   useDeleteInspection,
   useListElevators,
   getListElevatorsQueryKey,
+  useListBuildings,
+  getListBuildingsQueryKey,
+  useListCustomers,
+  getListCustomersQueryKey,
   Inspection,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -85,6 +89,11 @@ export default function Inspections() {
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
   const [showDateFilters, setShowDateFilters] = useState(false);
 
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
+  const [selectedElevatorId, setSelectedElevatorId] = useState<string>("all");
+  const [selectedBank, setSelectedBank] = useState<string>("all");
+
   const [lastInspFrom, setLastInspFrom] = useState("");
   const [lastInspTo, setLastInspTo] = useState("");
   const [nextDueFrom, setNextDueFrom] = useState("");
@@ -103,13 +112,33 @@ export default function Inspections() {
     setCompletionFrom(""); setCompletionTo("");
   }, []);
 
+  const handleCustomerChange = (val: string) => {
+    setSelectedCustomerId(val);
+    setSelectedBuildingId("all");
+    setSelectedElevatorId("all");
+  };
+
+  const handleBuildingChange = (val: string) => {
+    setSelectedBuildingId(val);
+    setSelectedElevatorId("all");
+  };
+
   const statusFilter = selectedStatus !== "all" ? (selectedStatus as any) : undefined;
   const typeFilter = selectedType !== "all" ? (selectedType as "CAT1" | "CAT5") : undefined;
+
+  const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
+  const buildingIdFilter = selectedBuildingId !== "all" ? Number(selectedBuildingId) : undefined;
+  const elevatorIdFilter = selectedElevatorId !== "all" ? Number(selectedElevatorId) : undefined;
+  const bankFilter = selectedBank !== "all" ? selectedBank : undefined;
 
   const queryParams = {
     search: debouncedSearch || undefined,
     status: statusFilter,
     inspectionType: typeFilter,
+    customerId: customerIdFilter,
+    buildingId: buildingIdFilter,
+    elevatorId: elevatorIdFilter,
+    bank: bankFilter,
     lastInspectionDateFrom: lastInspFrom || undefined,
     lastInspectionDateTo: lastInspTo || undefined,
     nextDueDateFrom: nextDueFrom || undefined,
@@ -126,6 +155,19 @@ export default function Inspections() {
   );
 
   const { data: elevators } = useListElevators({}, { query: { queryKey: getListElevatorsQueryKey({}) } });
+  const { data: customers } = useListCustomers({}, { query: { queryKey: getListCustomersQueryKey({}) } });
+  const { data: buildings } = useListBuildings({}, { query: { queryKey: getListBuildingsQueryKey({}) } });
+
+  // Derived lists for cascading filters
+  const filteredBuildings = customerIdFilter
+    ? (buildings ?? []).filter(b => b.customerId === customerIdFilter)
+    : (buildings ?? []);
+  const filteredElevators = buildingIdFilter
+    ? (elevators ?? []).filter(e => e.buildingId === buildingIdFilter)
+    : customerIdFilter
+      ? (elevators ?? []).filter(e => filteredBuildings.some(b => b.id === e.buildingId))
+      : (elevators ?? []);
+  const allBanks = Array.from(new Set((elevators ?? []).map(e => e.bank).filter(Boolean))) as string[];
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -498,6 +540,68 @@ export default function Inspections() {
             <Button variant="ghost" size="sm" onClick={clearDateFilters} className="text-muted-foreground">
               <X className="mr-1 h-3.5 w-3.5" />
               Clear dates
+            </Button>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3">
+          <Select value={selectedCustomerId} onValueChange={handleCustomerChange}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="All Customers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Customers</SelectItem>
+              {(customers ?? []).map(c => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedBuildingId} onValueChange={handleBuildingChange}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="All Buildings" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Buildings</SelectItem>
+              {filteredBuildings.map(b => (
+                <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedElevatorId} onValueChange={setSelectedElevatorId}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="All Elevators" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Elevators</SelectItem>
+              {filteredElevators.map(e => (
+                <SelectItem key={e.id} value={String(e.id)}>{e.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedBank} onValueChange={setSelectedBank}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="All Banks" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Banks</SelectItem>
+              {allBanks.map(bank => (
+                <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedElevatorId !== "all" || selectedBank !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => { setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedElevatorId("all"); setSelectedBank("all"); }}
+            >
+              <X className="mr-1 h-3.5 w-3.5" />
+              Clear
             </Button>
           )}
         </div>
