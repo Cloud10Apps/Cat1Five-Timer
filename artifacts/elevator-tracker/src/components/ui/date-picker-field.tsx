@@ -1,24 +1,25 @@
 import * as React from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { format, parse, isValid } from "date-fns";
+import { CalendarIcon, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-function daysInMonth(month: number, year: number): number {
-  return new Date(year, month, 0).getDate();
+// Parse user-typed text in common formats: MM/DD/YYYY, YYYY-MM-DD, M/D/YYYY
+function parseTypedDate(text: string): Date | null {
+  const trimmed = text.trim();
+  const formats = ["MM/dd/yyyy", "M/d/yyyy", "yyyy-MM-dd", "MM-dd-yyyy"];
+  for (const fmt of formats) {
+    const d = parse(trimmed, fmt, new Date());
+    if (isValid(d) && d.getFullYear() > 1900 && d.getFullYear() < 2100) return d;
+  }
+  return null;
 }
 
 interface DatePickerFieldProps {
-  value?: string;
+  value?: string;          // stored value: YYYY-MM-DD or ""
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -28,86 +29,119 @@ interface DatePickerFieldProps {
 export function DatePickerField({
   value,
   onChange,
+  placeholder = "MM/DD/YYYY",
   disabled,
   className,
 }: DatePickerFieldProps) {
   const safeValue = value ?? "";
 
-  const parsed = React.useMemo(() => {
-    if (!safeValue) return { month: "", day: "", year: "" };
-    const match = safeValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) return { month: "", day: "", year: "" };
-    return {
-      year: match[1],
-      month: String(parseInt(match[2], 10)),
-      day: String(parseInt(match[3], 10)),
-    };
+  // The text shown in the input — either the user's live typing or formatted stored value
+  const [inputText, setInputText] = React.useState(() =>
+    safeValue ? format(parse(safeValue, "yyyy-MM-dd", new Date()), "MM/dd/yyyy") : ""
+  );
+  const [open, setOpen] = React.useState(false);
+
+  // Keep inputText in sync when value changes externally (e.g. form reset, clear)
+  React.useEffect(() => {
+    if (!safeValue) {
+      setInputText("");
+      return;
+    }
+    const d = parse(safeValue, "yyyy-MM-dd", new Date());
+    if (isValid(d)) {
+      setInputText(format(d, "MM/dd/yyyy"));
+    }
   }, [safeValue]);
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 41 }, (_, i) => currentYear - 10 + i);
+  const selectedDate = React.useMemo(() => {
+    if (!safeValue) return undefined;
+    const d = parse(safeValue, "yyyy-MM-dd", new Date());
+    return isValid(d) ? d : undefined;
+  }, [safeValue]);
 
-  const monthNum = parseInt(parsed.month, 10) || 0;
-  const yearNum = parseInt(parsed.year, 10) || currentYear;
-  const maxDays = monthNum ? daysInMonth(monthNum, yearNum) : 31;
-  const days = Array.from({ length: maxDays }, (_, i) => i + 1);
-
-  const emit = (month: string, day: string, year: string) => {
-    if (month && day && year) {
-      const mm = month.padStart(2, "0");
-      const dd = day.padStart(2, "0");
-      onChange(`${year}-${mm}-${dd}`);
-    } else if (!month && !day && !year) {
+  // User types in the text box
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setInputText(text);
+    if (text === "") {
       onChange("");
+      return;
+    }
+    const parsed = parseTypedDate(text);
+    if (parsed) {
+      onChange(format(parsed, "yyyy-MM-dd"));
     }
   };
 
-  const handleMonth = (val: string) => {
-    const newMax = daysInMonth(parseInt(val, 10), yearNum);
-    const clampedDay = parsed.day && parseInt(parsed.day, 10) > newMax ? String(newMax) : parsed.day;
-    emit(val, clampedDay, parsed.year);
+  // User picks from calendar
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      const formatted = format(date, "yyyy-MM-dd");
+      onChange(formatted);
+      setInputText(format(date, "MM/dd/yyyy"));
+    }
+    setOpen(false);
   };
-  const handleDay = (val: string) => emit(parsed.month, val, parsed.year);
-  const handleYear = (val: string) => {
-    const newMax = monthNum ? daysInMonth(monthNum, parseInt(val, 10)) : 31;
-    const clampedDay = parsed.day && parseInt(parsed.day, 10) > newMax ? String(newMax) : parsed.day;
-    emit(parsed.month, clampedDay, val);
+
+  // Clear button
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange("");
+    setInputText("");
   };
 
   return (
-    <div className={cn("flex gap-1.5", className)}>
-      <Select value={parsed.month} onValueChange={handleMonth} disabled={disabled}>
-        <SelectTrigger className="flex-[3] min-w-0">
-          <SelectValue placeholder="Month" />
-        </SelectTrigger>
-        <SelectContent>
-          {MONTHS.map((name, i) => (
-            <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className={cn("flex gap-1", className)}>
+      <div className="relative flex-1">
+        <Input
+          value={inputText}
+          onChange={handleTextChange}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={cn("pr-7", selectedDate ? "" : "text-muted-foreground")}
+        />
+        {inputText && !disabled && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            tabIndex={-1}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
 
-      <Select value={parsed.day} onValueChange={handleDay} disabled={disabled || !parsed.month}>
-        <SelectTrigger className="flex-[2] min-w-0">
-          <SelectValue placeholder="Day" />
-        </SelectTrigger>
-        <SelectContent>
-          {days.map(d => (
-            <SelectItem key={d} value={String(d)}>{d}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select value={parsed.year} onValueChange={handleYear} disabled={disabled}>
-        <SelectTrigger className="flex-[2] min-w-0">
-          <SelectValue placeholder="Year" />
-        </SelectTrigger>
-        <SelectContent>
-          {years.map(y => (
-            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={disabled}
+            className="shrink-0"
+          >
+            <CalendarIcon className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto p-0 z-[9999]"
+          align="end"
+          side="bottom"
+          sideOffset={4}
+        >
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleCalendarSelect}
+            captionLayout="dropdown"
+            fromYear={2000}
+            toYear={2040}
+            defaultMonth={selectedDate ?? new Date()}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
