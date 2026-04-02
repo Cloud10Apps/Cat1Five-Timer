@@ -55,6 +55,8 @@ import { useDebounce } from "@/hooks/use-debounce";
 
 const elevatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  internalId: z.string().optional(),
+  stateId: z.string().optional(),
   buildingId: z.coerce.number().min(1, "Building is required"),
   description: z.string().optional(),
   bank: z.string().optional(),
@@ -120,7 +122,7 @@ export default function Elevators() {
 
   const form = useForm<ElevatorFormValues>({
     resolver: zodResolver(elevatorSchema),
-    defaultValues: { name: "", buildingId: 0, description: "", bank: "", type: "traction" },
+    defaultValues: { name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" },
   });
 
   const onSubmit = (data: ElevatorFormValues) => {
@@ -179,6 +181,8 @@ export default function Elevators() {
     setEditingElevator(elevator);
     form.reset({
       name: elevator.name,
+      internalId: (elevator as any).internalId || "",
+      stateId: (elevator as any).stateId || "",
       buildingId: elevator.buildingId,
       description: elevator.description || "",
       bank: elevator.bank || "",
@@ -229,7 +233,7 @@ export default function Elevators() {
           <Dialog open={isAddOpen} onOpenChange={(open) => {
             setIsAddOpen(open);
             if (!open) {
-              form.reset({ name: "", buildingId: 0, description: "", bank: "", type: "traction" });
+              form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
               setEditingElevator(null);
             }
           }}>
@@ -277,14 +281,42 @@ export default function Elevators() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Elevator Name/ID</FormLabel>
+                        <FormLabel>Elevator Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. PE-1" {...field} />
+                          <Input placeholder="e.g. Main Lobby Elevator" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="internalId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Internal ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. PE-1" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="stateId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>State ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. NY-12345" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -445,7 +477,17 @@ export default function Elevators() {
             ) : (
               elevators?.map((elevator) => (
                 <TableRow key={elevator.id}>
-                  <TableCell className="font-medium">{elevator.name}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{elevator.name}</div>
+                    <div className="flex gap-2 mt-0.5">
+                      {(elevator as any).internalId && (
+                        <span className="text-xs text-muted-foreground">Int: {(elevator as any).internalId}</span>
+                      )}
+                      {(elevator as any).stateId && (
+                        <span className="text-xs text-muted-foreground">State: {(elevator as any).stateId}</span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{elevator.buildingName}</TableCell>
                   <TableCell>{elevator.customerName}</TableCell>
                   <TableCell className="capitalize">{elevator.type}</TableCell>

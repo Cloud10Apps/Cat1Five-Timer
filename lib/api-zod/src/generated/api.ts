@@ -228,6 +228,8 @@ export const ListElevatorsResponse = zod.array(ListElevatorsResponseItem);
  */
 export const CreateElevatorBody = zod.object({
   name: zod.string(),
+  internalId: zod.string().optional(),
+  stateId: zod.string().optional(),
   description: zod.string().optional(),
   bank: zod.string().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]),
@@ -264,6 +266,8 @@ export const UpdateElevatorParams = zod.object({
 
 export const UpdateElevatorBody = zod.object({
   name: zod.string(),
+  internalId: zod.string().optional(),
+  stateId: zod.string().optional(),
   description: zod.string().optional(),
   bank: zod.string().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]),

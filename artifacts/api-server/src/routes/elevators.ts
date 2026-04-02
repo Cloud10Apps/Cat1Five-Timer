@@ -14,6 +14,8 @@ async function fetchElevator(id: number, orgId: number) {
     .select({
       id: elevatorsTable.id,
       name: elevatorsTable.name,
+      internalId: elevatorsTable.internalId,
+      stateId: elevatorsTable.stateId,
       description: elevatorsTable.description,
       bank: elevatorsTable.bank,
       type: elevatorsTable.type,
@@ -37,6 +39,8 @@ function formatElevator(e: Awaited<ReturnType<typeof fetchElevator>>) {
   return {
     id: e.id,
     name: e.name,
+    internalId: e.internalId ?? undefined,
+    stateId: e.stateId ?? undefined,
     description: e.description ?? undefined,
     bank: e.bank ?? undefined,
     type: e.type,
@@ -70,6 +74,8 @@ router.get("/", async (req, res) => {
     .select({
       id: elevatorsTable.id,
       name: elevatorsTable.name,
+      internalId: elevatorsTable.internalId,
+      stateId: elevatorsTable.stateId,
       description: elevatorsTable.description,
       bank: elevatorsTable.bank,
       type: elevatorsTable.type,
@@ -98,6 +104,8 @@ router.post("/", async (req, res) => {
   const orgId = req.user!.organizationId;
   const inserted = await db.insert(elevatorsTable).values({
     name: parsed.data.name,
+    internalId: parsed.data.internalId,
+    stateId: parsed.data.stateId,
     description: parsed.data.description,
     bank: parsed.data.bank,
     type: parsed.data.type,
@@ -131,7 +139,7 @@ router.put("/:id", async (req, res) => {
   }
   const orgId = req.user!.organizationId;
   await db.update(elevatorsTable)
-    .set({ name: body.data.name, description: body.data.description, bank: body.data.bank, type: body.data.type, buildingId: body.data.buildingId })
+    .set({ name: body.data.name, internalId: body.data.internalId, stateId: body.data.stateId, description: body.data.description, bank: body.data.bank, type: body.data.type, buildingId: body.data.buildingId })
     .where(and(eq(elevatorsTable.id, params.data.id), eq(elevatorsTable.organizationId, orgId)));
   const e = await fetchElevator(params.data.id, orgId);
   if (!e) {

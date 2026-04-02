@@ -7,6 +7,8 @@ import { buildingsTable } from "./buildings";
 export const elevatorsTable = pgTable("elevators", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  internalId: text("internal_id"),
+  stateId: text("state_id"),
   description: text("description"),
   bank: text("bank"),
   type: text("type", { enum: ["traction", "hydraulic", "other"] }).notNull().default("traction"),
