@@ -51,13 +51,19 @@ interface EventChipProps {
 }
 
 function EventChip({ insp, onClick }: EventChipProps) {
+  const header = [insp.customerName, insp.buildingName].filter(Boolean).join(" · ");
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`w-full text-left text-[11px] font-medium rounded px-1.5 py-0.5 truncate flex items-center gap-1 leading-tight ${statusStyle(insp.status)} hover:brightness-95 transition-all`}
+      className={`w-full text-left rounded px-2 py-1 leading-tight ${statusStyle(insp.status)} hover:brightness-95 transition-all`}
     >
-      <span className="truncate flex-1 min-w-0">{insp.elevatorName ?? "Elevator"}</span>
-      <span className="shrink-0 text-[9px] font-bold opacity-70">{insp.inspectionType}</span>
+      {header && (
+        <p className="text-[10px] opacity-60 truncate font-normal mb-0.5">{header}</p>
+      )}
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="truncate flex-1 min-w-0 text-xs font-semibold">{insp.elevatorName ?? "Elevator"}</span>
+        <span className="shrink-0 text-[10px] font-bold opacity-70">{insp.inspectionType}</span>
+      </div>
     </button>
   );
 }
