@@ -186,11 +186,31 @@ export default function Elevators() {
     });
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const params = new URLSearchParams();
     if (customerIdFilter) params.append("customerId", customerIdFilter.toString());
     if (buildingIdFilter) params.append("buildingId", buildingIdFilter.toString());
-    window.open(`/api/export/elevators?${params.toString()}`, "_blank");
+
+    const token = localStorage.getItem("token");
+    const res = await fetch(`/api/export/elevators?${params.toString()}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!res.ok) {
+      console.error("Export failed", res.status);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const date = new Date().toISOString().slice(0, 10);
+    a.download = `elevators_export_${date}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -204,7 +224,7 @@ export default function Elevators() {
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
-            Export CSV
+            Export Excel
           </Button>
           <Dialog open={isAddOpen} onOpenChange={(open) => {
             setIsAddOpen(open);

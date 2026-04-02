@@ -175,11 +175,31 @@ export default function Inspections() {
     });
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const params = new URLSearchParams();
     if (statusFilter) params.append("status", statusFilter);
     if (typeFilter) params.append("inspectionType", typeFilter);
-    window.open(`/api/export/inspections?${params.toString()}`, "_blank");
+
+    const token = localStorage.getItem("token");
+    const res = await fetch(`/api/export/inspections?${params.toString()}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!res.ok) {
+      console.error("Export failed", res.status);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const date = new Date().toISOString().slice(0, 10);
+    a.download = `inspections_export_${date}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   // Auto calculate next due date in the form preview
@@ -200,7 +220,7 @@ export default function Inspections() {
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
-            Export CSV
+            Export Excel
           </Button>
           <Dialog open={isAddOpen} onOpenChange={(open) => {
             setIsAddOpen(open);
