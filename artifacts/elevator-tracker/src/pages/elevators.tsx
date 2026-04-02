@@ -992,25 +992,39 @@ export default function Elevators() {
                         <span className="text-xs text-muted-foreground">State: {elevator.stateId}</span>
                       )}
                     </div>
-                    {activeDots.length > 0 && (
-                      <TooltipProvider delayDuration={200}>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          {activeDots.map(({ key, label, dot, text }) => (
-                            <Tooltip key={key}>
-                              <TooltipTrigger asChild>
-                                <span className={`inline-flex items-center gap-1 cursor-default ${text}`}>
-                                  <span className={`inline-block w-2 h-2 rounded-full ${dot} flex-shrink-0`} />
-                                  <span className="text-xs font-semibold tabular-nums">{counts[key]}</span>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs">
-                                {counts[key]} {label}
-                              </TooltipContent>
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </TooltipProvider>
-                    )}
+                    {activeDots.length > 0 && (() => {
+                      const total = activeDots.reduce((s, d) => s + (counts[d.key] ?? 0), 0);
+                      return (
+                        <TooltipProvider delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex h-2 w-full mt-2 rounded-full overflow-hidden cursor-default gap-px">
+                                {STATUS_DOTS.map(({ key, dot }) => {
+                                  const n = counts[key] ?? 0;
+                                  if (!n) return null;
+                                  return (
+                                    <div
+                                      key={key}
+                                      className={`${dot} h-full`}
+                                      style={{ width: `${(n / total) * 100}%` }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs space-y-0.5 p-2">
+                              {STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0).map(({ key, label, dot }) => (
+                                <div key={key} className="flex items-center gap-1.5">
+                                  <span className={`inline-block w-2 h-2 rounded-full ${dot}`} />
+                                  <span className="font-semibold tabular-nums">{counts[key]}</span>
+                                  <span className="text-muted-foreground">{label}</span>
+                                </div>
+                              ))}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>{elevator.buildingName}</TableCell>
                   <TableCell>{elevator.customerName}</TableCell>
