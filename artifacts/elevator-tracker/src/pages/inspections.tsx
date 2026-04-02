@@ -49,6 +49,7 @@ import { Plus, Search, Pencil, Trash2, ClipboardCheck, Download } from "lucide-r
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/status-badge";
+import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import dayjs from "dayjs";
 import { useDebounce } from "@/hooks/use-debounce";
 
@@ -465,9 +466,7 @@ export default function Inspections() {
                     <div className="text-xs text-muted-foreground">{inspection.buildingName}</div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-sm px-2 py-1 bg-secondary rounded-md">
-                      {inspection.inspectionType}
-                    </span>
+                    <InspectionTypeBadge type={inspection.inspectionType} />
                   </TableCell>
                   <TableCell>{inspection.lastInspectionDate ? dayjs(inspection.lastInspectionDate).format('MMM D, YYYY') : "N/A"}</TableCell>
                   <TableCell className={dayjs(inspection.nextDueDate).isBefore(dayjs()) ? "text-destructive font-bold" : "font-medium"}>

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-reac
 import dayjs from "dayjs";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/status-badge";
+import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -168,7 +169,7 @@ export default function CalendarView() {
                       <StatusBadge status={insp.status} />
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                      <div><span className="text-muted-foreground">Type:</span> {insp.inspectionType}</div>
+                      <div className="flex items-center gap-2"><span className="text-muted-foreground">Type:</span> <InspectionTypeBadge type={insp.inspectionType} /></div>
                       <div><span className="text-muted-foreground">Customer:</span> {insp.customerName}</div>
                       {insp.scheduledDate && <div><span className="text-muted-foreground">Scheduled:</span> {dayjs(insp.scheduledDate).format("MMM D")}</div>}
                       {insp.nextDueDate && <div><span className="text-muted-foreground">Due:</span> {dayjs(insp.nextDueDate).format("MMM D")}</div>}

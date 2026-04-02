@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Cartes
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/status-badge";
+import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import dayjs from "dayjs";
 import { FileText, AlertOctagon } from "lucide-react";
 
@@ -134,7 +135,7 @@ export default function Reports() {
                   <TableRow key={insp.id}>
                     <TableCell className="font-medium">{insp.elevatorName}</TableCell>
                     <TableCell>{insp.buildingName}</TableCell>
-                    <TableCell><span className="font-mono text-sm">{insp.inspectionType}</span></TableCell>
+                    <TableCell><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
                     <TableCell className={dayjs(insp.nextDueDate).isBefore(dayjs()) ? "text-destructive font-bold" : ""}>
                       {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                     </TableCell>
