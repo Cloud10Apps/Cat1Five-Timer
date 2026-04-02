@@ -540,6 +540,7 @@ export default function Inspections() {
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Inspection</TableHead>
+              <TableHead>Recurrence</TableHead>
               <TableHead>Next Due</TableHead>
               <TableHead>Scheduled Date</TableHead>
               <TableHead>Completion Date</TableHead>
@@ -549,13 +550,13 @@ export default function Inspections() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <Spinner />
                 </TableCell>
               </TableRow>
             ) : inspections?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <ClipboardCheck className="h-10 w-10 mb-2 opacity-20" />
                     <p>No inspections found.</p>
@@ -577,6 +578,9 @@ export default function Inspections() {
                   </TableCell>
                   <TableCell className="text-sm">
                     {inspection.lastInspectionDate ? dayjs(inspection.lastInspectionDate).format('MMM D, YYYY') : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                    {inspection.recurrenceYears === 1 ? "1 yr" : `${inspection.recurrenceYears} yrs`}
                   </TableCell>
                   <TableCell className={`text-sm font-medium ${inspection.status !== "COMPLETED" && inspection.nextDueDate && dayjs(inspection.nextDueDate).isBefore(dayjs()) ? "text-destructive" : ""}`}>
                     {inspection.nextDueDate ? dayjs(inspection.nextDueDate).format('MMM D, YYYY') : <span className="text-muted-foreground">—</span>}
