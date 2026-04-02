@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import dayjs from "dayjs";
 import {
   useListElevators,
   getListElevatorsQueryKey,
@@ -12,12 +13,18 @@ import {
   getListBuildingsQueryKey,
   useListCustomers,
   getListCustomersQueryKey,
+  useListInspections,
+  getListInspectionsQueryKey,
+  useCreateInspection,
+  useUpdateInspection,
+  useDeleteInspection,
   Elevator,
-  CreateElevatorBodyType,
+  Inspection,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -48,7 +55,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +71,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
+import { StatusBadge } from "@/components/status-badge";
+import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 
 const elevatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -75,6 +86,18 @@ const elevatorSchema = z.object({
 
 type ElevatorFormValues = z.infer<typeof elevatorSchema>;
 
+const inspectionSchema = z.object({
+  inspectionType: z.enum(["CAT1", "CAT5"] as const),
+  recurrenceYears: z.coerce.number().min(1, "Recurrence is required"),
+  lastInspectionDate: z.string().optional(),
+  scheduledDate: z.string().optional(),
+  completionDate: z.string().optional(),
+  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"] as const).optional(),
+  notes: z.string().optional(),
+});
+
+type InspectionFormValues = z.infer<typeof inspectionSchema>;
+
 export default function Elevators() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -84,6 +107,11 @@ export default function Elevators() {
   const [selectedBank, setSelectedBank] = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
+
+  // Inspection panel state (inside elevator dialog)
+  const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
+  const [showInspForm, setShowInspForm] = useState(false);
+  const [inspDeleteId, setInspDeleteId] = useState<number | null>(null);
 
   const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
   const buildingIdFilter = selectedBuildingId !== "all" ? Number(selectedBuildingId) : undefined;
@@ -107,8 +135,6 @@ export default function Elevators() {
     }) } }
   );
 
-  // Separate query without bank filter to populate the bank dropdown options,
-  // filtered by the other active filters so options stay contextually relevant.
   const { data: elevatorsForBankOptions } = useListElevators(
     { customerId: customerIdFilter, buildingId: buildingIdFilter, type: typeFilter },
     { query: { queryKey: getListElevatorsQueryKey({ customerId: customerIdFilter, buildingId: buildingIdFilter, type: typeFilter }) } }
@@ -123,6 +149,15 @@ export default function Elevators() {
     { query: { queryKey: getListBuildingsQueryKey({ customerId: customerIdFilter }) } }
   );
 
+  // Inspections for the currently-edited elevator
+  const { data: elevatorInspections, isLoading: inspLoading } = useListInspections(
+    { elevatorId: editingElevator?.id },
+    { query: { 
+      enabled: !!editingElevator,
+      queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator?.id }) 
+    }}
+  );
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -130,10 +165,100 @@ export default function Elevators() {
   const updateMutation = useUpdateElevator();
   const deleteMutation = useDeleteElevator();
 
+  const createInspMutation = useCreateInspection();
+  const updateInspMutation = useUpdateInspection();
+  const deleteInspMutation = useDeleteInspection();
+
   const form = useForm<ElevatorFormValues>({
     resolver: zodResolver(elevatorSchema),
     defaultValues: { name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" },
   });
+
+  const inspForm = useForm<InspectionFormValues>({
+    resolver: zodResolver(inspectionSchema),
+    defaultValues: { inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" },
+  });
+
+  const watchLastDate = inspForm.watch("lastInspectionDate");
+  const watchRecurrence = inspForm.watch("recurrenceYears");
+  const nextDuePreview = watchLastDate && watchRecurrence
+    ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
+    : null;
+
+  const resetInspForm = () => {
+    inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
+    setEditingInspection(null);
+    setShowInspForm(false);
+  };
+
+  const openEditInsp = (insp: Inspection) => {
+    setEditingInspection(insp);
+    setShowInspForm(true);
+    inspForm.reset({
+      inspectionType: insp.inspectionType,
+      recurrenceYears: insp.recurrenceYears,
+      status: insp.status,
+      lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      scheduledDate: insp.scheduledDate ? dayjs(insp.scheduledDate).format("YYYY-MM-DD") : "",
+      completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",
+      notes: insp.notes || "",
+    });
+  };
+
+  const onSubmitInsp = (data: InspectionFormValues) => {
+    if (!editingElevator) return;
+    const payload = {
+      ...data,
+      elevatorId: editingElevator.id,
+      lastInspectionDate: data.lastInspectionDate || undefined,
+      scheduledDate: data.scheduledDate || undefined,
+      completionDate: data.completionDate || undefined,
+    };
+
+    if (editingInspection) {
+      updateInspMutation.mutate(
+        { id: editingInspection.id, data: payload },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+            toast({ title: "Inspection updated" });
+            resetInspForm();
+          },
+          onError: () => toast({ title: "Failed to update inspection", variant: "destructive" }),
+        }
+      );
+    } else {
+      createInspMutation.mutate(
+        { data: payload },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+            toast({ title: "Inspection added" });
+            resetInspForm();
+          },
+          onError: () => toast({ title: "Failed to add inspection", variant: "destructive" }),
+        }
+      );
+    }
+  };
+
+  const confirmDeleteInsp = () => {
+    if (inspDeleteId === null) return;
+    deleteInspMutation.mutate(
+      { id: inspDeleteId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+          toast({ title: "Inspection deleted" });
+          setInspDeleteId(null);
+        },
+        onError: () => {
+          toast({ title: "Failed to delete inspection", variant: "destructive" });
+          setInspDeleteId(null);
+        },
+      }
+    );
+  };
 
   const onSubmit = (data: ElevatorFormValues) => {
     if (editingElevator) {
@@ -196,6 +321,7 @@ export default function Elevators() {
 
   const openEdit = (elevator: Elevator) => {
     setEditingElevator(elevator);
+    resetInspForm();
     form.reset({
       name: elevator.name,
       internalId: elevator.internalId || "",
@@ -234,6 +360,134 @@ export default function Elevators() {
     URL.revokeObjectURL(url);
   };
 
+  const elevatorFormFields = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="buildingId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Building</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value ? field.value.toString() : ""}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a building" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {buildings?.map((building) => (
+                    <SelectItem key={building.id} value={building.id.toString()}>
+                      {building.name} ({building.customerName})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Elevator Name</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Main Lobby Elevator" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="internalId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unit ID</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. PE-1" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="stateId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>State ID</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. NY-12345" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="traction">Traction</SelectItem>
+                    <SelectItem value="hydraulic">Hydraulic</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="bank"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Bank</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. High Rise" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Additional details..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
+          {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : "Save Elevator"}
+        </Button>
+      </form>
+    </Form>
+  );
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -252,146 +506,273 @@ export default function Elevators() {
             if (!open) {
               form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
               setEditingElevator(null);
+              resetInspForm();
             }
           }}>
             <DialogTrigger asChild>
               <Button onClick={() => {
                 setEditingElevator(null);
+                resetInspForm();
                 form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
               }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Elevator
               </Button>
             </DialogTrigger>
-            <DialogContent>
+
+            <DialogContent className={editingElevator ? "max-w-2xl max-h-[90vh]" : ""}>
               <DialogHeader>
-                <DialogTitle>{editingElevator ? "Edit Elevator" : "Add New Elevator"}</DialogTitle>
+                <DialogTitle>
+                  {editingElevator ? `Edit: ${editingElevator.name}` : "Add New Elevator"}
+                </DialogTitle>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="buildingId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Building</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value ? field.value.toString() : ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a building" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {buildings?.map((building) => (
-                              <SelectItem key={building.id} value={building.id.toString()}>
-                                {building.name} ({building.customerName})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+
+              {editingElevator ? (
+                <Tabs defaultValue="details" className="w-full">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
+                    <TabsTrigger value="inspections" className="flex-1">
+                      Inspections
+                      {elevatorInspections && elevatorInspections.length > 0 && (
+                        <span className="ml-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">
+                          {elevatorInspections.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="details" className="pt-2">
+                    {elevatorFormFields}
+                  </TabsContent>
+
+                  <TabsContent value="inspections" className="pt-2 space-y-4">
+                    {/* Inline inspection form */}
+                    {showInspForm ? (
+                      <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold">
+                            {editingInspection ? "Edit Inspection" : "New Inspection"}
+                          </h3>
+                          <Button variant="ghost" size="icon" onClick={resetInspForm}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Form {...inspForm}>
+                          <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <FormField
+                                control={inspForm.control}
+                                name="inspectionType"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Type</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
+                                        <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={inspForm.control}
+                                name="status"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Status</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                                        <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                                        <SelectItem value="OVERDUE">Overdue</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={inspForm.control}
+                                name="recurrenceYears"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Recurrence (Years)</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" min="1" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={inspForm.control}
+                                name="lastInspectionDate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Last Inspection Date</FormLabel>
+                                    <FormControl>
+                                      <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              {nextDuePreview && (
+                                <div className="col-span-2 text-xs text-muted-foreground bg-muted rounded px-3 py-2">
+                                  Calculated next due: <strong className="text-foreground">{nextDuePreview}</strong>
+                                </div>
+                              )}
+                              <FormField
+                                control={inspForm.control}
+                                name="scheduledDate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Scheduled Date</FormLabel>
+                                    <FormControl>
+                                      <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={inspForm.control}
+                                name="completionDate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Completion Date</FormLabel>
+                                    <FormControl>
+                                      <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <FormField
+                              control={inspForm.control}
+                              name="notes"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Notes</FormLabel>
+                                  <FormControl>
+                                    <Textarea
+                                      placeholder="Inspector notes, compliance details..."
+                                      className="resize-none h-16"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <Button type="button" variant="outline" size="sm" onClick={resetInspForm}>
+                                Cancel
+                              </Button>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                disabled={createInspMutation.isPending || updateInspMutation.isPending}
+                              >
+                                {(createInspMutation.isPending || updateInspMutation.isPending)
+                                  ? "Saving..."
+                                  : editingInspection ? "Update Inspection" : "Save Inspection"}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full border-dashed"
+                        onClick={() => setShowInspForm(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        New Inspection
+                      </Button>
                     )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Elevator Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Main Lobby Elevator" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+
+                    {/* Inspection history list */}
+                    {inspLoading ? (
+                      <div className="flex justify-center py-6"><Spinner /></div>
+                    ) : !elevatorInspections || elevatorInspections.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
+                        <ClipboardList className="h-8 w-8 mb-2 opacity-20" />
+                        <p>No inspection records yet.</p>
+                      </div>
+                    ) : (
+                      <ScrollArea className="max-h-64 rounded-md border">
+                        <div className="divide-y">
+                          {elevatorInspections.map((insp) => (
+                            <div key={insp.id} className="flex items-start justify-between gap-3 px-4 py-3">
+                              <div className="flex flex-col gap-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <InspectionTypeBadge type={insp.inspectionType} />
+                                  <StatusBadge status={insp.status || "NOT_STARTED"} />
+                                </div>
+                                <div className="flex gap-3 text-xs text-muted-foreground flex-wrap mt-0.5">
+                                  {insp.lastInspectionDate && (
+                                    <span>Last: {dayjs(insp.lastInspectionDate).format("MMM D, YYYY")}</span>
+                                  )}
+                                  {insp.nextDueDate && (
+                                    <span>Due: {dayjs(insp.nextDueDate).format("MMM D, YYYY")}</span>
+                                  )}
+                                  {insp.scheduledDate && (
+                                    <span>Scheduled: {dayjs(insp.scheduledDate).format("MMM D, YYYY")}</span>
+                                  )}
+                                  {insp.completionDate && (
+                                    <span>Completed: {dayjs(insp.completionDate).format("MMM D, YYYY")}</span>
+                                  )}
+                                </div>
+                                {insp.notes && (
+                                  <p className="text-xs text-muted-foreground truncate max-w-xs">{insp.notes}</p>
+                                )}
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => openEditInsp(insp)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => setInspDeleteId(insp.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="internalId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Unit ID</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. PE-1" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="stateId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>State ID</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. NY-12345" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="traction">Traction</SelectItem>
-                              <SelectItem value="hydraulic">Hydraulic</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="bank"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bank</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. High Rise" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Additional details..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
-                    {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : "Save Elevator"}
-                  </Button>
-                </form>
-              </Form>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                elevatorFormFields
+              )}
             </DialogContent>
           </Dialog>
         </div>
@@ -409,7 +790,7 @@ export default function Elevators() {
         </div>
         <Select value={selectedCustomerId} onValueChange={(val) => {
           setSelectedCustomerId(val);
-          setSelectedBuildingId("all"); // reset building when customer changes
+          setSelectedBuildingId("all");
         }}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Customer" />
@@ -535,6 +916,7 @@ export default function Elevators() {
         </Table>
       </div>
 
+      {/* Elevator delete confirmation */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -546,6 +928,24 @@ export default function Elevators() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Inspection delete confirmation */}
+      <AlertDialog open={inspDeleteId !== null} onOpenChange={(open) => { if (!open) setInspDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Inspection</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this inspection record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteInsp} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
