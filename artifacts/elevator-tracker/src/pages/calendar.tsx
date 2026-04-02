@@ -151,7 +151,13 @@ export default function CalendarView() {
   const onSubmit = (data: EditFormValues) => {
     if (!editingInsp) return;
     updateMutation.mutate(
-      { id: editingInsp.id, data: { ...data, elevatorId: editingInsp.elevatorId } },
+      { id: editingInsp.id, data: {
+        ...data,
+        elevatorId: editingInsp.elevatorId,
+        lastInspectionDate: data.lastInspectionDate || undefined,
+        scheduledDate: data.scheduledDate || undefined,
+        completionDate: data.completionDate || undefined,
+      }},
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
