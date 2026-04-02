@@ -8,7 +8,11 @@ import { cn } from "@/lib/utils";
 
 function parseTypedDate(text: string): Date | null {
   const trimmed = text.trim();
-  const fmts = ["MM/dd/yyyy", "M/d/yyyy", "M/d/yy", "yyyy-MM-dd", "MM-dd-yyyy"];
+  // Require a 4-digit year before trying to parse — prevents premature matches
+  // while the user is still typing (e.g. "01/15/20" must NOT match yet)
+  const hasFullYear = /\d{4}$/.test(trimmed) || /^\d{4}-/.test(trimmed);
+  if (!hasFullYear) return null;
+  const fmts = ["MM/dd/yyyy", "M/d/yyyy", "yyyy-MM-dd", "MM-dd-yyyy"];
   for (const fmt of fmts) {
     const d = parse(trimmed, fmt, new Date());
     if (isValid(d) && d.getFullYear() > 1900 && d.getFullYear() < 2100) return d;
@@ -39,9 +43,12 @@ export function DatePickerField({
   });
   const [showCal, setShowCal] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  // True while the user is typing so the useEffect doesn't overwrite their input
+  const typingRef = React.useRef(false);
 
-  // Sync text when value changes externally (form reset, etc.)
+  // Sync text only when value changes from an external source (calendar, form reset, clear)
   React.useEffect(() => {
+    if (typingRef.current) { typingRef.current = false; return; }
     if (!safeValue) { setInputText(""); return; }
     const d = parse(safeValue, "yyyy-MM-dd", new Date());
     if (isValid(d)) setInputText(format(d, "MM/dd/yyyy"));
@@ -70,7 +77,10 @@ export function DatePickerField({
     setInputText(text);
     if (!text) { onChange(""); return; }
     const d = parseTypedDate(text);
-    if (d) onChange(format(d, "yyyy-MM-dd"));
+    if (d) {
+      typingRef.current = true; // Prevent useEffect from overwriting what the user typed
+      onChange(format(d, "yyyy-MM-dd"));
+    }
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
