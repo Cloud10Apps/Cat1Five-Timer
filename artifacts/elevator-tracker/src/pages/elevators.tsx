@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,6 +74,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
 import { StatusBadge } from "@/components/status-badge";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const elevatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -158,6 +164,26 @@ export default function Elevators() {
       queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator?.id }) 
     }}
   );
+
+  // All inspections (unfiltered) — used to compute per-elevator status counts in the table
+  const { data: allInspections } = useListInspections(
+    {},
+    { query: { queryKey: getListInspectionsQueryKey({}) } }
+  );
+
+  // Map: elevatorId → { NOT_STARTED, OVERDUE, SCHEDULED, IN_PROGRESS, COMPLETED }
+  type StatusCounts = Record<string, number>;
+  const inspCountsByElevator = useMemo(() => {
+    const map = new Map<number, StatusCounts>();
+    for (const insp of allInspections ?? []) {
+      if (!insp.elevatorId) continue;
+      const existing = map.get(insp.elevatorId) ?? {};
+      const key = insp.status ?? "NOT_STARTED";
+      existing[key] = (existing[key] ?? 0) + 1;
+      map.set(insp.elevatorId, existing);
+    }
+    return map;
+  }, [allInspections]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -944,11 +970,21 @@ export default function Elevators() {
                 </TableCell>
               </TableRow>
             ) : (
-              elevators?.map((elevator) => (
+              elevators?.map((elevator) => {
+                const counts = inspCountsByElevator.get(elevator.id) ?? {};
+                const STATUS_DOTS = [
+                  { key: "OVERDUE",     label: "Overdue",     dot: "bg-red-500",    text: "text-red-600"   },
+                  { key: "IN_PROGRESS", label: "In Progress", dot: "bg-amber-500",  text: "text-amber-600" },
+                  { key: "SCHEDULED",   label: "Scheduled",   dot: "bg-sky-500",    text: "text-sky-600"   },
+                  { key: "NOT_STARTED", label: "Not Started", dot: "bg-slate-400",  text: "text-slate-500" },
+                  { key: "COMPLETED",   label: "Completed",   dot: "bg-green-500",  text: "text-green-600" },
+                ] as const;
+                const activeDots = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
+                return (
                 <TableRow key={elevator.id}>
                   <TableCell>
                     <div className="font-medium">{elevator.name}</div>
-                    <div className="flex gap-2 mt-0.5">
+                    <div className="flex gap-2 mt-0.5 flex-wrap">
                       {elevator.internalId && (
                         <span className="text-xs text-muted-foreground">Unit: {elevator.internalId}</span>
                       )}
@@ -956,6 +992,25 @@ export default function Elevators() {
                         <span className="text-xs text-muted-foreground">State: {elevator.stateId}</span>
                       )}
                     </div>
+                    {activeDots.length > 0 && (
+                      <TooltipProvider delayDuration={200}>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          {activeDots.map(({ key, label, dot, text }) => (
+                            <Tooltip key={key}>
+                              <TooltipTrigger asChild>
+                                <span className={`inline-flex items-center gap-1 cursor-default ${text}`}>
+                                  <span className={`inline-block w-2 h-2 rounded-full ${dot} flex-shrink-0`} />
+                                  <span className="text-xs font-semibold tabular-nums">{counts[key]}</span>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                {counts[key]} {label}
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </TooltipProvider>
+                    )}
                   </TableCell>
                   <TableCell>{elevator.buildingName}</TableCell>
                   <TableCell>{elevator.customerName}</TableCell>
@@ -978,7 +1033,8 @@ export default function Elevators() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
