@@ -295,7 +295,7 @@ export default function Elevators() {
                       name="internalId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Internal ID</FormLabel>
+                          <FormLabel>Unit ID</FormLabel>
                           <FormControl>
                             <Input placeholder="e.g. PE-1" {...field} />
                           </FormControl>
@@ -481,7 +481,7 @@ export default function Elevators() {
                     <div className="font-medium">{elevator.name}</div>
                     <div className="flex gap-2 mt-0.5">
                       {elevator.internalId && (
-                        <span className="text-xs text-muted-foreground">Int: {elevator.internalId}</span>
+                        <span className="text-xs text-muted-foreground">Unit: {elevator.internalId}</span>
                       )}
                       {elevator.stateId && (
                         <span className="text-xs text-muted-foreground">State: {elevator.stateId}</span>
