@@ -64,12 +64,12 @@ export default function Settings() {
           <CardDescription>Configure how you receive alerts</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between border p-4 rounded-lg">
+          <div className="flex items-center justify-between border p-4 rounded-lg opacity-60">
             <div>
               <h4 className="font-medium">Overdue Inspection Alerts</h4>
               <p className="text-sm text-muted-foreground">Receive emails when inspections pass their due date.</p>
             </div>
-            <Button variant="outline" disabled>Enabled</Button>
+            <Button variant="outline" disabled>Coming Soon</Button>
           </div>
           <div className="flex items-center justify-between border p-4 rounded-lg opacity-60">
             <div>
