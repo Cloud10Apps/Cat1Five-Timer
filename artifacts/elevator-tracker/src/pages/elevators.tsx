@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X, CalendarDays } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -112,6 +112,8 @@ export default function Elevators() {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedBank, setSelectedBank] = useState<string>("all");
+  const [dueDateFrom, setDueDateFrom] = useState<string>("");
+  const [dueDateTo, setDueDateTo] = useState<string>("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
 
@@ -184,6 +186,31 @@ export default function Elevators() {
     }
     return map;
   }, [allInspections]);
+
+  // Map: elevatorId → soonest nextDueDate (YYYY-MM-DD string)
+  const nextDueDateByElevator = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const insp of allInspections ?? []) {
+      if (!insp.elevatorId || !insp.nextDueDate) continue;
+      const current = map.get(insp.elevatorId);
+      if (!current || insp.nextDueDate < current) {
+        map.set(insp.elevatorId, insp.nextDueDate.slice(0, 10));
+      }
+    }
+    return map;
+  }, [allInspections]);
+
+  // Client-side filter by due date range
+  const filteredElevators = useMemo(() => {
+    if (!dueDateFrom && !dueDateTo) return elevators;
+    return (elevators ?? []).filter((el) => {
+      const due = nextDueDateByElevator.get(el.id);
+      if (!due) return false;
+      if (dueDateFrom && due < dueDateFrom) return false;
+      if (dueDateTo && due > dueDateTo) return false;
+      return true;
+    });
+  }, [elevators, nextDueDateByElevator, dueDateFrom, dueDateTo]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -919,6 +946,36 @@ export default function Elevators() {
             ))}
           </SelectContent>
         </Select>
+        {/* Due date range filter */}
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Input
+            type="date"
+            className="w-[145px]"
+            title="Due from"
+            placeholder="Due from"
+            value={dueDateFrom}
+            onChange={(e) => setDueDateFrom(e.target.value)}
+          />
+          <span className="text-muted-foreground text-sm">–</span>
+          <Input
+            type="date"
+            className="w-[145px]"
+            title="Due to"
+            placeholder="Due to"
+            value={dueDateTo}
+            onChange={(e) => setDueDateTo(e.target.value)}
+          />
+          {(dueDateFrom || dueDateTo) && (
+            <button
+              onClick={() => { setDueDateFrom(""); setDueDateTo(""); }}
+              className="text-muted-foreground hover:text-foreground"
+              title="Clear date filter"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="border rounded-md">
@@ -930,19 +987,20 @@ export default function Elevators() {
               <TableHead>Customer</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Bank</TableHead>
+              <TableHead>Next Due</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <Spinner />
                 </TableCell>
               </TableRow>
-            ) : elevators?.length === 0 ? (
+            ) : filteredElevators?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <ArrowUpSquare className="h-10 w-10 mb-2 opacity-20" />
                     <p>No elevators found.</p>
@@ -950,7 +1008,7 @@ export default function Elevators() {
                 </TableCell>
               </TableRow>
             ) : (
-              elevators?.map((elevator) => {
+              filteredElevators?.map((elevator) => {
                 const counts = inspCountsByElevator.get(elevator.id) ?? {};
                 const STATUS_DOTS = [
                   { key: "OVERDUE",     label: "Overdue",     dot: "bg-red-500",    text: "text-red-600"   },
@@ -1010,6 +1068,24 @@ export default function Elevators() {
                   <TableCell>{elevator.customerName}</TableCell>
                   <TableCell className="capitalize">{elevator.type}</TableCell>
                   <TableCell>{elevator.bank || "-"}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const due = nextDueDateByElevator.get(elevator.id);
+                      if (!due) return <span className="text-muted-foreground">—</span>;
+                      const today = new Date().toISOString().slice(0, 10);
+                      const isOverdue = due < today;
+                      const isSoon = !isOverdue && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+                      return (
+                        <span className={
+                          isOverdue ? "text-red-600 font-semibold" :
+                          isSoon    ? "text-amber-600 font-medium" :
+                                      "text-foreground"
+                        }>
+                          {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </span>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => {
                       openEdit(elevator);
