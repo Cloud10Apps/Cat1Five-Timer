@@ -145,6 +145,14 @@ router.get("/", async (req, res) => {
       conditions.push(gte(inspectionsTable.nextDueDate, startDate));
       conditions.push(lte(inspectionsTable.nextDueDate, endDate));
     }
+    if (params.data.lastInspectionDateFrom) conditions.push(gte(inspectionsTable.lastInspectionDate, params.data.lastInspectionDateFrom));
+    if (params.data.lastInspectionDateTo) conditions.push(lte(inspectionsTable.lastInspectionDate, params.data.lastInspectionDateTo));
+    if (params.data.nextDueDateFrom) conditions.push(gte(inspectionsTable.nextDueDate, params.data.nextDueDateFrom));
+    if (params.data.nextDueDateTo) conditions.push(lte(inspectionsTable.nextDueDate, params.data.nextDueDateTo));
+    if (params.data.scheduledDateFrom) conditions.push(gte(inspectionsTable.scheduledDate, params.data.scheduledDateFrom));
+    if (params.data.scheduledDateTo) conditions.push(lte(inspectionsTable.scheduledDate, params.data.scheduledDateTo));
+    if (params.data.completionDateFrom) conditions.push(gte(inspectionsTable.completionDate, params.data.completionDateFrom));
+    if (params.data.completionDateTo) conditions.push(lte(inspectionsTable.completionDate, params.data.completionDateTo));
   }
 
   const rows = await db

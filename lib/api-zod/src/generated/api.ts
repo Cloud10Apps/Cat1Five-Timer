@@ -316,6 +316,14 @@ export const ListInspectionsQueryParams = zod.object({
   search: zod.coerce.string().optional(),
   month: zod.coerce.number().optional(),
   year: zod.coerce.number().optional(),
+  lastInspectionDateFrom: zod.string().optional(),
+  lastInspectionDateTo: zod.string().optional(),
+  nextDueDateFrom: zod.string().optional(),
+  nextDueDateTo: zod.string().optional(),
+  scheduledDateFrom: zod.string().optional(),
+  scheduledDateTo: zod.string().optional(),
+  completionDateFrom: zod.string().optional(),
+  completionDateTo: zod.string().optional(),
 });
 
 export const ListInspectionsResponseItem = zod.object({

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, ClipboardCheck, Download } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ClipboardCheck, Download, Filter, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,21 +83,46 @@ export default function Inspections() {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
+  const [showDateFilters, setShowDateFilters] = useState(false);
+
+  const [lastInspFrom, setLastInspFrom] = useState("");
+  const [lastInspTo, setLastInspTo] = useState("");
+  const [nextDueFrom, setNextDueFrom] = useState("");
+  const [nextDueTo, setNextDueTo] = useState("");
+  const [scheduledFrom, setScheduledFrom] = useState("");
+  const [scheduledTo, setScheduledTo] = useState("");
+  const [completionFrom, setCompletionFrom] = useState("");
+  const [completionTo, setCompletionTo] = useState("");
+
+  const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo);
+
+  const clearDateFilters = useCallback(() => {
+    setLastInspFrom(""); setLastInspTo("");
+    setNextDueFrom(""); setNextDueTo("");
+    setScheduledFrom(""); setScheduledTo("");
+    setCompletionFrom(""); setCompletionTo("");
+  }, []);
 
   const statusFilter = selectedStatus !== "all" ? (selectedStatus as any) : undefined;
   const typeFilter = selectedType !== "all" ? (selectedType as "CAT1" | "CAT5") : undefined;
 
+  const queryParams = {
+    search: debouncedSearch || undefined,
+    status: statusFilter,
+    inspectionType: typeFilter,
+    lastInspectionDateFrom: lastInspFrom || undefined,
+    lastInspectionDateTo: lastInspTo || undefined,
+    nextDueDateFrom: nextDueFrom || undefined,
+    nextDueDateTo: nextDueTo || undefined,
+    scheduledDateFrom: scheduledFrom || undefined,
+    scheduledDateTo: scheduledTo || undefined,
+    completionDateFrom: completionFrom || undefined,
+    completionDateTo: completionTo || undefined,
+  };
+
   const { data: inspections, isLoading } = useListInspections(
-    { 
-      search: debouncedSearch || undefined, 
-      status: statusFilter,
-      inspectionType: typeFilter
-    },
-    { query: { queryKey: getListInspectionsQueryKey({ 
-      search: debouncedSearch || undefined, 
-      status: statusFilter,
-      inspectionType: typeFilter
-    }) } }
+    queryParams,
+    { query: { queryKey: getListInspectionsQueryKey(queryParams) } }
   );
 
   const { data: elevators } = useListElevators({}, { query: { queryKey: getListElevatorsQueryKey({}) } });
@@ -415,63 +440,122 @@ export default function Inspections() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4">
-        <div className="relative flex-1 w-full min-w-[200px] max-w-xs">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search inspections..."
-            className="pl-8"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3">
+          <div className="relative flex-1 w-full min-w-[200px] max-w-xs">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search inspections..."
+              className="pl-8"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+              <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+              <SelectItem value="COMPLETED">Completed</SelectItem>
+              <SelectItem value="OVERDUE">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="CAT1">CAT1</SelectItem>
+              <SelectItem value="CAT5">CAT5</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant={showDateFilters || hasDateFilters ? "default" : "outline"}
+            size="sm"
+            className="shrink-0"
+            onClick={() => setShowDateFilters(v => !v)}
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Date Filters
+            {hasDateFilters && (
+              <span className="ml-1.5 rounded-full bg-white text-amber-700 text-[10px] font-bold px-1.5 py-0.5 leading-none">●</span>
+            )}
+          </Button>
+          {hasDateFilters && (
+            <Button variant="ghost" size="sm" onClick={clearDateFilters} className="text-muted-foreground">
+              <X className="mr-1 h-3.5 w-3.5" />
+              Clear dates
+            </Button>
+          )}
         </div>
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="NOT_STARTED">Not Started</SelectItem>
-            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
-            <SelectItem value="OVERDUE">Overdue</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="CAT1">CAT1</SelectItem>
-            <SelectItem value="CAT5">CAT5</SelectItem>
-          </SelectContent>
-        </Select>
+
+        {showDateFilters && (
+          <div className="rounded-lg border bg-muted/30 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Last Inspection</p>
+              <div className="flex gap-1.5 items-center">
+                <Input type="date" className="h-8 text-xs" value={lastInspFrom} onChange={e => setLastInspFrom(e.target.value)} placeholder="From" />
+                <span className="text-muted-foreground text-xs">–</span>
+                <Input type="date" className="h-8 text-xs" value={lastInspTo} onChange={e => setLastInspTo(e.target.value)} placeholder="To" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Next Due</p>
+              <div className="flex gap-1.5 items-center">
+                <Input type="date" className="h-8 text-xs" value={nextDueFrom} onChange={e => setNextDueFrom(e.target.value)} placeholder="From" />
+                <span className="text-muted-foreground text-xs">–</span>
+                <Input type="date" className="h-8 text-xs" value={nextDueTo} onChange={e => setNextDueTo(e.target.value)} placeholder="To" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Scheduled Date</p>
+              <div className="flex gap-1.5 items-center">
+                <Input type="date" className="h-8 text-xs" value={scheduledFrom} onChange={e => setScheduledFrom(e.target.value)} placeholder="From" />
+                <span className="text-muted-foreground text-xs">–</span>
+                <Input type="date" className="h-8 text-xs" value={scheduledTo} onChange={e => setScheduledTo(e.target.value)} placeholder="To" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Completion Date</p>
+              <div className="flex gap-1.5 items-center">
+                <Input type="date" className="h-8 text-xs" value={completionFrom} onChange={e => setCompletionFrom(e.target.value)} placeholder="From" />
+                <span className="text-muted-foreground text-xs">–</span>
+                <Input type="date" className="h-8 text-xs" value={completionTo} onChange={e => setCompletionTo(e.target.value)} placeholder="To" />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Elevator / Building</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Last Inspection</TableHead>
               <TableHead>Next Due</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Scheduled Date</TableHead>
+              <TableHead>Completion Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   <Spinner />
                 </TableCell>
               </TableRow>
             ) : inspections?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <ClipboardCheck className="h-10 w-10 mb-2 opacity-20" />
                     <p>No inspections found.</p>
@@ -488,12 +572,20 @@ export default function Inspections() {
                   <TableCell>
                     <InspectionTypeBadge type={inspection.inspectionType} />
                   </TableCell>
-                  <TableCell>{inspection.lastInspectionDate ? dayjs(inspection.lastInspectionDate).format('MMM D, YYYY') : "N/A"}</TableCell>
-                  <TableCell className={dayjs(inspection.nextDueDate).isBefore(dayjs()) ? "text-destructive font-bold" : "font-medium"}>
-                    {inspection.nextDueDate ? dayjs(inspection.nextDueDate).format('MMM D, YYYY') : "N/A"}
-                  </TableCell>
                   <TableCell>
                     <StatusBadge status={inspection.status} />
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {inspection.lastInspectionDate ? dayjs(inspection.lastInspectionDate).format('MMM D, YYYY') : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className={`text-sm font-medium ${inspection.status !== "COMPLETED" && inspection.nextDueDate && dayjs(inspection.nextDueDate).isBefore(dayjs()) ? "text-destructive" : ""}`}>
+                    {inspection.nextDueDate ? dayjs(inspection.nextDueDate).format('MMM D, YYYY') : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {inspection.scheduledDate ? dayjs(inspection.scheduledDate).format('MMM D, YYYY') : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {inspection.completionDate ? dayjs(inspection.completionDate).format('MMM D, YYYY') : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => {
