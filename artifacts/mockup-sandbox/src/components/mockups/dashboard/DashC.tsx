@@ -65,7 +65,7 @@ export default function DashC() {
           <div className="bg-amber-500 p-1.5 rounded-md">
             <ArrowUpSquare className="w-5 h-5 text-zinc-950" />
           </div>
-          <span className="text-zinc-50 font-bold tracking-tight">InspectIQ Tracker</span>
+          <span className="text-zinc-50 font-bold tracking-tight">ElevatorInspect Pro</span>
         </div>
         
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

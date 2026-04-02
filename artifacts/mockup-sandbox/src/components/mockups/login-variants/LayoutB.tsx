@@ -30,7 +30,7 @@ export default function LayoutB() {
             <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950">
               <ArrowUpSquare className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <span>InspectIQ Tracker</span>
+            <span>ElevatorInspect Pro</span>
           </div>
 
           {/* RIGHT side: Feature bullets */}
@@ -120,7 +120,7 @@ export default function LayoutB() {
           <div>
             <hr className="border-zinc-200 mb-6" />
             <p className="text-xs text-zinc-400 text-center">
-              © 2026 InspectIQ Tracker
+              © 2026 ElevatorInspect Pro
             </p>
           </div>
         </div>

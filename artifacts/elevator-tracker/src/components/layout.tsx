@@ -56,7 +56,7 @@ export function Layout({ children }: LayoutProps) {
           <SidebarHeader className="p-4 border-b border-border">
             <div className="flex items-center gap-2 font-bold text-lg text-primary">
               <ArrowUpSquare className="h-6 w-6" />
-              <span>InspectIQ Tracker</span>
+              <span>ElevatorInspect Pro</span>
             </div>
           </SidebarHeader>
           <SidebarContent>

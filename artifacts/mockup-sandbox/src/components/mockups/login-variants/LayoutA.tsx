@@ -54,7 +54,7 @@ export default function LayoutA() {
             <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950">
               <ArrowUpSquare className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-zinc-950 text-xl tracking-tight">InspectIQ Tracker</span>
+            <span className="font-bold text-zinc-950 text-xl tracking-tight">ElevatorInspect Pro</span>
           </div>
 
           {/* Headline */}
@@ -149,7 +149,7 @@ export default function LayoutA() {
 
         {/* FOOTER */}
         <div className="bg-zinc-50 border-t border-zinc-100 py-3 px-10 text-xs text-zinc-400 text-center">
-          © 2026 InspectIQ Tracker
+          © 2026 ElevatorInspect Pro
         </div>
       </div>
 

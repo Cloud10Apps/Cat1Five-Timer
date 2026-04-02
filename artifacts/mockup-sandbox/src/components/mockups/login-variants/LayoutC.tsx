@@ -35,7 +35,7 @@ export default function LayoutC() {
           <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950">
             <ArrowUpSquare className="h-6 w-6" strokeWidth={2.5} />
           </div>
-          <span>InspectIQ Tracker</span>
+          <span>ElevatorInspect Pro</span>
         </div>
 
         {/* MIDDLE: Large typographic statement */}
@@ -54,7 +54,7 @@ export default function LayoutC() {
         <div>
           <div className="w-16 h-0.5 bg-amber-500 mb-4"></div>
           <div className="text-sm text-zinc-600">
-            © {new Date().getFullYear()} InspectIQ Tracker. All rights reserved.
+            © {new Date().getFullYear()} ElevatorInspect Pro. All rights reserved.
           </div>
         </div>
       </div>
@@ -66,7 +66,7 @@ export default function LayoutC() {
           <div className="bg-amber-500 p-1.5 rounded-md text-zinc-950">
             <ArrowUpSquare className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <span>InspectIQ Tracker</span>
+          <span>ElevatorInspect Pro</span>
         </div>
 
         <div className="w-full max-w-[280px] space-y-6">
@@ -124,7 +124,7 @@ export default function LayoutC() {
             </Button>
 
             <div className="mt-6 text-center">
-              <p className="text-xs text-zinc-400">© 2026 InspectIQ Tracker</p>
+              <p className="text-xs text-zinc-400">© 2026 ElevatorInspect Pro</p>
             </div>
           </form>
         </div>
