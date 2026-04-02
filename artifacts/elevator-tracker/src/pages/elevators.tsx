@@ -676,7 +676,6 @@ export default function Elevators() {
                                         value={field.value}
                                         onChange={field.onChange}
                                         placeholder="Pick a date"
-                                        disabled={watchInspStatus !== "COMPLETED"}
                                       />
                                     </FormControl>
                                     <FormMessage />

@@ -465,7 +465,6 @@ export default function Inspections() {
                               value={field.value}
                               onChange={field.onChange}
                               placeholder="Pick a date"
-                              disabled={watchStatus !== "COMPLETED"}
                             />
                           </FormControl>
                           <FormMessage />
