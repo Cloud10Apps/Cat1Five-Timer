@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X, Building2, Hash, Wrench, FileText } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -405,12 +405,7 @@ export default function Elevators() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-        {/* ── Location ── */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            <Building2 className="h-3.5 w-3.5 text-amber-500" />
-            Location
-          </div>
           <FormField
             control={form.control}
             name="buildingId"
@@ -441,12 +436,7 @@ export default function Elevators() {
           />
         </div>
 
-        {/* ── Identity ── */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            <Hash className="h-3.5 w-3.5 text-amber-500" />
-            Unit Identity
-          </div>
           <FormField
             control={form.control}
             name="name"
@@ -490,12 +480,7 @@ export default function Elevators() {
           </div>
         </div>
 
-        {/* ── Technical ── */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            <Wrench className="h-3.5 w-3.5 text-amber-500" />
-            Technical Details
-          </div>
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -535,12 +520,7 @@ export default function Elevators() {
           </div>
         </div>
 
-        {/* ── Notes ── */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            <FileText className="h-3.5 w-3.5 text-amber-500" />
-            Notes
-          </div>
           <FormField
             control={form.control}
             name="description"
