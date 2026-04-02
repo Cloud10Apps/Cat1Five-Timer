@@ -2,16 +2,14 @@ import * as React from "react";
 import { format, parse, isValid } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Parse user-typed text in common formats: MM/DD/YYYY, YYYY-MM-DD, M/D/YYYY
 function parseTypedDate(text: string): Date | null {
   const trimmed = text.trim();
-  const formats = ["MM/dd/yyyy", "M/d/yyyy", "yyyy-MM-dd", "MM-dd-yyyy"];
-  for (const fmt of formats) {
+  const fmts = ["MM/dd/yyyy", "M/d/yyyy", "M/d/yy", "yyyy-MM-dd", "MM-dd-yyyy"];
+  for (const fmt of fmts) {
     const d = parse(trimmed, fmt, new Date());
     if (isValid(d) && d.getFullYear() > 1900 && d.getFullYear() < 2100) return d;
   }
@@ -19,7 +17,7 @@ function parseTypedDate(text: string): Date | null {
 }
 
 interface DatePickerFieldProps {
-  value?: string;          // stored value: YYYY-MM-DD or ""
+  value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -34,24 +32,32 @@ export function DatePickerField({
   className,
 }: DatePickerFieldProps) {
   const safeValue = value ?? "";
-
-  // The text shown in the input — either the user's live typing or formatted stored value
-  const [inputText, setInputText] = React.useState(() =>
-    safeValue ? format(parse(safeValue, "yyyy-MM-dd", new Date()), "MM/dd/yyyy") : ""
-  );
-  const [open, setOpen] = React.useState(false);
-
-  // Keep inputText in sync when value changes externally (e.g. form reset, clear)
-  React.useEffect(() => {
-    if (!safeValue) {
-      setInputText("");
-      return;
-    }
+  const [inputText, setInputText] = React.useState(() => {
+    if (!safeValue) return "";
     const d = parse(safeValue, "yyyy-MM-dd", new Date());
-    if (isValid(d)) {
-      setInputText(format(d, "MM/dd/yyyy"));
-    }
+    return isValid(d) ? format(d, "MM/dd/yyyy") : "";
+  });
+  const [showCal, setShowCal] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Sync text when value changes externally (form reset, etc.)
+  React.useEffect(() => {
+    if (!safeValue) { setInputText(""); return; }
+    const d = parse(safeValue, "yyyy-MM-dd", new Date());
+    if (isValid(d)) setInputText(format(d, "MM/dd/yyyy"));
   }, [safeValue]);
+
+  // Close calendar when clicking outside
+  React.useEffect(() => {
+    if (!showCal) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowCal(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showCal]);
 
   const selectedDate = React.useMemo(() => {
     if (!safeValue) return undefined;
@@ -59,77 +65,66 @@ export function DatePickerField({
     return isValid(d) ? d : undefined;
   }, [safeValue]);
 
-  // User types in the text box
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     setInputText(text);
-    if (text === "") {
-      onChange("");
-      return;
-    }
-    const parsed = parseTypedDate(text);
-    if (parsed) {
-      onChange(format(parsed, "yyyy-MM-dd"));
-    }
+    if (!text) { onChange(""); return; }
+    const d = parseTypedDate(text);
+    if (d) onChange(format(d, "yyyy-MM-dd"));
   };
 
-  // User picks from calendar
   const handleCalendarSelect = (date: Date | undefined) => {
     if (date) {
-      const formatted = format(date, "yyyy-MM-dd");
-      onChange(formatted);
+      onChange(format(date, "yyyy-MM-dd"));
       setInputText(format(date, "MM/dd/yyyy"));
     }
-    setOpen(false);
+    setShowCal(false);
   };
 
-  // Clear button
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange("");
     setInputText("");
+    setShowCal(false);
   };
 
   return (
-    <div className={cn("flex gap-1", className)}>
-      <div className="relative flex-1">
-        <Input
-          value={inputText}
-          onChange={handleTextChange}
-          placeholder={placeholder}
+    <div ref={containerRef} className={cn("relative", className)}>
+      <div className="flex gap-1">
+        <div className="relative flex-1">
+          <Input
+            value={inputText}
+            onChange={handleTextChange}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="pr-7"
+            onFocus={() => setShowCal(false)}
+          />
+          {inputText && !disabled && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant={showCal ? "default" : "outline"}
+          size="icon"
           disabled={disabled}
-          className={cn("pr-7", selectedDate ? "" : "text-muted-foreground")}
-        />
-        {inputText && !disabled && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            tabIndex={-1}
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
+          className="shrink-0"
+          onClick={() => setShowCal(v => !v)}
+        >
+          <CalendarIcon className="h-4 w-4" />
+        </Button>
       </div>
 
-      <Popover open={open} onOpenChange={setOpen} modal={false}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            disabled={disabled}
-            className="shrink-0"
-          >
-            <CalendarIcon className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-auto p-0 z-[9999]"
-          align="end"
-          side="bottom"
-          sideOffset={4}
-        >
+      {showCal && (
+        <div className="absolute left-0 top-full mt-1 z-[9999] rounded-md border bg-popover shadow-lg">
           <Calendar
             mode="single"
             selected={selectedDate}
@@ -140,8 +135,8 @@ export function DatePickerField({
             defaultMonth={selectedDate ?? new Date()}
             initialFocus
           />
-        </PopoverContent>
-      </Popover>
+        </div>
+      )}
     </div>
   );
 }
