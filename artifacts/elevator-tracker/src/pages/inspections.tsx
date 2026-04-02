@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -248,9 +248,17 @@ export default function Inspections() {
   // Auto calculate next due date in the form preview
   const watchLastDate = form.watch("lastInspectionDate");
   const watchRecurrence = form.watch("recurrenceYears");
+  const watchStatus = form.watch("status");
   const nextDuePreview = watchLastDate && watchRecurrence 
     ? dayjs(watchLastDate).add(Number(watchRecurrence), 'year').format('YYYY-MM-DD')
     : "N/A";
+
+  // Clear completion date when status is changed away from COMPLETED
+  useEffect(() => {
+    if (watchStatus !== "COMPLETED") {
+      form.setValue("completionDate", "");
+    }
+  }, [watchStatus]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

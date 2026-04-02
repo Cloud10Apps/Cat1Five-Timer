@@ -241,7 +241,7 @@ router.put("/:id", async (req, res) => {
   const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
 
   await db.update(inspectionsTable)
-    .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspectionDate ?? null, nextDueDate, scheduledDate: scheduledDate ?? null, completionDate: completionDate ?? null, status: status ?? "NOT_STARTED", notes: notes ?? null })
+    .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspectionDate ?? null, nextDueDate, scheduledDate: scheduledDate ?? null, completionDate: (status === "COMPLETED" ? completionDate : null) ?? null, status: status ?? "NOT_STARTED", notes: notes ?? null })
     .where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
 
   const row = await fetchInspection(params.data.id, orgId);

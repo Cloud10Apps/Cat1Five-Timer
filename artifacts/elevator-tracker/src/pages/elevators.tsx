@@ -182,6 +182,7 @@ export default function Elevators() {
   const watchLastDate = inspForm.watch("lastInspectionDate");
   const watchRecurrence = inspForm.watch("recurrenceYears");
   const watchCompletionDate = inspForm.watch("completionDate");
+  const watchInspStatus = inspForm.watch("status");
   const nextDuePreview = watchLastDate && watchRecurrence
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
     : null;
@@ -191,6 +192,12 @@ export default function Elevators() {
       inspForm.setValue("status", "COMPLETED");
     }
   }, [watchCompletionDate]);
+
+  useEffect(() => {
+    if (watchInspStatus !== "COMPLETED") {
+      inspForm.setValue("completionDate", "");
+    }
+  }, [watchInspStatus]);
 
   const resetInspForm = () => {
     inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
