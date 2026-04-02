@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, ilike, gte, lte, inArray } from "drizzle-orm";
+import { eq, and, ilike, gte, lte, inArray, ne } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams } from "@workspace/api-zod";
@@ -77,6 +77,46 @@ function formatInspection(r: any) {
     organizationId: r.organizationId,
     createdAt: r.createdAt.toISOString(),
   };
+}
+
+async function maybeCreateFollowUp(
+  completedInspection: { id: number; elevatorId: number; inspectionType: string; recurrenceYears: number; completionDate: string | null | undefined; status: string },
+  orgId: number
+) {
+  if (completedInspection.status !== "COMPLETED" || !completedInspection.completionDate) return;
+
+  // Check if a non-completed inspection already exists for this elevator + type
+  const existing = await db
+    .select({ id: inspectionsTable.id })
+    .from(inspectionsTable)
+    .where(
+      and(
+        eq(inspectionsTable.elevatorId, completedInspection.elevatorId),
+        eq(inspectionsTable.inspectionType, completedInspection.inspectionType as any),
+        eq(inspectionsTable.organizationId, orgId),
+        ne(inspectionsTable.id, completedInspection.id),
+        ne(inspectionsTable.status, "COMPLETED")
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) return;
+
+  const nextLastDate = completedInspection.completionDate;
+  const nextDueDate = computeNextDueDate(nextLastDate, completedInspection.recurrenceYears);
+
+  await db.insert(inspectionsTable).values({
+    elevatorId: completedInspection.elevatorId,
+    organizationId: orgId,
+    inspectionType: completedInspection.inspectionType as any,
+    recurrenceYears: completedInspection.recurrenceYears,
+    lastInspectionDate: nextLastDate,
+    nextDueDate,
+    scheduledDate: null,
+    completionDate: null,
+    status: "NOT_STARTED",
+    notes: null,
+  });
 }
 
 router.get("/", async (req, res) => {
@@ -159,7 +199,9 @@ router.post("/", async (req, res) => {
   }).returning();
 
   const row = await fetchInspection(inserted[0].id, orgId);
-  res.status(201).json(formatInspection(row));
+  const formatted = formatInspection(row);
+  await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
+  res.status(201).json(formatted);
 });
 
 router.get("/:id", async (req, res) => {
@@ -196,7 +238,9 @@ router.put("/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  res.json(formatInspection(row));
+  const formatted = formatInspection(row);
+  await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
+  res.json(formatted);
 });
 
 router.delete("/:id", async (req, res) => {
