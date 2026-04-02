@@ -248,7 +248,10 @@ export default function Inspections() {
             }
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => {
+                setEditingInspection(null);
+                form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
+              }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Inspection
               </Button>

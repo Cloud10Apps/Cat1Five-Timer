@@ -185,7 +185,10 @@ export default function Buildings() {
           }
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => {
+              setEditingBuilding(null);
+              form.reset({ name: "", customerId: 0, address: "", city: "", state: "", zip: "" });
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Add Building
             </Button>

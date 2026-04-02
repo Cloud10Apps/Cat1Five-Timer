@@ -164,7 +164,10 @@ export default function Customers() {
             }
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => {
+                setEditingCustomer(null);
+                form.reset({ name: "" });
+              }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Customer
               </Button>

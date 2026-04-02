@@ -255,7 +255,10 @@ export default function Elevators() {
             }
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => {
+                setEditingElevator(null);
+                form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
+              }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Elevator
               </Button>
