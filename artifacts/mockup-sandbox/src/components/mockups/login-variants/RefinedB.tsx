@@ -50,7 +50,7 @@ export default function RefinedB() {
             <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950">
               <ArrowUpSquare className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <span>ElevatorTracker</span>
+            <span>InspectIQ Tracker</span>
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export default function RefinedB() {
           <div className="mt-auto pt-12">
             <div className="border-l-2 border-amber-500 pl-4">
               <p className="italic text-zinc-300 text-base leading-relaxed mb-3">
-                "ElevatorTracker cut our compliance review time in half. We used to chase spreadsheets — now everything is in one place."
+                "InspectIQ Tracker cut our compliance review time in half. We used to chase spreadsheets — now everything is in one place."
               </p>
               <p className="text-zinc-500 text-sm font-medium">
                 — Sarah K., Operations Director, Metro Lift Services
@@ -78,7 +78,7 @@ export default function RefinedB() {
         </div>
 
         <div className="relative z-10 text-sm text-zinc-500 mt-8">
-          © {new Date().getFullYear()} ElevatorTracker Inc. All rights reserved.
+          © {new Date().getFullYear()} InspectIQ Tracker Inc. All rights reserved.
         </div>
       </div>
 
@@ -89,7 +89,7 @@ export default function RefinedB() {
           <div className="bg-amber-500 p-1.5 rounded-md text-zinc-950">
             <ArrowUpSquare className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <span>ElevatorTracker</span>
+          <span>InspectIQ Tracker</span>
         </div>
 
         <div className="w-full max-w-[400px] flex-1 flex flex-col justify-center">

@@ -45,7 +45,7 @@ export default function HorizontalCardLogin() {
               <div className="bg-white/20 p-2 rounded-lg">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
-              ElevatorTracker
+              InspectIQ Tracker
             </div>
             <p className="text-amber-200 text-sm font-medium tracking-wide uppercase mt-12">
               Professional Grade

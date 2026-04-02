@@ -48,7 +48,7 @@ export default function RefinedALogin() {
             <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950">
               <ArrowUpSquare className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <span>ElevatorTracker</span>
+            <span>InspectIQ Tracker</span>
           </div>
           <div className="w-8 h-0.5 bg-amber-500 mt-4 mb-0" />
         </div>
@@ -96,7 +96,7 @@ export default function RefinedALogin() {
         </div>
 
         <div className="relative z-10 text-sm text-zinc-500">
-          © {new Date().getFullYear()} ElevatorTracker Inc. All rights reserved.
+          © {new Date().getFullYear()} InspectIQ Tracker Inc. All rights reserved.
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default function RefinedALogin() {
           <div className="bg-amber-500 p-1.5 rounded-md text-zinc-950">
             <ArrowUpSquare className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <span>ElevatorTracker</span>
+          <span>InspectIQ Tracker</span>
         </div>
 
         <div className="w-full max-w-[400px] space-y-8">

@@ -67,7 +67,7 @@ export default function DashB() {
           <div className="bg-amber-500 rounded p-1">
             <ArrowUpSquare className="h-5 w-5 text-zinc-950" />
           </div>
-          <span className="text-zinc-50 font-bold tracking-tight">ElevatorTracker</span>
+          <span className="text-zinc-50 font-bold tracking-tight">InspectIQ Tracker</span>
         </div>
         
         <nav className="flex-1 px-3 space-y-1">

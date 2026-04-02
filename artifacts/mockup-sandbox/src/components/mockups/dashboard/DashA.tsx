@@ -63,7 +63,7 @@ export default function DashA() {
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-500 text-zinc-950">
             <ArrowUpSquare size={18} strokeWidth={2.5} />
           </div>
-          <span className="text-sm font-bold text-zinc-50 tracking-tight">ElevatorTracker</span>
+          <span className="text-sm font-bold text-zinc-50 tracking-tight">InspectIQ Tracker</span>
         </div>
         
         <nav className="flex-1 space-y-1 px-3 py-6">
