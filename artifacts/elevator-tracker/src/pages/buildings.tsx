@@ -46,6 +46,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, Building as BuildingIcon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -123,21 +133,28 @@ export default function Buildings() {
     }
   };
 
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const confirmDelete = () => {
+    if (deleteId === null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListBuildingsQueryKey() });
+          toast({ title: "Building deleted successfully" });
+          setDeleteId(null);
+        },
+        onError: () => {
+          toast({ title: "Failed to delete building", variant: "destructive" });
+          setDeleteId(null);
+        },
+      }
+    );
+  };
+
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this building?")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListBuildingsQueryKey() });
-            toast({ title: "Building deleted successfully" });
-          },
-          onError: () => {
-            toast({ title: "Failed to delete building", variant: "destructive" });
-          },
-        }
-      );
-    }
+    setDeleteId(id);
   };
 
   const openEdit = (building: Building) => {
@@ -350,6 +367,23 @@ export default function Buildings() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Building</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this building? This action cannot be undone and will also remove all associated elevators and inspections.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

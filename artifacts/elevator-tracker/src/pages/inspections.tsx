@@ -46,6 +46,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, ClipboardCheck, Download } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/status-badge";
@@ -145,21 +155,28 @@ export default function Inspections() {
     }
   };
 
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const confirmDelete = () => {
+    if (deleteId === null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+          toast({ title: "Inspection deleted successfully" });
+          setDeleteId(null);
+        },
+        onError: () => {
+          toast({ title: "Failed to delete inspection", variant: "destructive" });
+          setDeleteId(null);
+        },
+      }
+    );
+  };
+
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this inspection record?")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
-            toast({ title: "Inspection deleted successfully" });
-          },
-          onError: () => {
-            toast({ title: "Failed to delete inspection", variant: "destructive" });
-          },
-        }
-      );
-    }
+    setDeleteId(id);
   };
 
   const openEdit = (inspection: Inspection) => {
@@ -497,6 +514,23 @@ export default function Inspections() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Inspection</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this inspection record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

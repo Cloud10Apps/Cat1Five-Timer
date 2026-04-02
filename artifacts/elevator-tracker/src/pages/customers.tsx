@@ -37,6 +37,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Plus, Search, Pencil, Trash2, Building } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import dayjs from "dayjs";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
@@ -109,21 +119,28 @@ export default function Customers() {
     }
   };
 
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const confirmDelete = () => {
+    if (deleteId === null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListCustomersQueryKey() });
+          toast({ title: "Customer deleted successfully" });
+          setDeleteId(null);
+        },
+        onError: () => {
+          toast({ title: "Failed to delete customer", variant: "destructive" });
+          setDeleteId(null);
+        },
+      }
+    );
+  };
+
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this customer?")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListCustomersQueryKey() });
-            toast({ title: "Customer deleted successfully" });
-          },
-          onError: () => {
-            toast({ title: "Failed to delete customer", variant: "destructive" });
-          },
-        }
-      );
-    }
+    setDeleteId(id);
   };
 
   const openEdit = (customer: Customer) => {
@@ -281,6 +298,23 @@ export default function Customers() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this customer? This action cannot be undone and will also remove all associated buildings, elevators, and inspections.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

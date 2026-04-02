@@ -49,6 +49,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -160,21 +170,28 @@ export default function Elevators() {
     }
   };
 
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const confirmDelete = () => {
+    if (deleteId === null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
+          toast({ title: "Elevator deleted successfully" });
+          setDeleteId(null);
+        },
+        onError: () => {
+          toast({ title: "Failed to delete elevator", variant: "destructive" });
+          setDeleteId(null);
+        },
+      }
+    );
+  };
+
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this elevator?")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
-            toast({ title: "Elevator deleted successfully" });
-          },
-          onError: () => {
-            toast({ title: "Failed to delete elevator", variant: "destructive" });
-          },
-        }
-      );
-    }
+    setDeleteId(id);
   };
 
   const openEdit = (elevator: Elevator) => {
@@ -514,6 +531,23 @@ export default function Elevators() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Elevator</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this elevator? This action cannot be undone and will also remove all associated inspection records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
