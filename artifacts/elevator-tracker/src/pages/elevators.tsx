@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X, Building2, Hash, Wrench, FileText } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -377,127 +377,169 @@ export default function Elevators() {
 
   const elevatorFormFields = (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="buildingId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Building</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value ? field.value.toString() : ""}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a building" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {buildings?.map((building) => (
-                    <SelectItem key={building.id} value={building.id.toString()}>
-                      {building.name} ({building.customerName})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Elevator Name</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Main Lobby Elevator" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+        {/* ── Location ── */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            <Building2 className="h-3.5 w-3.5 text-amber-500" />
+            Location
+          </div>
           <FormField
             control={form.control}
-            name="internalId"
+            name="buildingId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unit ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. PE-1" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="stateId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>State ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. NY-12345" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormLabel>Building</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value ? field.value.toString() : ""}
+                >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="Select a building" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="traction">Traction</SelectItem>
-                    <SelectItem value="hydraulic">Hydraulic</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {buildings?.map((building) => (
+                      <SelectItem key={building.id} value={building.id.toString()}>
+                        {building.name}
+                        <span className="ml-1.5 text-muted-foreground">({building.customerName})</span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
+
+        {/* ── Identity ── */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            <Hash className="h-3.5 w-3.5 text-amber-500" />
+            Unit Identity
+          </div>
           <FormField
             control={form.control}
-            name="bank"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Bank</FormLabel>
+                <FormLabel>Elevator Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. High Rise" {...field} />
+                  <Input placeholder="e.g. Main Lobby Elevator" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="internalId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. PE-1" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="stateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. NY-12345" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* ── Technical ── */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            <Wrench className="h-3.5 w-3.5 text-amber-500" />
+            Technical Details
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="traction">Traction</SelectItem>
+                      <SelectItem value="hydraulic">Hydraulic</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bank"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bank / Group</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. High Rise" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* ── Notes ── */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            <FileText className="h-3.5 w-3.5 text-amber-500" />
+            Notes
+          </div>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Additional details about this unit..."
+                    className="resize-none h-20"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="Additional details..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
-          {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : "Save Elevator"}
+
+        <Button
+          type="submit"
+          className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
+          disabled={createMutation.isPending || updateMutation.isPending}
+        >
+          {(createMutation.isPending || updateMutation.isPending) ? "Saving…" : editingElevator ? "Save Changes" : "Add Unit"}
         </Button>
       </form>
     </Form>
@@ -535,11 +577,17 @@ export default function Elevators() {
               </Button>
             </DialogTrigger>
 
-            <DialogContent className={editingElevator ? "max-w-2xl max-h-[90vh]" : ""}>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingElevator ? `Edit: ${editingElevator.name}` : "Add New Elevator"}
+            <DialogContent className={editingElevator ? "max-w-4xl max-h-[90vh] overflow-y-auto" : "max-w-xl"}>
+              <DialogHeader className="pb-2 border-b">
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                    <ArrowUpSquare className="h-4 w-4" />
+                  </span>
+                  {editingElevator ? editingElevator.name : "Add New Unit"}
                 </DialogTitle>
+                {editingElevator && (
+                  <p className="text-sm text-muted-foreground pl-10">{editingElevator.buildingName}</p>
+                )}
               </DialogHeader>
 
               {editingElevator ? (
