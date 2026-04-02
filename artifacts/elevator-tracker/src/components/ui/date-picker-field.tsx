@@ -1,10 +1,21 @@
 import * as React from "react";
-import { format, parse, isValid } from "date-fns";
-import { CalendarIcon, X } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function daysInMonth(month: number, year: number): number {
+  return new Date(year, month, 0).getDate();
+}
 
 interface DatePickerFieldProps {
   value?: string;
@@ -17,72 +28,86 @@ interface DatePickerFieldProps {
 export function DatePickerField({
   value,
   onChange,
-  placeholder = "Pick a date",
   disabled,
   className,
 }: DatePickerFieldProps) {
-  const [open, setOpen] = React.useState(false);
-
   const safeValue = value ?? "";
-  const selectedDate = React.useMemo(() => {
-    if (!safeValue) return undefined;
-    const d = parse(safeValue, "yyyy-MM-dd", new Date());
-    return isValid(d) ? d : undefined;
+
+  const parsed = React.useMemo(() => {
+    if (!safeValue) return { month: "", day: "", year: "" };
+    const match = safeValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return { month: "", day: "", year: "" };
+    return {
+      year: match[1],
+      month: String(parseInt(match[2], 10)),
+      day: String(parseInt(match[3], 10)),
+    };
   }, [safeValue]);
 
-  const handleSelect = (date: Date | undefined) => {
-    if (date) {
-      onChange(format(date, "yyyy-MM-dd"));
-    } else {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 41 }, (_, i) => currentYear - 10 + i);
+
+  const monthNum = parseInt(parsed.month, 10) || 0;
+  const yearNum = parseInt(parsed.year, 10) || currentYear;
+  const maxDays = monthNum ? daysInMonth(monthNum, yearNum) : 31;
+  const days = Array.from({ length: maxDays }, (_, i) => i + 1);
+
+  const emit = (month: string, day: string, year: string) => {
+    if (month && day && year) {
+      const mm = month.padStart(2, "0");
+      const dd = day.padStart(2, "0");
+      onChange(`${year}-${mm}-${dd}`);
+    } else if (!month && !day && !year) {
       onChange("");
     }
-    setOpen(false);
   };
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onChange("");
+  const handleMonth = (val: string) => {
+    const newMax = daysInMonth(parseInt(val, 10), yearNum);
+    const clampedDay = parsed.day && parseInt(parsed.day, 10) > newMax ? String(newMax) : parsed.day;
+    emit(val, clampedDay, parsed.year);
+  };
+  const handleDay = (val: string) => emit(parsed.month, val, parsed.year);
+  const handleYear = (val: string) => {
+    const newMax = monthNum ? daysInMonth(monthNum, parseInt(val, 10)) : 31;
+    const clampedDay = parsed.day && parseInt(parsed.day, 10) > newMax ? String(newMax) : parsed.day;
+    emit(parsed.month, clampedDay, val);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !selectedDate && "text-muted-foreground",
-            className
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-          <span className="flex-1">
-            {selectedDate ? format(selectedDate, "MMM d, yyyy") : placeholder}
-          </span>
-          {selectedDate && (
-            <span
-              role="button"
-              onClick={handleClear}
-              className="ml-1 rounded-full p-0.5 hover:bg-muted"
-            >
-              <X className="h-3 w-3" />
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" side="bottom">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={handleSelect}
-          captionLayout="dropdown"
-          fromYear={2000}
-          toYear={2040}
-          defaultMonth={selectedDate}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
+    <div className={cn("flex gap-1.5", className)}>
+      <Select value={parsed.month} onValueChange={handleMonth} disabled={disabled}>
+        <SelectTrigger className="flex-[3] min-w-0">
+          <SelectValue placeholder="Month" />
+        </SelectTrigger>
+        <SelectContent>
+          {MONTHS.map((name, i) => (
+            <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={parsed.day} onValueChange={handleDay} disabled={disabled || !parsed.month}>
+        <SelectTrigger className="flex-[2] min-w-0">
+          <SelectValue placeholder="Day" />
+        </SelectTrigger>
+        <SelectContent>
+          {days.map(d => (
+            <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={parsed.year} onValueChange={handleYear} disabled={disabled}>
+        <SelectTrigger className="flex-[2] min-w-0">
+          <SelectValue placeholder="Year" />
+        </SelectTrigger>
+        <SelectContent>
+          {years.map(y => (
+            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
