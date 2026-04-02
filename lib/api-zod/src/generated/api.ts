@@ -205,6 +205,7 @@ export const ListElevatorsQueryParams = zod.object({
   customerId: zod.coerce.number().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]).optional(),
   search: zod.coerce.string().optional(),
+  bank: zod.coerce.string().optional(),
 });
 
 export const ListElevatorsResponseItem = zod.object({

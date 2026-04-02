@@ -58,6 +58,7 @@ router.get("/", async (req, res) => {
     if (params.data.type) conditions.push(eq(elevatorsTable.type, params.data.type));
     if (params.data.search) conditions.push(ilike(elevatorsTable.name, `%${params.data.search}%`));
     if (params.data.customerId) conditions.push(eq(buildingsTable.customerId, params.data.customerId));
+    if (params.data.bank) conditions.push(eq(elevatorsTable.bank, params.data.bank));
   }
 
   const rows = await db

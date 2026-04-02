@@ -69,27 +69,41 @@ export default function Elevators() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedBank, setSelectedBank] = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
 
   const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
   const buildingIdFilter = selectedBuildingId !== "all" ? Number(selectedBuildingId) : undefined;
   const typeFilter = selectedType !== "all" ? (selectedType as "traction" | "hydraulic" | "other") : undefined;
+  const bankFilter = selectedBank !== "all" ? selectedBank : undefined;
 
   const { data: elevators, isLoading } = useListElevators(
     { 
       search: debouncedSearch || undefined, 
       customerId: customerIdFilter,
       buildingId: buildingIdFilter,
-      type: typeFilter
+      type: typeFilter,
+      bank: bankFilter,
     },
     { query: { queryKey: getListElevatorsQueryKey({ 
       search: debouncedSearch || undefined, 
       customerId: customerIdFilter,
       buildingId: buildingIdFilter,
-      type: typeFilter
+      type: typeFilter,
+      bank: bankFilter,
     }) } }
   );
+
+  // Separate query without bank filter to populate the bank dropdown options,
+  // filtered by the other active filters so options stay contextually relevant.
+  const { data: elevatorsForBankOptions } = useListElevators(
+    { customerId: customerIdFilter, buildingId: buildingIdFilter, type: typeFilter },
+    { query: { queryKey: getListElevatorsQueryKey({ customerId: customerIdFilter, buildingId: buildingIdFilter, type: typeFilter }) } }
+  );
+  const bankOptions = Array.from(
+    new Set((elevatorsForBankOptions ?? []).map((e) => e.bank).filter(Boolean) as string[])
+  ).sort();
 
   const { data: customers } = useListCustomers({}, { query: { queryKey: getListCustomersQueryKey({}) } });
   const { data: buildings } = useListBuildings(
@@ -359,6 +373,23 @@ export default function Elevators() {
             <SelectItem value="traction">Traction</SelectItem>
             <SelectItem value="hydraulic">Hydraulic</SelectItem>
             <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={selectedBank}
+          onValueChange={setSelectedBank}
+          disabled={bankOptions.length === 0}
+        >
+          <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectValue placeholder="Bank" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Banks</SelectItem>
+            {bankOptions.map((bank) => (
+              <SelectItem key={bank} value={bank}>
+                {bank}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

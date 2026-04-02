@@ -313,6 +313,10 @@ paths:
           in: query
           schema:
             type: string
+        - name: bank
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: List of elevators
