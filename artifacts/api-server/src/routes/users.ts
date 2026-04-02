@@ -101,7 +101,7 @@ router.put("/:id/customers", requireAdmin, async (req, res) => {
   await db.update(usersTable).set({ allCustomers }).where(eq(usersTable.id, userId));
   await db.delete(userCustomersTable).where(eq(userCustomersTable.userId, userId));
   if (!allCustomers && customerIds.length > 0) {
-    await db.insert(userCustomersTable).values(customerIds.map(cid => ({ userId, customerId: cid })));
+    await db.insert(userCustomersTable).values(customerIds.map(cid => ({ userId, customerId: cid, organizationId: orgId })));
   }
 
   res.json({ allCustomers, customerIds: allCustomers ? [] : customerIds });
