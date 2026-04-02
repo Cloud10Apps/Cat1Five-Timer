@@ -52,10 +52,12 @@ export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <Sidebar className="border-r border-border bg-card">
-          <SidebarHeader className="p-4 border-b border-border">
-            <div className="flex items-center gap-2 font-bold text-lg text-primary">
-              <ArrowUpSquare className="h-6 w-6" />
+        <Sidebar className="border-r border-sidebar-border">
+          <SidebarHeader className="p-4 border-b border-sidebar-border">
+            <div className="flex items-center gap-2.5 font-bold text-lg text-sidebar-foreground tracking-tight">
+              <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950 shrink-0">
+                <ArrowUpSquare className="h-5 w-5" strokeWidth={2.5} />
+              </div>
               <span>ElevatorInspect Pro</span>
             </div>
           </SidebarHeader>
@@ -77,15 +79,15 @@ export function Layout({ children }: LayoutProps) {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="border-t border-border p-4">
+          <SidebarFooter className="border-t border-sidebar-border p-4">
             <div className="flex flex-col gap-2">
               <div className="flex flex-col">
-                <span className="text-sm font-medium truncate">{user?.email}</span>
-                <span className="text-xs text-muted-foreground">{user?.role}</span>
+                <span className="text-sm font-medium truncate text-sidebar-foreground">{user?.email}</span>
+                <span className="text-xs text-zinc-400">{user?.role}</span>
               </div>
               <Button
-                variant="outline"
-                className="w-full justify-start gap-2"
+                variant="ghost"
+                className="w-full justify-start gap-2 text-zinc-400 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                 onClick={logout}
               >
                 <LogOut className="h-4 w-4" />

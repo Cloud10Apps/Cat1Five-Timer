@@ -76,44 +76,47 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
-  --border: 214 32% 91%;
+  /* Main content area: clean white */
+  --background: 0 0% 100%;
+  --foreground: 240 6% 6%;
+  --border: 0 0% 89%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
-  
-  --sidebar: 210 40% 96%;
-  --sidebar-foreground: 222 47% 11%;
-  --sidebar-border: 214 32% 91%;
-  --sidebar-primary: 43 100% 50%;
-  --sidebar-primary-foreground: 222 47% 11%;
-  --sidebar-accent: 210 40% 92%;
-  --sidebar-accent-foreground: 222 47% 11%;
-  --sidebar-ring: 222 47% 11%;
+  --card-foreground: 240 6% 6%;
+  --card-border: 0 0% 89%;
+
+  /* Sidebar: zinc-950 dark panel */
+  --sidebar: 240 6% 4%;
+  --sidebar-foreground: 0 0% 96%;
+  --sidebar-border: 240 4% 16%;
+  --sidebar-primary: 38 92% 50%;
+  --sidebar-primary-foreground: 240 6% 4%;
+  --sidebar-accent: 240 5% 10%;
+  --sidebar-accent-foreground: 0 0% 96%;
+  --sidebar-ring: 38 92% 50%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
+  --popover-foreground: 240 6% 6%;
+  --popover-border: 0 0% 89%;
 
-  --primary: 43 100% 50%;
-  --primary-foreground: 222 47% 11%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
+  /* Primary: amber-500 */
+  --primary: 38 92% 50%;
+  --primary-foreground: 240 6% 4%;
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 240 6% 6%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 0 0% 95%;
+  --accent-foreground: 240 6% 6%;
   --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 98%;
 
-  --input: 214 32% 91%;
-  --ring: 222 47% 11%;
-  --chart-1: 43 100% 50%;
-  --chart-2: 215 16% 47%;
+  --input: 0 0% 87%;
+  --ring: 38 92% 50%;
+  --chart-1: 38 92% 50%;
+  --chart-2: 240 4% 46%;
   --chart-3: 142 71% 45%;
   --chart-4: 0 84% 60%;
-  --chart-5: 222 47% 11%;
+  --chart-5: 240 6% 6%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-serif: Georgia, serif;

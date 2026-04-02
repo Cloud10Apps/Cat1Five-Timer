@@ -16,11 +16,11 @@ import { useLocation } from "wouter";
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "COMPLETED": return "#22c55e";
-    case "OVERDUE":   return "#ef4444";
-    case "IN_PROGRESS": return "#eab308";
-    case "SCHEDULED": return "#3b82f6";
-    default:          return "#94a3b8";
+    case "COMPLETED":   return "#22c55e";
+    case "OVERDUE":     return "#ef4444";
+    case "IN_PROGRESS": return "#f59e0b";
+    case "SCHEDULED":   return "#18181b";
+    default:            return "#a1a1aa";
   }
 };
 
@@ -84,36 +84,36 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Strip */}
-      <div className="bg-white border-b border-gray-200 px-8 py-5 flex items-center shadow-sm">
+      <div className="bg-white border-b border-zinc-200 px-8 py-5 flex items-center shadow-sm">
         <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-bold mb-1">Total Elevators</span>
-          <span className="text-3xl font-black text-gray-900 leading-none">{summary?.totalElevators ?? 0}</span>
+          <span className="text-[11px] uppercase tracking-[0.15em] text-zinc-500 font-bold mb-1">Total Elevators</span>
+          <span className="text-3xl font-black text-zinc-900 leading-none">{summary?.totalElevators ?? 0}</span>
         </div>
-        <div className="w-px h-10 bg-gray-200 mx-8" />
+        <div className="w-px h-10 bg-zinc-200 mx-8" />
         <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-bold mb-1">Due This Month</span>
-          <span className="text-3xl font-black text-gray-900 leading-none">{summary?.duethisMonth ?? 0}</span>
+          <span className="text-[11px] uppercase tracking-[0.15em] text-zinc-500 font-bold mb-1">Due This Month</span>
+          <span className="text-3xl font-black text-zinc-900 leading-none">{summary?.duethisMonth ?? 0}</span>
         </div>
-        <div className="w-px h-10 bg-gray-200 mx-8" />
+        <div className="w-px h-10 bg-zinc-200 mx-8" />
         <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-bold mb-1">Overdue</span>
+          <span className="text-[11px] uppercase tracking-[0.15em] text-zinc-500 font-bold mb-1">Overdue</span>
           <span className="text-3xl font-black text-red-600 leading-none">{overdueCount}</span>
         </div>
-        <div className="w-px h-10 bg-gray-200 mx-8" />
+        <div className="w-px h-10 bg-zinc-200 mx-8" />
         <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-bold mb-1">Scheduled</span>
-          <span className="text-3xl font-black text-gray-900 leading-none">{summary?.scheduledCount ?? 0}</span>
+          <span className="text-[11px] uppercase tracking-[0.15em] text-zinc-500 font-bold mb-1">Scheduled</span>
+          <span className="text-3xl font-black text-zinc-900 leading-none">{summary?.scheduledCount ?? 0}</span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 bg-gray-50">
+      <div className="flex-1 p-8 bg-zinc-50">
         <div className="grid grid-cols-7 gap-6">
 
           {/* Attention Table */}
-          <div className="col-span-4 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3">
-              <h2 className="text-base font-bold text-gray-900 tracking-tight">Inspections Requiring Attention</h2>
+          <div className="col-span-4 bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col overflow-hidden">
+            <div className="px-6 py-5 border-b border-zinc-100 flex items-center gap-3">
+              <h2 className="text-base font-bold text-zinc-900 tracking-tight">Inspections Requiring Attention</h2>
               {overdueItems.length > 0 && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700 tracking-wide">
                   {overdueItems.length} OVERDUE
@@ -122,28 +122,28 @@ export default function Dashboard() {
             </div>
             <div className="overflow-auto flex-1">
               <Table>
-                <TableHeader className="bg-gray-50/80">
-                  <TableRow className="hover:bg-transparent border-b-gray-200">
-                    <TableHead className="font-semibold text-gray-600 h-11 text-xs uppercase tracking-wider">Elevator</TableHead>
-                    <TableHead className="font-semibold text-gray-600 h-11 text-xs uppercase tracking-wider">Building</TableHead>
-                    <TableHead className="font-semibold text-gray-600 h-11 text-xs uppercase tracking-wider">Due Date</TableHead>
-                    <TableHead className="font-semibold text-gray-600 h-11 text-xs uppercase tracking-wider">Status</TableHead>
+                <TableHeader className="bg-zinc-50/80">
+                  <TableRow className="hover:bg-transparent border-b-zinc-200">
+                    <TableHead className="font-semibold text-zinc-500 h-11 text-xs uppercase tracking-wider">Elevator</TableHead>
+                    <TableHead className="font-semibold text-zinc-500 h-11 text-xs uppercase tracking-wider">Building</TableHead>
+                    <TableHead className="font-semibold text-zinc-500 h-11 text-xs uppercase tracking-wider">Due Date</TableHead>
+                    <TableHead className="font-semibold text-zinc-500 h-11 text-xs uppercase tracking-wider">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(!attention || attention.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-gray-400 py-8 text-sm">
+                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
                         No inspections requiring immediate attention.
                       </TableCell>
                     </TableRow>
                   )}
                   {attention?.map((inspection) => (
-                    <TableRow key={inspection.id} className="border-b-gray-100 hover:bg-gray-50/50 transition-colors">
-                      <TableCell className="font-bold text-gray-900">{inspection.elevatorName}</TableCell>
-                      <TableCell className="text-gray-600 font-medium">{inspection.buildingName}</TableCell>
+                    <TableRow key={inspection.id} className="border-b-zinc-100 hover:bg-zinc-50/50 transition-colors">
+                      <TableCell className="font-bold text-zinc-900">{inspection.elevatorName}</TableCell>
+                      <TableCell className="text-zinc-600 font-medium">{inspection.buildingName}</TableCell>
                       <TableCell>
-                        <span className={dayjs(inspection.nextDueDate).isBefore(dayjs()) ? "text-red-600 font-bold" : "text-gray-600 font-medium"}>
+                        <span className={dayjs(inspection.nextDueDate).isBefore(dayjs()) ? "text-red-600 font-bold" : "text-zinc-600 font-medium"}>
                           {inspection.nextDueDate ? dayjs(inspection.nextDueDate).format("MMM D, YYYY") : "N/A"}
                         </span>
                       </TableCell>
@@ -158,9 +158,9 @@ export default function Dashboard() {
           </div>
 
           {/* Status Breakdown Chart */}
-          <div className="col-span-3 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100">
-              <h2 className="text-base font-bold text-gray-900 tracking-tight">Status Breakdown</h2>
+          <div className="col-span-3 bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col overflow-hidden">
+            <div className="px-6 py-5 border-b border-zinc-100">
+              <h2 className="text-base font-bold text-zinc-900 tracking-tight">Status Breakdown</h2>
             </div>
             <div className="p-6 flex-1 flex flex-col justify-center">
               <div className="w-full h-[260px]">
@@ -168,23 +168,23 @@ export default function Dashboard() {
                   <BarChart data={breakdown} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                     <XAxis
                       dataKey="status"
-                      tick={{ fontSize: 11, fill: "#6b7280", fontWeight: 600 }}
+                      tick={{ fontSize: 11, fill: "#71717a", fontWeight: 600 }}
                       tickFormatter={(val) => val.replace("_", " ")}
                       axisLine={false}
                       tickLine={false}
                       dy={10}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: "#6b7280", fontWeight: 600 }}
+                      tick={{ fontSize: 11, fill: "#71717a", fontWeight: 600 }}
                       axisLine={false}
                       tickLine={false}
                       dx={-10}
                     />
                     <Tooltip
-                      cursor={{ fill: "#f9fafb" }}
+                      cursor={{ fill: "#f4f4f5" }}
                       contentStyle={{
                         borderRadius: "8px",
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid #e4e4e7",
                         boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                         fontWeight: 500,
                         fontSize: "13px",
