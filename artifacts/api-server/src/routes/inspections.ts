@@ -85,14 +85,13 @@ async function maybeCreateFollowUp(
 ) {
   if (completedInspection.status !== "COMPLETED" || !completedInspection.completionDate) return;
 
-  // The new record's lastInspectionDate is the completion date of the just-finished inspection.
-  // nextDueDate is calculated from that forward.
   const newLastDate = completedInspection.completionDate;
   const newNextDue = computeNextDueDate(newLastDate, completedInspection.recurrenceYears);
   if (!newNextDue) return;
 
-  // Only skip if there's already a non-completed inspection with a nextDueDate at or after
-  // what we'd create — this prevents duplicates while still allowing history to accumulate.
+  // Only skip if a follow-up already exists that directly references this exact completion date
+  // as its lastInspectionDate — meaning we already created a follow-up from this specific event.
+  // This prevents duplicates on re-saves without blocking unrelated records in the chain.
   const existing = await db
     .select({ id: inspectionsTable.id })
     .from(inspectionsTable)
@@ -102,8 +101,7 @@ async function maybeCreateFollowUp(
         eq(inspectionsTable.inspectionType, completedInspection.inspectionType as any),
         eq(inspectionsTable.organizationId, orgId),
         ne(inspectionsTable.id, completedInspection.id),
-        ne(inspectionsTable.status, "COMPLETED"),
-        gte(inspectionsTable.nextDueDate, newNextDue)
+        eq(inspectionsTable.lastInspectionDate, newLastDate)
       )
     )
     .limit(1);
