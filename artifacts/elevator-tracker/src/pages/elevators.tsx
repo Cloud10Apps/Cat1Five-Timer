@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -181,9 +181,16 @@ export default function Elevators() {
 
   const watchLastDate = inspForm.watch("lastInspectionDate");
   const watchRecurrence = inspForm.watch("recurrenceYears");
+  const watchCompletionDate = inspForm.watch("completionDate");
   const nextDuePreview = watchLastDate && watchRecurrence
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
     : null;
+
+  useEffect(() => {
+    if (watchCompletionDate) {
+      inspForm.setValue("status", "COMPLETED");
+    }
+  }, [watchCompletionDate]);
 
   const resetInspForm = () => {
     inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
