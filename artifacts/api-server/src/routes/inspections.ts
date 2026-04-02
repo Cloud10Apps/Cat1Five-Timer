@@ -85,7 +85,14 @@ async function maybeCreateFollowUp(
 ) {
   if (completedInspection.status !== "COMPLETED" || !completedInspection.completionDate) return;
 
-  // Check if a non-completed inspection already exists for this elevator + type
+  // The new record's lastInspectionDate is the completion date of the just-finished inspection.
+  // nextDueDate is calculated from that forward.
+  const newLastDate = completedInspection.completionDate;
+  const newNextDue = computeNextDueDate(newLastDate, completedInspection.recurrenceYears);
+  if (!newNextDue) return;
+
+  // Only skip if there's already a non-completed inspection with a nextDueDate at or after
+  // what we'd create — this prevents duplicates while still allowing history to accumulate.
   const existing = await db
     .select({ id: inspectionsTable.id })
     .from(inspectionsTable)
@@ -95,23 +102,21 @@ async function maybeCreateFollowUp(
         eq(inspectionsTable.inspectionType, completedInspection.inspectionType as any),
         eq(inspectionsTable.organizationId, orgId),
         ne(inspectionsTable.id, completedInspection.id),
-        ne(inspectionsTable.status, "COMPLETED")
+        ne(inspectionsTable.status, "COMPLETED"),
+        gte(inspectionsTable.nextDueDate, newNextDue)
       )
     )
     .limit(1);
 
   if (existing.length > 0) return;
 
-  const nextLastDate = completedInspection.completionDate;
-  const nextDueDate = computeNextDueDate(nextLastDate, completedInspection.recurrenceYears);
-
   await db.insert(inspectionsTable).values({
     elevatorId: completedInspection.elevatorId,
     organizationId: orgId,
     inspectionType: completedInspection.inspectionType as any,
     recurrenceYears: completedInspection.recurrenceYears,
-    lastInspectionDate: nextLastDate,
-    nextDueDate,
+    lastInspectionDate: newLastDate,
+    nextDueDate: newNextDue,
     scheduledDate: null,
     completionDate: null,
     status: "NOT_STARTED",
