@@ -1,0 +1,208 @@
+import { Router } from "express";
+import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
+import { eq, and, ilike, gte, lte } from "drizzle-orm";
+import dayjs from "dayjs";
+import { requireAuth } from "../middleware/auth.js";
+import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams } from "@workspace/api-zod";
+
+const router = Router();
+
+router.use(requireAuth);
+
+function computeNextDueDate(lastDate: string | null | undefined, recurrenceYears: number): string | null {
+  if (!lastDate) return null;
+  return dayjs(lastDate).add(recurrenceYears, "year").format("YYYY-MM-DD");
+}
+
+function computeStatus(status: string, nextDueDate: string | null | undefined, completionDate: string | null | undefined): string {
+  if (status === "COMPLETED") return "COMPLETED";
+  if (nextDueDate && !completionDate) {
+    const today = dayjs().startOf("day");
+    const due = dayjs(nextDueDate);
+    if (due.isBefore(today)) return "OVERDUE";
+  }
+  return status;
+}
+
+async function fetchInspection(id: number, orgId: number) {
+  const rows = await db
+    .select({
+      id: inspectionsTable.id,
+      elevatorId: inspectionsTable.elevatorId,
+      elevatorName: elevatorsTable.name,
+      buildingId: buildingsTable.id,
+      buildingName: buildingsTable.name,
+      customerId: customersTable.id,
+      customerName: customersTable.name,
+      inspectionType: inspectionsTable.inspectionType,
+      recurrenceYears: inspectionsTable.recurrenceYears,
+      lastInspectionDate: inspectionsTable.lastInspectionDate,
+      nextDueDate: inspectionsTable.nextDueDate,
+      scheduledDate: inspectionsTable.scheduledDate,
+      completionDate: inspectionsTable.completionDate,
+      status: inspectionsTable.status,
+      notes: inspectionsTable.notes,
+      organizationId: inspectionsTable.organizationId,
+      createdAt: inspectionsTable.createdAt,
+    })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
+    .where(and(eq(inspectionsTable.id, id), eq(inspectionsTable.organizationId, orgId)))
+    .limit(1);
+  return rows[0];
+}
+
+function formatInspection(r: any) {
+  if (!r) return null;
+  const status = computeStatus(r.status, r.nextDueDate, r.completionDate);
+  return {
+    id: r.id,
+    elevatorId: r.elevatorId,
+    elevatorName: r.elevatorName ?? undefined,
+    buildingId: r.buildingId ?? undefined,
+    buildingName: r.buildingName ?? undefined,
+    customerId: r.customerId ?? undefined,
+    customerName: r.customerName ?? undefined,
+    inspectionType: r.inspectionType,
+    recurrenceYears: r.recurrenceYears,
+    lastInspectionDate: r.lastInspectionDate ?? undefined,
+    nextDueDate: r.nextDueDate ?? undefined,
+    scheduledDate: r.scheduledDate ?? undefined,
+    completionDate: r.completionDate ?? undefined,
+    status,
+    notes: r.notes ?? undefined,
+    organizationId: r.organizationId,
+    createdAt: r.createdAt.toISOString(),
+  };
+}
+
+router.get("/", async (req, res) => {
+  const params = ListInspectionsQueryParams.safeParse(req.query);
+  const orgId = req.user!.organizationId;
+
+  const conditions: any[] = [eq(inspectionsTable.organizationId, orgId)];
+  if (params.success) {
+    if (params.data.elevatorId) conditions.push(eq(inspectionsTable.elevatorId, params.data.elevatorId));
+    if (params.data.buildingId) conditions.push(eq(buildingsTable.id, params.data.buildingId));
+    if (params.data.customerId) conditions.push(eq(customersTable.id, params.data.customerId));
+    if (params.data.status) conditions.push(eq(inspectionsTable.status, params.data.status));
+    if (params.data.inspectionType) conditions.push(eq(inspectionsTable.inspectionType, params.data.inspectionType));
+    if (params.data.elevatorType) conditions.push(eq(elevatorsTable.type, params.data.elevatorType));
+    if (params.data.search) conditions.push(ilike(elevatorsTable.name, `%${params.data.search}%`));
+    if (params.data.month && params.data.year) {
+      const startDate = dayjs().year(params.data.year).month(params.data.month - 1).startOf("month").format("YYYY-MM-DD");
+      const endDate = dayjs().year(params.data.year).month(params.data.month - 1).endOf("month").format("YYYY-MM-DD");
+      conditions.push(gte(inspectionsTable.nextDueDate, startDate));
+      conditions.push(lte(inspectionsTable.nextDueDate, endDate));
+    }
+  }
+
+  const rows = await db
+    .select({
+      id: inspectionsTable.id,
+      elevatorId: inspectionsTable.elevatorId,
+      elevatorName: elevatorsTable.name,
+      buildingId: buildingsTable.id,
+      buildingName: buildingsTable.name,
+      customerId: customersTable.id,
+      customerName: customersTable.name,
+      inspectionType: inspectionsTable.inspectionType,
+      recurrenceYears: inspectionsTable.recurrenceYears,
+      lastInspectionDate: inspectionsTable.lastInspectionDate,
+      nextDueDate: inspectionsTable.nextDueDate,
+      scheduledDate: inspectionsTable.scheduledDate,
+      completionDate: inspectionsTable.completionDate,
+      status: inspectionsTable.status,
+      notes: inspectionsTable.notes,
+      organizationId: inspectionsTable.organizationId,
+      createdAt: inspectionsTable.createdAt,
+    })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
+    .where(and(...conditions))
+    .orderBy(inspectionsTable.nextDueDate);
+
+  res.json(rows.map(formatInspection));
+});
+
+router.post("/", async (req, res) => {
+  const parsed = CreateInspectionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+  const orgId = req.user!.organizationId;
+  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = parsed.data;
+
+  const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
+
+  const inserted = await db.insert(inspectionsTable).values({
+    elevatorId,
+    organizationId: orgId,
+    inspectionType,
+    recurrenceYears,
+    lastInspectionDate: lastInspectionDate ?? null,
+    nextDueDate,
+    scheduledDate: scheduledDate ?? null,
+    completionDate: completionDate ?? null,
+    status: status ?? "NOT_STARTED",
+    notes: notes ?? null,
+  }).returning();
+
+  const row = await fetchInspection(inserted[0].id, orgId);
+  res.status(201).json(formatInspection(row));
+});
+
+router.get("/:id", async (req, res) => {
+  const params = GetInspectionParams.safeParse({ id: Number(req.params.id) });
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const row = await fetchInspection(params.data.id, req.user!.organizationId);
+  if (!row) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(formatInspection(row));
+});
+
+router.put("/:id", async (req, res) => {
+  const params = UpdateInspectionParams.safeParse({ id: Number(req.params.id) });
+  const body = CreateInspectionBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  const orgId = req.user!.organizationId;
+  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = body.data;
+  const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
+
+  await db.update(inspectionsTable)
+    .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspectionDate ?? null, nextDueDate, scheduledDate: scheduledDate ?? null, completionDate: completionDate ?? null, status: status ?? "NOT_STARTED", notes: notes ?? null })
+    .where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
+
+  const row = await fetchInspection(params.data.id, orgId);
+  if (!row) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(formatInspection(row));
+});
+
+router.delete("/:id", async (req, res) => {
+  const params = DeleteInspectionParams.safeParse({ id: Number(req.params.id) });
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const orgId = req.user!.organizationId;
+  await db.delete(inspectionsTable).where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
+  res.status(204).send();
+});
+
+export default router;

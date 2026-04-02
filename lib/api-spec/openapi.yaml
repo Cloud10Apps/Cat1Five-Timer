@@ -1,22 +1,37 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Elevator Inspection Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: customers
+    description: Customer management
+  - name: buildings
+    description: Building management
+  - name: elevators
+    description: Elevator management
+  - name: inspections
+    description: Inspection management
+  - name: dashboard
+    description: Dashboard analytics
+  - name: users
+    description: User management
+  - name: export
+    description: Data export
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +39,703 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a customer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get a customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    put:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update a customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      summary: Delete a customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /buildings:
+    get:
+      operationId: listBuildings
+      tags: [buildings]
+      summary: List all buildings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of buildings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Building"
+    post:
+      operationId: createBuilding
+      tags: [buildings]
+      summary: Create a building
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBuildingBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Building"
+
+  /buildings/{id}:
+    get:
+      operationId: getBuilding
+      tags: [buildings]
+      summary: Get a building
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Building
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Building"
+    put:
+      operationId: updateBuilding
+      tags: [buildings]
+      summary: Update a building
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBuildingBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Building"
+    delete:
+      operationId: deleteBuilding
+      tags: [buildings]
+      summary: Delete a building
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /elevators:
+    get:
+      operationId: listElevators
+      tags: [elevators]
+      summary: List all elevators
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [traction, hydraulic, other]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of elevators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Elevator"
+    post:
+      operationId: createElevator
+      tags: [elevators]
+      summary: Create an elevator
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateElevatorBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Elevator"
+
+  /elevators/{id}:
+    get:
+      operationId: getElevator
+      tags: [elevators]
+      summary: Get an elevator
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Elevator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Elevator"
+    put:
+      operationId: updateElevator
+      tags: [elevators]
+      summary: Update an elevator
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateElevatorBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Elevator"
+    delete:
+      operationId: deleteElevator
+      tags: [elevators]
+      summary: Delete an elevator
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /inspections:
+    get:
+      operationId: listInspections
+      tags: [inspections]
+      summary: List all inspections
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: elevatorId
+          in: query
+          schema:
+            type: integer
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [NOT_STARTED, SCHEDULED, IN_PROGRESS, COMPLETED, OVERDUE]
+        - name: inspectionType
+          in: query
+          schema:
+            type: string
+            enum: [CAT1, CAT5]
+        - name: elevatorType
+          in: query
+          schema:
+            type: string
+            enum: [traction, hydraulic, other]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: month
+          in: query
+          schema:
+            type: integer
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of inspections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Inspection"
+    post:
+      operationId: createInspection
+      tags: [inspections]
+      summary: Create an inspection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInspectionBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inspection"
+
+  /inspections/{id}:
+    get:
+      operationId: getInspection
+      tags: [inspections]
+      summary: Get an inspection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Inspection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inspection"
+    put:
+      operationId: updateInspection
+      tags: [inspections]
+      summary: Update an inspection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInspectionBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inspection"
+    delete:
+      operationId: deleteInspection
+      tags: [inspections]
+      summary: Delete an inspection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/attention:
+    get:
+      operationId: getAttentionInspections
+      tags: [dashboard]
+      summary: Get inspections requiring attention (overdue + due within 30 days)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Inspections requiring attention
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Inspection"
+
+  /dashboard/status-breakdown:
+    get:
+      operationId: getStatusBreakdown
+      tags: [dashboard]
+      summary: Get inspection counts by status
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Status breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusBreakdownItem"
+
+  /dashboard/overdue-by-building:
+    get:
+      operationId: getOverdueByBuilding
+      tags: [dashboard]
+      summary: Get overdue inspection counts grouped by building
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Overdue by building
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OverdueByBuildingItem"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users in organization (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/invite:
+    post:
+      operationId: inviteUser
+      tags: [users]
+      summary: Invite a new user (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteUserBody"
+      responses:
+        "201":
+          description: User invited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /export/inspections:
+    get:
+      operationId: exportInspections
+      tags: [export]
+      summary: Export inspections to Excel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: inspectionType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /export/elevators:
+    get:
+      operationId: exportElevators
+      tags: [export]
+      summary: Export elevators to Excel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +745,345 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, USER]
+        isActive:
+          type: boolean
+        organizationId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - role
+        - isActive
+        - organizationId
+        - createdAt
+
+    UpdateUserBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [ADMIN, USER]
+        isActive:
+          type: boolean
+
+    InviteUserBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [ADMIN, USER]
+        password:
+          type: string
+      required:
+        - email
+        - role
+        - password
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        organizationId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - organizationId
+        - createdAt
+
+    CreateCustomerBody:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    Building:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        organizationId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - customerId
+        - organizationId
+        - createdAt
+
+    CreateBuildingBody:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        customerId:
+          type: integer
+      required:
+        - name
+        - customerId
+
+    Elevator:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        bank:
+          type: string
+        type:
+          type: string
+          enum: [traction, hydraulic, other]
+        buildingId:
+          type: integer
+        buildingName:
+          type: string
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        organizationId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - type
+        - buildingId
+        - organizationId
+        - createdAt
+
+    CreateElevatorBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        bank:
+          type: string
+        type:
+          type: string
+          enum: [traction, hydraulic, other]
+        buildingId:
+          type: integer
+      required:
+        - name
+        - type
+        - buildingId
+
+    Inspection:
+      type: object
+      properties:
+        id:
+          type: integer
+        elevatorId:
+          type: integer
+        elevatorName:
+          type: string
+        buildingId:
+          type: integer
+        buildingName:
+          type: string
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        inspectionType:
+          type: string
+          enum: [CAT1, CAT5]
+        recurrenceYears:
+          type: integer
+        lastInspectionDate:
+          type: string
+          format: date
+        nextDueDate:
+          type: string
+          format: date
+        scheduledDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [NOT_STARTED, SCHEDULED, IN_PROGRESS, COMPLETED, OVERDUE]
+        notes:
+          type: string
+        organizationId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - elevatorId
+        - inspectionType
+        - recurrenceYears
+        - status
+        - organizationId
+        - createdAt
+
+    CreateInspectionBody:
+      type: object
+      properties:
+        elevatorId:
+          type: integer
+        inspectionType:
+          type: string
+          enum: [CAT1, CAT5]
+        recurrenceYears:
+          type: integer
+        lastInspectionDate:
+          type: string
+          format: date
+        scheduledDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [NOT_STARTED, SCHEDULED, IN_PROGRESS, COMPLETED, OVERDUE]
+        notes:
+          type: string
+      required:
+        - elevatorId
+        - inspectionType
+        - recurrenceYears
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalElevators:
+          type: integer
+        duethisMonth:
+          type: integer
+        overdueCount:
+          type: integer
+        scheduledCount:
+          type: integer
+        totalCustomers:
+          type: integer
+        totalBuildings:
+          type: integer
+      required:
+        - totalElevators
+        - duethisMonth
+        - overdueCount
+        - scheduledCount
+        - totalCustomers
+        - totalBuildings
+
+    StatusBreakdownItem:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+      required:
+        - status
+        - count
+
+    OverdueByBuildingItem:
+      type: object
+      properties:
+        buildingId:
+          type: integer
+        buildingName:
+          type: string
+        customerName:
+          type: string
+        overdueCount:
+          type: integer
+      required:
+        - buildingId
+        - buildingName
+        - overdueCount
