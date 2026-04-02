@@ -1017,7 +1017,7 @@ export default function Elevators() {
                   { key: "NOT_STARTED", label: "Not Started", dot: "bg-slate-400",  text: "text-slate-500" },
                   { key: "COMPLETED",   label: "Completed",   dot: "bg-green-500",  text: "text-green-600" },
                 ] as const;
-                const activeDots = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
+                const activeBadges = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
                 return (
                 <TableRow key={elevator.id}>
                   <TableCell>
@@ -1030,39 +1030,19 @@ export default function Elevators() {
                         <span className="text-xs text-muted-foreground">State: {elevator.stateId}</span>
                       )}
                     </div>
-                    {activeDots.length > 0 && (() => {
-                      const total = activeDots.reduce((s, d) => s + (counts[d.key] ?? 0), 0);
-                      return (
-                        <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex h-2 w-full mt-2 rounded-full overflow-hidden cursor-default gap-px">
-                                {STATUS_DOTS.map(({ key, dot }) => {
-                                  const n = counts[key] ?? 0;
-                                  if (!n) return null;
-                                  return (
-                                    <div
-                                      key={key}
-                                      className={`${dot} h-full`}
-                                      style={{ width: `${(n / total) * 100}%` }}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs space-y-0.5 p-2">
-                              {STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0).map(({ key, label, dot }) => (
-                                <div key={key} className="flex items-center gap-1.5">
-                                  <span className={`inline-block w-2 h-2 rounded-full ${dot}`} />
-                                  <span className="font-semibold tabular-nums">{counts[key]}</span>
-                                  <span className="text-muted-foreground">{label}</span>
-                                </div>
-                              ))}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    })()}
+                    {activeBadges.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {activeBadges.map(({ key, label, dot }) => (
+                          <span
+                            key={key}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-muted/60 border border-border/50"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+                            {counts[key]} {label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>{elevator.buildingName}</TableCell>
                   <TableCell>{elevator.customerName}</TableCell>
