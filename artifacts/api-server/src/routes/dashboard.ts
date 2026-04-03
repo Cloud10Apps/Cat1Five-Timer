@@ -40,17 +40,14 @@ router.get("/summary", async (req, res) => {
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`,
     ));
 
-  // SCHEDULED: status=SCHEDULED, has a scheduledDate this year, and not yet overdue
+  // SCHEDULED: any inspection with a scheduledDate in current year, regardless of status
   const scheduledQuery = db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
     .where(and(
       baseCondition,
-      eq(inspectionsTable.status, "SCHEDULED"),
-      sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
-      sql`EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
-      sql`(${inspectionsTable.nextDueDate} IS NULL OR ${inspectionsTable.nextDueDate}::date >= ${todayStr}::date)`,
+      sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
     ));
 
   // IN PROGRESS: status = IN_PROGRESS only (no date filter)
@@ -229,17 +226,14 @@ router.get("/status-breakdown", async (req, res) => {
 
   const makeStatusQuery = (status: string) => {
     if (status === "SCHEDULED") {
-      // Scheduled = status=SCHEDULED, has a scheduledDate this year, not yet overdue
+      // Scheduled = any inspection with a scheduledDate in current year, regardless of status
       return db.select({ count: count() })
         .from(inspectionsTable)
         .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
         .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
         .where(and(
           baseC,
-          eq(inspectionsTable.status, "SCHEDULED"),
-          sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
-          sql`EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
-          sql`(${inspectionsTable.nextDueDate} IS NULL OR ${inspectionsTable.nextDueDate}::date >= ${todayBd}::date)`,
+          sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
         ));
     }
     const dateFilter = status === "COMPLETED" ? completionYearFilter : dueDateYearFilter;
