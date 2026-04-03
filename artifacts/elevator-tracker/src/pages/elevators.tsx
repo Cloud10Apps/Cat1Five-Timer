@@ -1059,10 +1059,10 @@ export default function Elevators() {
                     <div className="font-medium">{elevator.name}</div>
                     <div className="flex gap-2 mt-0.5 flex-wrap">
                       {elevator.internalId && (
-                        <span className="text-xs text-muted-foreground">Unit: {elevator.internalId}</span>
+                        <span className="text-sm text-muted-foreground">Unit: {elevator.internalId}</span>
                       )}
                       {elevator.stateId && (
-                        <span className="text-xs text-muted-foreground">State: {elevator.stateId}</span>
+                        <span className="text-sm text-muted-foreground">State: {elevator.stateId}</span>
                       )}
                     </div>
                     {activeBadges.length > 0 && (
@@ -1070,7 +1070,7 @@ export default function Elevators() {
                         {activeBadges.map(({ key, label, dot }) => (
                           <span
                             key={key}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium bg-muted/60 border border-border/50"
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50"
                           >
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
                             {counts[key]} {label}
