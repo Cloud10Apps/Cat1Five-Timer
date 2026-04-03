@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Spinner } from "@/components/ui/spinner";
-import { AlertTriangle } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -263,17 +262,7 @@ export default function Dashboard() {
 
           {/* Overdue Inspections */}
           <div className="bg-white border border-zinc-200 border-t-4 border-t-red-500 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader
-              title="Overdue Inspections"
-              badge={
-                overdueItems.length > 0 ? (
-                  <span className="ml-auto flex items-center gap-1 text-[11px] font-bold text-red-600">
-                    <AlertTriangle className="w-3 h-3" />
-                    {overdueItems.length} OVERDUE
-                  </span>
-                ) : undefined
-              }
-            />
+            <SectionHeader title="Overdue Inspections" />
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
