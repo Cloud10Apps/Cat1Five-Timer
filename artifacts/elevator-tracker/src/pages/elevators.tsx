@@ -872,18 +872,10 @@ export default function Elevators() {
                                   <StatusBadge status={insp.status || "NOT_STARTED"} />
                                 </div>
                                 <div className="flex gap-3 text-xs text-muted-foreground flex-wrap mt-0.5">
-                                  {insp.lastInspectionDate && (
-                                    <span>Last: {dayjs(insp.lastInspectionDate).format("MMM D, YYYY")}</span>
-                                  )}
-                                  {insp.nextDueDate && (
-                                    <span>Due: {dayjs(insp.nextDueDate).format("MMM D, YYYY")}</span>
-                                  )}
-                                  {insp.scheduledDate && (
-                                    <span>Scheduled: {dayjs(insp.scheduledDate).format("MMM D, YYYY")}</span>
-                                  )}
-                                  {insp.completionDate && (
-                                    <span>Completed: {dayjs(insp.completionDate).format("MMM D, YYYY")}</span>
-                                  )}
+                                  <span>Last: {insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
+                                  <span>Due: {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
+                                  <span>Scheduled: {insp.scheduledDate ? dayjs(insp.scheduledDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
+                                  <span>Completed: {insp.completionDate ? dayjs(insp.completionDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
                                 </div>
                                 {insp.notes && (
                                   <p className="text-xs text-muted-foreground truncate max-w-xs">{insp.notes}</p>
