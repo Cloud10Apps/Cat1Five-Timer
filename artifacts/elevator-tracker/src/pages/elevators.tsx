@@ -293,6 +293,20 @@ export default function Elevators() {
     return result.sort((a, b) => a.customerName.localeCompare(b.customerName));
   }, [filteredElevators]);
 
+  // Bulk expand/collapse helpers
+  const allCustomerIds = useMemo(() => grouped.map(c => c.customerId), [grouped]);
+  const allBuildingIds = useMemo(() => grouped.flatMap(c => c.buildings.map(b => b.buildingId)), [grouped]);
+  const allBankKeys   = useMemo(() => grouped.flatMap(c =>
+    c.buildings.flatMap(b =>
+      b.banks.filter(bk => bk.bankName !== "").map(bk => `${b.buildingId}::${bk.bankName}`)
+    )
+  ), [grouped]);
+
+  const collapseAll    = () => { setCollapsedCustomers(new Set(allCustomerIds)); setCollapsedBuildings(new Set(allBuildingIds)); setCollapsedBanks(new Set(allBankKeys)); };
+  const expandCustomers = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set(allBuildingIds)); setCollapsedBanks(new Set(allBankKeys)); };
+  const expandBuildings = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set()); setCollapsedBanks(new Set(allBankKeys)); };
+  const expandAll      = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set()); setCollapsedBanks(new Set()); };
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1082,6 +1096,27 @@ export default function Elevators() {
         )}
       </div>
 
+
+      {/* ── Expand / Collapse controls ── */}
+      {!isLoading && grouped.length > 0 && (
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider mr-1">View:</span>
+          {[
+            { label: "Collapse All",  action: collapseAll },
+            { label: "Customers",     action: expandCustomers },
+            { label: "Buildings",     action: expandBuildings },
+            { label: "Expand All",    action: expandAll },
+          ].map(({ label, action }) => (
+            <button
+              key={label}
+              onClick={action}
+              className="px-2.5 py-1 text-xs font-medium rounded border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-900 transition-colors shadow-sm"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Accordion tree: Customer → Building → Bank → Elevator ── */}
       {isLoading ? (
