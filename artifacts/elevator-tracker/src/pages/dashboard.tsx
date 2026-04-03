@@ -199,7 +199,10 @@ export default function Dashboard() {
                       tick={{ fill: "#3f3f46", fontSize: 15 }}
                       axisLine={{ stroke: "#e4e4e7" }}
                       tickLine={false}
-                      dy={8}
+                      angle={-45}
+                      textAnchor="end"
+                      dy={5}
+                      height={60}
                     />
                     <YAxis
                       tick={{ fill: "#3f3f46", fontSize: 15 }}
