@@ -29,11 +29,21 @@ router.get("/summary", async (req, res) => {
   const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
   const baseCondition = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
 
-  // Non-completed statuses: filter by nextDueDate in current year
+  // Non-completed statuses (except SCHEDULED): filter by nextDueDate in current year
   const dueDateYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`;
 
   // Completed: filter by completionDate in current year
   const completionYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`;
+
+  // Scheduled: any inspection that has a scheduledDate this year (regardless of current status)
+  const scheduledQuery = db.select({ count: count() })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      baseCondition,
+      sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
+    ));
 
   const makeCountQuery = (status: string) => {
     const dateFilter = status === "COMPLETED" ? completionYearFilter : dueDateYearFilter;
@@ -65,7 +75,7 @@ router.get("/summary", async (req, res) => {
     [avgCompleteRow],
   ] = await Promise.all([
     makeCountQuery("NOT_STARTED"),
-    makeCountQuery("SCHEDULED"),
+    scheduledQuery,
     makeCountQuery("IN_PROGRESS"),
     makeCountQuery("COMPLETED"),
     overdueQuery,
@@ -189,18 +199,29 @@ router.get("/status-breakdown", async (req, res) => {
   const dueDateYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`;
   const completionYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`;
 
-  const storedStatuses = ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"];
-
-  const storedResults = await Promise.all(storedStatuses.map(async (status) => {
+  const makeStatusQuery = (status: string) => {
+    if (status === "SCHEDULED") {
+      // Scheduled = any inspection with a scheduledDate this year, regardless of current status
+      return db.select({ count: count() })
+        .from(inspectionsTable)
+        .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+        .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+        .where(and(baseC, sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`));
+    }
     const dateFilter = status === "COMPLETED" ? completionYearFilter : dueDateYearFilter;
-    const [row] = await db
-      .select({ count: count() })
+    return db.select({ count: count() })
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
       .where(and(baseC, eq(inspectionsTable.status, status), dateFilter));
-    return { status, count: Number(row.count) };
-  }));
+  };
+
+  const storedResults = await Promise.all(
+    ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"].map(async (status) => {
+      const [row] = await makeStatusQuery(status);
+      return { status, count: Number(row.count) };
+    })
+  );
 
   // Overdue = all past-due non-completed, regardless of year
   const [overdueRow] = await db.select({ count: count() })
