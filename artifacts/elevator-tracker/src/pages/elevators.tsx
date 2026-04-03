@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -121,6 +121,7 @@ export default function Elevators() {
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
   const [showInspForm, setShowInspForm] = useState(false);
   const [inspDeleteId, setInspDeleteId] = useState<number | null>(null);
+  const autoLoadedForElevator = useRef<number | null>(null);
 
   const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
   const buildingIdFilter = selectedBuildingId !== "all" ? Number(selectedBuildingId) : undefined;
@@ -269,6 +270,23 @@ export default function Elevators() {
     }
   }, [watchInspStatus]);
 
+  // Auto-load the most current NOT_STARTED inspection when the dialog opens
+  useEffect(() => {
+    if (!editingElevator || !elevatorInspections) return;
+    if (autoLoadedForElevator.current === editingElevator.id) return;
+    autoLoadedForElevator.current = editingElevator.id;
+
+    const STATUS_PRIORITY = ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "OVERDUE"];
+    const toLoad = STATUS_PRIORITY.reduce<typeof elevatorInspections[0] | null>((found, status) => {
+      if (found) return found;
+      return elevatorInspections.find(i => i.status === status) ?? null;
+    }, null);
+
+    if (toLoad) {
+      openEditInsp(toLoad);
+    }
+  }, [elevatorInspections, editingElevator]);
+
   const resetInspForm = () => {
     inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
     setEditingInspection(null);
@@ -415,6 +433,7 @@ export default function Elevators() {
 
   const openEdit = (elevator: Elevator) => {
     setEditingElevator(elevator);
+    autoLoadedForElevator.current = null;
     resetInspForm();
     form.reset({
       name: elevator.name,
