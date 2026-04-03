@@ -1136,7 +1136,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[2fr_1fr_1fr_1fr_2fr_1fr_1fr_1fr_1fr_1fr]"
+                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[3fr_1fr_1fr_1fr_2fr_1fr_1.5fr_1.5fr_1.5fr_1fr]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1231,7 +1231,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[2fr_1fr_1fr_1fr_2fr_1fr_1fr_1fr_1fr_1fr] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid grid-cols-[3fr_1fr_1fr_1fr_2fr_1fr_1.5fr_1.5fr_1.5fr_1fr] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
@@ -1239,50 +1239,50 @@ export default function Elevators() {
                                           <div className={`flex items-center px-4 py-1 min-w-0 ${nameIndent}`}>
                                             <div className="font-semibold text-xs leading-snug truncate text-zinc-900">{elevator.name}</div>
                                           </div>
-                                          {/* Unit ID — 80px */}
-                                          <div className="flex items-center px-3 py-1 border-l border-zinc-200">
+                                          {/* Unit ID */}
+                                          <div className="flex items-center justify-center px-3 py-1 border-l border-zinc-200">
                                             <span className="text-xs tabular-nums text-zinc-700">{elevator.internalId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
-                                          {/* State ID — 80px */}
-                                          <div className="flex items-center px-3 py-1 border-l border-zinc-200">
+                                          {/* State ID */}
+                                          <div className="flex items-center justify-center px-3 py-1 border-l border-zinc-200">
                                             <span className="text-xs tabular-nums text-zinc-700">{elevator.stateId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
-                                          {/* Unit Type — 90px */}
-                                          <div className="flex items-center px-3 py-1 border-l border-zinc-200">
+                                          {/* Unit Type */}
+                                          <div className="flex items-center justify-center px-3 py-1 border-l border-zinc-200">
                                             <span className="text-xs font-medium text-zinc-700 capitalize">{elevator.type}</span>
                                           </div>
-                                          {/* Status — 155px */}
-                                          <div className="flex items-center px-4 py-1 border-l border-zinc-200">
+                                          {/* Status */}
+                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
                                             {latestInsp
                                               ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
                                               : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
-                                          {/* Insp Type — 85px */}
-                                          <div className="flex items-center px-4 py-1 border-l border-zinc-200">
+                                          {/* Insp Type */}
+                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
                                             {latestInsp ? (
                                               <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
-                                          {/* Last Completed — 125px */}
-                                          <div className="flex items-center px-4 py-1 border-l border-zinc-200">
+                                          {/* Last Completed */}
+                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
                                             {completionDate ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(completionDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
-                                          {/* Next Due — 125px */}
-                                          <div className="flex items-center px-4 py-1 border-l border-zinc-200">
+                                          {/* Next Due */}
+                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
                                             {due ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
-                                          {/* Scheduled — 125px */}
-                                          <div className="flex items-center px-4 py-1 border-l border-zinc-200">
+                                          {/* Scheduled */}
+                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
                                             {scheduledDate ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
