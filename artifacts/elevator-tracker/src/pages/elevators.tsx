@@ -1115,7 +1115,7 @@ export default function Elevators() {
                 onClick={action}
                 className={`relative flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors border-r border-zinc-200 last:border-r-0
                   ${isActive
-                    ? "bg-amber-500 text-white"
+                    ? "bg-blue-600 text-white"
                     : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
                   }`}
               >
