@@ -180,15 +180,11 @@ export default function Elevators() {
   );
 
   // Map: elevatorId → most-relevant inspection
-  // Priority: active (non-COMPLETED) beats COMPLETED, then CAT5 beats CAT1,
-  // then descending nextDueDate within same tier+type
+  // Priority: CAT5 always beats CAT1 (regardless of status),
+  // then descending nextDueDate within the same type
   const latestInspByElevator = useMemo(() => {
     const TYPE_PRIORITY: Record<string, number> = { CAT5: 0, CAT1: 1 };
-    const isActive = (insp: Inspection) => insp.status !== "COMPLETED";
     const beats = (challenger: Inspection, champion: Inspection): boolean => {
-      const ca = isActive(challenger) ? 0 : 1;
-      const cc = isActive(champion) ? 0 : 1;
-      if (ca !== cc) return ca < cc;
       const np = TYPE_PRIORITY[challenger.inspectionType ?? ""] ?? 99;
       const cp = TYPE_PRIORITY[champion.inspectionType ?? ""] ?? 99;
       if (np !== cp) return np < cp;
