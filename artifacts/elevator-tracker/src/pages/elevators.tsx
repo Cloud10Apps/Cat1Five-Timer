@@ -869,7 +869,7 @@ export default function Elevators() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 max-w-5xl">
+      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4">
         <div className="relative flex-1 w-full min-w-[200px] max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -990,27 +990,28 @@ export default function Elevators() {
           <p>No elevators found.</p>
         </div>
       ) : (
-        <div className="space-y-3 max-w-5xl">
+        <div className="space-y-3">
           {grouped.map((customer) => {
             const isCustomerCollapsed = collapsedCustomers.has(customer.customerId);
             return (
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
-                {/* Customer header — column labels live here in white */}
+                {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full flex items-center px-4 py-3 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left"
+                  className="w-full grid items-center px-4 py-3 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left grid-cols-[1fr_200px_120px_160px_160px_68px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
-                  {isCustomerCollapsed
-                    ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
-                    : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" />}
-                  <Users className="h-4 w-4 shrink-0 text-zinc-400 ml-2" />
-                  <span className="font-bold text-sm flex-1 ml-2">{customer.customerName}</span>
-                  {/* Column headers — no gap so widths align exactly with data rows */}
-                  <div className="w-[160px] text-center text-sm font-bold text-white shrink-0">Status</div>
-                  <div className="w-[90px] text-center text-sm font-bold text-white shrink-0">Type</div>
-                  <div className="w-[130px] text-right text-sm font-bold text-white shrink-0 pr-1">Next Due</div>
-                  <div className="w-[130px] text-right text-sm font-bold text-white shrink-0 pr-1">Scheduled</div>
-                  <div className="w-[68px] shrink-0" />
+                  <div className="flex items-center gap-2 min-w-0">
+                    {isCustomerCollapsed
+                      ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
+                      : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" />}
+                    <Users className="h-4 w-4 shrink-0 text-zinc-400" />
+                    <span className="font-bold text-sm truncate ml-1">{customer.customerName}</span>
+                  </div>
+                  <div className="text-center text-sm font-bold text-white">Status</div>
+                  <div className="text-center text-sm font-bold text-white">Type</div>
+                  <div className="text-right text-sm font-bold text-white pr-1">Next Due</div>
+                  <div className="text-right text-sm font-bold text-white pr-1">Scheduled</div>
+                  <div />
                 </button>
 
                 {!isCustomerCollapsed && (
@@ -1061,54 +1062,56 @@ export default function Elevators() {
                                       const isOverdue = !!due && due < today;
                                       const isSoon = !isOverdue && !!due && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                                       const scheduledDate = latestInsp?.scheduledDate?.slice(0, 10);
-                                      const indent = hasBankName ? "pl-20" : "pl-16";
+                                      const nameIndent = hasBankName ? "pl-16" : "pl-12";
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className={`flex items-center px-4 py-2.5 ${indent} pr-4 hover:bg-amber-50/60 transition-colors border-t border-zinc-50`}
+                                          className="grid items-center px-4 py-2.5 pr-4 grid-cols-[1fr_200px_120px_160px_160px_68px] hover:bg-amber-50/60 transition-colors border-t border-zinc-50"
                                         >
-                                          <div className="w-0.5 self-stretch min-h-[2rem] rounded-full bg-amber-400/70 shrink-0 mr-3" />
-                                          {/* Name + meta — fills remaining width */}
-                                          <div className="flex-1 min-w-0 mr-2">
-                                            <div className="font-semibold text-sm leading-snug truncate">{elevator.name}</div>
-                                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                              <span className="text-xs text-muted-foreground capitalize">{elevator.type}</span>
-                                              {elevator.internalId && <><span className="text-muted-foreground/40 text-[10px]">·</span><span className="text-xs text-muted-foreground">Unit {elevator.internalId}</span></>}
-                                              {elevator.stateId && <><span className="text-muted-foreground/40 text-[10px]">·</span><span className="text-xs text-muted-foreground">State {elevator.stateId}</span></>}
+                                          {/* Name + meta — 1fr; indent + amber bar live inside */}
+                                          <div className={`flex items-center min-w-0 ${nameIndent}`}>
+                                            <div className="w-0.5 self-stretch min-h-[2rem] rounded-full bg-amber-400/70 shrink-0 mr-3" />
+                                            <div className="min-w-0">
+                                              <div className="font-semibold text-sm leading-snug truncate">{elevator.name}</div>
+                                              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                                <span className="text-xs text-muted-foreground capitalize">{elevator.type}</span>
+                                                {elevator.internalId && <><span className="text-muted-foreground/40 text-[10px]">·</span><span className="text-xs text-muted-foreground">Unit {elevator.internalId}</span></>}
+                                                {elevator.stateId && <><span className="text-muted-foreground/40 text-[10px]">·</span><span className="text-xs text-muted-foreground">State {elevator.stateId}</span></>}
+                                              </div>
                                             </div>
                                           </div>
-                                          {/* Status — w-[160px] */}
-                                          <div className="w-[160px] flex justify-center shrink-0 overflow-hidden">
+                                          {/* Status — 200px */}
+                                          <div className="flex justify-center overflow-hidden">
                                             {latestInsp
                                               ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
                                               : <span className="text-muted-foreground text-xs">—</span>}
                                           </div>
-                                          {/* Insp Type — w-[90px] compact label only */}
-                                          <div className="w-[90px] flex justify-center shrink-0 overflow-hidden">
+                                          {/* Insp Type — 120px */}
+                                          <div className="flex justify-center overflow-hidden">
                                             {latestInsp ? (
                                               <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-muted-foreground text-xs">—</span>}
                                           </div>
-                                          {/* Next Due — w-[130px] */}
-                                          <div className="w-[130px] text-right shrink-0 pr-1 overflow-hidden">
+                                          {/* Next Due — 160px */}
+                                          <div className="text-right pr-1 overflow-hidden">
                                             {due ? (
                                               <span className={`text-xs tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-muted-foreground"}`}>
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-xs text-muted-foreground">—</span>}
                                           </div>
-                                          {/* Scheduled — w-[130px] */}
-                                          <div className="w-[130px] text-right shrink-0 pr-1 overflow-hidden">
+                                          {/* Scheduled — 160px */}
+                                          <div className="text-right pr-1 overflow-hidden">
                                             {scheduledDate ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-muted-foreground">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-xs text-muted-foreground">—</span>}
                                           </div>
-                                          {/* Actions — w-[68px] */}
-                                          <div className="w-[68px] flex items-center justify-end shrink-0 gap-0.5">
+                                          {/* Actions — 68px */}
+                                          <div className="flex items-center justify-end gap-0.5">
                                             <TooltipProvider>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
