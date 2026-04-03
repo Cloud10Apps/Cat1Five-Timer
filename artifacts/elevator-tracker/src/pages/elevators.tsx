@@ -198,6 +198,19 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
+  // Map: elevatorId → most recent completionDate from any COMPLETED inspection
+  const lastCompletedByElevator = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const insp of allInspections ?? []) {
+      if (!insp.elevatorId || !insp.completionDate) continue;
+      const current = map.get(insp.elevatorId);
+      if (!current || insp.completionDate > current) {
+        map.set(insp.elevatorId, insp.completionDate.slice(0, 10));
+      }
+    }
+    return map;
+  }, [allInspections]);
+
   // Map: elevatorId → latest nextDueDate (YYYY-MM-DD string)
   const nextDueDateByElevator = useMemo(() => {
     const map = new Map<number, string>();
@@ -1078,7 +1091,7 @@ export default function Elevators() {
                                       const isOverdue = !!due && due < today;
                                       const isSoon = !isOverdue && !!due && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                                       const scheduledDate = latestInsp?.scheduledDate?.slice(0, 10);
-                                      const completionDate = latestInsp?.completionDate?.slice(0, 10);
+                                      const completionDate = lastCompletedByElevator.get(elevator.id);
                                       const nameIndent = hasBankName ? "pl-16" : "pl-12";
                                       return (
                                         <div
