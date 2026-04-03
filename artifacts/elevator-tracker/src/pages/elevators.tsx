@@ -758,8 +758,9 @@ export default function Elevators() {
                                 )}
                               />
                             </div>
-                            {/* Row 2: Recurrence + Last Inspection Date + Next Due computed */}
-                            <div className="grid grid-cols-3 gap-3 items-end">
+                            {/* Rows 2–3: merged 3-col grid; Next Due spans both rows */}
+                            <div className="grid grid-cols-3 gap-3">
+                              {/* Col 1 Row 1 */}
                               <FormField
                                 control={inspForm.control}
                                 name="recurrenceYears"
@@ -773,6 +774,7 @@ export default function Elevators() {
                                   </FormItem>
                                 )}
                               />
+                              {/* Col 2 Row 1 */}
                               <FormField
                                 control={inspForm.control}
                                 name="lastInspectionDate"
@@ -786,19 +788,18 @@ export default function Elevators() {
                                   </FormItem>
                                 )}
                               />
-                              <div className={`rounded-lg px-3 py-3 flex flex-col items-center justify-center text-center ${nextDuePreview ? "bg-amber-500" : "bg-muted border border-dashed"}`}>
+                              {/* Col 3 Rows 1–2: Next Due badge */}
+                              <div className={`row-span-2 rounded-lg px-4 py-4 flex flex-col items-center justify-center text-center ${nextDuePreview ? "bg-amber-500" : "bg-muted border border-dashed"}`}>
                                 {nextDuePreview ? (
                                   <>
-                                    <span className="text-xs font-bold text-white/80 uppercase tracking-widest leading-none mb-1.5">Next Due</span>
-                                    <span className="text-base font-bold text-white leading-tight">{dayjs(nextDuePreview).format("MMM D, YYYY")}</span>
+                                    <span className="text-sm font-bold text-white/80 uppercase tracking-widest leading-none mb-2">Next Due</span>
+                                    <span className="text-xl font-bold text-white leading-tight">{dayjs(nextDuePreview).format("MMM D, YYYY")}</span>
                                   </>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground py-1">Next Due</span>
+                                  <span className="text-sm text-muted-foreground">Next Due</span>
                                 )}
                               </div>
-                            </div>
-                            {/* Row 3: Scheduled + Completion dates */}
-                            <div className="grid grid-cols-2 gap-3">
+                              {/* Col 1 Row 2 */}
                               <FormField
                                 control={inspForm.control}
                                 name="scheduledDate"
@@ -812,6 +813,7 @@ export default function Elevators() {
                                   </FormItem>
                                 )}
                               />
+                              {/* Col 2 Row 2 */}
                               <FormField
                                 control={inspForm.control}
                                 name="completionDate"
