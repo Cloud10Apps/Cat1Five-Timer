@@ -404,6 +404,7 @@ export default function Elevators() {
           onSuccess: () => {
             invalidateInspections();
             toast({ title: "Inspection saved" });
+            setIsAddOpen(false);
           },
           onError: () => toast({ title: "Failed to save inspection", variant: "destructive" }),
         }
