@@ -2,11 +2,9 @@ import {
   useGetDashboardSummary,
   useGetAttentionInspections,
   useGetStatusBreakdown,
-  useGetOverdueByBuilding,
   getGetDashboardSummaryQueryKey,
   getGetAttentionInspectionsQueryKey,
   getGetStatusBreakdownQueryKey,
-  getGetOverdueByBuildingQueryKey,
 } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
@@ -86,10 +84,9 @@ export default function Dashboard() {
   const { data: summary,          isLoading: l1 } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: attention,        isLoading: l2 } = useGetAttentionInspections({ query: { queryKey: getGetAttentionInspectionsQueryKey() } });
   const { data: breakdown,        isLoading: l3 } = useGetStatusBreakdown({ query: { queryKey: getGetStatusBreakdownQueryKey() } });
-  const { data: overdueBuildings, isLoading: l4 } = useGetOverdueByBuilding({ query: { queryKey: getGetOverdueByBuildingQueryKey() } });
-  const { data: forecast,         isLoading: l5 } = useQuery({ queryKey: ["monthly-forecast"], queryFn: fetchMonthlyForecast });
+  const { data: forecast,         isLoading: l4 } = useQuery({ queryKey: ["monthly-forecast"], queryFn: fetchMonthlyForecast });
 
-  if (l1 || l2 || l3 || l4 || l5) {
+  if (l1 || l2 || l3 || l4) {
     return (
       <div className="flex h-[50vh] items-center justify-center bg-zinc-50">
         <Spinner size="lg" />
@@ -228,13 +225,13 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* ── Tables Grid — 3 columns ── */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ── Tables Grid — 2 columns ── */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Requiring Attention */}
+          {/* Overdue Inspections */}
           <div className="bg-white border border-zinc-200 border-t-4 border-t-red-500 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader
-              title="Requiring Attention"
+              title="Overdue Inspections"
               badge={
                 overdueItems.length > 0 ? (
                   <span className="ml-auto flex items-center gap-1 text-[11px] font-bold text-red-600">
@@ -258,7 +255,7 @@ export default function Dashboard() {
                   {(!attention || attention.length === 0) ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
-                        No inspections requiring attention.
+                        No overdue inspections.
                       </TableCell>
                     </TableRow>
                   ) : attention.map((insp) => (
@@ -270,41 +267,6 @@ export default function Dashboard() {
                       </TableCell>
                       <TableCell className="text-right py-3">
                         <StatusBadge status={insp.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* Highest Risk Buildings */}
-          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="Highest Risk Buildings" />
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-zinc-50">
-                  <TableRow className="hover:bg-transparent border-b border-zinc-100">
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Building</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Customer</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right">Overdue</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(!overdueBuildings || overdueBuildings.length === 0) ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-zinc-400 py-8 text-sm">
-                        No overdue inspections!
-                      </TableCell>
-                    </TableRow>
-                  ) : overdueBuildings.map((item) => (
-                    <TableRow key={item.buildingId} className="hover:bg-zinc-50/80 border-b border-zinc-100">
-                      <TableCell className="font-medium text-sm py-3">{item.buildingName}</TableCell>
-                      <TableCell className="text-zinc-500 text-sm py-3">{item.customerName}</TableCell>
-                      <TableCell className="text-right py-3">
-                        <span className="inline-flex items-center justify-center bg-red-100 text-red-700 rounded-full font-bold h-6 w-6 text-xs">
-                          {item.overdueCount}
-                        </span>
                       </TableCell>
                     </TableRow>
                   ))}
