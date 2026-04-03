@@ -177,6 +177,18 @@ export default function Buildings() {
           <p className="text-muted-foreground italic">Manage your building locations.</p>
         </div>
 
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <select
+            value={selectedCustomerId}
+            onChange={e => setSelectedCustomerId(e.target.value)}
+            className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[180px]"
+          >
+            <option value="all">All Customers</option>
+            {customers?.map((c) => (
+              <option key={c.id} value={c.id.toString()}>{c.name}</option>
+            ))}
+          </select>
+
         <Dialog open={isAddOpen} onOpenChange={(open) => {
           setIsAddOpen(open);
           if (!open) {
@@ -287,6 +299,7 @@ export default function Buildings() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -299,19 +312,6 @@ export default function Buildings() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Filter by customer" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Customers</SelectItem>
-            {customers?.map((customer) => (
-              <SelectItem key={customer.id} value={customer.id.toString()}>
-                {customer.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="border rounded-md">
