@@ -123,7 +123,7 @@ router.get("/summary", async (req, res) => {
   ]);
 
   const parseAvg = (val: string | null): number | null =>
-    val == null ? null : Math.round(parseFloat(val) * 10) / 10;
+    val == null ? null : parseFloat(parseFloat(val).toFixed(1));
 
   res.json({
     notStartedCount:    Number(notStartedRow.count),
