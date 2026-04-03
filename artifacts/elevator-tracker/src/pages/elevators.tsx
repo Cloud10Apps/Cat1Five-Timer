@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, X, CalendarDays, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -62,7 +62,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
-import { useDebounce } from "@/hooks/use-debounce";
 import { StatusBadge } from "@/components/status-badge";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import {
@@ -98,8 +97,6 @@ const inspectionSchema = z.object({
 type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
 export default function Elevators() {
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 300);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
@@ -134,14 +131,12 @@ export default function Elevators() {
 
   const { data: elevators, isLoading } = useListElevators(
     { 
-      search: debouncedSearch || undefined, 
       customerId: customerIdFilter,
       buildingId: buildingIdFilter,
       type: typeFilter,
       bank: bankFilter,
     },
     { query: { queryKey: getListElevatorsQueryKey({ 
-      search: debouncedSearch || undefined, 
       customerId: customerIdFilter,
       buildingId: buildingIdFilter,
       type: typeFilter,
@@ -989,22 +984,15 @@ export default function Elevators() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4">
-        <div className="relative flex-1 w-full min-w-[200px] max-w-xs">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search elevators..."
-            className="pl-8"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* All Customers */}
         <Select value={selectedCustomerId} onValueChange={(val) => {
           setSelectedCustomerId(val);
           setSelectedBuildingId("all");
+          setSelectedBank("all");
         }}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Customer" />
+          <SelectTrigger className="h-8 text-xs w-[160px]">
+            <SelectValue placeholder="All Customers" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Customers</SelectItem>
@@ -1015,9 +1003,14 @@ export default function Elevators() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={selectedBuildingId} onValueChange={setSelectedBuildingId}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Building" />
+
+        {/* All Buildings */}
+        <Select value={selectedBuildingId} onValueChange={(val) => {
+          setSelectedBuildingId(val);
+          setSelectedBank("all");
+        }}>
+          <SelectTrigger className="h-8 text-xs w-[160px]">
+            <SelectValue placeholder="All Buildings" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Buildings</SelectItem>
@@ -1028,9 +1021,28 @@ export default function Elevators() {
             ))}
           </SelectContent>
         </Select>
+
+        {/* All Banks */}
+        <Select
+          value={selectedBank}
+          onValueChange={setSelectedBank}
+          disabled={bankOptions.length === 0}
+        >
+          <SelectTrigger className="h-8 text-xs w-[140px]">
+            <SelectValue placeholder="All Banks" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Banks</SelectItem>
+            {bankOptions.map((bank) => (
+              <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* All Types */}
         <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="Type" />
+          <SelectTrigger className="h-8 text-xs w-[130px]">
+            <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
@@ -1039,31 +1051,17 @@ export default function Elevators() {
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
-        <Select
-          value={selectedBank}
-          onValueChange={setSelectedBank}
-          disabled={bankOptions.length === 0}
-        >
-          <SelectTrigger className="w-full sm:w-[150px]">
-            <SelectValue placeholder="Bank" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Banks</SelectItem>
-            {bankOptions.map((bank) => (
-              <SelectItem key={bank} value={bank}>
-                {bank}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {/* Due Month filter */}
+
+        {/* Divider */}
+        <div className="h-6 w-px bg-zinc-200 mx-1" />
+
+        {/* Due Month */}
         <Select value={filterDueMonth} onValueChange={setFilterDueMonth}>
-          <SelectTrigger className="w-[140px]">
-            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
+          <SelectTrigger className="h-8 text-xs w-[140px]">
             <SelectValue placeholder="Due Month" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Months</SelectItem>
+            <SelectItem value="all">Due Month</SelectItem>
             {[
               ["01","January"],["02","February"],["03","March"],["04","April"],
               ["05","May"],["06","June"],["07","July"],["08","August"],
@@ -1074,26 +1072,33 @@ export default function Elevators() {
           </SelectContent>
         </Select>
 
-        {/* Due Year filter */}
+        {/* Due Year */}
         <Select value={filterDueYear} onValueChange={setFilterDueYear}>
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="h-8 text-xs w-[120px]">
             <SelectValue placeholder="Due Year" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Years</SelectItem>
+            <SelectItem value="all">Due Year</SelectItem>
             {dueYearOptions.map((y) => (
               <SelectItem key={y} value={y}>{y}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Reset due filters */}
-        {(filterDueMonth !== "all" || filterDueYear !== "all") && (
+        {/* Clear all filters */}
+        {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
           <button
-            onClick={() => { setFilterDueMonth("all"); setFilterDueYear("all"); }}
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+            onClick={() => {
+              setSelectedCustomerId("all");
+              setSelectedBuildingId("all");
+              setSelectedBank("all");
+              setSelectedType("all");
+              setFilterDueMonth("all");
+              setFilterDueYear("all");
+            }}
+            className="h-8 px-2.5 flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 border border-dashed border-zinc-300 rounded hover:border-zinc-400 transition-colors"
           >
-            <X className="h-3.5 w-3.5" /> Reset
+            <X className="h-3 w-3" /> Clear filters
           </button>
         )}
       </div>
