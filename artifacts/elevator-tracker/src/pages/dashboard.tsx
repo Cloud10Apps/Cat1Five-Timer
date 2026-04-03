@@ -302,31 +302,40 @@ export default function Dashboard() {
               <Table>
                 <TableHeader className="bg-zinc-50">
                   <TableRow className="hover:bg-transparent border-b border-zinc-100">
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Unit</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Building</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Due</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right">Status</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Was Due</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {overdueItems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
+                      <TableCell colSpan={3} className="text-center text-zinc-400 py-8 text-sm">
                         No overdue inspections.
                       </TableCell>
                     </TableRow>
-                  ) : overdueItems.map((insp: any) => (
-                    <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-100">
-                      <TableCell className="font-medium text-sm py-3">{insp.elevatorName}</TableCell>
-                      <TableCell className="text-zinc-500 text-sm py-3">{insp.buildingName}</TableCell>
-                      <TableCell className="text-sm py-3 font-medium text-red-600">
-                        {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
-                      </TableCell>
-                      <TableCell className="text-right py-3">
-                        <StatusBadge status={insp.rawStatus ?? insp.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  ) : overdueItems.map((insp: any) => {
+                    const daysOver = insp.nextDueDate ? dayjs().diff(dayjs(insp.nextDueDate), "day") : null;
+                    return (
+                      <TableRow key={insp.id} className="hover:bg-red-50/40 border-b border-zinc-100 relative">
+                        <TableCell className="py-3 pl-4">
+                          <div className="font-semibold text-sm text-zinc-900 leading-snug">{insp.elevatorName}</div>
+                          <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <InspectionTypeBadge type={insp.inspectionType} />
+                        </TableCell>
+                        <TableCell className="text-right py-3 pr-4">
+                          <div className="text-sm font-semibold text-red-600 leading-snug">
+                            {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
+                          </div>
+                          {daysOver !== null && (
+                            <div className="text-xs text-red-400 mt-0.5">{daysOver} day{daysOver !== 1 ? "s" : ""} overdue</div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -339,36 +348,43 @@ export default function Dashboard() {
               <Table>
                 <TableHeader className="bg-zinc-50">
                   <TableRow className="hover:bg-transparent border-b border-zinc-100">
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Unit / Building</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Due</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right">Status</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Due</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {upcoming.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
+                      <TableCell colSpan={3} className="text-center text-zinc-400 py-8 text-sm">
                         No inspections due in the next 14 days.
                       </TableCell>
                     </TableRow>
-                  ) : upcoming.map((insp: any) => (
-                    <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-100">
-                      <TableCell className="py-3">
-                        <div className="font-medium text-sm">{insp.elevatorName}</div>
-                        <div className="text-xs text-zinc-500">{insp.buildingName}</div>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <InspectionTypeBadge type={insp.inspectionType} />
-                      </TableCell>
-                      <TableCell className="text-zinc-500 text-sm py-3">
-                        {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
-                      </TableCell>
-                      <TableCell className="text-right py-3">
-                        <StatusBadge status={insp.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  ) : upcoming.map((insp: any) => {
+                    const daysUntil = insp.nextDueDate ? dayjs(insp.nextDueDate).diff(dayjs(), "day") : null;
+                    const isUrgent = daysUntil !== null && daysUntil <= 3;
+                    return (
+                      <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-100">
+                        <TableCell className="py-3 pl-4">
+                          <div className="font-semibold text-sm text-zinc-900 leading-snug">{insp.elevatorName}</div>
+                          <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <InspectionTypeBadge type={insp.inspectionType} />
+                        </TableCell>
+                        <TableCell className="text-right py-3 pr-4">
+                          <div className={`text-sm font-semibold leading-snug ${isUrgent ? "text-amber-600" : "text-zinc-700"}`}>
+                            {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
+                          </div>
+                          {daysUntil !== null && (
+                            <div className={`text-xs mt-0.5 ${isUrgent ? "text-amber-500" : "text-zinc-400"}`}>
+                              {daysUntil === 0 ? "due today" : `in ${daysUntil} day${daysUntil !== 1 ? "s" : ""}`}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
