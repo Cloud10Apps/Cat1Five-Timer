@@ -1136,7 +1136,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_80px_80px_90px_155px_85px_125px_125px_125px_100px]"
+                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[2fr_1fr_1fr_1fr_2fr_1fr_1fr_1fr_1fr_1fr]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1231,7 +1231,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_80px_80px_90px_155px_85px_125px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid grid-cols-[2fr_1fr_1fr_1fr_2fr_1fr_1fr_1fr_1fr_1fr] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
