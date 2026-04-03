@@ -789,7 +789,7 @@ export default function Elevators() {
                               <div className={`rounded-lg px-3 py-2 flex flex-col items-center justify-center text-center h-[42px] ${nextDuePreview ? "bg-amber-500" : "bg-muted border border-dashed"}`}>
                                 {nextDuePreview ? (
                                   <>
-                                    <span className="text-[10px] font-semibold text-amber-900 uppercase tracking-wider leading-none mb-0.5">Next Due</span>
+                                    <span className="text-[10px] font-semibold text-white/70 uppercase tracking-wider leading-none mb-0.5">Next Due</span>
                                     <span className="text-sm font-bold text-white leading-tight">{dayjs(nextDuePreview).format("MMM D, YYYY")}</span>
                                   </>
                                 ) : (
