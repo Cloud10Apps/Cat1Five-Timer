@@ -202,7 +202,7 @@ export default function Dashboard() {
                       angle={-45}
                       textAnchor="end"
                       dy={5}
-                      height={60}
+                      height={75}
                     />
                     <YAxis
                       tick={{ fill: "#3f3f46", fontSize: 15 }}
