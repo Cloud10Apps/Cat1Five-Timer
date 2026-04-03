@@ -1020,123 +1020,127 @@ export default function Elevators() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterCombobox
-          value={selectedCustomerId}
-          onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
-          options={customerOptions}
-          placeholder="All Customers"
-          searchPlaceholder="Search customers..."
-          width="w-[160px]"
-        />
-        <FilterCombobox
-          value={selectedBuildingId}
-          onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
-          options={buildingOptions}
-          placeholder="All Buildings"
-          searchPlaceholder="Search buildings..."
-          width="w-[160px]"
-        />
-        <FilterCombobox
-          value={selectedBank}
-          onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
-          options={bankFilterOptions}
-          placeholder="All Banks"
-          searchPlaceholder="Search banks..."
-          disabled={bankFilterOptions.length === 0}
-          width="w-[140px]"
-        />
-        <FilterCombobox
-          value={selectedElevatorId}
-          onValueChange={setSelectedElevatorId}
-          options={elevatorFilterOptions}
-          placeholder="All Elevators"
-          searchPlaceholder="Search elevators..."
-          disabled={elevatorFilterOptions.length === 0}
-          width="w-[180px]"
-        />
-        <FilterCombobox
-          value={selectedType}
-          onValueChange={setSelectedType}
-          options={[
-            { value: "traction",  label: "Traction" },
-            { value: "hydraulic", label: "Hydraulic" },
-            { value: "other",     label: "Other" },
-          ]}
-          placeholder="All Types"
-          searchPlaceholder="Search types..."
-          width="w-[130px]"
-        />
+      {/* ── Filters + Depth selector row ── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
 
-        {/* Divider */}
-        <div className="h-6 w-px bg-zinc-200 mx-1" />
+        {/* Left: filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
+          <div className="h-4 w-px bg-zinc-200" />
+          <FilterCombobox
+            value={selectedCustomerId}
+            onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+            options={customerOptions}
+            placeholder="All Customers"
+            searchPlaceholder="Search customers..."
+            width="w-[155px]"
+          />
+          <FilterCombobox
+            value={selectedBuildingId}
+            onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+            options={buildingOptions}
+            placeholder="All Buildings"
+            searchPlaceholder="Search buildings..."
+            width="w-[155px]"
+          />
+          <FilterCombobox
+            value={selectedBank}
+            onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
+            options={bankFilterOptions}
+            placeholder="All Banks"
+            searchPlaceholder="Search banks..."
+            disabled={bankFilterOptions.length === 0}
+            width="w-[130px]"
+          />
+          <FilterCombobox
+            value={selectedElevatorId}
+            onValueChange={setSelectedElevatorId}
+            options={elevatorFilterOptions}
+            placeholder="All Elevators"
+            searchPlaceholder="Search elevators..."
+            disabled={elevatorFilterOptions.length === 0}
+            width="w-[170px]"
+          />
+          <FilterCombobox
+            value={selectedType}
+            onValueChange={setSelectedType}
+            options={[
+              { value: "traction",  label: "Traction" },
+              { value: "hydraulic", label: "Hydraulic" },
+              { value: "other",     label: "Other" },
+            ]}
+            placeholder="All Types"
+            searchPlaceholder="Search types..."
+            width="w-[125px]"
+          />
+          <div className="h-4 w-px bg-zinc-200" />
+          <FilterCombobox
+            value={filterDueMonth}
+            onValueChange={setFilterDueMonth}
+            options={MONTH_OPTIONS}
+            placeholder="Due Month"
+            searchPlaceholder="Search months..."
+            width="w-[130px]"
+          />
+          <FilterCombobox
+            value={filterDueYear}
+            onValueChange={setFilterDueYear}
+            options={yearFilterOptions}
+            placeholder="Due Year"
+            searchPlaceholder="Search years..."
+            width="w-[110px]"
+          />
+          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
+            <button
+              onClick={() => {
+                setSelectedCustomerId("all");
+                setSelectedBuildingId("all");
+                setSelectedBank("all");
+                setSelectedElevatorId("all");
+                setSelectedType("all");
+                setFilterDueMonth("all");
+                setFilterDueYear("all");
+              }}
+              className="h-8 px-2.5 flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 border border-dashed border-zinc-300 rounded hover:border-zinc-400 transition-colors"
+            >
+              <X className="h-3 w-3" /> Clear
+            </button>
+          )}
+        </div>
 
-        <FilterCombobox
-          value={filterDueMonth}
-          onValueChange={setFilterDueMonth}
-          options={MONTH_OPTIONS}
-          placeholder="Due Month"
-          searchPlaceholder="Search months..."
-          width="w-[140px]"
-        />
-        <FilterCombobox
-          value={filterDueYear}
-          onValueChange={setFilterDueYear}
-          options={yearFilterOptions}
-          placeholder="Due Year"
-          searchPlaceholder="Search years..."
-          width="w-[120px]"
-        />
-
-        {/* Clear all filters */}
-        {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
-          <button
-            onClick={() => {
-              setSelectedCustomerId("all");
-              setSelectedBuildingId("all");
-              setSelectedBank("all");
-              setSelectedElevatorId("all");
-              setSelectedType("all");
-              setFilterDueMonth("all");
-              setFilterDueYear("all");
-            }}
-            className="h-8 px-2.5 flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 border border-dashed border-zinc-300 rounded hover:border-zinc-400 transition-colors"
-          >
-            <X className="h-3 w-3" /> Clear filters
-          </button>
+        {/* Right: expand/collapse depth selector */}
+        {!isLoading && grouped.length > 0 && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
+            <div className="flex items-center gap-0 rounded-lg border border-zinc-200 bg-white shadow-sm overflow-hidden">
+              {([
+                { key: "customers", label: "Customers", action: collapseAll },
+                { key: "buildings", label: "Buildings", action: expandCustomers },
+                { key: "banks",     label: "Banks",     action: expandBuildings },
+                { key: "units",     label: "Units",     action: expandAll },
+              ] as const).map(({ key, label, action }, i) => {
+                const isActive = activeDepth === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={action}
+                    className={`relative flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors border-r border-zinc-200 last:border-r-0
+                      ${isActive
+                        ? "bg-blue-600 text-white"
+                        : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+                      }`}
+                  >
+                    {i > 0 && (
+                      <ChevronRight className={`h-3 w-3 shrink-0 ${isActive ? "text-white/70" : "text-zinc-300"}`} />
+                    )}
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
-
-
-      {/* ── Depth selector ── */}
-      {!isLoading && grouped.length > 0 && (
-        <div className="flex items-center gap-0 rounded-lg border border-zinc-200 bg-white shadow-sm w-fit overflow-hidden">
-          {([
-            { key: "customers", label: "Customers", action: collapseAll },
-            { key: "buildings", label: "Buildings", action: expandCustomers },
-            { key: "banks",     label: "Banks",     action: expandBuildings },
-            { key: "units",     label: "Units",     action: expandAll },
-          ] as const).map(({ key, label, action }, i) => {
-            const isActive = activeDepth === key;
-            return (
-              <button
-                key={key}
-                onClick={action}
-                className={`relative flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors border-r border-zinc-200 last:border-r-0
-                  ${isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
-                  }`}
-              >
-                {i > 0 && (
-                  <ChevronRight className={`h-3 w-3 shrink-0 ${isActive ? "text-white/70" : "text-zinc-300"}`} />
-                )}
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* ── Accordion tree: Customer → Building → Bank → Elevator ── */}
       {isLoading ? (
