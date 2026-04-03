@@ -1011,19 +1011,19 @@ export default function Elevators() {
                     </span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Status</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Status</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Type</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Type</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Next Due</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Next Due</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Scheduled</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Scheduled</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Actions</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Actions</span>
                   </div>
                 </button>
 
