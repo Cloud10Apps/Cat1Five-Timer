@@ -1112,7 +1112,7 @@ export default function Elevators() {
         {!isLoading && grouped.length > 0 && (
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
-            <div className="flex items-center gap-0 rounded-lg border border-zinc-200 bg-white shadow-sm overflow-hidden">
+            <nav className="flex items-center gap-0.5">
               {([
                 { key: "customers", label: "Customers", action: collapseAll },
                 { key: "buildings", label: "Buildings", action: expandCustomers },
@@ -1121,23 +1121,24 @@ export default function Elevators() {
               ] as const).map(({ key, label, action }, i) => {
                 const isActive = activeDepth === key;
                 return (
-                  <button
-                    key={key}
-                    onClick={action}
-                    className={`relative flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors border-r border-zinc-200 last:border-r-0
-                      ${isActive
-                        ? "bg-blue-600 text-white"
-                        : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
-                      }`}
-                  >
+                  <span key={key} className="flex items-center gap-0.5">
                     {i > 0 && (
-                      <ChevronRight className={`h-3 w-3 shrink-0 ${isActive ? "text-white/70" : "text-zinc-300"}`} />
+                      <span className="text-zinc-300 text-xs select-none px-0.5">/</span>
                     )}
-                    {label}
-                  </button>
+                    <button
+                      onClick={action}
+                      className={`px-1.5 py-0.5 rounded text-xs transition-colors ${
+                        isActive
+                          ? "text-blue-600 font-semibold"
+                          : "text-zinc-400 hover:text-zinc-700 font-medium"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  </span>
                 );
               })}
-            </div>
+            </nav>
           </div>
         )}
       </div>
