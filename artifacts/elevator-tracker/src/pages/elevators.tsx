@@ -989,20 +989,20 @@ export default function Elevators() {
                 <CalendarDays className="h-3.5 w-3.5" />
                 Next Due
               </span>
-              <span className="font-medium tabular-nums text-foreground">
-                {new Date(sliderFromDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
-                {" – "}
-                {new Date(sliderToDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
-              </span>
               {sliderActive && (
                 <button
                   onClick={() => { setSliderFromDay(sliderBoundsMin); setSliderToDay(sliderBoundsMax); }}
-                  className="text-muted-foreground hover:text-foreground ml-1"
+                  className="text-muted-foreground hover:text-foreground"
                   title="Reset"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
+            </div>
+            <div className="text-xs tabular-nums text-muted-foreground">
+              {new Date(sliderFromDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+              {" – "}
+              {new Date(sliderToDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
             </div>
             <div className="relative h-5 flex items-center">
               {/* Track background */}
