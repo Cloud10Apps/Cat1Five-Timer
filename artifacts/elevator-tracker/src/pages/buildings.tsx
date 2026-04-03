@@ -360,9 +360,6 @@ export default function Buildings() {
                       <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5 text-xs font-semibold" title="Elevators">
                         {elevatorCount} Elevators
                       </span>
-                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 text-xs font-semibold" title="Inspections">
-                        {inspectionCount} Inspections
-                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
