@@ -1149,28 +1149,28 @@ export default function Elevators() {
                       {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
                     </span>
                   </div>
-                  <div className="flex items-center px-3 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Unit ID</span>
                   </div>
-                  <div className="flex items-center px-3 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">State ID</span>
                   </div>
-                  <div className="flex items-center px-3 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Unit Type</span>
                   </div>
-                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Status</span>
                   </div>
-                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Insp Type</span>
                   </div>
-                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Last Inspection</span>
                   </div>
-                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Next Due</span>
                   </div>
-                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Scheduled</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
