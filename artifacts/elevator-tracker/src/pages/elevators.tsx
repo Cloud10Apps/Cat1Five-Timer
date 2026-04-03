@@ -997,19 +997,19 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — column labels live here in white */}
                 <button
-                  className="w-full flex items-center gap-2 px-4 py-3 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left"
+                  className="w-full flex items-center px-4 py-3 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   {isCustomerCollapsed
                     ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
                     : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" />}
-                  <Users className="h-4 w-4 shrink-0 text-zinc-400" />
-                  <span className="font-bold text-sm flex-1">{customer.customerName}</span>
-                  {/* Column headers — match the data row column widths exactly */}
-                  <div className="w-[120px] text-center text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0">Status</div>
-                  <div className="w-[62px] text-center text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0">Type</div>
-                  <div className="w-[96px] text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0 pr-1">Next Due</div>
-                  <div className="w-[96px] text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0 pr-1">Scheduled</div>
+                  <Users className="h-4 w-4 shrink-0 text-zinc-400 ml-2" />
+                  <span className="font-bold text-sm flex-1 ml-2">{customer.customerName}</span>
+                  {/* Column headers — no gap so widths align exactly with data rows */}
+                  <div className="w-[120px] text-center text-sm font-bold text-zinc-400 shrink-0">Status</div>
+                  <div className="w-[62px] text-center text-sm font-bold text-zinc-400 shrink-0">Type</div>
+                  <div className="w-[96px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Next Due</div>
+                  <div className="w-[96px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Scheduled</div>
                   <div className="w-[68px] shrink-0" />
                 </button>
 
