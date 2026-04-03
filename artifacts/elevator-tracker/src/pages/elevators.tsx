@@ -1033,7 +1033,7 @@ export default function Elevators() {
             options={customerOptions}
             placeholder="All Customers"
             searchPlaceholder="Search customers..."
-            width="w-[155px]"
+            width="w-[185px]"
           />
           <FilterCombobox
             value={selectedBuildingId}
