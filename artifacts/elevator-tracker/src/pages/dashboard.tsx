@@ -95,7 +95,9 @@ export default function Dashboard() {
     );
   }
 
-  const overdueItems = (attention ?? []).filter((i: any) => i.status === "OVERDUE");
+  const overdueItems = (attention ?? [])
+    .filter((i: any) => i.status === "OVERDUE")
+    .sort((a: any, b: any) => (a.nextDueDate ?? "").localeCompare(b.nextDueDate ?? ""));
 
   const todayStr = dayjs().format("YYYY-MM-DD");
   const in14Days = dayjs().add(14, "day").format("YYYY-MM-DD");
