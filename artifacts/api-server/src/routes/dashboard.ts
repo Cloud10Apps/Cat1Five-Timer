@@ -53,14 +53,14 @@ router.get("/summary", async (req, res) => {
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
       .where(and(baseCondition, sql`${inspectionsTable.scheduledDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
-    // avg(completion_date - scheduled_date)
+    // avg(completion_date - next_due_date) for COMPLETED inspections only
     db.select({
-      avg: sql<string>`AVG(${inspectionsTable.completionDate}::date - ${inspectionsTable.scheduledDate}::date)`,
+      avg: sql<string>`AVG(${inspectionsTable.completionDate}::date - ${inspectionsTable.nextDueDate}::date)`,
     })
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseCondition, sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.scheduledDate} IS NOT NULL`)),
+      .where(and(baseCondition, eq(inspectionsTable.status, "COMPLETED"), sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
   ]);
 
   const parseAvg = (val: string | null): number | null =>

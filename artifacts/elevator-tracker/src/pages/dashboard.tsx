@@ -159,7 +159,7 @@ export default function Dashboard() {
                 <div className="text-5xl font-black text-zinc-900">
                   {val === null ? "—" : val}
                 </div>
-                <div className="text-xs text-zinc-400 mt-1">{val !== null ? "from schedule to done" : "no data"}</div>
+                <div className="text-xs text-zinc-400 mt-1">{val !== null ? "due → completion (neg = early)" : "no data"}</div>
               </div>
             );
           })()}

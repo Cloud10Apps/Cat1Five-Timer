@@ -1,5 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/auth-provider";
@@ -16,7 +16,20 @@ import CalendarView from "@/pages/calendar";
 import Admin from "@/pages/admin";
 import Settings from "@/pages/settings";
 
-const queryClient = new QueryClient();
+let queryClient: QueryClient;
+queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].startsWith("/api/dashboard"),
+      });
+      queryClient.invalidateQueries({ queryKey: ["monthly-forecast"] });
+    },
+  }),
+});
 
 function Router() {
   return (
