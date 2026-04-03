@@ -174,7 +174,7 @@ export default function Buildings() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Buildings</h1>
-          <p className="text-muted-foreground">Manage your building locations.</p>
+          <p className="text-muted-foreground italic">Manage your building locations.</p>
         </div>
 
         <Dialog open={isAddOpen} onOpenChange={(open) => {
