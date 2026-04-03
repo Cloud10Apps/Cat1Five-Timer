@@ -191,4 +191,57 @@ router.get("/overdue-by-building", async (req, res) => {
   })));
 });
 
+router.get("/monthly-forecast", async (req, res) => {
+  const orgId = req.user!.organizationId;
+  const today = dayjs();
+  const start = today.subtract(2, "month").startOf("month");
+
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+  if (allowedIds !== null && allowedIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  const buildingCustomerFilter =
+    allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
+
+  const rows = await db
+    .select({
+      nextDueDate: inspectionsTable.nextDueDate,
+      scheduledDate: inspectionsTable.scheduledDate,
+      completionDate: inspectionsTable.completionDate,
+      status: inspectionsTable.status,
+    })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter));
+
+  const months: { key: string; label: string; due: number; scheduled: number; completed: number }[] = [];
+  for (let i = 0; i < 13; i++) {
+    const m = start.add(i, "month");
+    months.push({ key: m.format("YYYY-MM"), label: m.format("MMM YYYY"), due: 0, scheduled: 0, completed: 0 });
+  }
+
+  for (const row of rows) {
+    if (row.nextDueDate) {
+      const key = row.nextDueDate.substring(0, 7);
+      const bucket = months.find((m) => m.key === key);
+      if (bucket) bucket.due++;
+    }
+    if (row.scheduledDate && row.status === "SCHEDULED") {
+      const key = row.scheduledDate.substring(0, 7);
+      const bucket = months.find((m) => m.key === key);
+      if (bucket) bucket.scheduled++;
+    }
+    if (row.completionDate && row.status === "COMPLETED") {
+      const key = row.completionDate.substring(0, 7);
+      const bucket = months.find((m) => m.key === key);
+      if (bucket) bucket.completed++;
+    }
+  }
+
+  res.json(months);
+});
+
 export default router;

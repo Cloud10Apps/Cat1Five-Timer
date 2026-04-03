@@ -16,7 +16,6 @@ import {
   ArrowUpSquare,
   ClipboardCheck,
   Calendar,
-  BarChart3,
   Settings,
   LogOut,
   ShieldAlert,
@@ -39,7 +38,6 @@ export function Layout({ children }: LayoutProps) {
     { name: "Elevators",   href: "/elevators",   icon: ArrowUpSquare },
     { name: "Inspections", href: "/inspections", icon: ClipboardCheck },
     { name: "Calendar",    href: "/calendar",    icon: Calendar },
-    { name: "Reports",     href: "/reports",     icon: BarChart3 },
   ];
 
   const bottomNav: { name: string; href: string; icon: typeof Settings }[] = [];

@@ -13,7 +13,6 @@ import Buildings from "@/pages/buildings";
 import Elevators from "@/pages/elevators";
 import Inspections from "@/pages/inspections";
 import CalendarView from "@/pages/calendar";
-import Reports from "@/pages/reports";
 import Admin from "@/pages/admin";
 import Settings from "@/pages/settings";
 
@@ -43,7 +42,7 @@ function Router() {
         <ProtectedRoute><CalendarView /></ProtectedRoute>
       </Route>
       <Route path="/reports">
-        <ProtectedRoute><Reports /></ProtectedRoute>
+        <Redirect to="/dashboard" />
       </Route>
       <Route path="/settings">
         <ProtectedRoute><Settings /></ProtectedRoute>
