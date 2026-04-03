@@ -54,39 +54,41 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar className="border-r border-sidebar-border">
-          <SidebarHeader className="p-4 border-b border-sidebar-border">
-            <img src={logoSrc} alt="Cat1Five Timer" className="h-10 w-auto" />
+          <SidebarHeader className="px-4 py-5 border-b border-sidebar-border">
+            <img src={logoSrc} alt="Cat1Five Timer" className="h-16 w-auto" />
           </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
+          <SidebarContent className="py-3">
+            <SidebarMenu className="gap-1">
               {navigation.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.href}
                     tooltip={item.name}
+                    size="lg"
+                    className="h-14 px-4 rounded-lg text-base font-semibold"
                   >
-                    <Link href={item.href} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.name}</span>
+                    <Link href={item.href} className="flex items-center gap-4">
+                      <item.icon className="h-6 w-6 shrink-0" />
+                      <span className="text-base">{item.name}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="border-t border-sidebar-border p-4">
-            <div className="flex flex-col gap-2">
+          <SidebarFooter className="border-t border-sidebar-border px-4 py-5">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-col">
-                <span className="text-sm font-medium truncate text-sidebar-foreground">{user?.email}</span>
-                <span className="text-xs text-zinc-400">{user?.role}</span>
+                <span className="text-sm font-semibold truncate text-sidebar-foreground">{user?.email}</span>
+                <span className="text-xs text-zinc-400 uppercase tracking-wide mt-0.5">{user?.role}</span>
               </div>
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-2 text-zinc-400 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                className="w-full justify-start gap-3 text-zinc-400 hover:text-sidebar-foreground hover:bg-sidebar-accent h-11 text-base font-semibold"
                 onClick={logout}
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
                 Logout
               </Button>
             </div>
