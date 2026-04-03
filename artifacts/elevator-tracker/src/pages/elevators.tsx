@@ -1071,7 +1071,7 @@ export default function Elevators() {
             ]}
             placeholder="All Types"
             searchPlaceholder="Search types..."
-            width="w-[125px]"
+            width="w-[155px]"
           />
           <div className="h-4 w-px bg-zinc-200" />
           <FilterCombobox
