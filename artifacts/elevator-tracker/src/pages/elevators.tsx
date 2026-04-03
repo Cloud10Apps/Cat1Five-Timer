@@ -198,14 +198,14 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
-  // Map: elevatorId → most recent completionDate from any COMPLETED inspection
+  // Map: elevatorId → most recent lastInspectionDate across all inspections
   const lastCompletedByElevator = useMemo(() => {
     const map = new Map<number, string>();
     for (const insp of allInspections ?? []) {
-      if (!insp.elevatorId || !insp.completionDate) continue;
+      if (!insp.elevatorId || !insp.lastInspectionDate) continue;
       const current = map.get(insp.elevatorId);
-      if (!current || insp.completionDate > current) {
-        map.set(insp.elevatorId, insp.completionDate.slice(0, 10));
+      if (!current || insp.lastInspectionDate > current) {
+        map.set(insp.elevatorId, insp.lastInspectionDate.slice(0, 10));
       }
     }
     return map;
@@ -1030,7 +1030,7 @@ export default function Elevators() {
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Type</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Last Completed</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Last Inspection</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Next Due</span>
