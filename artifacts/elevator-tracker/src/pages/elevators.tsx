@@ -991,21 +991,11 @@ export default function Elevators() {
         </div>
       ) : (
         <div className="space-y-3">
-          {/* ── Column header bar ── */}
-          <div className="flex items-center px-4 py-1.5 rounded-md bg-zinc-50 border border-zinc-200 text-[11px] font-semibold text-zinc-400 uppercase tracking-wide select-none">
-            <div className="flex-1" />
-            <div className="w-[120px] text-center shrink-0">Status</div>
-            <div className="w-[62px] text-center shrink-0">Type</div>
-            <div className="w-[96px] text-right shrink-0 pr-1">Next Due</div>
-            <div className="w-[96px] text-right shrink-0 pr-1">Scheduled</div>
-            <div className="w-[68px] shrink-0" />
-          </div>
-
           {grouped.map((customer) => {
             const isCustomerCollapsed = collapsedCustomers.has(customer.customerId);
             return (
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
-                {/* Customer header */}
+                {/* Customer header — column labels live here in white */}
                 <button
                   className="w-full flex items-center gap-2 px-4 py-3 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left"
                   onClick={() => toggleCustomer(customer.customerId)}
@@ -1014,7 +1004,13 @@ export default function Elevators() {
                     ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
                     : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" />}
                   <Users className="h-4 w-4 shrink-0 text-zinc-400" />
-                  <span className="font-bold text-sm">{customer.customerName}</span>
+                  <span className="font-bold text-sm flex-1">{customer.customerName}</span>
+                  {/* Column headers — match the data row column widths exactly */}
+                  <div className="w-[120px] text-center text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0">Status</div>
+                  <div className="w-[62px] text-center text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0">Type</div>
+                  <div className="w-[96px] text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0 pr-1">Next Due</div>
+                  <div className="w-[96px] text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-400 shrink-0 pr-1">Scheduled</div>
+                  <div className="w-[68px] shrink-0" />
                 </button>
 
                 {!isCustomerCollapsed && (
