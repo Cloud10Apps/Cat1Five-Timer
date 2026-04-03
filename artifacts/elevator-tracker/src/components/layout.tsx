@@ -78,11 +78,11 @@ export function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <SidebarProvider style={{ "--sidebar-width": "22rem" } as React.CSSProperties}>
+    <SidebarProvider style={{ "--sidebar-width": "18rem" } as React.CSSProperties}>
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar className="border-r border-white/5">
-          {/* Logo — full bleed, no padding so it uses the full sidebar width */}
-          <SidebarHeader className="pt-5 px-0 pb-0 border-b border-white/5">
+          {/* Logo — centered with symmetric padding */}
+          <SidebarHeader className="pt-5 px-4 pb-0 border-b border-white/5">
             <img src={logoSrc} alt="Cat1Five Timer" className="w-full block" />
           </SidebarHeader>
 
