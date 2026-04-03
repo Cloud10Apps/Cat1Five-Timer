@@ -1006,10 +1006,10 @@ export default function Elevators() {
                   <Users className="h-4 w-4 shrink-0 text-zinc-400 ml-2" />
                   <span className="font-bold text-sm flex-1 ml-2">{customer.customerName}</span>
                   {/* Column headers — no gap so widths align exactly with data rows */}
-                  <div className="w-[120px] text-center text-sm font-bold text-zinc-400 shrink-0">Status</div>
-                  <div className="w-[62px] text-center text-sm font-bold text-zinc-400 shrink-0">Type</div>
-                  <div className="w-[96px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Next Due</div>
-                  <div className="w-[96px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Scheduled</div>
+                  <div className="w-[160px] text-center text-sm font-bold text-zinc-400 shrink-0">Status</div>
+                  <div className="w-[90px] text-center text-sm font-bold text-zinc-400 shrink-0">Type</div>
+                  <div className="w-[130px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Next Due</div>
+                  <div className="w-[130px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Scheduled</div>
                   <div className="w-[68px] shrink-0" />
                 </button>
 
@@ -1077,30 +1077,30 @@ export default function Elevators() {
                                               {elevator.stateId && <><span className="text-muted-foreground/40 text-[10px]">·</span><span className="text-xs text-muted-foreground">State {elevator.stateId}</span></>}
                                             </div>
                                           </div>
-                                          {/* Status — w-[120px] */}
-                                          <div className="w-[120px] flex justify-center shrink-0 overflow-hidden">
+                                          {/* Status — w-[160px] */}
+                                          <div className="w-[160px] flex justify-center shrink-0 overflow-hidden">
                                             {latestInsp
                                               ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
                                               : <span className="text-muted-foreground text-xs">—</span>}
                                           </div>
-                                          {/* Insp Type — w-[62px] compact label only */}
-                                          <div className="w-[62px] flex justify-center shrink-0 overflow-hidden">
+                                          {/* Insp Type — w-[90px] compact label only */}
+                                          <div className="w-[90px] flex justify-center shrink-0 overflow-hidden">
                                             {latestInsp ? (
                                               <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-muted-foreground text-xs">—</span>}
                                           </div>
-                                          {/* Next Due — w-[96px] */}
-                                          <div className="w-[96px] text-right shrink-0 pr-1 overflow-hidden">
+                                          {/* Next Due — w-[130px] */}
+                                          <div className="w-[130px] text-right shrink-0 pr-1 overflow-hidden">
                                             {due ? (
                                               <span className={`text-xs tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-muted-foreground"}`}>
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-xs text-muted-foreground">—</span>}
                                           </div>
-                                          {/* Scheduled — w-[96px] */}
-                                          <div className="w-[96px] text-right shrink-0 pr-1 overflow-hidden">
+                                          {/* Scheduled — w-[130px] */}
+                                          <div className="w-[130px] text-right shrink-0 pr-1 overflow-hidden">
                                             {scheduledDate ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-muted-foreground">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
