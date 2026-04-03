@@ -1006,10 +1006,10 @@ export default function Elevators() {
                   <Users className="h-4 w-4 shrink-0 text-zinc-400 ml-2" />
                   <span className="font-bold text-sm flex-1 ml-2">{customer.customerName}</span>
                   {/* Column headers — no gap so widths align exactly with data rows */}
-                  <div className="w-[160px] text-center text-sm font-bold text-zinc-400 shrink-0">Status</div>
-                  <div className="w-[90px] text-center text-sm font-bold text-zinc-400 shrink-0">Type</div>
-                  <div className="w-[130px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Next Due</div>
-                  <div className="w-[130px] text-right text-sm font-bold text-zinc-400 shrink-0 pr-1">Scheduled</div>
+                  <div className="w-[160px] text-center text-sm font-bold text-white shrink-0">Status</div>
+                  <div className="w-[90px] text-center text-sm font-bold text-white shrink-0">Type</div>
+                  <div className="w-[130px] text-right text-sm font-bold text-white shrink-0 pr-1">Next Due</div>
+                  <div className="w-[130px] text-right text-sm font-bold text-white shrink-0 pr-1">Scheduled</div>
                   <div className="w-[68px] shrink-0" />
                 </button>
 
