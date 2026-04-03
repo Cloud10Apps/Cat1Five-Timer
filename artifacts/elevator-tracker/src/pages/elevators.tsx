@@ -180,19 +180,25 @@ export default function Elevators() {
   );
 
   // Map: elevatorId → most-relevant inspection
-  // Priority: CAT5 before CAT1, then descending nextDueDate within same type
+  // Priority: active (non-COMPLETED) beats COMPLETED, then CAT5 beats CAT1,
+  // then descending nextDueDate within same tier+type
   const latestInspByElevator = useMemo(() => {
     const TYPE_PRIORITY: Record<string, number> = { CAT5: 0, CAT1: 1 };
+    const isActive = (insp: Inspection) => insp.status !== "COMPLETED";
+    const beats = (challenger: Inspection, champion: Inspection): boolean => {
+      const ca = isActive(challenger) ? 0 : 1;
+      const cc = isActive(champion) ? 0 : 1;
+      if (ca !== cc) return ca < cc;
+      const np = TYPE_PRIORITY[challenger.inspectionType ?? ""] ?? 99;
+      const cp = TYPE_PRIORITY[champion.inspectionType ?? ""] ?? 99;
+      if (np !== cp) return np < cp;
+      return (challenger.nextDueDate ?? "") > (champion.nextDueDate ?? "");
+    };
     const map = new Map<number, Inspection>();
     for (const insp of allInspections ?? []) {
       if (!insp.elevatorId) continue;
       const current = map.get(insp.elevatorId);
-      if (!current) { map.set(insp.elevatorId, insp); continue; }
-      const np = TYPE_PRIORITY[insp.inspectionType ?? ""] ?? 99;
-      const cp = TYPE_PRIORITY[current.inspectionType ?? ""] ?? 99;
-      if (np < cp || (np === cp && (insp.nextDueDate ?? "") > (current.nextDueDate ?? ""))) {
-        map.set(insp.elevatorId, insp);
-      }
+      if (!current || beats(insp, current)) map.set(insp.elevatorId, insp);
     }
     return map;
   }, [allInspections]);
