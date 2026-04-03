@@ -196,30 +196,15 @@ export default function Elevators() {
       return (challenger.nextDueDate ?? "") < (champion.nextDueDate ?? "");
     };
 
-    const beatsClosed = (challenger: Inspection, champion: Inspection): boolean => {
-      const np = TYPE_PRIORITY[challenger.inspectionType ?? ""] ?? 99;
-      const cp = TYPE_PRIORITY[champion.inspectionType ?? ""] ?? 99;
-      if (np !== cp) return np < cp;
-      return (challenger.nextDueDate ?? "") > (champion.nextDueDate ?? "");
-    };
-
     const openMap = new Map<number, Inspection>();
-    const closedMap = new Map<number, Inspection>();
 
     for (const insp of allInspections ?? []) {
-      if (!insp.elevatorId) continue;
-      if (isOpen(insp)) {
-        const cur = openMap.get(insp.elevatorId);
-        if (!cur || beatsOpen(insp, cur)) openMap.set(insp.elevatorId, insp);
-      } else {
-        const cur = closedMap.get(insp.elevatorId);
-        if (!cur || beatsClosed(insp, cur)) closedMap.set(insp.elevatorId, insp);
-      }
+      if (!insp.elevatorId || !isOpen(insp)) continue;
+      const cur = openMap.get(insp.elevatorId);
+      if (!cur || beatsOpen(insp, cur)) openMap.set(insp.elevatorId, insp);
     }
 
-    const result = new Map<number, Inspection>(closedMap);
-    for (const [id, insp] of openMap) result.set(id, insp);
-    return result;
+    return openMap;
   }, [allInspections]);
 
   // Map: elevatorId → most recent lastInspectionDate across all inspections
