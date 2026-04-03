@@ -44,7 +44,7 @@ router.get("/summary", async (req, res) => {
       .where(and(baseCondition, eq(inspectionsTable.status, status), dateFilter));
   };
 
-  // Overdue = not completed + nextDueDate in current year + past due today
+  // Overdue = all past-due non-completed, regardless of year
   const overdueQuery = db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
@@ -52,7 +52,6 @@ router.get("/summary", async (req, res) => {
     .where(and(
       baseCondition,
       ne(inspectionsTable.status, "COMPLETED"),
-      dueDateYearFilter,
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayStr}::date`,
     ));
 
@@ -197,7 +196,7 @@ router.get("/status-breakdown", async (req, res) => {
     return { status, count: Number(row.count) };
   }));
 
-  // Overdue = not completed + due in current year + past due today
+  // Overdue = all past-due non-completed, regardless of year
   const [overdueRow] = await db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
@@ -205,7 +204,6 @@ router.get("/status-breakdown", async (req, res) => {
     .where(and(
       baseC,
       ne(inspectionsTable.status, "COMPLETED"),
-      dueDateYearFilter,
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayBd}::date`,
     ));
 
@@ -214,7 +212,6 @@ router.get("/status-breakdown", async (req, res) => {
 
 router.get("/overdue-by-building", async (req, res) => {
   const orgId = req.user!.organizationId;
-  const currentYear = dayjs().year();
   const todayObd = dayjs().format("YYYY-MM-DD");
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
@@ -223,7 +220,6 @@ router.get("/overdue-by-building", async (req, res) => {
   const conditions: any[] = [
     eq(inspectionsTable.organizationId, orgId),
     ne(inspectionsTable.status, "COMPLETED"),
-    sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`,
     sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayObd}::date`,
   ];
   if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));
