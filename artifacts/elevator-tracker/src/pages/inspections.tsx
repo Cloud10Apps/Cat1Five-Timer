@@ -292,6 +292,7 @@ export default function Inspections() {
   const watchLastDate = form.watch("lastInspectionDate");
   const watchRecurrence = form.watch("recurrenceYears");
   const watchStatus = form.watch("status");
+  const watchScheduledDate = form.watch("scheduledDate");
   const nextDuePreview = watchLastDate && watchRecurrence 
     ? dayjs(watchLastDate).add(Number(watchRecurrence), 'year').format('YYYY-MM-DD')
     : "N/A";
@@ -302,6 +303,13 @@ export default function Inspections() {
       form.setValue("completionDate", "");
     }
   }, [watchStatus]);
+
+  // Auto-promote to SCHEDULED when a scheduled date is entered and status is NOT_STARTED
+  useEffect(() => {
+    if (watchScheduledDate && form.getValues("status") === "NOT_STARTED") {
+      form.setValue("status", "SCHEDULED");
+    }
+  }, [watchScheduledDate]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
