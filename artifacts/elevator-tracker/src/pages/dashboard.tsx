@@ -123,8 +123,8 @@ export default function Dashboard() {
             { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
             { label: "TOTAL ELEVATORS", value: summary?.totalElevators ?? 0 },
             { label: "INSPECTIONS DUE THIS MONTH", value: summary?.duethisMonth ?? 0 },
-            { label: "OVERDUE",         value: overdueCount, isAlert: true },
-            { label: "SCHEDULED",       value: summary?.scheduledCount ?? 0 },
+            { label: "SCHEDULED INSPECTIONS THIS MONTH", value: summary?.scheduledCount ?? 0 },
+            { label: "OVERDUE INSPECTIONS", value: overdueCount, isAlert: true },
           ].map((kpi, i) => (
             <div key={i} className={`p-6 flex flex-col justify-center ${kpi.isAlert ? "bg-red-50" : ""}`}>
               <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">

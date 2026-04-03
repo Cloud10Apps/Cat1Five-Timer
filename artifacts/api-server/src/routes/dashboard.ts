@@ -50,8 +50,8 @@ router.get("/summary", async (req, res) => {
   const [overdueCount] = await inspectionBase.where(
     and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, "OVERDUE"), buildingCustomerFilter)
   );
-  const [scheduledCount] = await inspectionBase.where(
-    and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, "SCHEDULED"), buildingCustomerFilter)
+  const [scheduledThisMonth] = await inspectionBase.where(
+    and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, "SCHEDULED"), gte(inspectionsTable.nextDueDate, monthStart), lte(inspectionsTable.nextDueDate, monthEnd), buildingCustomerFilter)
   );
   const [dueThisMonth] = await inspectionBase.where(
     and(eq(inspectionsTable.organizationId, orgId), gte(inspectionsTable.nextDueDate, monthStart), lte(inspectionsTable.nextDueDate, monthEnd), buildingCustomerFilter)
@@ -61,7 +61,7 @@ router.get("/summary", async (req, res) => {
     totalElevators: Number(elevatorCount.count),
     duethisMonth: Number(dueThisMonth.count),
     overdueCount: Number(overdueCount.count),
-    scheduledCount: Number(scheduledCount.count),
+    scheduledCount: Number(scheduledThisMonth.count),
     totalCustomers: Number(customerCount.count),
     totalBuildings: Number(buildingCount.count),
   });
