@@ -192,6 +192,8 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
                   <XAxis
                     type="number"
+                    allowDecimals={false}
+                    tickCount={6}
                     tick={{ fill: "#3f3f46", fontSize: 16 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
