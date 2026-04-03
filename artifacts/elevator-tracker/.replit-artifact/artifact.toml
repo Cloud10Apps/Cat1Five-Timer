@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Elevator Inspection Tracker"
+title = "Cat1Five-Timer"
 version = "1.0.0"
 id = "artifacts/elevator-tracker"
 router = "path"
