@@ -869,7 +869,7 @@ export default function Elevators() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4">
+      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 max-w-5xl">
         <div className="relative flex-1 w-full min-w-[200px] max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -990,7 +990,7 @@ export default function Elevators() {
           <p>No elevators found.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 max-w-5xl">
           {grouped.map((customer) => {
             const isCustomerCollapsed = collapsedCustomers.has(customer.customerId);
             return (
