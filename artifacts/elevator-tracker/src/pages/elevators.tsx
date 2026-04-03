@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, Fragment } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X, CalendarDays, Clock, ArrowRight } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X, CalendarDays, Clock, ArrowRight, ChevronDown, ChevronRight, Building as BuildingIcon, Users } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -116,6 +116,16 @@ export default function Elevators() {
   const [filterDueYear,  setFilterDueYear]  = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
+
+  // Collapsible group state
+  const [collapsedCustomers, setCollapsedCustomers] = useState<Set<number>>(new Set());
+  const [collapsedBuildings, setCollapsedBuildings] = useState<Set<number>>(new Set());
+  const toggleCustomer = (id: number) => setCollapsedCustomers(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
+  const toggleBuilding = (id: number) => setCollapsedBuildings(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
 
   // Inspection panel state (inside elevator dialog)
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
@@ -221,6 +231,29 @@ export default function Elevators() {
       return true;
     });
   }, [elevators, nextDueDateByElevator, filterDueMonth, filterDueYear]);
+
+  // Group filtered elevators: customer → building → elevator[]
+  const grouped = useMemo(() => {
+    type BuildingGroup = { buildingId: number; buildingName: string; elevators: NonNullable<typeof filteredElevators>[number][] };
+    type CustomerGroup = { customerId: number; customerName: string; buildings: BuildingGroup[] };
+    const customerMap = new Map<number, { customerName: string; buildingMap: Map<number, BuildingGroup> }>();
+    for (const el of filteredElevators ?? []) {
+      if (!customerMap.has(el.customerId)) {
+        customerMap.set(el.customerId, { customerName: el.customerName ?? "Unknown", buildingMap: new Map() });
+      }
+      const cust = customerMap.get(el.customerId)!;
+      if (!cust.buildingMap.has(el.buildingId)) {
+        cust.buildingMap.set(el.buildingId, { buildingId: el.buildingId, buildingName: el.buildingName ?? "Unknown", elevators: [] });
+      }
+      cust.buildingMap.get(el.buildingId)!.elevators.push(el);
+    }
+    const result: CustomerGroup[] = [];
+    for (const [customerId, { customerName, buildingMap }] of customerMap) {
+      const buildings = Array.from(buildingMap.values()).sort((a, b) => a.buildingName.localeCompare(b.buildingName));
+      result.push({ customerId, customerName, buildings });
+    }
+    return result.sort((a, b) => a.customerName.localeCompare(b.customerName));
+  }, [filteredElevators]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1050,13 +1083,11 @@ export default function Elevators() {
       </div>
 
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Elevator</TableHead>
-              <TableHead>Building</TableHead>
-              <TableHead>Customer</TableHead>
+              <TableHead className="pl-16">Elevator</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Bank</TableHead>
               <TableHead>Next Due</TableHead>
@@ -1067,13 +1098,13 @@ export default function Elevators() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   <Spinner />
                 </TableCell>
               </TableRow>
-            ) : filteredElevators?.length === 0 ? (
+            ) : grouped.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <ArrowUpSquare className="h-10 w-10 mb-2 opacity-20" />
                     <p>No elevators found.</p>
@@ -1081,96 +1112,147 @@ export default function Elevators() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredElevators?.map((elevator) => {
-                const counts = inspCountsByElevator.get(elevator.id) ?? {};
-                const STATUS_DOTS = [
-                  { key: "OVERDUE",     label: "Overdue",     dot: "bg-red-500",    text: "text-red-600"   },
-                  { key: "IN_PROGRESS", label: "In Progress", dot: "bg-amber-500",  text: "text-amber-600" },
-                  { key: "SCHEDULED",   label: "Scheduled",   dot: "bg-sky-500",    text: "text-sky-600"   },
-                  { key: "NOT_STARTED", label: "Not Started", dot: "bg-slate-400",  text: "text-slate-500" },
-                  { key: "COMPLETED",   label: "Completed",   dot: "bg-green-500",  text: "text-green-600" },
-                ] as const;
-                const activeBadges = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
+              grouped.map((customer) => {
+                const isCustomerCollapsed = collapsedCustomers.has(customer.customerId);
+                const totalElevators = customer.buildings.reduce((sum, b) => sum + b.elevators.length, 0);
                 return (
-                <TableRow key={elevator.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition-colors">
-                  <TableCell className="py-2 pl-0 pr-4">
-                    <div className="flex items-stretch gap-0">
-                      {/* amber accent bar */}
-                      <div className="w-1 rounded-full bg-amber-400/70 mr-3 shrink-0 self-stretch min-h-[2rem]" />
-                      <div className="min-w-0">
-                        <div className="text-lg font-bold tracking-tight leading-snug">{elevator.name}</div>
-                        {(elevator.internalId || elevator.stateId) && (
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            {elevator.internalId && (
-                              <span className="text-sm text-muted-foreground">Unit&nbsp;{elevator.internalId}</span>
-                            )}
-                            {elevator.internalId && elevator.stateId && (
-                              <span className="text-muted-foreground/40 text-sm">·</span>
-                            )}
-                            {elevator.stateId && (
-                              <span className="text-sm text-muted-foreground">State&nbsp;{elevator.stateId}</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2">{elevator.buildingName}</TableCell>
-                  <TableCell className="py-2">{elevator.customerName}</TableCell>
-                  <TableCell className="py-2 capitalize">{elevator.type}</TableCell>
-                  <TableCell className="py-2">{elevator.bank || "-"}</TableCell>
-                  <TableCell className="py-2">
-                    {(() => {
-                      const due = nextDueDateByElevator.get(elevator.id);
-                      if (!due) return <span className="text-muted-foreground">—</span>;
-                      const today = new Date().toISOString().slice(0, 10);
-                      const isOverdue = due < today;
-                      const isSoon = !isOverdue && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-                      return (
-                        <span className={
-                          isOverdue ? "text-red-600 font-semibold" :
-                          isSoon    ? "text-amber-600 font-medium" :
-                                      "text-foreground"
-                        }>
-                          {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
-                        </span>
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell className="py-2 text-center">
-                    {activeBadges.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 justify-center">
-                        {activeBadges.map(({ key, label, dot }) => (
-                          <span
-                            key={key}
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50 whitespace-nowrap"
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
-                            {counts[key]} {label}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      openEdit(elevator);
-                      setIsAddOpen(true);
-                    }}>
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(elevator.id)}
-                      disabled={deleteMutation.isPending}
+                  <Fragment key={customer.customerId}>
+                    {/* ── Customer header row ── */}
+                    <TableRow
+                      className="bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer select-none border-t-2 border-zinc-300 dark:border-zinc-600"
+                      onClick={() => toggleCustomer(customer.customerId)}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                      <TableCell colSpan={6} className="py-2.5">
+                        <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
+                          {isCustomerCollapsed
+                            ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500" />
+                            : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500" />}
+                          <Users className="h-4 w-4 shrink-0 text-zinc-400" />
+                          <span className="font-bold text-sm">{customer.customerName}</span>
+                          <span className="ml-auto text-xs font-normal text-zinc-400">
+                            {customer.buildings.length} {customer.buildings.length === 1 ? "building" : "buildings"} · {totalElevators} {totalElevators === 1 ? "elevator" : "elevators"}
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+
+                    {!isCustomerCollapsed && customer.buildings.map((building) => {
+                      const isBuildingCollapsed = collapsedBuildings.has(building.buildingId);
+                      return (
+                        <Fragment key={building.buildingId}>
+                          {/* ── Building header row ── */}
+                          <TableRow
+                            className="bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 cursor-pointer select-none"
+                            onClick={() => toggleBuilding(building.buildingId)}
+                          >
+                            <TableCell colSpan={6} className="py-2 pl-8">
+                              <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
+                                {isBuildingCollapsed
+                                  ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                                  : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" />}
+                                <BuildingIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                                <span className="font-semibold text-sm">{building.buildingName}</span>
+                                <span className="ml-auto text-xs font-normal text-zinc-400">
+                                  {building.elevators.length} {building.elevators.length === 1 ? "elevator" : "elevators"}
+                                </span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+
+                          {/* ── Elevator rows ── */}
+                          {!isBuildingCollapsed && building.elevators.map((elevator) => {
+                            const counts = inspCountsByElevator.get(elevator.id) ?? {};
+                            const STATUS_DOTS = [
+                              { key: "OVERDUE",     label: "Overdue",     dot: "bg-red-500"   },
+                              { key: "IN_PROGRESS", label: "In Progress", dot: "bg-amber-500" },
+                              { key: "SCHEDULED",   label: "Scheduled",   dot: "bg-sky-500"   },
+                              { key: "NOT_STARTED", label: "Not Started", dot: "bg-slate-400" },
+                              { key: "COMPLETED",   label: "Completed",   dot: "bg-green-500" },
+                            ] as const;
+                            const activeBadges = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
+                            return (
+                              <TableRow key={elevator.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition-colors">
+                                <TableCell className="py-2 pl-16 pr-4">
+                                  <div className="flex items-stretch gap-0">
+                                    <div className="w-1 rounded-full bg-amber-400/70 mr-3 shrink-0 self-stretch min-h-[2rem]" />
+                                    <div className="min-w-0">
+                                      <div className="text-base font-bold tracking-tight leading-snug">{elevator.name}</div>
+                                      {(elevator.internalId || elevator.stateId) && (
+                                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                          {elevator.internalId && (
+                                            <span className="text-sm text-muted-foreground">Unit&nbsp;{elevator.internalId}</span>
+                                          )}
+                                          {elevator.internalId && elevator.stateId && (
+                                            <span className="text-muted-foreground/40 text-sm">·</span>
+                                          )}
+                                          {elevator.stateId && (
+                                            <span className="text-sm text-muted-foreground">State&nbsp;{elevator.stateId}</span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-2 capitalize">{elevator.type}</TableCell>
+                                <TableCell className="py-2">{elevator.bank || "—"}</TableCell>
+                                <TableCell className="py-2">
+                                  {(() => {
+                                    const due = nextDueDateByElevator.get(elevator.id);
+                                    if (!due) return <span className="text-muted-foreground">—</span>;
+                                    const today = new Date().toISOString().slice(0, 10);
+                                    const isOverdue = due < today;
+                                    const isSoon = !isOverdue && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+                                    return (
+                                      <span className={
+                                        isOverdue ? "text-red-600 font-semibold" :
+                                        isSoon    ? "text-amber-600 font-medium" :
+                                                    "text-foreground"
+                                      }>
+                                        {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                                      </span>
+                                    );
+                                  })()}
+                                </TableCell>
+                                <TableCell className="py-2 text-center">
+                                  {activeBadges.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1 justify-center">
+                                      {activeBadges.map(({ key, label, dot }) => (
+                                        <span
+                                          key={key}
+                                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50 whitespace-nowrap"
+                                        >
+                                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+                                          {counts[key]} {label}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right space-x-2">
+                                  <Button variant="ghost" size="icon" onClick={() => {
+                                    openEdit(elevator);
+                                    setIsAddOpen(true);
+                                  }}>
+                                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(elevator.id)}
+                                    disabled={deleteMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </Fragment>
+                      );
+                    })}
+                  </Fragment>
                 );
               })
             )}
