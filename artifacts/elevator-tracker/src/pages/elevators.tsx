@@ -314,6 +314,11 @@ export default function Elevators() {
     defaultValues: { inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" },
   });
 
+  const inspCat5Form = useForm<InspectionFormValues>({
+    resolver: zodResolver(inspectionSchema),
+    defaultValues: { inspectionType: "CAT5", recurrenceYears: 5, status: "NOT_STARTED", notes: "" },
+  });
+
   const watchLastDate = inspForm.watch("lastInspectionDate");
   const watchRecurrence = inspForm.watch("recurrenceYears");
   const watchCompletionDate = inspForm.watch("completionDate");
@@ -321,6 +326,15 @@ export default function Elevators() {
   const watchInspStatus = inspForm.watch("status");
   const nextDuePreview = watchLastDate && watchRecurrence
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
+    : null;
+
+  const watchLastDateCat5 = inspCat5Form.watch("lastInspectionDate");
+  const watchRecurrenceCat5 = inspCat5Form.watch("recurrenceYears");
+  const watchCompletionDateCat5 = inspCat5Form.watch("completionDate");
+  const watchScheduledDateCat5 = inspCat5Form.watch("scheduledDate");
+  const watchInspStatusCat5 = inspCat5Form.watch("status");
+  const nextDuePreviewCat5 = watchLastDateCat5 && watchRecurrenceCat5
+    ? dayjs(watchLastDateCat5).add(Number(watchRecurrenceCat5), "year").format("YYYY-MM-DD")
     : null;
 
   useEffect(() => {
@@ -335,9 +349,21 @@ export default function Elevators() {
     }
   }, [watchCompletionDate]);
 
+  useEffect(() => {
+    if (watchScheduledDateCat5 && watchInspStatusCat5 === "NOT_STARTED") {
+      inspCat5Form.setValue("status", "SCHEDULED");
+    }
+  }, [watchScheduledDateCat5]);
+
+  useEffect(() => {
+    if (watchCompletionDateCat5) {
+      inspCat5Form.setValue("status", "COMPLETED");
+    }
+  }, [watchCompletionDateCat5]);
 
   const resetInspForm = () => {
     inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
+    inspCat5Form.reset({ inspectionType: "CAT5", recurrenceYears: 5, status: "NOT_STARTED", notes: "" });
     setEditingInspection(null);
   };
 
@@ -395,6 +421,26 @@ export default function Elevators() {
         }
       );
     }
+  };
+
+  const onSubmitBothInsp = async () => {
+    if (!editingElevator) return;
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator.id }), exact: false });
+    };
+    const cat1Data = inspForm.getValues();
+    const cat5Data = inspCat5Form.getValues();
+    let successCount = 0;
+    const onDone = () => { successCount++; if (successCount === 2) { invalidate(); toast({ title: "Both inspections created" }); } };
+    createInspMutation.mutate(
+      { data: { ...cat1Data, elevatorId: editingElevator.id, lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } },
+      { onSuccess: onDone, onError: () => toast({ title: "Failed to create CAT1 inspection", variant: "destructive" }) }
+    );
+    createInspMutation.mutate(
+      { data: { ...cat5Data, elevatorId: editingElevator.id, lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } },
+      { onSuccess: onDone, onError: () => toast({ title: "Failed to create CAT5 inspection", variant: "destructive" }) }
+    );
   };
 
   const confirmDeleteInsp = () => {
@@ -735,150 +781,170 @@ export default function Elevators() {
 
                   {/* ── Tab 2: Inspection ── */}
                   <TabsContent value="inspection">
-                    <Form {...inspForm}>
-                      <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Row 1: Type + Status */}
-                          <FormField
-                            control={inspForm.control}
-                            name="inspectionType"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Type</FormLabel>
+                    {editingInspection ? (
+                      /* ── EDIT MODE: single form ── */
+                      <Form {...inspForm}>
+                        <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField control={inspForm.control} name="inspectionType" render={({ field }) => (
+                              <FormItem><FormLabel>Type</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                  </FormControl>
+                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                   <SelectContent>
                                     <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
                                     <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
                                   </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={inspForm.control}
-                            name="status"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Status</FormLabel>
-                                <Select
-                                  value={field.value}
-                                  onValueChange={(val) => {
-                                    field.onChange(val);
-                                    if (val !== "COMPLETED") inspForm.setValue("completionDate", "");
-                                  }}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                  </FormControl>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={inspForm.control} name="status" render={({ field }) => (
+                              <FormItem><FormLabel>Status</FormLabel>
+                                <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val !== "COMPLETED") inspForm.setValue("completionDate", ""); }}>
+                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                   <SelectContent>
                                     <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                                     <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                                     <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                                     <SelectItem value="COMPLETED">Completed</SelectItem>
                                   </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={inspForm.control} name="lastInspectionDate" render={({ field }) => (
+                              <FormItem><FormLabel>Last Inspection Date</FormLabel>
+                                <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                <FormMessage /></FormItem>
+                            )} />
+                            <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
+                              <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                                <FormMessage /></FormItem>
+                            )} />
+                            {nextDuePreview && (
+                              <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                                Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreview}</strong>
+                              </div>
                             )}
-                          />
-
-                          {/* Row 2: Last Inspection Date + Recurrence */}
-                          <FormField
-                            control={inspForm.control}
-                            name="lastInspectionDate"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Last Inspection Date</FormLabel>
-                                <FormControl>
-                                  <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={inspForm.control}
-                            name="recurrenceYears"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Recurrence (Years)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" min="1" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Row 3: Calculated Next Due — spans full width */}
-                          {nextDuePreview && (
-                            <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                              Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreview}</strong>
+                            <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
+                              <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                                <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                <FormMessage /></FormItem>
+                            )} />
+                            <FormField control={inspForm.control} name="completionDate" render={({ field }) => (
+                              <FormItem><FormLabel>Completion Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                                <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                <FormMessage /></FormItem>
+                            )} />
+                          </div>
+                          <FormField control={inspForm.control} name="notes" render={({ field }) => (
+                            <FormItem><FormLabel>Notes</FormLabel>
+                              <FormControl><Textarea placeholder="Inspector notes, compliance details..." className="resize-none h-20" {...field} /></FormControl>
+                              <FormMessage /></FormItem>
+                          )} />
+                          <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold" disabled={updateInspMutation.isPending}>
+                            {updateInspMutation.isPending ? "Saving..." : "Save Inspection"}
+                          </Button>
+                        </form>
+                      </Form>
+                    ) : (
+                      /* ── CREATE MODE: two forms — CAT1 + CAT5 ── */
+                      <div className="space-y-6">
+                        {/* CAT1 section */}
+                        <div className="rounded-lg border border-zinc-200 p-4 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-white tracking-wide">CAT1</span>
+                            <span className="text-sm font-medium text-zinc-700">Annual Inspection</span>
+                          </div>
+                          <Form {...inspForm}>
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField control={inspForm.control} name="status" render={({ field }) => (
+                                <FormItem><FormLabel>Status</FormLabel>
+                                  <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val !== "COMPLETED") inspForm.setValue("completionDate", ""); }}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                                      <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                                    </SelectContent>
+                                  </Select><FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
+                                <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                  <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspForm.control} name="lastInspectionDate" render={({ field }) => (
+                                <FormItem><FormLabel>Last Inspection Date</FormLabel>
+                                  <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
+                                <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                                  <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              {nextDuePreview && (
+                                <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                                  Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreview}</strong>
+                                </div>
+                              )}
                             </div>
-                          )}
-
-                          {/* Row 4: Scheduled Date + Completion Date */}
-                          <FormField
-                            control={inspForm.control}
-                            name="scheduledDate"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
-                                <FormControl>
-                                  <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={inspForm.control}
-                            name="completionDate"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Completion Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
-                                <FormControl>
-                                  <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          </Form>
                         </div>
 
-                        {/* Notes — full width */}
-                        <FormField
-                          control={inspForm.control}
-                          name="notes"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Notes</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Inspector notes, compliance details..."
-                                  className="resize-none h-20"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {/* CAT5 section */}
+                        <div className="rounded-lg border border-amber-200 p-4 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white tracking-wide">CAT5</span>
+                            <span className="text-sm font-medium text-zinc-700">5-Year Inspection</span>
+                          </div>
+                          <Form {...inspCat5Form}>
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField control={inspCat5Form.control} name="status" render={({ field }) => (
+                                <FormItem><FormLabel>Status</FormLabel>
+                                  <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val !== "COMPLETED") inspCat5Form.setValue("completionDate", ""); }}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                                      <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                                    </SelectContent>
+                                  </Select><FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspCat5Form.control} name="recurrenceYears" render={({ field }) => (
+                                <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                  <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspCat5Form.control} name="lastInspectionDate" render={({ field }) => (
+                                <FormItem><FormLabel>Last Inspection Date</FormLabel>
+                                  <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspCat5Form.control} name="scheduledDate" render={({ field }) => (
+                                <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                                  <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              {nextDuePreviewCat5 && (
+                                <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                                  Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreviewCat5}</strong>
+                                </div>
+                              )}
+                            </div>
+                          </Form>
+                        </div>
+
                         <Button
-                          type="submit"
+                          type="button"
                           className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
-                          disabled={createInspMutation.isPending || updateInspMutation.isPending}
+                          disabled={createInspMutation.isPending}
+                          onClick={onSubmitBothInsp}
                         >
-                          {(createInspMutation.isPending || updateInspMutation.isPending)
-                            ? "Saving..."
-                            : editingInspection ? "Save Inspection" : "Create Inspection"}
+                          {createInspMutation.isPending ? "Creating..." : "Create Both Inspections"}
                         </Button>
-                      </form>
-                    </Form>
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               ) : (
