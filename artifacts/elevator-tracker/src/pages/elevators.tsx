@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/select";
 
 import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers } from "lucide-react";
+import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -159,6 +160,37 @@ export default function Elevators() {
     { query: { queryKey: getListBuildingsQueryKey({ customerId: customerIdFilter }) } }
   );
 
+  // Elevator options for the dropdown (from the API-filtered list, before client-side filters)
+  const elevatorOptions = useMemo(() => {
+    return [...(elevators ?? [])]
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  }, [elevators]);
+
+  // Filter combobox option arrays
+  const customerOptions = useMemo(() =>
+    (customers ?? []).map((c) => ({ value: c.id.toString(), label: c.name })),
+    [customers]);
+  const buildingOptions = useMemo(() =>
+    (buildings ?? []).map((b) => ({ value: b.id.toString(), label: b.name })),
+    [buildings]);
+  const bankFilterOptions = useMemo(() =>
+    bankOptions.map((b) => ({ value: b, label: b })),
+    [bankOptions]);
+  const elevatorFilterOptions = useMemo(() =>
+    elevatorOptions.map((el) => ({
+      value: el.id.toString(),
+      label: el.name + (el.unitId ? ` (${el.unitId})` : ""),
+    })),
+    [elevatorOptions]);
+  const MONTH_OPTIONS = [
+    { value: "01", label: "January" }, { value: "02", label: "February" },
+    { value: "03", label: "March" },   { value: "04", label: "April" },
+    { value: "05", label: "May" },     { value: "06", label: "June" },
+    { value: "07", label: "July" },    { value: "08", label: "August" },
+    { value: "09", label: "September"},{ value: "10", label: "October" },
+    { value: "11", label: "November" },{ value: "12", label: "December" },
+  ];
+
   // Inspections for the currently-edited elevator
   const { data: elevatorInspections, isLoading: inspLoading } = useListInspections(
     { elevatorId: editingElevator?.id },
@@ -237,11 +269,9 @@ export default function Elevators() {
     return Array.from(years).sort();
   }, [nextDueDateByElevator]);
 
-  // Elevator options for the dropdown (from the API-filtered list, before client-side filters)
-  const elevatorOptions = useMemo(() => {
-    return [...(elevators ?? [])]
-      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
-  }, [elevators]);
+  const yearFilterOptions = useMemo(() =>
+    dueYearOptions.map((y) => ({ value: y, label: y })),
+    [dueYearOptions]);
 
   // Client-side filter by elevator, due month, and due year
   const filteredElevators = useMemo(() => {
@@ -991,126 +1021,72 @@ export default function Elevators() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {/* All Customers */}
-        <Select value={selectedCustomerId} onValueChange={(val) => {
-          setSelectedCustomerId(val);
-          setSelectedBuildingId("all");
-          setSelectedBank("all");
-          setSelectedElevatorId("all");
-        }}>
-          <SelectTrigger className="h-8 text-xs w-[160px]">
-            <SelectValue placeholder="All Customers" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Customers</SelectItem>
-            {customers?.map((customer) => (
-              <SelectItem key={customer.id} value={customer.id.toString()}>
-                {customer.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* All Buildings */}
-        <Select value={selectedBuildingId} onValueChange={(val) => {
-          setSelectedBuildingId(val);
-          setSelectedBank("all");
-          setSelectedElevatorId("all");
-        }}>
-          <SelectTrigger className="h-8 text-xs w-[160px]">
-            <SelectValue placeholder="All Buildings" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Buildings</SelectItem>
-            {buildings?.map((building) => (
-              <SelectItem key={building.id} value={building.id.toString()}>
-                {building.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* All Banks */}
-        <Select
+        <FilterCombobox
+          value={selectedCustomerId}
+          onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+          options={customerOptions}
+          placeholder="All Customers"
+          searchPlaceholder="Search customers..."
+          width="w-[160px]"
+        />
+        <FilterCombobox
+          value={selectedBuildingId}
+          onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+          options={buildingOptions}
+          placeholder="All Buildings"
+          searchPlaceholder="Search buildings..."
+          width="w-[160px]"
+        />
+        <FilterCombobox
           value={selectedBank}
           onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
-          disabled={bankOptions.length === 0}
-        >
-          <SelectTrigger className="h-8 text-xs w-[140px]">
-            <SelectValue placeholder="All Banks" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Banks</SelectItem>
-            {bankOptions.map((bank) => (
-              <SelectItem key={bank} value={bank}>{bank}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* All Elevators */}
-        <Select
+          options={bankFilterOptions}
+          placeholder="All Banks"
+          searchPlaceholder="Search banks..."
+          disabled={bankFilterOptions.length === 0}
+          width="w-[140px]"
+        />
+        <FilterCombobox
           value={selectedElevatorId}
           onValueChange={setSelectedElevatorId}
-          disabled={elevatorOptions.length === 0}
-        >
-          <SelectTrigger className="h-8 text-xs w-[180px]">
-            <SelectValue placeholder="All Elevators" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Elevators</SelectItem>
-            {elevatorOptions.map((el) => (
-              <SelectItem key={el.id} value={el.id.toString()}>
-                {el.name}{el.unitId ? ` (${el.unitId})` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* All Types */}
-        <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="h-8 text-xs w-[130px]">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="traction">Traction</SelectItem>
-            <SelectItem value="hydraulic">Hydraulic</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
+          options={elevatorFilterOptions}
+          placeholder="All Elevators"
+          searchPlaceholder="Search elevators..."
+          disabled={elevatorFilterOptions.length === 0}
+          width="w-[180px]"
+        />
+        <FilterCombobox
+          value={selectedType}
+          onValueChange={setSelectedType}
+          options={[
+            { value: "traction",  label: "Traction" },
+            { value: "hydraulic", label: "Hydraulic" },
+            { value: "other",     label: "Other" },
+          ]}
+          placeholder="All Types"
+          searchPlaceholder="Search types..."
+          width="w-[130px]"
+        />
 
         {/* Divider */}
         <div className="h-6 w-px bg-zinc-200 mx-1" />
 
-        {/* Due Month */}
-        <Select value={filterDueMonth} onValueChange={setFilterDueMonth}>
-          <SelectTrigger className="h-8 text-xs w-[140px]">
-            <SelectValue placeholder="Due Month" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Due Month</SelectItem>
-            {[
-              ["01","January"],["02","February"],["03","March"],["04","April"],
-              ["05","May"],["06","June"],["07","July"],["08","August"],
-              ["09","September"],["10","October"],["11","November"],["12","December"],
-            ].map(([val, label]) => (
-              <SelectItem key={val} value={val}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Due Year */}
-        <Select value={filterDueYear} onValueChange={setFilterDueYear}>
-          <SelectTrigger className="h-8 text-xs w-[120px]">
-            <SelectValue placeholder="Due Year" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Due Year</SelectItem>
-            {dueYearOptions.map((y) => (
-              <SelectItem key={y} value={y}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FilterCombobox
+          value={filterDueMonth}
+          onValueChange={setFilterDueMonth}
+          options={MONTH_OPTIONS}
+          placeholder="Due Month"
+          searchPlaceholder="Search months..."
+          width="w-[140px]"
+        />
+        <FilterCombobox
+          value={filterDueYear}
+          onValueChange={setFilterDueYear}
+          options={yearFilterOptions}
+          placeholder="Due Year"
+          searchPlaceholder="Search years..."
+          width="w-[120px]"
+        />
 
         {/* Clear all filters */}
         {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
