@@ -138,18 +138,16 @@ export default function Dashboard() {
           <span className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">
             {currentYear} Inspection Activity
           </span>
-          {customerList.length > 1 && (
-            <select
-              value={selectedCustomerId ?? ""}
-              onChange={e => setSelectedCustomerId(e.target.value ? parseInt(e.target.value) : null)}
-              className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[200px]"
-            >
-              <option value="">All Customers</option>
-              {customerList.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          )}
+          <select
+            value={selectedCustomerId ?? ""}
+            onChange={e => setSelectedCustomerId(e.target.value ? parseInt(e.target.value) : null)}
+            className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[200px]"
+          >
+            <option value="">All Customers</option>
+            {customerList.map((c: any) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
 
         {/* ── KPI Strip ── */}
