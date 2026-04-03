@@ -432,7 +432,11 @@ export default function Elevators() {
     } else {
       const isValid = await form.trigger();
       if (!isValid) return;
-      const elevatorData = form.getValues();
+      const raw = form.getValues();
+      const elevatorData = {
+        ...raw,
+        buildingId: Number(raw.buildingId),
+      };
       try {
         const created = await createMutation.mutateAsync({ data: elevatorData });
         queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
