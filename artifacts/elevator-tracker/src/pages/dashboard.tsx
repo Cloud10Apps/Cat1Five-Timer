@@ -143,7 +143,7 @@ export default function Dashboard() {
             return (
               <div className={`p-6 flex flex-col justify-center ${isBad ? "bg-red-50" : isGood ? "bg-green-50" : ""}`}>
                 <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO SCHEDULE</div>
-                <div className={`text-3xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
+                <div className={`text-5xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
                   {val === null ? "—" : (val > 0 ? `+${val}` : `${val}`)}
                 </div>
                 {val !== null && <div className="text-xs text-zinc-400 mt-1">Days</div>}
@@ -156,7 +156,7 @@ export default function Dashboard() {
             return (
               <div className="p-6 flex flex-col justify-center">
                 <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO COMPLETE</div>
-                <div className="text-3xl font-black text-zinc-900">
+                <div className="text-5xl font-black text-zinc-900">
                   {val === null ? "—" : val}
                 </div>
                 {val !== null && <div className="text-xs text-zinc-400 mt-1">Days</div>}
