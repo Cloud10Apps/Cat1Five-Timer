@@ -227,11 +227,11 @@ export default function Dashboard() {
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader title={`Monthly Compliance Forecast — ${currentYear}`} />
             <div className="flex-1 overflow-x-auto">
-              <div style={{ width: Math.max(560, (forecast?.length ?? 12) * 72), height: 360 }} className="p-6">
+              <div style={{ width: Math.max(560, (forecast?.length ?? 12) * 72), height: 360 }} className="px-4 py-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={forecast}
-                    margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                    margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                     barCategoryGap="20%"
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
@@ -246,7 +246,6 @@ export default function Dashboard() {
                       height={75}
                     />
                     <YAxis
-                      width={160}
                       tick={{ fill: "#3f3f46", fontSize: 15 }}
                       axisLine={false}
                       tickLine={false}
