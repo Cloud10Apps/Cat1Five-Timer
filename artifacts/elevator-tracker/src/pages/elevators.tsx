@@ -329,7 +329,7 @@ export default function Elevators() {
   const allBuildingIds = useMemo(() => grouped.flatMap(c => c.buildings.map(b => b.buildingId)), [grouped]);
   const allBankKeys   = useMemo(() => grouped.flatMap(c =>
     c.buildings.flatMap(b =>
-      b.banks.filter(bk => bk.bankName !== "").map(bk => `${b.buildingId}::${bk.bankName}`)
+      b.banks.map(bk => `${b.buildingId}::${bk.bankName}`)
     )
   ), [grouped]);
 
@@ -1223,24 +1223,24 @@ export default function Elevators() {
                           {!isBuildingCollapsed && (
                             <div>
                               {building.banks.map((bank) => {
-                                const hasBankName = bank.bankName !== "";
                                 const bankKey = `${building.buildingId}::${bank.bankName}`;
-                                const isBankCollapsed = hasBankName && collapsedBanks.has(bankKey);
+                                const isBankCollapsed = collapsedBanks.has(bankKey);
+                                const bankLabel = bank.bankName !== "" ? `Bank: ${bank.bankName}` : "No Bank";
                                 return (
                                   <div key={bank.bankName}>
-                                    {/* Bank header — only when elevators have a bank assigned */}
-                                    {hasBankName && (
-                                      <button
-                                        className="w-full flex items-center gap-2 px-4 py-2 pl-12 bg-white border-l-[2px] border-zinc-200 hover:bg-zinc-50 transition-colors text-left border-b border-zinc-100"
-                                        onClick={() => toggleBank(bankKey)}
-                                      >
-                                        {isBankCollapsed
-                                          ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300" />
-                                          : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-300" />}
-                                        <Layers className="h-4 w-4 shrink-0 text-zinc-300" />
-                                        <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Bank: {bank.bankName}</span>
-                                      </button>
-                                    )}
+                                    {/* Bank header — always shown; "No Bank" for unassigned elevators */}
+                                    <button
+                                      className="w-full flex items-center gap-2 px-4 py-2 pl-12 bg-white border-l-[2px] border-zinc-200 hover:bg-zinc-50 transition-colors text-left border-b border-zinc-100"
+                                      onClick={() => toggleBank(bankKey)}
+                                    >
+                                      {isBankCollapsed
+                                        ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300" />
+                                        : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-300" />}
+                                      <Layers className={`h-4 w-4 shrink-0 ${bank.bankName !== "" ? "text-zinc-300" : "text-zinc-200"}`} />
+                                      <span className={`text-xs font-semibold uppercase tracking-wide ${bank.bankName !== "" ? "text-zinc-500" : "text-zinc-400 italic"}`}>
+                                        {bankLabel}
+                                      </span>
+                                    </button>
 
                                     {/* Elevator rows — fixed-width right columns for alignment */}
                                     {!isBankCollapsed && bank.elevators.map((elevator) => {
@@ -1251,7 +1251,7 @@ export default function Elevators() {
                                       const isSoon = !isOverdue && !!due && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                                       const scheduledDate = latestInsp?.scheduledDate?.slice(0, 10);
                                       const completionDate = lastCompletedByElevator.get(elevator.id);
-                                      const nameIndent = hasBankName ? "pl-24" : "pl-20";
+                                      const nameIndent = "pl-24";
                                       return (
                                         <div
                                           key={elevator.id}
