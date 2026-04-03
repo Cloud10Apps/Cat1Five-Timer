@@ -9,17 +9,13 @@ import {
   getGetOverdueByBuildingQueryKey,
 } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StatusBadge } from "@/components/status-badge";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Spinner } from "@/components/ui/spinner";
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  FileText,
-  AlertOctagon,
-  CalendarClock,
+  ShieldAlert,
 } from "lucide-react";
 import {
   BarChart,
@@ -34,6 +30,7 @@ import {
 } from "recharts";
 import dayjs from "dayjs";
 import { useLocation } from "wouter";
+import logoSrc from "@/assets/logo.svg";
 
 /* ─── colour helpers ─── */
 const getStatusColor = (status: string) => {
@@ -42,7 +39,7 @@ const getStatusColor = (status: string) => {
     case "OVERDUE":     return "#ef4444";
     case "IN_PROGRESS": return "#f59e0b";
     case "SCHEDULED":   return "#3b82f6";
-    default:            return "#94a3b8";
+    default:            return "#71717a";
   }
 };
 
@@ -58,299 +55,327 @@ async function fetchMonthlyForecast(): Promise<MonthBucket[]> {
   return res.json();
 }
 
-/* ─── Section card wrapper ─── */
-function Section({ title, icon: Icon, badge, children }: {
-  title: string;
-  icon?: React.ElementType;
-  badge?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+/* ─── Dark-themed status badge ─── */
+function DarkStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    OVERDUE:     "bg-red-500/10 text-red-400 border-red-500/20",
+    SCHEDULED:   "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    NOT_STARTED: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+    IN_PROGRESS: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    COMPLETED:   "bg-green-500/10 text-green-400 border-green-500/20",
+  };
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col overflow-hidden">
-      <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-3">
-        {Icon && <Icon className="h-4 w-4 text-zinc-400 shrink-0" />}
-        <h2 className="text-sm font-bold text-zinc-900 tracking-tight uppercase">{title}</h2>
-        {badge}
-      </div>
-      {children}
-    </div>
+    <span className={`px-2 py-1 text-xs font-medium rounded-sm border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
+      {status.replace(/_/g, " ")}
+    </span>
   );
 }
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
 
-  const { data: summary,  isLoading: l1 } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
-  const { data: attention, isLoading: l2 } = useGetAttentionInspections({ query: { queryKey: getGetAttentionInspectionsQueryKey() } });
-  const { data: breakdown, isLoading: l3 } = useGetStatusBreakdown({ query: { queryKey: getGetStatusBreakdownQueryKey() } });
-  const { data: overdueBuildings, isLoading: l4 } = useGetOverdueByBuilding({ query: { queryKey: getGetOverdueByBuildingQueryKey() } });
-  const { data: forecast,  isLoading: l5 } = useQuery({ queryKey: ["monthly-forecast"], queryFn: fetchMonthlyForecast });
+  const { data: summary,         isLoading: l1 } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
+  const { data: attention,       isLoading: l2 } = useGetAttentionInspections({ query: { queryKey: getGetAttentionInspectionsQueryKey() } });
+  const { data: breakdown,       isLoading: l3 } = useGetStatusBreakdown({ query: { queryKey: getGetStatusBreakdownQueryKey() } });
+  const { data: overdueBuildings,isLoading: l4 } = useGetOverdueByBuilding({ query: { queryKey: getGetOverdueByBuildingQueryKey() } });
+  const { data: forecast,        isLoading: l5 } = useQuery({ queryKey: ["monthly-forecast"], queryFn: fetchMonthlyForecast });
 
   if (l1 || l2 || l3 || l4 || l5) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
+      <div className="flex h-[50vh] items-center justify-center bg-zinc-950">
         <Spinner size="lg" />
       </div>
     );
   }
 
-  const overdueCount  = summary?.overdueCount ?? 0;
-  const isAllClear    = overdueCount === 0;
-  const overdueItems  = attention?.filter((i) => i.status === "OVERDUE") ?? [];
+  const overdueCount = summary?.overdueCount ?? 0;
+  const isAllClear   = overdueCount === 0;
+  const overdueItems = attention?.filter((i) => i.status === "OVERDUE") ?? [];
 
-  /* upcoming = next 30 days, not overdue */
   const todayStr = dayjs().format("YYYY-MM-DD");
+  const in30Str  = dayjs().add(30, "day").format("YYYY-MM-DD");
   const upcoming = attention?.filter(
-    (i) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr
+    (i) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in30Str
   ) ?? [];
 
+  const statusChartData = (breakdown ?? []).map((b) => ({
+    name:  b.status.replace(/_/g, " "),
+    value: b.count,
+    color: getStatusColor(b.status),
+  }));
+
   return (
-    <div className="flex flex-col min-h-full -m-6 lg:-m-8">
+    <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-950 text-zinc-100 font-sans selection:bg-amber-500/30">
 
-      {/* ── Hero Alert Banner ── */}
-      <div className={`w-full py-6 px-8 flex items-center shadow-md ${isAllClear ? "bg-green-600" : "bg-red-600"}`}>
-        <div className="flex items-start gap-4 flex-1">
-          {isAllClear ? (
-            <CheckCircle2 className="h-12 w-12 text-green-200 shrink-0" />
-          ) : (
-            <AlertTriangle className="h-12 w-12 text-red-200 shrink-0" />
-          )}
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tight">
-              {isAllClear ? "All Systems Go" : `${overdueCount} Overdue Inspection${overdueCount !== 1 ? "s" : ""}`}
-            </h1>
-            <p className={`text-sm mt-1 font-medium ${isAllClear ? "text-green-100" : "text-red-100"}`}>
-              {isAllClear
-                ? "All elevators are fully compliant and up to date."
-                : "Immediate attention required. These elevators are past their compliance deadline."}
-            </p>
-          </div>
-        </div>
-        {!isAllClear && (
-          <div className="ml-auto pl-4">
-            <button
-              onClick={() => setLocation("/inspections")}
-              className="bg-white text-red-700 font-bold text-sm px-5 py-2.5 rounded-lg shadow-sm hover:bg-red-50 transition-all flex items-center gap-1.5"
-            >
-              View All Overdue <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
+      {/* ── Top status line ── */}
+      <div className={`h-1.5 w-full shrink-0 ${isAllClear ? "bg-green-500" : "bg-red-500"}`} />
 
-      {/* ── Stats Strip ── */}
-      <div className="bg-white border-b border-zinc-200 px-8 py-5 flex items-center shadow-sm flex-wrap gap-6">
-        {[
-          { label: "Total Elevators",  value: summary?.totalElevators ?? 0,  color: "text-zinc-900" },
-          { label: "Due This Month",   value: summary?.duethisMonth ?? 0,    color: "text-zinc-900" },
-          { label: "Overdue",          value: overdueCount,                   color: "text-red-600"  },
-          { label: "Scheduled",        value: summary?.scheduledCount ?? 0,  color: "text-zinc-900" },
-          { label: "Total Buildings",  value: summary?.totalBuildings ?? 0,  color: "text-zinc-900" },
-          { label: "Total Customers",  value: summary?.totalCustomers ?? 0,  color: "text-zinc-900" },
-        ].map((stat, i, arr) => (
-          <div key={stat.label} className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-[11px] uppercase tracking-[0.15em] text-zinc-500 font-bold mb-1">{stat.label}</span>
-              <span className={`text-3xl font-black leading-none ${stat.color}`}>{stat.value}</span>
+      <div className="flex-1 p-6 md:p-8 space-y-8">
+
+        {/* ── Header ── */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <img src={logoSrc} alt="Cat1Five Timer" className="h-14 rounded-sm" />
+
+          <div className="flex items-center gap-3">
+            {!isAllClear && (
+              <button
+                onClick={() => setLocation("/inspections")}
+                className="text-xs font-medium px-3 py-1.5 rounded border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors flex items-center gap-1"
+              >
+                View All <ChevronRight className="h-3 w-3" />
+              </button>
+            )}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm border ${
+              isAllClear
+                ? "bg-green-500/10 border-green-500/20 text-green-400"
+                : "bg-red-500/10 border-red-500/20 text-red-400"
+            }`}>
+              {isAllClear ? (
+                <><CheckCircle2 className="w-4 h-4" /><span>All Systems Go</span></>
+              ) : (
+                <><ShieldAlert className="w-4 h-4" /><span>{overdueCount} Inspection{overdueCount !== 1 ? "s" : ""} Overdue</span></>
+              )}
             </div>
-            {i < arr.length - 1 && <div className="w-px h-10 bg-zinc-200" />}
           </div>
-        ))}
-      </div>
+        </header>
 
-      {/* ── Main Content ── */}
-      <div className="flex-1 p-8 bg-zinc-50 space-y-6">
-
-        {/* Row 1: Attention table + Status chart */}
-        <div className="grid grid-cols-7 gap-6">
-          <div className="col-span-4">
-            <Section
-              title="Inspections Requiring Attention"
-              icon={AlertTriangle}
-              badge={
-                overdueItems.length > 0 ? (
-                  <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700">
-                    {overdueItems.length} OVERDUE
-                  </span>
-                ) : undefined
-              }
-            >
-              <div className="overflow-auto">
-                <Table>
-                  <TableHeader className="bg-zinc-50/80">
-                    <TableRow className="hover:bg-transparent border-b-zinc-200">
-                      {["Elevator", "Building", "Due Date", "Status"].map((h) => (
-                        <TableHead key={h} className="font-semibold text-zinc-500 h-10 text-xs uppercase tracking-wider">{h}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(!attention || attention.length === 0) ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">No inspections requiring immediate attention.</TableCell>
-                      </TableRow>
-                    ) : attention.map((insp) => (
-                      <TableRow key={insp.id} className="border-b-zinc-100 hover:bg-zinc-50/50">
-                        <TableCell className="font-bold text-zinc-900">{insp.elevatorName}</TableCell>
-                        <TableCell className="text-zinc-600 font-medium">{insp.buildingName}</TableCell>
-                        <TableCell>
-                          <span className={dayjs(insp.nextDueDate).isBefore(dayjs()) ? "text-red-600 font-bold" : "text-zinc-600 font-medium"}>
-                            {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
-                          </span>
-                        </TableCell>
-                        <TableCell><StatusBadge status={insp.status} /></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Section>
-          </div>
-
-          <div className="col-span-3">
-            <Section title="Inspections by Status" icon={FileText}>
-              <div className="p-4 h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={breakdown} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                    <XAxis
-                      dataKey="status"
-                      tick={{ fontSize: 10, fill: "#71717a", fontWeight: 600 }}
-                      tickFormatter={(v) => v.replace("_", " ")}
-                      axisLine={false} tickLine={false} dy={8}
-                    />
-                    <YAxis tick={{ fontSize: 10, fill: "#71717a" }} axisLine={false} tickLine={false} dx={-6} />
-                    <Tooltip
-                      cursor={{ fill: "#f4f4f5" }}
-                      contentStyle={{ borderRadius: "8px", border: "1px solid #e4e4e7", fontSize: 13, fontWeight: 500 }}
-                    />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={48}>
-                      {breakdown?.map((entry, i) => (
-                        <Cell key={i} fill={getStatusColor(entry.status)} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Section>
-          </div>
-        </div>
-
-        {/* Row 2: Overdue Buildings + Upcoming 30 days */}
-        <div className="grid grid-cols-2 gap-6">
-          <Section title="Highest Risk Buildings (Overdue)" icon={AlertOctagon}>
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader className="bg-zinc-50/80">
-                  <TableRow className="hover:bg-transparent border-b-zinc-200">
-                    <TableHead className="font-semibold text-zinc-500 h-10 text-xs uppercase tracking-wider">Building</TableHead>
-                    <TableHead className="font-semibold text-zinc-500 h-10 text-xs uppercase tracking-wider">Customer</TableHead>
-                    <TableHead className="font-semibold text-zinc-500 h-10 text-xs uppercase tracking-wider text-right">Overdue</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {overdueBuildings?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8 text-zinc-400 text-sm">No overdue inspections!</TableCell>
-                    </TableRow>
-                  ) : overdueBuildings?.map((item) => (
-                    <TableRow key={item.buildingId} className="border-b-zinc-100 hover:bg-zinc-50/50">
-                      <TableCell className="font-bold text-zinc-900">{item.buildingName}</TableCell>
-                      <TableCell className="text-zinc-600">{item.customerName}</TableCell>
-                      <TableCell className="text-right">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-700 font-black text-sm">
-                          {item.overdueCount}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        {/* ── KPI Strip ── */}
+        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-zinc-800 border border-zinc-800 rounded-lg bg-zinc-900/50 overflow-hidden">
+          {[
+            { label: "TOTAL ELEVATORS", value: summary?.totalElevators ?? 0 },
+            { label: "DUE THIS MONTH",  value: summary?.duethisMonth ?? 0 },
+            { label: "OVERDUE",         value: overdueCount, isAlert: true },
+            { label: "SCHEDULED",       value: summary?.scheduledCount ?? 0 },
+            { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
+            { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
+          ].map((kpi, i) => (
+            <div key={i} className="p-6 flex flex-col justify-between hover:bg-zinc-800/50 transition-colors">
+              <span className="text-zinc-500 text-xs font-semibold tracking-wider mb-2">{kpi.label}</span>
+              <span className={`text-4xl font-light tracking-tight ${kpi.isAlert && overdueCount > 0 ? "text-red-500" : "text-white"}`}>
+                {kpi.value}
+              </span>
             </div>
-          </Section>
+          ))}
+        </section>
 
-          <Section title="Upcoming Inspections — Next 30 Days" icon={CalendarClock}>
-            <div className="overflow-auto max-h-[320px]">
-              <Table>
-                <TableHeader className="bg-zinc-50/80 sticky top-0 z-10">
-                  <TableRow className="hover:bg-transparent border-b-zinc-200">
-                    {["Elevator", "Building", "Type", "Due Date", "Status"].map((h) => (
-                      <TableHead key={h} className="font-semibold text-zinc-500 h-10 text-xs uppercase tracking-wider">{h}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {upcoming.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-zinc-400 text-sm">No upcoming inspections in the next 30 days.</TableCell>
-                    </TableRow>
-                  ) : upcoming.map((insp) => (
-                    <TableRow key={insp.id} className="border-b-zinc-100 hover:bg-zinc-50/50">
-                      <TableCell className="font-bold text-zinc-900">{insp.elevatorName}</TableCell>
-                      <TableCell className="text-zinc-600">{insp.buildingName}</TableCell>
-                      <TableCell><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
-                      <TableCell className="text-zinc-700 font-medium">
-                        {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
-                      </TableCell>
-                      <TableCell><StatusBadge status={insp.status} /></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Section>
-        </div>
+        {/* ── Charts Row ── */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* Row 3: Monthly Forecast — scrollable */}
-        <Section title="Monthly Inspection Forecast" icon={CalendarClock}>
-          <div className="px-6 pt-2 pb-1 flex items-center gap-6 text-xs font-semibold text-zinc-500 border-b border-zinc-100">
-            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-zinc-800" />Due</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-blue-500" />Scheduled</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-green-500" />Completed</span>
-            <span className="ml-auto text-zinc-400 italic">Scroll to see all months →</span>
-          </div>
-          <div className="overflow-x-auto">
-            <div style={{ width: Math.max(900, (forecast?.length ?? 13) * 90) }} className="h-[300px] px-4 py-4">
+          {/* Status Distribution — horizontal bar */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col h-[380px]">
+            <h2 className="text-xs font-semibold tracking-wider text-zinc-400 uppercase mb-6 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
+              Current Status Distribution
+            </h2>
+            <div className="flex-1 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={forecast}
-                  margin={{ top: 10, right: 20, left: -10, bottom: 5 }}
-                  barCategoryGap="25%"
-                  barGap={3}
+                  data={statusChartData}
+                  layout="vertical"
+                  margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 11, fill: "#71717a", fontWeight: 600 }}
-                    axisLine={false}
-                    tickLine={false}
-                    dy={8}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#27272a" />
+                  <XAxis type="number" hide />
                   <YAxis
-                    tick={{ fontSize: 11, fill: "#71717a" }}
+                    dataKey="name"
+                    type="category"
                     axisLine={false}
                     tickLine={false}
-                    dx={-6}
-                    allowDecimals={false}
+                    tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                    width={90}
                   />
                   <Tooltip
-                    cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid #e4e4e7",
-                      fontSize: 13,
-                      fontWeight: 500,
-                    }}
+                    cursor={{ fill: "#27272a", opacity: 0.4 }}
+                    contentStyle={{ backgroundColor: "#18181b", borderColor: "#3f3f46", color: "#f4f4f5", borderRadius: "6px" }}
+                    itemStyle={{ color: "#f4f4f5" }}
                   />
-                  <Bar dataKey="due"       name="Due"       fill="#18181b" radius={[3, 3, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="scheduled" name="Scheduled" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="completed" name="Completed" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                    {statusChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
-        </Section>
 
+          {/* 13-Month Forecast */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col h-[380px]">
+            <h2 className="text-xs font-semibold tracking-wider text-zinc-400 uppercase mb-6 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
+              13-Month Compliance Forecast
+            </h2>
+            <div className="flex-1 overflow-x-auto">
+              <div style={{ width: Math.max(560, (forecast?.length ?? 13) * 72), height: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={forecast}
+                    margin={{ top: 10, right: 4, left: -20, bottom: 0 }}
+                    barCategoryGap="25%"
+                    barGap={2}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                    <XAxis
+                      dataKey="label"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#a1a1aa", fontSize: 11 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#a1a1aa", fontSize: 11 }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "#27272a", opacity: 0.4 }}
+                      contentStyle={{ backgroundColor: "#18181b", borderColor: "#3f3f46", color: "#f4f4f5", borderRadius: "6px" }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: "12px", paddingTop: "10px", color: "#a1a1aa" }}
+                    />
+                    <Bar dataKey="due"       name="Total Due"  fill="#3f3f46" radius={[2, 2, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="scheduled" name="Scheduled"  fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="completed" name="Completed"  fill="#22c55e" radius={[2, 2, 0, 0]} maxBarSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Tables Grid — 3 columns ── */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Requiring Attention */}
+          <div className="bg-zinc-900 border border-red-900/40 rounded-lg overflow-hidden shadow-[0_0_20px_rgba(239,68,68,0.04)]">
+            <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+              <h3 className="text-sm font-semibold text-zinc-200">Requiring Attention</h3>
+              {overdueItems.length > 0 && (
+                <span className="ml-auto text-[11px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-sm">
+                  {overdueItems.length} OVERDUE
+                </span>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="text-xs text-zinc-500 uppercase">
+                    <th className="px-4 py-3 font-medium">Unit</th>
+                    <th className="px-4 py-3 font-medium">Building</th>
+                    <th className="px-4 py-3 font-medium">Due</th>
+                    <th className="px-4 py-3 font-medium text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/50">
+                  {(!attention || attention.length === 0) ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-zinc-500 text-xs">
+                        No inspections requiring attention.
+                      </td>
+                    </tr>
+                  ) : attention.map((insp) => (
+                    <tr key={insp.id} className="hover:bg-zinc-800/30 transition-colors">
+                      <td className="px-4 py-3 font-medium text-zinc-300 text-xs">{insp.elevatorName}</td>
+                      <td className="px-4 py-3 text-zinc-400 text-xs">{insp.buildingName}</td>
+                      <td className={`px-4 py-3 font-medium text-xs ${dayjs(insp.nextDueDate).isBefore(dayjs()) ? "text-red-400" : "text-zinc-400"}`}>
+                        {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DarkStatusBadge status={insp.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Highest Risk Buildings */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="p-4 border-b border-zinc-800">
+              <h3 className="text-sm font-semibold text-zinc-200">Highest Risk Buildings</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="text-xs text-zinc-500 uppercase">
+                    <th className="px-4 py-3 font-medium">Building</th>
+                    <th className="px-4 py-3 font-medium">Customer</th>
+                    <th className="px-4 py-3 font-medium text-right">Overdue</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/50">
+                  {(!overdueBuildings || overdueBuildings.length === 0) ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-zinc-500 text-xs">
+                        No overdue inspections!
+                      </td>
+                    </tr>
+                  ) : overdueBuildings.map((item) => (
+                    <tr key={item.buildingId} className="hover:bg-zinc-800/30 transition-colors">
+                      <td className="px-4 py-3 font-medium text-zinc-300 text-xs">{item.buildingName}</td>
+                      <td className="px-4 py-3 text-zinc-400 text-xs">{item.customerName}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500/10 text-red-400 text-xs font-bold border border-red-500/20">
+                          {item.overdueCount}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Upcoming — 30 days */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="p-4 border-b border-zinc-800">
+              <h3 className="text-sm font-semibold text-zinc-200">Upcoming — Next 30 Days</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="text-xs text-zinc-500 uppercase">
+                    <th className="px-4 py-3 font-medium">Unit</th>
+                    <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium">Due</th>
+                    <th className="px-4 py-3 font-medium text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/50">
+                  {upcoming.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-zinc-500 text-xs">
+                        No upcoming inspections in 30 days.
+                      </td>
+                    </tr>
+                  ) : upcoming.map((insp) => (
+                    <tr key={insp.id} className="hover:bg-zinc-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-zinc-300 text-xs">{insp.elevatorName}</div>
+                        <div className="text-[11px] text-zinc-500">{insp.buildingName}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <InspectionTypeBadge type={insp.inspectionType} />
+                      </td>
+                      <td className="px-4 py-3 text-zinc-400 text-xs">
+                        {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DarkStatusBadge status={insp.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
       </div>
     </div>
   );
