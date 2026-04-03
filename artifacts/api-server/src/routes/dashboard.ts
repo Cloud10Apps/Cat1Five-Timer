@@ -9,12 +9,20 @@ const router = Router();
 
 router.use(requireAuth);
 
+function getEffectiveIds(allowedIds: number[] | null, customerIdParam: number | null): number[] | null {
+  if (customerIdParam === null) return allowedIds;
+  if (allowedIds === null) return [customerIdParam];
+  return allowedIds.includes(customerIdParam) ? [customerIdParam] : [];
+}
+
 router.get("/summary", async (req, res) => {
   const orgId = req.user!.organizationId;
+  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
+  const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
 
-  if (allowedIds !== null && allowedIds.length === 0) {
+  if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json({
       notStartedCount: 0, scheduledCount: 0, inProgressCount: 0,
       completedCount: 0, overdueCount: 0,
@@ -26,7 +34,7 @@ router.get("/summary", async (req, res) => {
   const currentYear = dayjs().year();
   const todayStr = dayjs().format("YYYY-MM-DD");
 
-  const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
+  const buildingCustomerFilter = effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
   const baseCondition = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
 
   // NOT STARTED: status = NOT_STARTED AND nextDueDate in current year
@@ -141,9 +149,11 @@ router.get("/attention", async (req, res) => {
   const today = dayjs();
   const todayStr = today.format("YYYY-MM-DD");
   const currentYear = today.year();
+  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
-  if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
+  const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
+  if (effectiveIds !== null && effectiveIds.length === 0) { res.json([]); return; }
 
   // Include: (a) all past-due non-completed from any year (overdue),
   //          (b) all non-completed inspections due in the current year
@@ -155,7 +165,7 @@ router.get("/attention", async (req, res) => {
       OR EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}
     )`,
   ];
-  if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));
+  if (effectiveIds !== null) conditions.push(inArray(customersTable.id, effectiveIds));
 
   const rows = await db
     .select({
@@ -212,14 +222,16 @@ router.get("/status-breakdown", async (req, res) => {
   const orgId = req.user!.organizationId;
   const currentYear = dayjs().year();
   const todayBd = dayjs().format("YYYY-MM-DD");
+  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
-  if (allowedIds !== null && allowedIds.length === 0) {
+  const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
+  if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"].map(s => ({ status: s, count: 0 })));
     return;
   }
 
-  const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
+  const buildingCustomerFilter = effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
   const baseC = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
 
   const dueDateYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`;
@@ -307,15 +319,17 @@ router.get("/monthly-forecast", async (req, res) => {
   const orgId = req.user!.organizationId;
   const today = dayjs();
   const start = today.startOf("year");
+  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
-  if (allowedIds !== null && allowedIds.length === 0) {
+  const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
+  if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([]);
     return;
   }
 
   const buildingCustomerFilter =
-    allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
+    effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
 
   const rows = await db
     .select({

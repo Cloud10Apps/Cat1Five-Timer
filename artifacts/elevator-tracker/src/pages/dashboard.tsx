@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -36,11 +37,18 @@ const getStatusColor = (status: string) => {
 /* ─── dashboard API fetchers ─── */
 type MonthBucket = { key: string; label: string; due: number; scheduled: number; completed: number };
 
-function dashboardFetch(path: string) {
+function dashboardFetch(path: string, customerId?: number | null) {
   const token = localStorage.getItem("token");
-  return fetch(`/api/dashboard/${path}`, {
+  const qs = customerId ? `?customerId=${customerId}` : "";
+  return fetch(`/api/dashboard/${path}${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   }).then(r => { if (!r.ok) throw new Error(`Failed: ${path}`); return r.json(); });
+}
+
+function customersFetch() {
+  const token = localStorage.getItem("token");
+  return fetch("/api/customers", { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => { if (!r.ok) throw new Error("Failed: customers"); return r.json(); });
 }
 
 /* ─── Light-themed status badge ─── */
@@ -70,21 +78,28 @@ function SectionHeader({ title, badge }: { title: string; badge?: React.ReactNod
 }
 
 export default function Dashboard() {
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+
+  const { data: customers } = useQuery({
+    queryKey: ["/api/customers"],
+    queryFn: customersFetch,
+  });
+
   const { data: summary,   isLoading: l1 } = useQuery({
-    queryKey: ["/api/dashboard/summary"],
-    queryFn:  () => dashboardFetch("summary"),
+    queryKey: ["/api/dashboard/summary", selectedCustomerId],
+    queryFn:  () => dashboardFetch("summary", selectedCustomerId),
   });
   const { data: attention, isLoading: l2 } = useQuery({
-    queryKey: ["/api/dashboard/attention"],
-    queryFn:  () => dashboardFetch("attention"),
+    queryKey: ["/api/dashboard/attention", selectedCustomerId],
+    queryFn:  () => dashboardFetch("attention", selectedCustomerId),
   });
   const { data: breakdown, isLoading: l3 } = useQuery({
-    queryKey: ["/api/dashboard/status-breakdown"],
-    queryFn:  () => dashboardFetch("status-breakdown"),
+    queryKey: ["/api/dashboard/status-breakdown", selectedCustomerId],
+    queryFn:  () => dashboardFetch("status-breakdown", selectedCustomerId),
   });
   const { data: forecast,  isLoading: l4 } = useQuery({
-    queryKey: ["monthly-forecast"],
-    queryFn:  () => dashboardFetch("monthly-forecast"),
+    queryKey: ["monthly-forecast", selectedCustomerId],
+    queryFn:  () => dashboardFetch("monthly-forecast", selectedCustomerId),
   });
 
   if (l1 || l2 || l3 || l4) {
@@ -101,7 +116,6 @@ export default function Dashboard() {
 
   const todayStr = dayjs().format("YYYY-MM-DD");
   const in14Days = dayjs().add(14, "day").format("YYYY-MM-DD");
-  // Non-overdue, non-completed inspections due in the next 14 days
   const upcoming = (attention ?? []).filter(
     (i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in14Days
   ).sort((a: any, b: any) => a.nextDueDate.localeCompare(b.nextDueDate));
@@ -113,16 +127,29 @@ export default function Dashboard() {
   }));
 
   const currentYear = dayjs().year();
+  const customerList: any[] = customers ?? [];
 
   return (
     <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-50 text-zinc-900 font-sans">
       <div className="flex-1 p-6 md:p-8 space-y-6">
 
-        {/* ── Year badge ── */}
-        <div className="flex items-center gap-2">
+        {/* ── Header row: year badge + customer selector ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <span className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">
             {currentYear} Inspection Activity
           </span>
+          {customerList.length > 1 && (
+            <select
+              value={selectedCustomerId ?? ""}
+              onChange={e => setSelectedCustomerId(e.target.value ? parseInt(e.target.value) : null)}
+              className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[200px]"
+            >
+              <option value="">All Customers</option>
+              {customerList.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* ── KPI Strip ── */}
@@ -223,51 +250,46 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 12-Month Forecast */}
+          {/* 12-Month Forecast — fits container, no scroll */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader title={`Monthly Compliance Forecast — ${currentYear}`} />
-            <div className="flex-1 overflow-x-auto">
-              <div style={{ width: Math.max(560, (forecast?.length ?? 12) * 72), height: 360 }} className="px-4 py-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={forecast}
-                    margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-                    barCategoryGap="20%"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fill: "#3f3f46", fontSize: 15 }}
-                      axisLine={{ stroke: "#e4e4e7" }}
-                      tickLine={false}
-                      angle={-45}
-                      textAnchor="end"
-                      dy={5}
-                      height={75}
-                    />
-                    <YAxis
-                      tick={{ fill: "#3f3f46", fontSize: 15 }}
-                      axisLine={false}
-                      tickLine={false}
-                      allowDecimals={false}
-                    />
-                    <Tooltip
-                      cursor={{ fill: "#f4f4f5" }}
-                      contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "16px" }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      verticalAlign="top"
-                      align="center"
-                      wrapperStyle={{ fontSize: "15px", color: "#3f3f46", paddingBottom: "12px" }}
-                    />
-                    <Bar dataKey="notStarted" name="Not Started" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} maxBarSize={72} />
-                    <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} maxBarSize={72} />
-                    <Bar dataKey="inProgress" name="In Progress" stackId="stack" fill="#f59e0b" radius={[0, 0, 0, 0]} maxBarSize={72} />
-                    <Bar dataKey="completed"  name="Completed"  stackId="stack" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={72} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+            <div className="p-4" style={{ height: 360 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={forecast}
+                  margin={{ top: 5, right: 8, left: -24, bottom: 0 }}
+                  barCategoryGap="18%"
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: "#3f3f46", fontSize: 12 }}
+                    axisLine={{ stroke: "#e4e4e7" }}
+                    tickLine={false}
+                    height={28}
+                  />
+                  <YAxis
+                    tick={{ fill: "#3f3f46", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#f4f4f5" }}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
+                  />
+                  <Legend
+                    iconType="circle"
+                    verticalAlign="top"
+                    align="center"
+                    wrapperStyle={{ fontSize: "12px", color: "#3f3f46", paddingBottom: "8px" }}
+                  />
+                  <Bar dataKey="notStarted" name="Not Started" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="inProgress" name="In Progress" stackId="stack" fill="#f59e0b" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="completed"  name="Completed"  stackId="stack" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </section>
@@ -313,7 +335,7 @@ export default function Dashboard() {
           </div>
 
           {/* Upcoming — Next 2 Weeks */}
-          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+          <div className="bg-white border border-zinc-200 border-t-4 border-t-zinc-700 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader title="Upcoming — Next 14 Days" />
             <div className="overflow-x-auto">
               <Table>
