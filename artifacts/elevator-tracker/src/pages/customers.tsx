@@ -88,7 +88,10 @@ function CustomerUsersRow({ customerId, colSpan }: { customerId: number; colSpan
           <Users className="h-4 w-4 text-zinc-500" />
           <span className="text-sm font-semibold text-zinc-700">Associated Users</span>
         </div>
-        <p className="text-xs text-zinc-400 mb-3 italic">To add or remove user access for this customer, contact your system administrator.</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-md px-4 py-3 mb-4 flex items-start gap-3">
+          <span className="text-blue-500 text-lg leading-none mt-0.5">i</span>
+          <p className="text-sm text-blue-800 font-medium">To add or remove user access for this customer, contact your system administrator.</p>
+        </div>
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-zinc-500">
             <Spinner /> Loading users...
