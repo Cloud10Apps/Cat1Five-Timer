@@ -1101,9 +1101,9 @@ export default function Elevators() {
                 setFilterDueMonth("all");
                 setFilterDueYear("all");
               }}
-              className="h-8 px-2.5 flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 border border-dashed border-zinc-300 rounded hover:border-zinc-400 transition-colors"
+              className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 hover:text-red-700 transition-colors"
             >
-              <X className="h-3 w-3" /> Clear
+              <X className="h-3.5 w-3.5" /> Clear filters
             </button>
           )}
         </div>
