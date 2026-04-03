@@ -325,26 +325,31 @@ router.get("/monthly-forecast", async (req, res) => {
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
     .where(and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter));
 
-  const months: { key: string; label: string; due: number; scheduled: number; completed: number }[] = [];
+  const months: { key: string; label: string; notStarted: number; scheduled: number; inProgress: number; completed: number }[] = [];
   for (let i = 0; i < 12; i++) {
     const m = start.add(i, "month");
-    months.push({ key: m.format("YYYY-MM"), label: m.format("MMM YYYY"), due: 0, scheduled: 0, completed: 0 });
+    months.push({ key: m.format("YYYY-MM"), label: m.format("MMM"), notStarted: 0, scheduled: 0, inProgress: 0, completed: 0 });
   }
 
   for (const row of rows) {
-    if (row.nextDueDate) {
-      const key = row.nextDueDate.substring(0, 7);
-      const bucket = months.find((m) => m.key === key);
-      if (bucket) bucket.due++;
+    // Not Started: status = NOT_STARTED, bucket by nextDueDate
+    if (row.status === "NOT_STARTED" && row.nextDueDate) {
+      const bucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
+      if (bucket) bucket.notStarted++;
     }
-    if (row.scheduledDate && row.status === "SCHEDULED") {
-      const key = row.scheduledDate.substring(0, 7);
-      const bucket = months.find((m) => m.key === key);
+    // Scheduled: has a scheduledDate, bucket by scheduledDate
+    if (row.scheduledDate) {
+      const bucket = months.find((m) => m.key === row.scheduledDate!.substring(0, 7));
       if (bucket) bucket.scheduled++;
     }
-    if (row.completionDate && row.status === "COMPLETED") {
-      const key = row.completionDate.substring(0, 7);
-      const bucket = months.find((m) => m.key === key);
+    // In Progress: status = IN_PROGRESS, bucket by nextDueDate
+    if (row.status === "IN_PROGRESS" && row.nextDueDate) {
+      const bucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
+      if (bucket) bucket.inProgress++;
+    }
+    // Completed: has a completionDate, bucket by completionDate
+    if (row.completionDate) {
+      const bucket = months.find((m) => m.key === row.completionDate!.substring(0, 7));
       if (bucket) bucket.completed++;
     }
   }

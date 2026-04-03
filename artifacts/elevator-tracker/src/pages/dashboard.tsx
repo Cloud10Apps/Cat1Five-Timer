@@ -259,9 +259,10 @@ export default function Dashboard() {
                       iconType="circle"
                       wrapperStyle={{ fontSize: "15px", color: "#3f3f46", paddingTop: "16px" }}
                     />
-                    <Bar dataKey="due"       name="Due"       fill="#d4d4d8" radius={[2, 2, 0, 0]} maxBarSize={14} />
-                    <Bar dataKey="scheduled" name="Scheduled" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={14} />
-                    <Bar dataKey="completed" name="Completed" fill="#22c55e" radius={[2, 2, 0, 0]} maxBarSize={14} />
+                    <Bar dataKey="notStarted" name="Not Started" fill="#d4d4d8" radius={[2, 2, 0, 0]} maxBarSize={10} />
+                    <Bar dataKey="scheduled"  name="Scheduled"  fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={10} />
+                    <Bar dataKey="inProgress" name="In Progress" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={10} />
+                    <Bar dataKey="completed"  name="Completed"  fill="#22c55e" radius={[2, 2, 0, 0]} maxBarSize={10} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
