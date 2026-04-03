@@ -425,22 +425,19 @@ export default function Elevators() {
 
   const onSubmitBothInsp = async () => {
     if (!editingElevator) return;
-    const invalidate = () => {
-      queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator.id }), exact: false });
-    };
     const cat1Data = inspForm.getValues();
     const cat5Data = inspCat5Form.getValues();
-    let successCount = 0;
-    const onDone = () => { successCount++; if (successCount === 2) { invalidate(); toast({ title: "Both inspections created" }); } };
-    createInspMutation.mutate(
-      { data: { ...cat1Data, elevatorId: editingElevator.id, lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } },
-      { onSuccess: onDone, onError: () => toast({ title: "Failed to create CAT1 inspection", variant: "destructive" }) }
-    );
-    createInspMutation.mutate(
-      { data: { ...cat5Data, elevatorId: editingElevator.id, lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } },
-      { onSuccess: onDone, onError: () => toast({ title: "Failed to create CAT5 inspection", variant: "destructive" }) }
-    );
+    try {
+      await Promise.all([
+        createInspMutation.mutateAsync({ data: { ...cat1Data, elevatorId: editingElevator.id, lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat5Data, elevatorId: editingElevator.id, lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
+      ]);
+      queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+      if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator.id }), exact: false });
+      toast({ title: "Both inspections created" });
+    } catch {
+      toast({ title: "Failed to create inspections", variant: "destructive" });
+    }
   };
 
   const confirmDeleteInsp = () => {
