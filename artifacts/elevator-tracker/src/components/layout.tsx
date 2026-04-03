@@ -58,7 +58,7 @@ export function Layout({ children }: LayoutProps) {
               <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950 shrink-0">
                 <ArrowUpSquare className="h-5 w-5" strokeWidth={2.5} />
               </div>
-              <span>ElevatorInspect Pro</span>
+              <span>Cat1Five Timer</span>
             </div>
           </SidebarHeader>
           <SidebarContent>
