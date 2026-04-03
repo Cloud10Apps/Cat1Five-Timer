@@ -233,7 +233,7 @@ router.get("/overdue-by-building", async (req, res) => {
 router.get("/monthly-forecast", async (req, res) => {
   const orgId = req.user!.organizationId;
   const today = dayjs();
-  const start = today.subtract(2, "month").startOf("month");
+  const start = today.startOf("year");
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   if (allowedIds !== null && allowedIds.length === 0) {
@@ -257,7 +257,7 @@ router.get("/monthly-forecast", async (req, res) => {
     .where(and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter));
 
   const months: { key: string; label: string; due: number; scheduled: number; completed: number }[] = [];
-  for (let i = 0; i < 13; i++) {
+  for (let i = 0; i < 12; i++) {
     const m = start.add(i, "month");
     months.push({ key: m.format("YYYY-MM"), label: m.format("MMM YYYY"), due: 0, scheduled: 0, completed: 0 });
   }

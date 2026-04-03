@@ -282,11 +282,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 13-Month Forecast */}
+          {/* 12-Month Forecast */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="13-Month Compliance Forecast" />
+            <SectionHeader title={`12-Month Compliance Forecast (Jan–Dec ${dayjs().year()})`} />
             <div className="flex-1 overflow-x-auto">
-              <div style={{ width: Math.max(560, (forecast?.length ?? 13) * 72), height: 360 }} className="px-4 py-4">
+              <div style={{ width: Math.max(560, (forecast?.length ?? 12) * 72), height: 360 }} className="px-4 py-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={forecast}
