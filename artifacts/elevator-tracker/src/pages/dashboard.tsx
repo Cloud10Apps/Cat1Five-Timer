@@ -151,7 +151,7 @@ export default function Dashboard() {
             return (
               <div className="p-6 flex flex-col items-center justify-center text-center">
                 <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO SCHEDULE</div>
-                <div className="text-5xl font-black text-zinc-900">
+                <div className={`text-5xl font-black ${val === null ? "text-zinc-400" : val > 0 ? "text-red-600" : "text-green-600"}`}>
                   {val === null ? "—" : val.toFixed(1)}
                 </div>
                 {val !== null && <div className="text-xs text-zinc-400 mt-1">Days</div>}
