@@ -796,7 +796,7 @@ export default function Elevators() {
                             )} />
                             <FormField control={inspForm.control} name="status" render={({ field }) => (
                               <FormItem><FormLabel>Status</FormLabel>
-                                <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val !== "COMPLETED") inspForm.setValue("completionDate", ""); }}>
+                                <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else if (val === "COMPLETED") { inspForm.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { inspForm.setValue("completionDate", ""); } }}>
                                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                   <SelectContent>
                                     <SelectItem value="NOT_STARTED">Not Started</SelectItem>
@@ -855,7 +855,7 @@ export default function Elevators() {
                             <div className="grid grid-cols-2 gap-4">
                               <FormField control={inspForm.control} name="status" render={({ field }) => (
                                 <FormItem><FormLabel>Status</FormLabel>
-                                  <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val !== "COMPLETED") inspForm.setValue("completionDate", ""); }}>
+                                  <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else if (val === "COMPLETED") { inspForm.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { inspForm.setValue("completionDate", ""); } }}>
                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
                                       <SelectItem value="NOT_STARTED">Not Started</SelectItem>
@@ -899,7 +899,7 @@ export default function Elevators() {
                             <div className="grid grid-cols-2 gap-4">
                               <FormField control={inspCat5Form.control} name="status" render={({ field }) => (
                                 <FormItem><FormLabel>Status</FormLabel>
-                                  <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val !== "COMPLETED") inspCat5Form.setValue("completionDate", ""); }}>
+                                  <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspCat5Form.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspCat5Form.setValue("completionDate", ""); } else if (val === "COMPLETED") { inspCat5Form.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { inspCat5Form.setValue("completionDate", ""); } }}>
                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
                                       <SelectItem value="NOT_STARTED">Not Started</SelectItem>
