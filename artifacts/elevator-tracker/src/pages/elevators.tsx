@@ -997,7 +997,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_155px_85px_125px_125px_100px]"
+                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_155px_85px_125px_125px_125px_100px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1015,6 +1015,9 @@ export default function Elevators() {
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Type</span>
+                  </div>
+                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Last Completed</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Next Due</span>
@@ -1075,11 +1078,12 @@ export default function Elevators() {
                                       const isOverdue = !!due && due < today;
                                       const isSoon = !isOverdue && !!due && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                                       const scheduledDate = latestInsp?.scheduledDate?.slice(0, 10);
+                                      const completionDate = latestInsp?.completionDate?.slice(0, 10);
                                       const nameIndent = hasBankName ? "pl-16" : "pl-12";
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-100"
+                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-100"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
@@ -1105,6 +1109,14 @@ export default function Elevators() {
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-zinc-400 text-sm">—</span>}
+                                          </div>
+                                          {/* Last Completed — 125px */}
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
+                                            {completionDate ? (
+                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
+                                                {new Date(completionDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                                              </span>
+                                            ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Next Due — 125px */}
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
