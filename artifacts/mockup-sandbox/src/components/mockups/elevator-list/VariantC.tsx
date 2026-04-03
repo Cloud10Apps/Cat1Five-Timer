@@ -147,7 +147,7 @@ export function VariantC() {
             <div className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm bg-white">
               {/* Customer Header */}
               <div 
-                className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] bg-gradient-to-r from-zinc-900 to-zinc-800 border-t border-amber-500/30 cursor-pointer select-none"
+                className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] bg-gradient-to-r from-zinc-900 to-zinc-800 border-t border-amber-500/30 cursor-pointer select-none"
                 onClick={() => toggleCustomer('osb')}
               >
                 <div className="flex items-center gap-3 px-4 py-3">
@@ -193,7 +193,7 @@ export function VariantC() {
                   </div>
 
                   {/* Elevator Row 1 */}
-                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] relative group hover:bg-amber-50/60 border-b border-zinc-100 transition-colors">
+                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] relative group hover:bg-amber-50/60 border-b border-zinc-100 transition-colors">
                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
                     <div className="flex flex-col justify-center px-4 py-2 pl-[4.5rem]">
                       <span className="font-semibold text-sm text-zinc-900">Preppy Pet North West Houston, TX</span>
@@ -219,7 +219,7 @@ export function VariantC() {
                   </div>
 
                   {/* Elevator Row 2 */}
-                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] relative group hover:bg-amber-50/60 transition-colors">
+                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] relative group hover:bg-amber-50/60 transition-colors">
                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
                     <div className="flex flex-col justify-center px-4 py-2 pl-[4.5rem]">
                       <span className="font-semibold text-sm text-zinc-900">Unit 1 - Dumbwaiter</span>
@@ -252,7 +252,7 @@ export function VariantC() {
             <div className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm bg-white">
               {/* Customer Header */}
               <div 
-                className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] bg-gradient-to-r from-zinc-900 to-zinc-800 border-t border-amber-500/30 cursor-pointer select-none"
+                className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] bg-gradient-to-r from-zinc-900 to-zinc-800 border-t border-amber-500/30 cursor-pointer select-none"
                 onClick={() => toggleCustomer('cloud10')}
               >
                 <div className="flex items-center gap-3 px-4 py-3">
@@ -298,7 +298,7 @@ export function VariantC() {
                   </div>
 
                   {/* Elevator Row 1 */}
-                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] relative group hover:bg-amber-50/60 border-b border-zinc-100 transition-colors">
+                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] relative group hover:bg-amber-50/60 border-b border-zinc-100 transition-colors">
                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
                     <div className="flex flex-col justify-center px-4 py-2 pl-[4.5rem]">
                       <span className="font-semibold text-sm text-zinc-900">Unit A</span>
@@ -324,7 +324,7 @@ export function VariantC() {
                   </div>
 
                   {/* Elevator Row 2 */}
-                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] relative group hover:bg-amber-50/60 border-b border-zinc-100 transition-colors">
+                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] relative group hover:bg-amber-50/60 border-b border-zinc-100 transition-colors">
                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
                     <div className="flex flex-col justify-center px-4 py-2 pl-[4.5rem]">
                       <span className="font-semibold text-sm text-zinc-900">Unit B</span>
@@ -350,7 +350,7 @@ export function VariantC() {
                   </div>
 
                   {/* Elevator Row 3 */}
-                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] relative group hover:bg-amber-50/60 transition-colors">
+                  <div className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] relative group hover:bg-amber-50/60 transition-colors">
                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
                     <div className="flex flex-col justify-center px-4 py-2 pl-[4.5rem]">
                       <span className="font-semibold text-sm text-zinc-900">Unit C</span>
