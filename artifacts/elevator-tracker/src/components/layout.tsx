@@ -82,8 +82,8 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar className="border-r border-white/5">
           {/* Logo — centered with symmetric padding */}
-          <SidebarHeader className="pt-5 px-2 pb-0 border-b border-white/5">
-            <img src={logoSrc} alt="Cat1Five Timer" className="w-full block" />
+          <SidebarHeader className="pt-6 px-4 pb-4 border-b border-white/5">
+            <img src={logoSrc} alt="Cat1Five Timer" className="w-full block scale-110 origin-center" />
           </SidebarHeader>
 
           <SidebarContent className="px-3 py-3 flex flex-col gap-0 overflow-y-auto">
