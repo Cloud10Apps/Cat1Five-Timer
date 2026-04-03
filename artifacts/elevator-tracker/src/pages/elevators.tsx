@@ -187,13 +187,13 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
-  // Map: elevatorId → soonest nextDueDate (YYYY-MM-DD string)
+  // Map: elevatorId → latest nextDueDate (YYYY-MM-DD string)
   const nextDueDateByElevator = useMemo(() => {
     const map = new Map<number, string>();
     for (const insp of allInspections ?? []) {
       if (!insp.elevatorId || !insp.nextDueDate) continue;
       const current = map.get(insp.elevatorId);
-      if (!current || insp.nextDueDate < current) {
+      if (!current || insp.nextDueDate > current) {
         map.set(insp.elevatorId, insp.nextDueDate.slice(0, 10));
       }
     }
