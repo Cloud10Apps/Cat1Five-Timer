@@ -893,9 +893,9 @@ export default function Elevators() {
                         </div>
 
                         {/* CAT5 section */}
-                        <div className="rounded-lg border border-amber-200 p-4 space-y-4">
+                        <div className="rounded-lg border border-yellow-300 p-4 space-y-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white tracking-wide">CAT5</span>
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-zinc-900 tracking-wide">CAT5</span>
                             <span className="text-sm font-medium text-zinc-700">5-Year Inspection</span>
                           </div>
                           <Form {...inspCat5Form}>
@@ -1192,7 +1192,7 @@ export default function Elevators() {
                                           {/* Insp Type — 85px */}
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {latestInsp ? (
-                                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-500 text-white" : "bg-zinc-800 text-white"}`}>
+                                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-zinc-400 text-sm">—</span>}

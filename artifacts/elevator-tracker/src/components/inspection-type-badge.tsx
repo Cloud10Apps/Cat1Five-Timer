@@ -12,7 +12,7 @@ export function InspectionTypeBadge({ type, className }: InspectionTypeBadgeProp
       <span
         className={cn(
           "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide",
-          "bg-amber-500 text-zinc-950 border border-amber-400",
+          "bg-yellow-400 text-zinc-900 border border-yellow-300",
           className
         )}
       >
