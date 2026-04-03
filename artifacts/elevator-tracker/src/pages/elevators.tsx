@@ -1020,10 +1020,10 @@ export default function Elevators() {
         </div>
       </div>
 
-      {/* ── Filters + Depth selector row ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      {/* ── Filters row ── */}
+      <div className="flex flex-col gap-2">
 
-        {/* Left: filters */}
+        {/* Row 1: filters */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
           <div className="h-4 w-px bg-zinc-200" />
@@ -1108,7 +1108,7 @@ export default function Elevators() {
           )}
         </div>
 
-        {/* Right: expand/collapse depth selector */}
+        {/* Row 2: expand/collapse depth selector */}
         {!isLoading && grouped.length > 0 && (
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
