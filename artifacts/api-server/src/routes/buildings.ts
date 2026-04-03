@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, buildingsTable, customersTable, elevatorsTable, inspectionsTable } from "@workspace/db";
-import { eq, and, ilike, inArray, count, sql } from "drizzle-orm";
+import { eq, and, ilike, inArray, count, sql, asc } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateBuildingBody, ListBuildingsQueryParams, GetBuildingParams, UpdateBuildingParams, DeleteBuildingParams } from "@workspace/api-zod";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
@@ -54,7 +54,7 @@ router.get("/", async (req, res) => {
     .leftJoin(elevatorCountSq, eq(buildingsTable.id, elevatorCountSq.buildingId))
     .leftJoin(inspectionCountSq, eq(buildingsTable.id, inspectionCountSq.buildingId))
     .where(and(...conditions))
-    .orderBy(buildingsTable.name);
+    .orderBy(asc(customersTable.name), asc(buildingsTable.city), asc(buildingsTable.state), asc(buildingsTable.name));
 
   res.json(buildings.map(b => ({
     id: b.id,
