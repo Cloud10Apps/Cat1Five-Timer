@@ -50,7 +50,7 @@ export function Layout({ children }: LayoutProps) {
       <Link
         href={href}
         className={cn(
-          "group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-150 select-none",
+          "group flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-150 select-none",
           isActive
             ? "bg-white text-zinc-950 shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
             : "text-zinc-400 hover:text-white hover:bg-white/10"
@@ -78,35 +78,35 @@ export function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider style={{ "--sidebar-width": "22rem" } as React.CSSProperties}>
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar className="border-r border-white/5">
-          {/* Logo */}
-          <SidebarHeader className="px-5 py-6 border-b border-white/5">
-            <img src={logoSrc} alt="Cat1Five Timer" className="h-16 w-auto" />
+          {/* Logo — full bleed, no padding so it uses the full sidebar width */}
+          <SidebarHeader className="p-0 border-b border-white/5">
+            <img src={logoSrc} alt="Cat1Five Timer" className="w-full block" />
           </SidebarHeader>
 
-          <SidebarContent className="px-3 py-4 flex flex-col gap-0 overflow-y-auto">
+          <SidebarContent className="px-3 py-3 flex flex-col gap-0 overflow-y-auto">
             {/* Section label */}
-            <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-600">
+            <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-600">
               Navigation
             </p>
 
             {/* Main nav */}
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-0.5">
               {mainNav.map((item) => (
                 <NavItem key={item.href} {...item} />
               ))}
             </nav>
 
             {/* Divider */}
-            <div className="my-4 border-t border-white/5" />
+            <div className="my-3 border-t border-white/5" />
 
             {/* Bottom nav (Admin, Settings) */}
-            <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-600">
+            <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-600">
               System
             </p>
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-0.5">
               {bottomNav.map((item) => (
                 <NavItem key={item.href} {...item} />
               ))}
@@ -114,7 +114,7 @@ export function Layout({ children }: LayoutProps) {
           </SidebarContent>
 
           {/* Footer — user info + logout */}
-          <SidebarFooter className="border-t border-white/5 px-5 py-5">
+          <SidebarFooter className="border-t border-white/5 px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 text-white shrink-0 font-bold text-base uppercase">
                 {user?.email?.[0] ?? "?"}
