@@ -92,7 +92,7 @@ export function CommandCenter() {
             {isOverdue ? (
               <>
                 <ShieldAlert className="w-4 h-4" />
-                <span>{kpiData.overdue} SYSTEM{kpiData.overdue > 1 ? 'S' : ''} OVERDUE</span>
+                <span>{kpiData.overdue} Inspection{kpiData.overdue > 1 ? 's' : ''} Overdue</span>
               </>
             ) : (
               <>
