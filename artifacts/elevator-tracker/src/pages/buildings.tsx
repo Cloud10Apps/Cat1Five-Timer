@@ -321,7 +321,7 @@ export default function Buildings() {
               <TableHead>Building</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Address</TableHead>
-              <TableHead className="text-center">Quick Stats</TableHead>
+              <TableHead className="text-center">Unit Count</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
