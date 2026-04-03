@@ -1089,7 +1089,7 @@ export default function Elevators() {
                                           {/* Insp Type — 85px */}
                                           <div className="flex items-center justify-center border-l border-zinc-200">
                                             {latestInsp ? (
-                                              <span className={`text-xs font-bold px-1.5 py-0.5 rounded tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
+                                              <span className={`text-sm font-bold px-1.5 py-0.5 rounded tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-muted-foreground text-sm">—</span>}

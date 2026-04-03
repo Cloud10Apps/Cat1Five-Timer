@@ -18,7 +18,7 @@ export const STATUS_LABELS: Record<string, string> = {
 
 export function StatusBadge({ status }: { status: string }) {
   return (
-    <Badge variant="outline" className={`border-0 font-medium ${STATUS_COLORS[status] || STATUS_COLORS.NOT_STARTED}`}>
+    <Badge variant="outline" className={`border-0 font-medium text-sm ${STATUS_COLORS[status] || STATUS_COLORS.NOT_STARTED}`}>
       {STATUS_LABELS[status] || status}
     </Badge>
   );
