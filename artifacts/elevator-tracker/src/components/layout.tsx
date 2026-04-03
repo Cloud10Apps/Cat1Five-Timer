@@ -82,7 +82,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar className="border-r border-white/5">
           {/* Logo — full bleed, no padding so it uses the full sidebar width */}
-          <SidebarHeader className="p-0 border-b border-white/5">
+          <SidebarHeader className="pt-5 px-0 pb-0 border-b border-white/5">
             <img src={logoSrc} alt="Cat1Five Timer" className="w-full block" />
           </SidebarHeader>
 
