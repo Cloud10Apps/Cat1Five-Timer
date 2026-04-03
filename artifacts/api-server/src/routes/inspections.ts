@@ -186,8 +186,17 @@ router.get("/", async (req, res) => {
   res.json(rows.map(formatInspection));
 });
 
+function sanitizeDates(body: Record<string, unknown>) {
+  const dateCols = ["lastInspectionDate", "scheduledDate", "completionDate"];
+  const result = { ...body };
+  for (const col of dateCols) {
+    if (result[col] === "" || result[col] === null) result[col] = undefined;
+  }
+  return result;
+}
+
 router.post("/", async (req, res) => {
-  const parsed = CreateInspectionBody.safeParse(req.body);
+  const parsed = CreateInspectionBody.safeParse(sanitizeDates(req.body));
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
     return;
@@ -232,7 +241,7 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const params = UpdateInspectionParams.safeParse({ id: Number(req.params.id) });
-  const body = CreateInspectionBody.safeParse(req.body);
+  const body = CreateInspectionBody.safeParse(sanitizeDates(req.body));
   if (!params.success || !body.success) {
     res.status(400).json({ error: "Invalid request" });
     return;
