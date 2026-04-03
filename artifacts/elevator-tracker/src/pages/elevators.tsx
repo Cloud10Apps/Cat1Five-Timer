@@ -55,9 +55,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X, CalendarDays, Clock, ArrowRight, ChevronDown, ChevronRight, Building as BuildingIcon, Users } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, X, CalendarDays, ChevronDown, ChevronRight, Building as BuildingIcon, Users } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -129,9 +128,7 @@ export default function Elevators() {
 
   // Inspection panel state (inside elevator dialog)
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
-  const [showInspForm, setShowInspForm] = useState(false);
   const [inspDeleteId, setInspDeleteId] = useState<number | null>(null);
-  const autoLoadedForElevator = useRef<number | null>(null);
 
   const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
   const buildingIdFilter = selectedBuildingId !== "all" ? Number(selectedBuildingId) : undefined;
@@ -186,16 +183,21 @@ export default function Elevators() {
     { query: { queryKey: getListInspectionsQueryKey({}) } }
   );
 
-  // Map: elevatorId → { NOT_STARTED, OVERDUE, SCHEDULED, IN_PROGRESS, COMPLETED }
-  type StatusCounts = Record<string, number>;
-  const inspCountsByElevator = useMemo(() => {
-    const map = new Map<number, StatusCounts>();
+  // Map: elevatorId → most-actionable inspection
+  // Priority: NOT_STARTED → OVERDUE → SCHEDULED → IN_PROGRESS → COMPLETED
+  // Within same status, latest nextDueDate wins
+  const latestInspByElevator = useMemo(() => {
+    const STATUS_PRIORITY = ["NOT_STARTED", "OVERDUE", "SCHEDULED", "IN_PROGRESS", "COMPLETED"];
+    const map = new Map<number, Inspection>();
     for (const insp of allInspections ?? []) {
       if (!insp.elevatorId) continue;
-      const existing = map.get(insp.elevatorId) ?? {};
-      const key = insp.status ?? "NOT_STARTED";
-      existing[key] = (existing[key] ?? 0) + 1;
-      map.set(insp.elevatorId, existing);
+      const current = map.get(insp.elevatorId);
+      if (!current) { map.set(insp.elevatorId, insp); continue; }
+      const np = STATUS_PRIORITY.indexOf(insp.status ?? "NOT_STARTED");
+      const cp = STATUS_PRIORITY.indexOf(current.status ?? "NOT_STARTED");
+      if (np < cp || (np === cp && (insp.nextDueDate ?? "") > (current.nextDueDate ?? ""))) {
+        map.set(insp.elevatorId, insp);
+      }
     }
     return map;
   }, [allInspections]);
@@ -298,32 +300,13 @@ export default function Elevators() {
   }, [watchCompletionDate]);
 
 
-  // Auto-load the most current NOT_STARTED inspection when the dialog opens
-  useEffect(() => {
-    if (!editingElevator || !elevatorInspections) return;
-    if (autoLoadedForElevator.current === editingElevator.id) return;
-    autoLoadedForElevator.current = editingElevator.id;
-
-    const STATUS_PRIORITY = ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "OVERDUE"];
-    const toLoad = STATUS_PRIORITY.reduce<typeof elevatorInspections[0] | null>((found, status) => {
-      if (found) return found;
-      return elevatorInspections.find(i => i.status === status) ?? null;
-    }, null);
-
-    if (toLoad) {
-      openEditInsp(toLoad);
-    }
-  }, [elevatorInspections, editingElevator]);
-
   const resetInspForm = () => {
     inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
     setEditingInspection(null);
-    setShowInspForm(false);
   };
 
   const openEditInsp = (insp: Inspection) => {
     setEditingInspection(insp);
-    setShowInspForm(true);
     inspForm.reset({
       inspectionType: insp.inspectionType,
       recurrenceYears: insp.recurrenceYears,
@@ -358,22 +341,21 @@ export default function Elevators() {
         {
           onSuccess: () => {
             invalidateInspections();
-            toast({ title: "Inspection updated" });
-            resetInspForm();
+            toast({ title: "Inspection saved" });
           },
-          onError: () => toast({ title: "Failed to update inspection", variant: "destructive" }),
+          onError: () => toast({ title: "Failed to save inspection", variant: "destructive" }),
         }
       );
     } else {
       createInspMutation.mutate(
         { data: payload },
         {
-          onSuccess: () => {
+          onSuccess: (created) => {
             invalidateInspections();
-            toast({ title: "Inspection added" });
-            resetInspForm();
+            toast({ title: "Inspection created" });
+            if (created && (created as any).id) setEditingInspection(created as Inspection);
           },
-          onError: () => toast({ title: "Failed to add inspection", variant: "destructive" }),
+          onError: () => toast({ title: "Failed to create inspection", variant: "destructive" }),
         }
       );
     }
@@ -461,8 +443,6 @@ export default function Elevators() {
 
   const openEdit = (elevator: Elevator) => {
     setEditingElevator(elevator);
-    autoLoadedForElevator.current = null;
-    resetInspForm();
     form.reset({
       name: elevator.name,
       internalId: elevator.internalId || "",
@@ -472,6 +452,13 @@ export default function Elevators() {
       bank: elevator.bank || "",
       type: elevator.type,
     });
+    // Pre-load the most actionable inspection for this elevator
+    const latestInsp = latestInspByElevator.get(elevator.id);
+    if (latestInsp) {
+      openEditInsp(latestInsp);
+    } else {
+      resetInspForm();
+    }
   };
 
   const handleExport = async () => {
@@ -683,7 +670,7 @@ export default function Elevators() {
               </Button>
             </DialogTrigger>
 
-            <DialogContent className={editingElevator ? "max-w-4xl max-h-[90vh] overflow-y-auto" : "max-w-xl"}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader className="pb-2 border-b">
                 <DialogTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
@@ -692,279 +679,175 @@ export default function Elevators() {
                   {editingElevator ? editingElevator.name : "Add New Unit"}
                 </DialogTitle>
                 {editingElevator && (
-                  <p className="text-sm text-muted-foreground pl-10">{editingElevator.buildingName}</p>
+                  <p className="text-sm text-muted-foreground pl-10">{editingElevator.buildingName} · {editingElevator.customerName}</p>
                 )}
               </DialogHeader>
 
               {editingElevator ? (
-                <Tabs defaultValue="details" className="w-full">
-                  <TabsList className="w-full">
-                    <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
-                    <TabsTrigger value="inspections" className="flex-1">
-                      Inspections
-                      {elevatorInspections && elevatorInspections.length > 0 && (
-                        <span className="ml-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">
-                          {elevatorInspections.length}
-                        </span>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="details" className="pt-2">
+                <div className="space-y-6 pt-2">
+                  {/* ── Section 1: Unit Details ── */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Unit Details</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
                     {elevatorFormFields}
-                  </TabsContent>
+                  </div>
 
-                  <TabsContent value="inspections" className="pt-2 space-y-4">
-                    {/* Inline inspection form — always visible */}
-                    <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-semibold">
-                            {editingInspection ? "Edit Inspection" : "New Inspection"}
-                          </h3>
-                          {editingInspection && (
-                            <Button variant="ghost" size="icon" onClick={resetInspForm}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <Form {...inspForm}>
-                          <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-3">
-                            {/* Type — full width up top */}
-                            <FormField
-                              control={inspForm.control}
-                              name="inspectionType"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Inspection Type</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger className="w-full sm:w-56">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
-                                      <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            {/* Timeline section: Past | Future */}
-                            <div className="relative pt-5 pb-4 px-4 bg-slate-50 rounded-lg border border-slate-200">
-                              <div className="grid grid-cols-2 gap-4">
-
-                                {/* Past card */}
-                                <div className="relative bg-white rounded-lg border border-slate-200 shadow-sm p-4 space-y-3">
-                                  <div className="absolute -top-3 left-3 bg-white px-2 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 border border-slate-200 rounded-full">
-                                    <Clock className="w-3 h-3" /> Past
-                                  </div>
-                                  <FormField
-                                    control={inspForm.control}
-                                    name="lastInspectionDate"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Last Inspection</FormLabel>
-                                        <FormControl>
-                                          <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={inspForm.control}
-                                    name="recurrenceYears"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Recurrence (Years)</FormLabel>
-                                        <FormControl>
-                                          <Input type="number" min="1" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </div>
-
-                                {/* Future card */}
-                                <div className="relative bg-amber-50/40 rounded-lg border border-amber-100 shadow-sm p-4 space-y-3">
-                                  <div className="absolute -top-3 left-3 bg-white px-2 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-amber-600 border border-amber-100 rounded-full">
-                                    <ArrowRight className="w-3 h-3" /> Future
-                                  </div>
-                                  {/* Next Due — computed read-only */}
-                                  <div className="space-y-1">
-                                    <span className="text-sm font-medium leading-none">Next Due</span>
-                                    {nextDuePreview ? (
-                                      <div className="flex items-center h-10 px-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 font-semibold text-base">
-                                        {dayjs(nextDuePreview).format("MMM D, YYYY")}
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center h-10 px-3 bg-muted border border-dashed rounded-md text-muted-foreground text-sm">
-                                        Set last date + recurrence
-                                      </div>
-                                    )}
-                                    <p className="text-[11px] text-amber-600/80">Calculated from Last Inspection + Recurrence</p>
-                                  </div>
-                                  <FormField
-                                    control={inspForm.control}
-                                    name="scheduledDate"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Scheduled Date</FormLabel>
-                                        <FormControl>
-                                          <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </div>
-
-                              </div>
-                            </div>
-
-                            {/* Outcomes: Status + Completion Date */}
-                            <div className="grid grid-cols-2 gap-3">
-                              <FormField
-                                control={inspForm.control}
-                                name="status"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select
-                                      value={field.value}
-                                      onValueChange={(val) => {
-                                        field.onChange(val);
-                                        if (val !== "COMPLETED") inspForm.setValue("completionDate", "");
-                                      }}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="NOT_STARTED">Not Started</SelectItem>
-                                        <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                        <SelectItem value="COMPLETED">Completed</SelectItem>
-                                        <SelectItem value="OVERDUE">Overdue</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={inspForm.control}
-                                name="completionDate"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Completion Date</FormLabel>
-                                    <FormControl>
-                                      <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            <FormField
-                              control={inspForm.control}
-                              name="notes"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Notes</FormLabel>
+                  {/* ── Section 2: Current Inspection ── */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {editingInspection ? "Current Inspection" : "New Inspection"}
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                    <Form {...inspForm}>
+                      <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Type */}
+                          <FormField
+                            control={inspForm.control}
+                            name="inspectionType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Type</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                   <FormControl>
-                                    <Textarea
-                                      placeholder="Inspector notes, compliance details..."
-                                      className="resize-none h-20"
-                                      {...field}
-                                    />
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
+                                    <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {/* Status */}
+                          <FormField
+                            control={inspForm.control}
+                            name="status"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Status</FormLabel>
+                                <Select
+                                  value={field.value}
+                                  onValueChange={(val) => {
+                                    field.onChange(val);
+                                    if (val !== "COMPLETED") inspForm.setValue("completionDate", "");
+                                  }}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                                    <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {/* Last Inspection Date */}
+                          <FormField
+                            control={inspForm.control}
+                            name="lastInspectionDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Last Inspection Date</FormLabel>
+                                <FormControl>
+                                  <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {/* Recurrence + Calculated Next Due */}
+                          <div className="space-y-1">
+                            <FormField
+                              control={inspForm.control}
+                              name="recurrenceYears"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Recurrence (Years)</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
-
-                            <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
-                              <Button type="button" variant="outline" size="sm" onClick={resetInspForm}>
-                                Cancel
-                              </Button>
-                              <Button
-                                type="submit"
-                                size="sm"
-                                className="bg-amber-500 hover:bg-amber-600 text-zinc-900"
-                                disabled={createInspMutation.isPending || updateInspMutation.isPending}
-                              >
-                                {(createInspMutation.isPending || updateInspMutation.isPending)
-                                  ? "Saving..."
-                                  : editingInspection ? "Update Inspection" : "Save Inspection"}
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </div>
-
-                    {/* Inspection history list */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="text-sm font-semibold text-foreground">Inspection History</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
-                    {inspLoading ? (
-                      <div className="flex justify-center py-6"><Spinner /></div>
-                    ) : !elevatorInspections || elevatorInspections.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
-                        <ClipboardList className="h-8 w-8 mb-2 opacity-20" />
-                        <p>No inspection records yet.</p>
-                      </div>
-                    ) : (
-                      <div className="rounded-md border divide-y">
-                          {elevatorInspections.map((insp) => (
-                            <div key={insp.id} className="flex items-start justify-between gap-3 px-4 py-3">
-                              <div className="flex flex-col gap-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <InspectionTypeBadge type={insp.inspectionType} />
-                                  <StatusBadge status={insp.status || "NOT_STARTED"} />
-                                </div>
-                                <div className="flex gap-3 text-xs text-muted-foreground flex-wrap mt-0.5">
-                                  <span>Last: {insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
-                                  <span>Due: {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
-                                  <span>Scheduled: {insp.scheduledDate ? dayjs(insp.scheduledDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
-                                  <span>Completed: {insp.completionDate ? dayjs(insp.completionDate).format("MMM D, YYYY") : <span className="text-muted-foreground/40">—</span>}</span>
-                                </div>
-                                {insp.notes && (
-                                  <p className="text-xs text-muted-foreground truncate max-w-xs">{insp.notes}</p>
-                                )}
-                              </div>
-                              <div className="flex shrink-0 items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => openEditInsp(insp)}
-                                >
-                                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => setInspDeleteId(insp.id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                            {nextDuePreview && (
+                              <p className="text-xs text-muted-foreground">
+                                Calculated Next Due: <strong>{nextDuePreview}</strong>
+                              </p>
+                            )}
+                          </div>
+                          {/* Scheduled Date */}
+                          <FormField
+                            control={inspForm.control}
+                            name="scheduledDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Scheduled Date (Optional)</FormLabel>
+                                <FormControl>
+                                  <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {/* Completion Date */}
+                          <FormField
+                            control={inspForm.control}
+                            name="completionDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Completion Date (Optional)</FormLabel>
+                                <FormControl>
+                                  <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        {/* Notes — full width */}
+                        <FormField
+                          control={inspForm.control}
+                          name="notes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Notes</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Inspector notes, compliance details..."
+                                  className="resize-none h-20"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="submit"
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
+                          disabled={createInspMutation.isPending || updateInspMutation.isPending}
+                        >
+                          {(createInspMutation.isPending || updateInspMutation.isPending)
+                            ? "Saving..."
+                            : editingInspection ? "Save Inspection" : "Create Inspection"}
+                        </Button>
+                      </form>
+                    </Form>
+                  </div>
+                </div>
               ) : (
                 elevatorFormFields
               )}
@@ -1088,10 +971,10 @@ export default function Elevators() {
           <TableHeader>
             <TableRow>
               <TableHead className="pl-16">Elevator</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Bank</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Insp. Type</TableHead>
               <TableHead>Next Due</TableHead>
-              <TableHead className="text-center">Inspection Activity</TableHead>
+              <TableHead>Scheduled</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -1161,75 +1044,58 @@ export default function Elevators() {
 
                           {/* ── Elevator rows ── */}
                           {!isBuildingCollapsed && building.elevators.map((elevator) => {
-                            const counts = inspCountsByElevator.get(elevator.id) ?? {};
-                            const STATUS_DOTS = [
-                              { key: "OVERDUE",     label: "Overdue",     dot: "bg-red-500"   },
-                              { key: "IN_PROGRESS", label: "In Progress", dot: "bg-amber-500" },
-                              { key: "SCHEDULED",   label: "Scheduled",   dot: "bg-sky-500"   },
-                              { key: "NOT_STARTED", label: "Not Started", dot: "bg-slate-400" },
-                              { key: "COMPLETED",   label: "Completed",   dot: "bg-green-500" },
-                            ] as const;
-                            const activeBadges = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
+                            const latestInsp = latestInspByElevator.get(elevator.id);
                             return (
                               <TableRow key={elevator.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition-colors">
+                                {/* Elevator name + IDs */}
                                 <TableCell className="py-2 pl-16 pr-4">
                                   <div className="flex items-stretch gap-0">
                                     <div className="w-1 rounded-full bg-amber-400/70 mr-3 shrink-0 self-stretch min-h-[2rem]" />
                                     <div className="min-w-0">
                                       <div className="text-base font-bold tracking-tight leading-snug">{elevator.name}</div>
-                                      {(elevator.internalId || elevator.stateId) && (
-                                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                          {elevator.internalId && (
-                                            <span className="text-sm text-muted-foreground">Unit&nbsp;{elevator.internalId}</span>
-                                          )}
-                                          {elevator.internalId && elevator.stateId && (
-                                            <span className="text-muted-foreground/40 text-sm">·</span>
-                                          )}
-                                          {elevator.stateId && (
-                                            <span className="text-sm text-muted-foreground">State&nbsp;{elevator.stateId}</span>
-                                          )}
-                                        </div>
-                                      )}
+                                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        <span className="text-xs text-muted-foreground capitalize">{elevator.type}</span>
+                                        {elevator.bank && <><span className="text-muted-foreground/40 text-xs">·</span><span className="text-xs text-muted-foreground">Bank {elevator.bank}</span></>}
+                                        {elevator.internalId && <><span className="text-muted-foreground/40 text-xs">·</span><span className="text-xs text-muted-foreground">Unit {elevator.internalId}</span></>}
+                                        {elevator.stateId && <><span className="text-muted-foreground/40 text-xs">·</span><span className="text-xs text-muted-foreground">State {elevator.stateId}</span></>}
+                                      </div>
                                     </div>
                                   </div>
                                 </TableCell>
-                                <TableCell className="py-2 capitalize">{elevator.type}</TableCell>
-                                <TableCell className="py-2">{elevator.bank || "—"}</TableCell>
+                                {/* Status */}
+                                <TableCell className="py-2">
+                                  {latestInsp
+                                    ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
+                                    : <span className="text-muted-foreground text-sm">—</span>}
+                                </TableCell>
+                                {/* Inspection Type */}
+                                <TableCell className="py-2">
+                                  {latestInsp
+                                    ? <InspectionTypeBadge type={latestInsp.inspectionType} />
+                                    : <span className="text-muted-foreground text-sm">—</span>}
+                                </TableCell>
+                                {/* Next Due */}
                                 <TableCell className="py-2">
                                   {(() => {
-                                    const due = nextDueDateByElevator.get(elevator.id);
+                                    const due = latestInsp?.nextDueDate?.slice(0, 10);
                                     if (!due) return <span className="text-muted-foreground">—</span>;
                                     const today = new Date().toISOString().slice(0, 10);
                                     const isOverdue = due < today;
                                     const isSoon = !isOverdue && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                                     return (
-                                      <span className={
-                                        isOverdue ? "text-red-600 font-semibold" :
-                                        isSoon    ? "text-amber-600 font-medium" :
-                                                    "text-foreground"
-                                      }>
+                                      <span className={isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-foreground"}>
                                         {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                       </span>
                                     );
                                   })()}
                                 </TableCell>
-                                <TableCell className="py-2 text-center">
-                                  {activeBadges.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1 justify-center">
-                                      {activeBadges.map(({ key, label, dot }) => (
-                                        <span
-                                          key={key}
-                                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50 whitespace-nowrap"
-                                        >
-                                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
-                                          {counts[key]} {label}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <span className="text-muted-foreground text-sm">—</span>
-                                  )}
+                                {/* Scheduled */}
+                                <TableCell className="py-2">
+                                  {latestInsp?.scheduledDate
+                                    ? <span className="text-foreground">{new Date(latestInsp.scheduledDate.slice(0,10) + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}</span>
+                                    : <span className="text-muted-foreground">—</span>}
                                 </TableCell>
+                                {/* Actions */}
                                 <TableCell className="text-right space-x-2">
                                   <Button variant="ghost" size="icon" onClick={() => {
                                     openEdit(elevator);
