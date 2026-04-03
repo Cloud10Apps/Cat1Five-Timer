@@ -997,38 +997,51 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid px-4 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left grid-cols-[1fr_155px_85px_125px_125px_68px]"
+                  className="w-full grid bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left grid-cols-[1fr_155px_85px_125px_125px_68px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
-                  <div className="flex items-center gap-2 min-w-0 py-3">
+                  <div className="flex items-center gap-2 min-w-0 px-4 py-3">
                     {isCustomerCollapsed
-                      ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
-                      : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" />}
-                    <Users className="h-4 w-4 shrink-0 text-zinc-400" />
-                    <span className="font-bold text-sm truncate ml-1">{customer.customerName}</span>
+                      ? <ChevronRight className="h-5 w-5 shrink-0 text-zinc-400" />
+                      : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
+                    <Users className="h-5 w-5 shrink-0 text-zinc-400" />
+                    <span className="font-bold text-base tracking-tight truncate">{customer.customerName}</span>
+                    <span className="text-xs font-medium bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
+                      {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-center border-l border-zinc-700 text-sm font-bold text-white">Status</div>
-                  <div className="flex items-center justify-center border-l border-zinc-700 text-sm font-bold text-white">Type</div>
-                  <div className="flex items-center justify-end border-l border-zinc-700 text-sm font-bold text-white pr-2">Next Due</div>
-                  <div className="flex items-center justify-end border-l border-zinc-700 text-sm font-bold text-white pr-2">Scheduled</div>
-                  <div className="border-l border-zinc-700" />
+                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Status</span>
+                  </div>
+                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Type</span>
+                  </div>
+                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Next Due</span>
+                  </div>
+                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Scheduled</span>
+                  </div>
+                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Actions</span>
+                  </div>
                 </button>
 
                 {!isCustomerCollapsed && (
-                  <div className="divide-y divide-zinc-100">
+                  <div>
                     {customer.buildings.map((building) => {
                       const isBuildingCollapsed = collapsedBuildings.has(building.buildingId);
                       return (
                         <div key={building.buildingId}>
                           {/* Building header */}
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-2.5 pl-8 bg-zinc-50 hover:bg-zinc-100 transition-colors text-left"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 pl-6 bg-zinc-50 border-l-[3px] border-zinc-400 hover:bg-zinc-100 transition-colors text-left border-b border-zinc-100"
                             onClick={() => toggleBuilding(building.buildingId)}
                           >
                             {isBuildingCollapsed
                               ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                               : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" />}
-                            <BuildingIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                            <BuildingIcon className="h-4 w-4 shrink-0 text-zinc-500" />
                             <span className="font-semibold text-sm text-zinc-700">{building.buildingName}</span>
                           </button>
 
@@ -1043,14 +1056,14 @@ export default function Elevators() {
                                     {/* Bank header — only when elevators have a bank assigned */}
                                     {hasBankName && (
                                       <button
-                                        className="w-full flex items-center gap-2 px-4 py-1.5 pl-14 bg-white hover:bg-zinc-50 transition-colors text-left border-t border-zinc-100"
+                                        className="w-full flex items-center gap-2 px-4 py-1.5 pl-12 bg-white border-l-[2px] border-zinc-200 hover:bg-zinc-50 transition-colors text-left border-b border-zinc-100"
                                         onClick={() => toggleBank(bankKey)}
                                       >
                                         {isBankCollapsed
                                           ? <ChevronRight className="h-3 w-3 shrink-0 text-zinc-300" />
                                           : <ChevronDown className="h-3 w-3 shrink-0 text-zinc-300" />}
-                                        <Layers className="h-3 w-3 shrink-0 text-zinc-300" />
-                                        <span className="text-xs font-semibold text-zinc-500">Bank: {bank.bankName}</span>
+                                        <Layers className="h-3.5 w-3.5 shrink-0 text-zinc-300" />
+                                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide">Bank: {bank.bankName}</span>
                                       </button>
                                     )}
 
@@ -1066,49 +1079,48 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid px-4 pr-4 grid-cols-[1fr_155px_85px_125px_125px_68px] hover:bg-amber-50/60 transition-colors border-t border-zinc-50"
+                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] relative hover:bg-amber-50/40 transition-colors border-b border-zinc-100"
                                         >
-                                          {/* Name + meta — 1fr; indent + amber bar live inside */}
-                                          <div className={`flex items-center min-w-0 py-2.5 ${nameIndent}`}>
-                                            <div className="w-0.5 self-stretch min-h-[2rem] rounded-full bg-amber-400/70 shrink-0 mr-3" />
-                                            <div className="min-w-0">
-                                              <div className="font-semibold text-sm leading-snug truncate">{elevator.name}</div>
-                                              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                                <span className="text-xs text-muted-foreground capitalize">{elevator.type}</span>
-                                                {elevator.internalId && <><span className="text-muted-foreground/40 text-[10px]">·</span><span className="text-xs text-muted-foreground">Unit {elevator.internalId}</span></>}
-                                                {elevator.stateId && <><span className="text-muted-foreground/40 text-[10px]">·</span><span className="text-xs text-muted-foreground">State {elevator.stateId}</span></>}
-                                              </div>
+                                          {/* Amber accent bar — absolute left edge */}
+                                          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500/80" />
+                                          {/* Name + meta */}
+                                          <div className={`flex flex-col justify-center px-4 py-2 min-w-0 ${nameIndent}`}>
+                                            <div className="font-semibold text-sm leading-snug truncate text-zinc-900">{elevator.name}</div>
+                                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                              <span className="text-xs text-zinc-500 capitalize">{elevator.type}</span>
+                                              {elevator.internalId && <><span className="text-zinc-300 text-[10px]">•</span><span className="text-xs text-zinc-500">Unit {elevator.internalId}</span></>}
+                                              {elevator.stateId && <><span className="text-zinc-300 text-[10px]">•</span><span className="text-xs text-zinc-500">State {elevator.stateId}</span></>}
                                             </div>
                                           </div>
                                           {/* Status — 155px */}
-                                          <div className="flex items-center justify-center border-l border-zinc-200">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {latestInsp
                                               ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
-                                              : <span className="text-muted-foreground text-sm">—</span>}
+                                              : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Insp Type — 85px */}
-                                          <div className="flex items-center justify-center border-l border-zinc-200">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {latestInsp ? (
-                                              <span className={`text-sm font-bold px-1.5 py-0.5 rounded tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
+                                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-500 text-white" : "bg-zinc-800 text-white"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
-                                            ) : <span className="text-muted-foreground text-sm">—</span>}
+                                            ) : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Next Due — 125px */}
-                                          <div className="flex items-center justify-end border-l border-zinc-200 pr-2">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {due ? (
-                                              <span className={`text-sm tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-muted-foreground"}`}>
-                                                {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                                              <span className={`text-sm tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-zinc-600"}`}>
+                                                {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-sm text-muted-foreground">—</span>}
+                                            ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Scheduled — 125px */}
-                                          <div className="flex items-center justify-end border-l border-zinc-200 pr-2">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {scheduledDate ? (
-                                              <span className="text-sm tabular-nums whitespace-nowrap text-muted-foreground">
-                                                {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                                              <span className="text-sm tabular-nums whitespace-nowrap text-zinc-500">
+                                                {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-sm text-muted-foreground">—</span>}
+                                            ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Actions — 68px */}
                                           <div className="flex items-center justify-end border-l border-zinc-200 gap-0.5">
