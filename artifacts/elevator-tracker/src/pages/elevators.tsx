@@ -164,7 +164,9 @@ export default function Elevators() {
     { elevatorId: editingElevator?.id },
     { query: { 
       enabled: !!editingElevator,
-      queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator?.id }) 
+      queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator?.id }),
+      staleTime: 0,
+      refetchOnMount: "always",
     }}
   );
 
@@ -872,7 +874,7 @@ export default function Elevators() {
                         <p>No inspection records yet.</p>
                       </div>
                     ) : (
-                      <ScrollArea className="max-h-64 rounded-md border">
+                      <ScrollArea className="max-h-[50vh] rounded-md border">
                         <div className="divide-y">
                           {elevatorInspections.map((insp) => (
                             <div key={insp.id} className="flex items-start justify-between gap-3 px-4 py-3">
