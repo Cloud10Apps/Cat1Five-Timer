@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -130,9 +130,17 @@ export default function CalendarView() {
 
   const watchLastDate = form.watch("lastInspectionDate");
   const watchRecurrence = form.watch("recurrenceYears");
+  const watchCompletionDate = form.watch("completionDate");
   const nextDuePreview = watchLastDate && watchRecurrence
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("MMM D, YYYY")
     : "—";
+
+  // Auto-promote to COMPLETED when a completion date is entered
+  useEffect(() => {
+    if (watchCompletionDate) {
+      form.setValue("status", "COMPLETED");
+    }
+  }, [watchCompletionDate]);
 
   const openEdit = (insp: Inspection) => {
     setSelectedDate(null);
@@ -327,7 +335,13 @@ export default function CalendarView() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            value={field.value}
+                            onValueChange={(val) => {
+                              field.onChange(val);
+                              if (val !== "COMPLETED") form.setValue("completionDate", "");
+                            }}
+                          >
                             <FormControl>
                               <SelectTrigger><SelectValue /></SelectTrigger>
                             </FormControl>

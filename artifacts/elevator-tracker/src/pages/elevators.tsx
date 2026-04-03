@@ -264,11 +264,6 @@ export default function Elevators() {
     }
   }, [watchCompletionDate]);
 
-  useEffect(() => {
-    if (watchInspStatus !== "COMPLETED") {
-      inspForm.setValue("completionDate", "");
-    }
-  }, [watchInspStatus]);
 
   // Auto-load the most current NOT_STARTED inspection when the dialog opens
   useEffect(() => {
@@ -806,7 +801,13 @@ export default function Elevators() {
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>Status</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select
+                                      value={field.value}
+                                      onValueChange={(val) => {
+                                        field.onChange(val);
+                                        if (val !== "COMPLETED") inspForm.setValue("completionDate", "");
+                                      }}
+                                    >
                                       <FormControl>
                                         <SelectTrigger>
                                           <SelectValue />

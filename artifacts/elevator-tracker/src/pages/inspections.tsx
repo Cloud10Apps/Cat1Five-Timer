@@ -293,24 +293,26 @@ export default function Inspections() {
   const watchRecurrence = form.watch("recurrenceYears");
   const watchStatus = form.watch("status");
   const watchScheduledDate = form.watch("scheduledDate");
+  const watchCompletionDate = form.watch("completionDate");
   const nextDuePreview = watchLastDate && watchRecurrence 
     ? dayjs(watchLastDate).add(Number(watchRecurrence), 'year').format('YYYY-MM-DD')
     : "N/A";
 
-  // Auto-fill dates as status advances through stages
+  // Auto-promote to COMPLETED when a completion date is entered
+  useEffect(() => {
+    if (watchCompletionDate) {
+      form.setValue("status", "COMPLETED");
+    }
+  }, [watchCompletionDate]);
+
+  // Auto-fill scheduledDate when status advances (don't clear completionDate here — handled in onValueChange)
   useEffect(() => {
     const today = dayjs().format("YYYY-MM-DD");
-    if (watchStatus === "SCHEDULED") {
+    if (watchStatus === "SCHEDULED" || watchStatus === "IN_PROGRESS") {
       if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today);
-      form.setValue("completionDate", "");
-    } else if (watchStatus === "IN_PROGRESS") {
-      if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today);
-      form.setValue("completionDate", "");
     } else if (watchStatus === "COMPLETED") {
       if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today);
       if (!form.getValues("completionDate")) form.setValue("completionDate", today);
-    } else {
-      form.setValue("completionDate", "");
     }
   }, [watchStatus]);
 
@@ -391,7 +393,13 @@ export default function Inspections() {
                       render={({ field }) => (
                         <FormItem className="col-span-2 md:col-span-1">
                           <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select
+                            value={field.value}
+                            onValueChange={(val) => {
+                              field.onChange(val);
+                              if (val !== "COMPLETED") form.setValue("completionDate", "");
+                            }}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Status" />
