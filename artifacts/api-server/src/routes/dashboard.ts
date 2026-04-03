@@ -40,14 +40,17 @@ router.get("/summary", async (req, res) => {
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`,
     ));
 
-  // SCHEDULED: any inspection with a scheduledDate in current year (any status)
+  // SCHEDULED: status=SCHEDULED, has a scheduledDate this year, and not yet overdue
   const scheduledQuery = db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
     .where(and(
       baseCondition,
-      sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
+      eq(inspectionsTable.status, "SCHEDULED"),
+      sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
+      sql`EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
+      sql`(${inspectionsTable.nextDueDate} IS NULL OR ${inspectionsTable.nextDueDate}::date >= ${todayStr}::date)`,
     ));
 
   // IN PROGRESS: status = IN_PROGRESS only (no date filter)
@@ -226,12 +229,18 @@ router.get("/status-breakdown", async (req, res) => {
 
   const makeStatusQuery = (status: string) => {
     if (status === "SCHEDULED") {
-      // Scheduled = any inspection with a scheduledDate this year, regardless of current status
+      // Scheduled = status=SCHEDULED, has a scheduledDate this year, not yet overdue
       return db.select({ count: count() })
         .from(inspectionsTable)
         .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
         .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-        .where(and(baseC, sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`));
+        .where(and(
+          baseC,
+          eq(inspectionsTable.status, "SCHEDULED"),
+          sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
+          sql`EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
+          sql`(${inspectionsTable.nextDueDate} IS NULL OR ${inspectionsTable.nextDueDate}::date >= ${todayBd}::date)`,
+        ));
     }
     const dateFilter = status === "COMPLETED" ? completionYearFilter : dueDateYearFilter;
     return db.select({ count: count() })
@@ -337,8 +346,12 @@ router.get("/monthly-forecast", async (req, res) => {
       const bucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
       if (bucket) bucket.notStarted++;
     }
-    // Scheduled: has a scheduledDate, bucket by scheduledDate
-    if (row.scheduledDate) {
+    // Scheduled: status=SCHEDULED, has a scheduledDate, not yet overdue — bucket by scheduledDate
+    if (
+      row.status === "SCHEDULED" &&
+      row.scheduledDate &&
+      (row.nextDueDate == null || row.nextDueDate >= today.format("YYYY-MM-DD"))
+    ) {
       const bucket = months.find((m) => m.key === row.scheduledDate!.substring(0, 7));
       if (bucket) bucket.scheduled++;
     }
