@@ -987,7 +987,7 @@ export default function Elevators() {
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5" />
-                Next Due Range
+                Next Due
               </span>
               <span className="font-medium tabular-nums text-foreground">
                 {new Date(sliderFromDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
