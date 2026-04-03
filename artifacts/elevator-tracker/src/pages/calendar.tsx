@@ -140,7 +140,7 @@ export default function CalendarView() {
     form.reset({
       inspectionType: insp.inspectionType,
       recurrenceYears: insp.recurrenceYears,
-      status: insp.status,
+      status: insp.status === "OVERDUE" ? "NOT_STARTED" : insp.status,
       lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
       scheduledDate: insp.scheduledDate ? dayjs(insp.scheduledDate).format("YYYY-MM-DD") : "",
       completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",

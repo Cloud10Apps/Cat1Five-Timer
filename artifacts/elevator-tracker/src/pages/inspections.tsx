@@ -253,7 +253,7 @@ export default function Inspections() {
       elevatorId: inspection.elevatorId,
       inspectionType: inspection.inspectionType,
       recurrenceYears: inspection.recurrenceYears,
-      status: inspection.status,
+      status: inspection.status === "OVERDUE" ? "NOT_STARTED" : inspection.status,
       lastInspectionDate: inspection.lastInspectionDate ? dayjs(inspection.lastInspectionDate).format('YYYY-MM-DD') : "",
       scheduledDate: inspection.scheduledDate ? dayjs(inspection.scheduledDate).format('YYYY-MM-DD') : "",
       completionDate: inspection.completionDate ? dayjs(inspection.completionDate).format('YYYY-MM-DD') : "",
