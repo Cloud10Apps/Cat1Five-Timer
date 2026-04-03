@@ -29,13 +29,18 @@ router.get("/summary", async (req, res) => {
   const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
   const baseCondition = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
 
-  // Non-completed statuses (except SCHEDULED): filter by nextDueDate in current year
-  const dueDateYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`;
+  // NOT STARTED: status = NOT_STARTED AND nextDueDate in current year
+  const notStartedQuery = db.select({ count: count() })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      baseCondition,
+      eq(inspectionsTable.status, "NOT_STARTED"),
+      sql`${inspectionsTable.nextDueDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`,
+    ));
 
-  // Completed: filter by completionDate in current year
-  const completionYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`;
-
-  // Scheduled: any inspection that has a scheduledDate this year (regardless of current status)
+  // SCHEDULED: any inspection with a scheduledDate in current year (any status)
   const scheduledQuery = db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
@@ -45,24 +50,58 @@ router.get("/summary", async (req, res) => {
       sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
     ));
 
-  const makeCountQuery = (status: string) => {
-    const dateFilter = status === "COMPLETED" ? completionYearFilter : dueDateYearFilter;
-    return db.select({ count: count() })
-      .from(inspectionsTable)
-      .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-      .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseCondition, eq(inspectionsTable.status, status), dateFilter));
-  };
+  // IN PROGRESS: status = IN_PROGRESS only (no date filter)
+  const inProgressQuery = db.select({ count: count() })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(baseCondition, eq(inspectionsTable.status, "IN_PROGRESS")));
 
-  // Overdue = all past-due non-completed, regardless of year
+  // COMPLETED: any inspection with a completionDate in current year (any status)
+  const completedQuery = db.select({ count: count() })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      baseCondition,
+      sql`${inspectionsTable.completionDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`,
+    ));
+
+  // OVERDUE: no completionDate AND nextDueDate is in the past
   const overdueQuery = db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
     .where(and(
       baseCondition,
-      ne(inspectionsTable.status, "COMPLETED"),
+      sql`${inspectionsTable.completionDate} IS NULL`,
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayStr}::date`,
+    ));
+
+  // Avg Days to Schedule: AVG(scheduledDate - nextDueDate) for inspections with scheduledDate this year
+  const avgScheduleQuery = db.select({
+    avg: sql<string>`AVG(${inspectionsTable.scheduledDate}::date - ${inspectionsTable.nextDueDate}::date)`,
+  })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      baseCondition,
+      sql`${inspectionsTable.scheduledDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`,
+      sql`EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
+    ));
+
+  // Avg Days to Complete: AVG(completionDate - nextDueDate) for inspections with completionDate this year
+  const avgCompleteQuery = db.select({
+    avg: sql<string>`AVG(${inspectionsTable.completionDate}::date - ${inspectionsTable.nextDueDate}::date)`,
+  })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      baseCondition,
+      sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`,
+      sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`,
     ));
 
   const [
@@ -74,27 +113,13 @@ router.get("/summary", async (req, res) => {
     [avgScheduleRow],
     [avgCompleteRow],
   ] = await Promise.all([
-    makeCountQuery("NOT_STARTED"),
+    notStartedQuery,
     scheduledQuery,
-    makeCountQuery("IN_PROGRESS"),
-    makeCountQuery("COMPLETED"),
+    inProgressQuery,
+    completedQuery,
     overdueQuery,
-    // avg(scheduled_date - next_due_date) for current-year inspections
-    db.select({
-      avg: sql<string>`AVG(${inspectionsTable.scheduledDate}::date - ${inspectionsTable.nextDueDate}::date)`,
-    })
-      .from(inspectionsTable)
-      .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-      .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseCondition, dueDateYearFilter, sql`${inspectionsTable.scheduledDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
-    // avg(completion_date - next_due_date) for COMPLETED inspections this year
-    db.select({
-      avg: sql<string>`AVG(${inspectionsTable.completionDate}::date - ${inspectionsTable.nextDueDate}::date)`,
-    })
-      .from(inspectionsTable)
-      .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-      .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseCondition, eq(inspectionsTable.status, "COMPLETED"), completionYearFilter, sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
+    avgScheduleQuery,
+    avgCompleteQuery,
   ]);
 
   const parseAvg = (val: string | null): number | null =>
