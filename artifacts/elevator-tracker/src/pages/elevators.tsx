@@ -997,7 +997,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left grid-cols-[1fr_155px_85px_125px_125px_68px]"
+                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_155px_85px_125px_125px_100px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1006,7 +1006,7 @@ export default function Elevators() {
                       : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
                     <Users className="h-5 w-5 shrink-0 text-zinc-400" />
                     <span className="font-bold text-base tracking-tight truncate">{customer.customerName}</span>
-                    <span className="text-xs font-medium bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
+                    <span className="text-xs font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
                       {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
                     </span>
                   </div>
@@ -1035,7 +1035,7 @@ export default function Elevators() {
                         <div key={building.buildingId}>
                           {/* Building header */}
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-2.5 pl-6 bg-zinc-50 border-l-[3px] border-zinc-400 hover:bg-zinc-100 transition-colors text-left border-b border-zinc-100"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 pl-8 bg-zinc-50 border-l-[3px] border-zinc-500 hover:bg-zinc-100 transition-colors text-left border-b border-zinc-100"
                             onClick={() => toggleBuilding(building.buildingId)}
                           >
                             {isBuildingCollapsed
@@ -1079,10 +1079,10 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_68px] relative hover:bg-amber-50/40 transition-colors border-b border-zinc-100"
+                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-100"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
-                                          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500/80" />
+                                          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
                                           {/* Name + meta */}
                                           <div className={`flex flex-col justify-center px-4 py-2 min-w-0 ${nameIndent}`}>
                                             <div className="font-semibold text-sm leading-snug truncate text-zinc-900">{elevator.name}</div>
@@ -1109,7 +1109,7 @@ export default function Elevators() {
                                           {/* Next Due — 125px */}
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {due ? (
-                                              <span className={`text-sm tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-zinc-600"}`}>
+                                              <span className={`text-sm tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-zinc-800 font-medium"}`}>
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
@@ -1117,13 +1117,13 @@ export default function Elevators() {
                                           {/* Scheduled — 125px */}
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {scheduledDate ? (
-                                              <span className="text-sm tabular-nums whitespace-nowrap text-zinc-500">
+                                              <span className="text-sm tabular-nums whitespace-nowrap text-zinc-400">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
-                                          {/* Actions — 68px */}
-                                          <div className="flex items-center justify-end border-l border-zinc-200 gap-0.5">
+                                          {/* Actions — 100px */}
+                                          <div className="flex items-center justify-center border-l border-zinc-200 gap-0.5">
                                             <TooltipProvider>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
