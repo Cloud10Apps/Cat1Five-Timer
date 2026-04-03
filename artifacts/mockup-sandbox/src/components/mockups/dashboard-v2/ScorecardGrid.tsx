@@ -100,15 +100,20 @@ export function ScorecardGrid() {
     <div className="min-h-screen bg-zinc-50 p-8 font-sans text-zinc-950 space-y-8">
       
       {/* HEADER BANNER */}
-      <div className={`w-full rounded-none border-l-8 p-6 shadow-sm flex items-center gap-4 ${hasOverdue ? "bg-red-50 border-red-500" : "bg-green-50 border-green-500"}`}>
-        {hasOverdue ? <AlertCircle className="w-8 h-8 text-red-500" /> : <CheckCircle2 className="w-8 h-8 text-green-500" />}
-        <div>
-          <h1 className={`text-2xl font-black tracking-tight ${hasOverdue ? "text-red-700" : "text-green-700"}`}>
-            {hasOverdue ? "3 OVERDUE INSPECTIONS" : "ALL SYSTEMS GO"}
-          </h1>
-          <p className={hasOverdue ? "text-red-600/80 font-medium" : "text-green-600/80 font-medium"}>
-            Immediate action required on critical elevators.
-          </p>
+      <div className="flex items-stretch gap-0 shadow-sm rounded-sm overflow-hidden">
+        <div className="bg-zinc-950 px-3 py-2 flex items-center">
+          <img src="/__mockup/images/logo.svg" alt="Cat1Five Timer" className="h-12" />
+        </div>
+        <div className={`flex-1 border-l-8 p-6 flex items-center gap-4 ${hasOverdue ? "bg-red-50 border-red-500" : "bg-green-50 border-green-500"}`}>
+          {hasOverdue ? <AlertCircle className="w-8 h-8 text-red-500" /> : <CheckCircle2 className="w-8 h-8 text-green-500" />}
+          <div>
+            <h1 className={`text-2xl font-black tracking-tight ${hasOverdue ? "text-red-700" : "text-green-700"}`}>
+              {hasOverdue ? "3 OVERDUE INSPECTIONS" : "ALL SYSTEMS GO"}
+            </h1>
+            <p className={hasOverdue ? "text-red-600/80 font-medium" : "text-green-600/80 font-medium"}>
+              Immediate action required on critical elevators.
+            </p>
+          </div>
         </div>
       </div>
 

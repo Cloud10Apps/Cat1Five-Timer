@@ -81,11 +81,7 @@ export function CommandCenter() {
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-white flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-              Cat1Five Operations
-            </h1>
-            <p className="text-zinc-500 text-sm mt-1 uppercase tracking-widest font-medium">System Command Center</p>
+            <img src="/__mockup/images/logo.svg" alt="Cat1Five Timer" className="h-14 rounded-sm" />
           </div>
           
           <div className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm border ${

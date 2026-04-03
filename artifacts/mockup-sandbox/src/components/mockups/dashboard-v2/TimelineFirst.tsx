@@ -108,9 +108,8 @@ export function TimelineFirst() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 font-sans text-zinc-950 dark:text-zinc-50 space-y-8">
       {/* Header & Status Alert */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Timeline Overview</h1>
-          <p className="text-zinc-500 dark:text-zinc-400">Cat1/Cat5 Elevator Compliance</p>
+        <div className="bg-zinc-950 rounded-lg px-2 py-1 inline-flex">
+          <img src="/__mockup/images/logo.svg" alt="Cat1Five Timer" className="h-12" />
         </div>
         
         {hasOverdue ? (
