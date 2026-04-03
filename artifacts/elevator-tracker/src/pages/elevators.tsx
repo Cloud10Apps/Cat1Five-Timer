@@ -425,17 +425,34 @@ export default function Elevators() {
   };
 
   const onSubmitBothInsp = async () => {
-    if (!editingElevator) return;
+    let elevatorId: number;
+
+    if (editingElevator) {
+      elevatorId = editingElevator.id;
+    } else {
+      const isValid = await form.trigger();
+      if (!isValid) return;
+      const elevatorData = form.getValues();
+      try {
+        const created = await createMutation.mutateAsync({ data: elevatorData });
+        queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
+        elevatorId = (created as any).id;
+      } catch {
+        toast({ title: "Failed to create elevator", variant: "destructive" });
+        return;
+      }
+    }
+
     const cat1Data = inspForm.getValues();
     const cat5Data = inspCat5Form.getValues();
     try {
       await Promise.all([
-        createInspMutation.mutateAsync({ data: { ...cat1Data, elevatorId: editingElevator.id, lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
-        createInspMutation.mutateAsync({ data: { ...cat5Data, elevatorId: editingElevator.id, lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat1Data, elevatorId, lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat5Data, elevatorId, lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
       ]);
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
-      if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator.id }), exact: false });
-      toast({ title: "Both inspections created" });
+      if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
+      toast({ title: editingElevator ? "Both inspections created" : "Unit and inspections created" });
       setIsAddOpen(false);
     } catch {
       toast({ title: "Failed to create inspections", variant: "destructive" });
@@ -766,8 +783,7 @@ export default function Elevators() {
                 )}
               </DialogHeader>
 
-              {editingElevator ? (
-                <Tabs defaultValue="unit" className="pt-2">
+              <Tabs defaultValue="unit" className="pt-2">
                   <TabsList className="w-full mb-4">
                     <TabsTrigger value="unit" className="flex-1">Unit Details</TabsTrigger>
                     <TabsTrigger value="inspection" className="flex-1">
@@ -948,9 +964,6 @@ export default function Elevators() {
                     )}
                   </TabsContent>
                 </Tabs>
-              ) : (
-                elevatorFormFields
-              )}
             </DialogContent>
           </Dialog>
         </div>
