@@ -1054,36 +1054,47 @@ export default function Elevators() {
                 ] as const;
                 const activeBadges = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
                 return (
-                <TableRow key={elevator.id}>
-                  <TableCell>
-                    <div className="font-medium">{elevator.name}</div>
-                    <div className="flex gap-2 mt-0.5 flex-wrap">
-                      {elevator.internalId && (
-                        <span className="text-sm text-muted-foreground">Unit: {elevator.internalId}</span>
-                      )}
-                      {elevator.stateId && (
-                        <span className="text-sm text-muted-foreground">State: {elevator.stateId}</span>
-                      )}
-                    </div>
-                    {activeBadges.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {activeBadges.map(({ key, label, dot }) => (
-                          <span
-                            key={key}
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50"
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
-                            {counts[key]} {label}
-                          </span>
-                        ))}
+                <TableRow key={elevator.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition-colors">
+                  <TableCell className="py-4 pl-0 pr-4">
+                    <div className="flex items-stretch gap-0">
+                      {/* amber accent bar */}
+                      <div className="w-1 rounded-full bg-amber-400/70 mr-3 shrink-0 self-stretch min-h-[2rem]" />
+                      <div className="min-w-0">
+                        <div className="font-semibold leading-snug">{elevator.name}</div>
+                        {(elevator.internalId || elevator.stateId) && (
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {elevator.internalId && (
+                              <span className="text-sm text-muted-foreground">Unit&nbsp;{elevator.internalId}</span>
+                            )}
+                            {elevator.internalId && elevator.stateId && (
+                              <span className="text-muted-foreground/40 text-sm">·</span>
+                            )}
+                            {elevator.stateId && (
+                              <span className="text-sm text-muted-foreground">State&nbsp;{elevator.stateId}</span>
+                            )}
+                          </div>
+                        )}
+                        {activeBadges.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {activeBadges.map(({ key, label, dot }) => (
+                              <span
+                                key={key}
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50"
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+                                {counts[key]} {label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </TableCell>
-                  <TableCell>{elevator.buildingName}</TableCell>
-                  <TableCell>{elevator.customerName}</TableCell>
-                  <TableCell className="capitalize">{elevator.type}</TableCell>
-                  <TableCell>{elevator.bank || "-"}</TableCell>
-                  <TableCell>
+                  <TableCell className="py-4">{elevator.buildingName}</TableCell>
+                  <TableCell className="py-4">{elevator.customerName}</TableCell>
+                  <TableCell className="py-4 capitalize">{elevator.type}</TableCell>
+                  <TableCell className="py-4">{elevator.bank || "-"}</TableCell>
+                  <TableCell className="py-4">
                     {(() => {
                       const due = nextDueDateByElevator.get(elevator.id);
                       if (!due) return <span className="text-muted-foreground">—</span>;
@@ -1101,7 +1112,7 @@ export default function Elevators() {
                       );
                     })()}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-4">
                     {(() => {
                       const STATUS_META: Record<string, { color: string; ring: string; label: string }> = {
                         OVERDUE:     { color: "bg-red-500",   ring: "ring-2 ring-red-200 ring-offset-1",   label: "Overdue"     },
