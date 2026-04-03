@@ -112,9 +112,8 @@ export default function Elevators() {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedBank, setSelectedBank] = useState<string>("all");
-  const [sliderFromDay, setSliderFromDay] = useState<number>(0);
-  const [sliderToDay,   setSliderToDay]   = useState<number>(0);
-  const [sliderReady,   setSliderReady]   = useState(false);
+  const [filterDueMonth, setFilterDueMonth] = useState<string>("all");
+  const [filterDueYear,  setFilterDueYear]  = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
 
@@ -203,42 +202,24 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
-  // Slider bounds: epoch-days spanning all known next-due dates ± buffer
-  const { sliderBoundsMin, sliderBoundsMax } = useMemo(() => {
-    const days = Array.from(nextDueDateByElevator.values())
-      .map(d => Math.floor(new Date(d + "T00:00:00").getTime() / 86400000));
-    const today = Math.floor(Date.now() / 86400000);
-    if (!days.length) return { sliderBoundsMin: today - 180, sliderBoundsMax: today + 365 * 5 };
-    return {
-      sliderBoundsMin: Math.min(...days) - 30,
-      sliderBoundsMax: Math.max(...days) + 30,
-    };
+  // Derive available years from actual next-due dates
+  const dueYearOptions = useMemo(() => {
+    const years = new Set<string>();
+    for (const d of nextDueDateByElevator.values()) years.add(d.slice(0, 4));
+    return Array.from(years).sort();
   }, [nextDueDateByElevator]);
 
-  // Initialize slider to full range once bounds are known
-  useEffect(() => {
-    if (!sliderReady && sliderBoundsMin < sliderBoundsMax) {
-      setSliderFromDay(sliderBoundsMin);
-      setSliderToDay(sliderBoundsMax);
-      setSliderReady(true);
-    }
-  }, [sliderBoundsMin, sliderBoundsMax, sliderReady]);
-
-  const sliderActive = sliderReady && (sliderFromDay > sliderBoundsMin || sliderToDay < sliderBoundsMax);
-  const dueDateFrom = sliderActive ? new Date(sliderFromDay * 86400000).toISOString().slice(0, 10) : "";
-  const dueDateTo   = sliderActive ? new Date(sliderToDay   * 86400000).toISOString().slice(0, 10) : "";
-
-  // Client-side filter by due date range
+  // Client-side filter by due month / year
   const filteredElevators = useMemo(() => {
-    if (!dueDateFrom && !dueDateTo) return elevators;
+    if (filterDueMonth === "all" && filterDueYear === "all") return elevators;
     return (elevators ?? []).filter((el) => {
       const due = nextDueDateByElevator.get(el.id);
       if (!due) return false;
-      if (dueDateFrom && due < dueDateFrom) return false;
-      if (dueDateTo && due > dueDateTo) return false;
+      if (filterDueYear  !== "all" && due.slice(0, 4) !== filterDueYear)  return false;
+      if (filterDueMonth !== "all" && due.slice(5, 7) !== filterDueMonth) return false;
       return true;
     });
-  }, [elevators, nextDueDateByElevator, dueDateFrom, dueDateTo]);
+  }, [elevators, nextDueDateByElevator, filterDueMonth, filterDueYear]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1011,62 +992,45 @@ export default function Elevators() {
             ))}
           </SelectContent>
         </Select>
-        {/* Due date range slider */}
-        {sliderReady && (
-          <div className="flex flex-col gap-1 min-w-[260px]">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5" />
-                Next Due
-              </span>
-              {sliderActive && (
-                <button
-                  onClick={() => { setSliderFromDay(sliderBoundsMin); setSliderToDay(sliderBoundsMax); }}
-                  className="text-muted-foreground hover:text-foreground"
-                  title="Reset"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-            <div className="text-xs tabular-nums text-muted-foreground">
-              {new Date(sliderFromDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
-              {" – "}
-              {new Date(sliderToDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
-            </div>
-            <div className="relative h-5 flex items-center">
-              {/* Track background */}
-              <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 bg-muted rounded-full" />
-              {/* Active fill */}
-              <div
-                className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-amber-400 rounded-full"
-                style={{
-                  left:  `${((sliderFromDay - sliderBoundsMin) / (sliderBoundsMax - sliderBoundsMin)) * 100}%`,
-                  right: `${100 - ((sliderToDay - sliderBoundsMin) / (sliderBoundsMax - sliderBoundsMin)) * 100}%`,
-                }}
-              />
-              {/* From handle */}
-              <input
-                type="range"
-                min={sliderBoundsMin}
-                max={sliderBoundsMax}
-                value={sliderFromDay}
-                onChange={(e) => setSliderFromDay(Math.min(+e.target.value, sliderToDay - 1))}
-                className="due-range-input"
-                style={{ zIndex: sliderFromDay >= sliderToDay - 1 ? 5 : 3 }}
-              />
-              {/* To handle */}
-              <input
-                type="range"
-                min={sliderBoundsMin}
-                max={sliderBoundsMax}
-                value={sliderToDay}
-                onChange={(e) => setSliderToDay(Math.max(+e.target.value, sliderFromDay + 1))}
-                className="due-range-input"
-                style={{ zIndex: 4 }}
-              />
-            </div>
-          </div>
+        {/* Due Month filter */}
+        <Select value={filterDueMonth} onValueChange={setFilterDueMonth}>
+          <SelectTrigger className="w-[140px]">
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
+            <SelectValue placeholder="Due Month" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Months</SelectItem>
+            {[
+              ["01","January"],["02","February"],["03","March"],["04","April"],
+              ["05","May"],["06","June"],["07","July"],["08","August"],
+              ["09","September"],["10","October"],["11","November"],["12","December"],
+            ].map(([val, label]) => (
+              <SelectItem key={val} value={val}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Due Year filter */}
+        <Select value={filterDueYear} onValueChange={setFilterDueYear}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Due Year" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Years</SelectItem>
+            {dueYearOptions.map((y) => (
+              <SelectItem key={y} value={y}>{y}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Reset due filters */}
+        {(filterDueMonth !== "all" || filterDueYear !== "all") && (
+          <button
+            onClick={() => { setFilterDueMonth("all"); setFilterDueYear("all"); }}
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <X className="h-3.5 w-3.5" /> Reset
+          </button>
         )}
       </div>
 
