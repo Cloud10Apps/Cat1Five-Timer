@@ -56,7 +56,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Plus, Search, Pencil, Trash2, ArrowUpSquare, Download, ClipboardList, X, CalendarDays, Clock, ArrowRight } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -661,16 +661,17 @@ export default function Elevators() {
                   </TabsContent>
 
                   <TabsContent value="inspections" className="pt-2 space-y-4">
-                    {/* Inline inspection form */}
-                    {showInspForm ? (
-                      <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
+                    {/* Inline inspection form — always visible */}
+                    <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
                         <div className="flex items-center justify-between">
                           <h3 className="text-sm font-semibold">
                             {editingInspection ? "Edit Inspection" : "New Inspection"}
                           </h3>
-                          <Button variant="ghost" size="icon" onClick={resetInspForm}>
-                            <X className="h-4 w-4" />
-                          </Button>
+                          {editingInspection && (
+                            <Button variant="ghost" size="icon" onClick={resetInspForm}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                         <Form {...inspForm}>
                           <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-3">
@@ -848,17 +849,6 @@ export default function Elevators() {
                           </form>
                         </Form>
                       </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full border-dashed"
-                        onClick={() => setShowInspForm(true)}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Inspection
-                      </Button>
-                    )}
 
                     {/* Inspection history list */}
                     <div className="flex items-center gap-2 pt-1">
@@ -873,8 +863,7 @@ export default function Elevators() {
                         <p>No inspection records yet.</p>
                       </div>
                     ) : (
-                      <ScrollArea className="max-h-[50vh] rounded-md border">
-                        <div className="divide-y">
+                      <div className="rounded-md border divide-y">
                           {elevatorInspections.map((insp) => (
                             <div key={insp.id} className="flex items-start justify-between gap-3 px-4 py-3">
                               <div className="flex flex-col gap-1 min-w-0">
@@ -912,8 +901,7 @@ export default function Elevators() {
                               </div>
                             </div>
                           ))}
-                        </div>
-                      </ScrollArea>
+                      </div>
                     )}
                   </TabsContent>
                 </Tabs>
