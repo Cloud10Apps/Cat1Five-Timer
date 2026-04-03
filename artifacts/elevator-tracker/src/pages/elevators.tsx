@@ -760,7 +760,7 @@ export default function Elevators() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Elevators</h1>
           <p className="mt-1 text-sm text-muted-foreground max-w-xl leading-relaxed italic">
-            Set up new elevator units, add initial inspection records, and keep statuses current &mdash; so your compliance data stays accurate from day one.
+            Set up elevator units, establish initial inspection records, and keep the most recent inspection front and center&mdash;ensuring everything stays accurate and up to date.
           </p>
         </div>
 
