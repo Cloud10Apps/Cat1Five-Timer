@@ -869,7 +869,7 @@ export default function Elevators() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4">
+      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 max-w-4xl">
         <div className="relative flex-1 w-full min-w-[200px] max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -990,28 +990,28 @@ export default function Elevators() {
           <p>No elevators found.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 max-w-4xl">
           {grouped.map((customer) => {
             const isCustomerCollapsed = collapsedCustomers.has(customer.customerId);
             return (
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid items-center px-4 py-3 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left grid-cols-[1fr_200px_120px_160px_160px_68px]"
+                  className="w-full grid px-4 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors text-left grid-cols-[1fr_155px_85px_125px_125px_68px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0 py-3">
                     {isCustomerCollapsed
                       ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
                       : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" />}
                     <Users className="h-4 w-4 shrink-0 text-zinc-400" />
                     <span className="font-bold text-sm truncate ml-1">{customer.customerName}</span>
                   </div>
-                  <div className="text-center text-sm font-bold text-white">Status</div>
-                  <div className="text-center text-sm font-bold text-white">Type</div>
-                  <div className="text-right text-sm font-bold text-white pr-1">Next Due</div>
-                  <div className="text-right text-sm font-bold text-white pr-1">Scheduled</div>
-                  <div />
+                  <div className="flex items-center justify-center border-l border-zinc-700 text-sm font-bold text-white">Status</div>
+                  <div className="flex items-center justify-center border-l border-zinc-700 text-sm font-bold text-white">Type</div>
+                  <div className="flex items-center justify-end border-l border-zinc-700 text-sm font-bold text-white pr-2">Next Due</div>
+                  <div className="flex items-center justify-end border-l border-zinc-700 text-sm font-bold text-white pr-2">Scheduled</div>
+                  <div className="border-l border-zinc-700" />
                 </button>
 
                 {!isCustomerCollapsed && (
@@ -1066,10 +1066,10 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid items-center px-4 py-2.5 pr-4 grid-cols-[1fr_200px_120px_160px_160px_68px] hover:bg-amber-50/60 transition-colors border-t border-zinc-50"
+                                          className="grid px-4 pr-4 grid-cols-[1fr_155px_85px_125px_125px_68px] hover:bg-amber-50/60 transition-colors border-t border-zinc-50"
                                         >
                                           {/* Name + meta — 1fr; indent + amber bar live inside */}
-                                          <div className={`flex items-center min-w-0 ${nameIndent}`}>
+                                          <div className={`flex items-center min-w-0 py-2.5 ${nameIndent}`}>
                                             <div className="w-0.5 self-stretch min-h-[2rem] rounded-full bg-amber-400/70 shrink-0 mr-3" />
                                             <div className="min-w-0">
                                               <div className="font-semibold text-sm leading-snug truncate">{elevator.name}</div>
@@ -1080,38 +1080,38 @@ export default function Elevators() {
                                               </div>
                                             </div>
                                           </div>
-                                          {/* Status — 200px */}
-                                          <div className="flex justify-center overflow-hidden">
+                                          {/* Status — 155px */}
+                                          <div className="flex items-center justify-center border-l border-zinc-200">
                                             {latestInsp
                                               ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
-                                              : <span className="text-muted-foreground text-xs">—</span>}
+                                              : <span className="text-muted-foreground text-sm">—</span>}
                                           </div>
-                                          {/* Insp Type — 120px */}
-                                          <div className="flex justify-center overflow-hidden">
+                                          {/* Insp Type — 85px */}
+                                          <div className="flex items-center justify-center border-l border-zinc-200">
                                             {latestInsp ? (
-                                              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
+                                              <span className={`text-xs font-bold px-1.5 py-0.5 rounded tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
-                                            ) : <span className="text-muted-foreground text-xs">—</span>}
+                                            ) : <span className="text-muted-foreground text-sm">—</span>}
                                           </div>
-                                          {/* Next Due — 160px */}
-                                          <div className="text-right pr-1 overflow-hidden">
+                                          {/* Next Due — 125px */}
+                                          <div className="flex items-center justify-end border-l border-zinc-200 pr-2">
                                             {due ? (
-                                              <span className={`text-xs tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-muted-foreground"}`}>
+                                              <span className={`text-sm tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-muted-foreground"}`}>
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-xs text-muted-foreground">—</span>}
+                                            ) : <span className="text-sm text-muted-foreground">—</span>}
                                           </div>
-                                          {/* Scheduled — 160px */}
-                                          <div className="text-right pr-1 overflow-hidden">
+                                          {/* Scheduled — 125px */}
+                                          <div className="flex items-center justify-end border-l border-zinc-200 pr-2">
                                             {scheduledDate ? (
-                                              <span className="text-xs tabular-nums whitespace-nowrap text-muted-foreground">
+                                              <span className="text-sm tabular-nums whitespace-nowrap text-muted-foreground">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-xs text-muted-foreground">—</span>}
+                                            ) : <span className="text-sm text-muted-foreground">—</span>}
                                           </div>
                                           {/* Actions — 68px */}
-                                          <div className="flex items-center justify-end gap-0.5">
+                                          <div className="flex items-center justify-end border-l border-zinc-200 gap-0.5">
                                             <TooltipProvider>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
