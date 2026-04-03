@@ -1110,7 +1110,7 @@ export default function Elevators() {
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {due ? (
                                               <span className={`text-sm tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-zinc-800 font-medium"}`}>
-                                                {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
+                                                {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
@@ -1118,7 +1118,7 @@ export default function Elevators() {
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {scheduledDate ? (
                                               <span className="text-sm tabular-nums whitespace-nowrap text-zinc-400">
-                                                {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
+                                                {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
