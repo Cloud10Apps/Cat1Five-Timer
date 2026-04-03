@@ -101,6 +101,7 @@ export default function Elevators() {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedBank, setSelectedBank] = useState<string>("all");
+  const [selectedElevatorId, setSelectedElevatorId] = useState<string>("all");
   const [filterDueMonth, setFilterDueMonth] = useState<string>("all");
   const [filterDueYear,  setFilterDueYear]  = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -236,17 +237,22 @@ export default function Elevators() {
     return Array.from(years).sort();
   }, [nextDueDateByElevator]);
 
-  // Client-side filter by due month / year
+  // Elevator options for the dropdown (from the API-filtered list, before client-side filters)
+  const elevatorOptions = useMemo(() => {
+    return [...(elevators ?? [])]
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  }, [elevators]);
+
+  // Client-side filter by elevator, due month, and due year
   const filteredElevators = useMemo(() => {
-    if (filterDueMonth === "all" && filterDueYear === "all") return elevators;
     return (elevators ?? []).filter((el) => {
+      if (selectedElevatorId !== "all" && el.id.toString() !== selectedElevatorId) return false;
       const due = nextDueDateByElevator.get(el.id);
-      if (!due) return false;
-      if (filterDueYear  !== "all" && due.slice(0, 4) !== filterDueYear)  return false;
-      if (filterDueMonth !== "all" && due.slice(5, 7) !== filterDueMonth) return false;
+      if (filterDueYear  !== "all") { if (!due || due.slice(0, 4) !== filterDueYear)  return false; }
+      if (filterDueMonth !== "all") { if (!due || due.slice(5, 7) !== filterDueMonth) return false; }
       return true;
     });
-  }, [elevators, nextDueDateByElevator, filterDueMonth, filterDueYear]);
+  }, [elevators, selectedElevatorId, nextDueDateByElevator, filterDueMonth, filterDueYear]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -990,6 +996,7 @@ export default function Elevators() {
           setSelectedCustomerId(val);
           setSelectedBuildingId("all");
           setSelectedBank("all");
+          setSelectedElevatorId("all");
         }}>
           <SelectTrigger className="h-8 text-xs w-[160px]">
             <SelectValue placeholder="All Customers" />
@@ -1008,6 +1015,7 @@ export default function Elevators() {
         <Select value={selectedBuildingId} onValueChange={(val) => {
           setSelectedBuildingId(val);
           setSelectedBank("all");
+          setSelectedElevatorId("all");
         }}>
           <SelectTrigger className="h-8 text-xs w-[160px]">
             <SelectValue placeholder="All Buildings" />
@@ -1025,7 +1033,7 @@ export default function Elevators() {
         {/* All Banks */}
         <Select
           value={selectedBank}
-          onValueChange={setSelectedBank}
+          onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
           disabled={bankOptions.length === 0}
         >
           <SelectTrigger className="h-8 text-xs w-[140px]">
@@ -1035,6 +1043,25 @@ export default function Elevators() {
             <SelectItem value="all">All Banks</SelectItem>
             {bankOptions.map((bank) => (
               <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* All Elevators */}
+        <Select
+          value={selectedElevatorId}
+          onValueChange={setSelectedElevatorId}
+          disabled={elevatorOptions.length === 0}
+        >
+          <SelectTrigger className="h-8 text-xs w-[180px]">
+            <SelectValue placeholder="All Elevators" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Elevators</SelectItem>
+            {elevatorOptions.map((el) => (
+              <SelectItem key={el.id} value={el.id.toString()}>
+                {el.name}{el.unitId ? ` (${el.unitId})` : ""}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1086,12 +1113,13 @@ export default function Elevators() {
         </Select>
 
         {/* Clear all filters */}
-        {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
+        {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
           <button
             onClick={() => {
               setSelectedCustomerId("all");
               setSelectedBuildingId("all");
               setSelectedBank("all");
+              setSelectedElevatorId("all");
               setSelectedType("all");
               setFilterDueMonth("all");
               setFilterDueYear("all");
