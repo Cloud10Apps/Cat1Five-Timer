@@ -302,7 +302,7 @@ export default function Dashboard() {
                         {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                       </TableCell>
                       <TableCell className="text-right py-3">
-                        <StatusBadge status={insp.status} />
+                        <StatusBadge status={insp.rawStatus ?? insp.status} />
                       </TableCell>
                     </TableRow>
                   ))}

@@ -200,6 +200,7 @@ router.get("/attention", async (req, res) => {
       scheduledDate: r.scheduledDate ?? undefined,
       completionDate: r.completionDate ?? undefined,
       status: r.nextDueDate && r.nextDueDate < todayStr && r.status !== "COMPLETED" ? "OVERDUE" : r.status,
+      rawStatus: r.status,
       notes: r.notes ?? undefined,
       organizationId: r.organizationId,
       createdAt: r.createdAt.toISOString(),
