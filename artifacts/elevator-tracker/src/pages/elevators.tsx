@@ -1225,7 +1225,7 @@ export default function Elevators() {
                               {building.banks.map((bank) => {
                                 const bankKey = `${building.buildingId}::${bank.bankName}`;
                                 const isBankCollapsed = collapsedBanks.has(bankKey);
-                                const bankLabel = bank.bankName !== "" ? `Bank: ${bank.bankName}` : "No Bank";
+                                const bankLabel = bank.bankName !== "" ? bank.bankName : "No Bank";
                                 return (
                                   <div key={bank.bankName}>
                                     {/* Bank header — always shown; "No Bank" for unassigned elevators */}
