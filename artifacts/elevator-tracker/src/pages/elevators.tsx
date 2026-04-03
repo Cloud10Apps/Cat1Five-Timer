@@ -1078,7 +1078,7 @@ export default function Elevators() {
                 const activeBadges = STATUS_DOTS.filter(s => (counts[s.key] ?? 0) > 0);
                 return (
                 <TableRow key={elevator.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition-colors">
-                  <TableCell className="py-4 pl-0 pr-4">
+                  <TableCell className="py-2 pl-0 pr-4">
                     <div className="flex items-stretch gap-0">
                       {/* amber accent bar */}
                       <div className="w-1 rounded-full bg-amber-400/70 mr-3 shrink-0 self-stretch min-h-[2rem]" />
@@ -1100,11 +1100,11 @@ export default function Elevators() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="py-4">{elevator.buildingName}</TableCell>
-                  <TableCell className="py-4">{elevator.customerName}</TableCell>
-                  <TableCell className="py-4 capitalize">{elevator.type}</TableCell>
-                  <TableCell className="py-4">{elevator.bank || "-"}</TableCell>
-                  <TableCell className="py-4">
+                  <TableCell className="py-2">{elevator.buildingName}</TableCell>
+                  <TableCell className="py-2">{elevator.customerName}</TableCell>
+                  <TableCell className="py-2 capitalize">{elevator.type}</TableCell>
+                  <TableCell className="py-2">{elevator.bank || "-"}</TableCell>
+                  <TableCell className="py-2">
                     {(() => {
                       const due = nextDueDateByElevator.get(elevator.id);
                       if (!due) return <span className="text-muted-foreground">—</span>;
@@ -1122,7 +1122,7 @@ export default function Elevators() {
                       );
                     })()}
                   </TableCell>
-                  <TableCell className="py-4">
+                  <TableCell className="py-2">
                     {activeBadges.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {activeBadges.map(({ key, label, dot }) => (
