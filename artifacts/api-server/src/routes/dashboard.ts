@@ -45,9 +45,9 @@ router.get("/summary", async (req, res) => {
     makeCountQuery("SCHEDULED"),
     makeCountQuery("COMPLETED"),
     makeCountQuery("OVERDUE"),
-    // avg(scheduled_date - due_date) — negative = good (scheduled before due)
+    // avg(next_due_date - scheduled_date) — positive = good (scheduled before due)
     db.select({
-      avg: sql<string>`AVG(${inspectionsTable.scheduledDate}::date - ${inspectionsTable.nextDueDate}::date)`,
+      avg: sql<string>`AVG(${inspectionsTable.nextDueDate}::date - ${inspectionsTable.scheduledDate}::date)`,
     })
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
