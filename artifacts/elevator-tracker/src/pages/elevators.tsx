@@ -112,8 +112,9 @@ export default function Elevators() {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedBank, setSelectedBank] = useState<string>("all");
-  const [dueDateFrom, setDueDateFrom] = useState<string>("");
-  const [dueDateTo, setDueDateTo] = useState<string>("");
+  const [sliderFromDay, setSliderFromDay] = useState<number>(0);
+  const [sliderToDay,   setSliderToDay]   = useState<number>(0);
+  const [sliderReady,   setSliderReady]   = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
 
@@ -216,6 +217,31 @@ export default function Elevators() {
     raw.forEach(({ status }, id) => map.set(id, status));
     return map;
   }, [allInspections]);
+
+  // Slider bounds: epoch-days spanning all known next-due dates ± buffer
+  const { sliderBoundsMin, sliderBoundsMax } = useMemo(() => {
+    const days = Array.from(nextDueDateByElevator.values())
+      .map(d => Math.floor(new Date(d + "T00:00:00").getTime() / 86400000));
+    const today = Math.floor(Date.now() / 86400000);
+    if (!days.length) return { sliderBoundsMin: today - 180, sliderBoundsMax: today + 365 * 5 };
+    return {
+      sliderBoundsMin: Math.min(...days) - 30,
+      sliderBoundsMax: Math.max(...days) + 30,
+    };
+  }, [nextDueDateByElevator]);
+
+  // Initialize slider to full range once bounds are known
+  useEffect(() => {
+    if (!sliderReady && sliderBoundsMin < sliderBoundsMax) {
+      setSliderFromDay(sliderBoundsMin);
+      setSliderToDay(sliderBoundsMax);
+      setSliderReady(true);
+    }
+  }, [sliderBoundsMin, sliderBoundsMax, sliderReady]);
+
+  const sliderActive = sliderReady && (sliderFromDay > sliderBoundsMin || sliderToDay < sliderBoundsMax);
+  const dueDateFrom = sliderActive ? new Date(sliderFromDay * 86400000).toISOString().slice(0, 10) : "";
+  const dueDateTo   = sliderActive ? new Date(sliderToDay   * 86400000).toISOString().slice(0, 10) : "";
 
   // Client-side filter by due date range
   const filteredElevators = useMemo(() => {
@@ -963,36 +989,63 @@ export default function Elevators() {
             ))}
           </SelectContent>
         </Select>
-        {/* Due date range filter */}
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-          <Input
-            type="date"
-            className="w-[145px]"
-            title="Due from"
-            placeholder="Due from"
-            value={dueDateFrom}
-            onChange={(e) => setDueDateFrom(e.target.value)}
-          />
-          <span className="text-muted-foreground text-sm">–</span>
-          <Input
-            type="date"
-            className="w-[145px]"
-            title="Due to"
-            placeholder="Due to"
-            value={dueDateTo}
-            onChange={(e) => setDueDateTo(e.target.value)}
-          />
-          {(dueDateFrom || dueDateTo) && (
-            <button
-              onClick={() => { setDueDateFrom(""); setDueDateTo(""); }}
-              className="text-muted-foreground hover:text-foreground"
-              title="Clear date filter"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        {/* Due date range slider */}
+        {sliderReady && (
+          <div className="flex flex-col gap-1 min-w-[260px]">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Next Due Range
+              </span>
+              <span className="font-medium tabular-nums text-foreground">
+                {new Date(sliderFromDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                {" – "}
+                {new Date(sliderToDay * 86400000).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+              </span>
+              {sliderActive && (
+                <button
+                  onClick={() => { setSliderFromDay(sliderBoundsMin); setSliderToDay(sliderBoundsMax); }}
+                  className="text-muted-foreground hover:text-foreground ml-1"
+                  title="Reset"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="relative h-5 flex items-center">
+              {/* Track background */}
+              <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 bg-muted rounded-full" />
+              {/* Active fill */}
+              <div
+                className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-amber-400 rounded-full"
+                style={{
+                  left:  `${((sliderFromDay - sliderBoundsMin) / (sliderBoundsMax - sliderBoundsMin)) * 100}%`,
+                  right: `${100 - ((sliderToDay - sliderBoundsMin) / (sliderBoundsMax - sliderBoundsMin)) * 100}%`,
+                }}
+              />
+              {/* From handle */}
+              <input
+                type="range"
+                min={sliderBoundsMin}
+                max={sliderBoundsMax}
+                value={sliderFromDay}
+                onChange={(e) => setSliderFromDay(Math.min(+e.target.value, sliderToDay - 1))}
+                className="due-range-input"
+                style={{ zIndex: sliderFromDay >= sliderToDay - 1 ? 5 : 3 }}
+              />
+              {/* To handle */}
+              <input
+                type="range"
+                min={sliderBoundsMin}
+                max={sliderBoundsMax}
+                value={sliderToDay}
+                onChange={(e) => setSliderToDay(Math.max(+e.target.value, sliderFromDay + 1))}
+                className="due-range-input"
+                style={{ zIndex: 4 }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Legend */}
@@ -1022,7 +1075,7 @@ export default function Elevators() {
               <TableHead>Type</TableHead>
               <TableHead>Bank</TableHead>
               <TableHead>Next Due</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Current Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
