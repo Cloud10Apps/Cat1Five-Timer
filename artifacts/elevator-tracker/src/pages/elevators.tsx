@@ -245,10 +245,17 @@ export default function Elevators() {
   const watchLastDate = inspForm.watch("lastInspectionDate");
   const watchRecurrence = inspForm.watch("recurrenceYears");
   const watchCompletionDate = inspForm.watch("completionDate");
+  const watchScheduledDate = inspForm.watch("scheduledDate");
   const watchInspStatus = inspForm.watch("status");
   const nextDuePreview = watchLastDate && watchRecurrence
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
     : null;
+
+  useEffect(() => {
+    if (watchScheduledDate && watchInspStatus === "NOT_STARTED") {
+      inspForm.setValue("status", "SCHEDULED");
+    }
+  }, [watchScheduledDate]);
 
   useEffect(() => {
     if (watchCompletionDate) {
