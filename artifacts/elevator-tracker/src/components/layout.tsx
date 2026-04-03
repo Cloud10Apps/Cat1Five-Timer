@@ -88,7 +88,7 @@ export function Layout({ children }: LayoutProps) {
 
           <SidebarContent className="px-3 py-3 flex flex-col gap-0 overflow-y-auto">
             {/* Section label */}
-            <p className="px-3 mb-1 text-xs font-bold uppercase tracking-[0.15em] text-zinc-500">
+            <p className="px-3 mb-3 text-xs font-bold uppercase tracking-[0.15em] text-zinc-500">
               Navigation
             </p>
 
