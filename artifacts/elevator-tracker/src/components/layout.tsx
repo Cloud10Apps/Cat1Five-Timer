@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
+import logoSrc from "@/assets/logo.svg";
 import {
   Sidebar,
   SidebarContent,
@@ -54,12 +55,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar className="border-r border-sidebar-border">
           <SidebarHeader className="p-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-2.5 font-bold text-lg text-sidebar-foreground tracking-tight">
-              <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950 shrink-0">
-                <ArrowUpSquare className="h-5 w-5" strokeWidth={2.5} />
-              </div>
-              <span>Cat1Five Timer</span>
-            </div>
+            <img src={logoSrc} alt="Cat1Five Timer" className="h-10 w-auto" />
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>

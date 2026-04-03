@@ -7,8 +7,9 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowUpSquare, LayoutDashboard, ClipboardCheck, BellRing, Loader2 } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, BellRing, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+import logoSrc from "@/assets/logo.svg";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -52,12 +53,7 @@ export default function Login() {
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-zinc-900/50 to-zinc-950 pointer-events-none" />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-2.5 font-bold text-2xl text-zinc-50 tracking-tight">
-            <div className="bg-amber-500 p-1.5 rounded-lg text-zinc-950">
-              <ArrowUpSquare className="h-6 w-6" strokeWidth={2.5} />
-            </div>
-            <span>Cat1Five Timer</span>
-          </div>
+          <img src={logoSrc} alt="Cat1Five Timer" className="h-14 w-auto" />
         </div>
 
         <div className="relative z-10 max-w-lg mt-12 mb-auto md:my-auto">
@@ -110,11 +106,8 @@ export default function Login() {
       {/* Right Panel — Login Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-white relative">
         {/* Mobile header — only visible on small screens */}
-        <div className="absolute top-8 left-8 md:hidden flex items-center gap-2 font-bold text-xl text-zinc-950">
-          <div className="bg-amber-500 p-1.5 rounded-md text-zinc-950">
-            <ArrowUpSquare className="h-5 w-5" strokeWidth={2.5} />
-          </div>
-          <span>Cat1Five Timer</span>
+        <div className="absolute top-8 left-8 md:hidden">
+          <img src={logoSrc} alt="Cat1Five Timer" className="h-9 w-auto rounded-md" />
         </div>
 
         <div className="w-full max-w-[400px] space-y-8">
