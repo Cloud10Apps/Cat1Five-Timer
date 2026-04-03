@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import ExcelJS from "exceljs";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
@@ -129,38 +129,72 @@ router.get("/elevators", async (req, res) => {
 
   const rows = await db
     .select({
+      elevatorId:   elevatorsTable.id,
       customerName: customersTable.name,
       buildingName: buildingsTable.name,
       elevatorName: elevatorsTable.name,
-      type: elevatorsTable.type,
-      bank: elevatorsTable.bank,
+      elevatorType: elevatorsTable.type,
+      bank:         elevatorsTable.bank,
+      internalId:   elevatorsTable.internalId,
+      stateId:      elevatorsTable.stateId,
     })
     .from(elevatorsTable)
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
     .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
     .where(and(...conditions))
-    .orderBy(elevatorsTable.name);
+    .orderBy(customersTable.name, buildingsTable.name, elevatorsTable.name);
+
+  // Latest inspection per elevator using DISTINCT ON (PostgreSQL)
+  const elevatorIds = rows.map(r => r.elevatorId);
+  type LatestInsp = { elevator_id: number; status: string; inspection_type: string; next_due_date: string | null; scheduled_date: string | null };
+  let latestInspMap = new Map<number, LatestInsp>();
+  if (elevatorIds.length > 0) {
+    const latestInspRows = await db.execute<LatestInsp>(sql`
+      SELECT DISTINCT ON (elevator_id)
+        elevator_id, status, inspection_type, next_due_date, scheduled_date
+      FROM inspections
+      WHERE organization_id = ${orgId}
+        AND elevator_id = ANY(${sql.raw(`ARRAY[${elevatorIds.join(",")}]`)})
+      ORDER BY elevator_id, next_due_date DESC NULLS LAST
+    `);
+    for (const r of latestInspRows.rows) {
+      latestInspMap.set(r.elevator_id, r);
+    }
+  }
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Elevators");
 
   sheet.columns = [
-    { header: "Customer",      key: "customerName", width: 25 },
-    { header: "Building",      key: "buildingName", width: 30 },
-    { header: "Elevator Name", key: "elevatorName", width: 25 },
-    { header: "Type",          key: "type",         width: 15 },
-    { header: "Bank",          key: "bank",         width: 15 },
+    { header: "Customer",        key: "customerName",    width: 25 },
+    { header: "Building",        key: "buildingName",    width: 30 },
+    { header: "Elevator Name",   key: "elevatorName",    width: 25 },
+    { header: "Elevator Type",   key: "elevatorType",    width: 15 },
+    { header: "Bank",            key: "bank",            width: 15 },
+    { header: "Unit ID",         key: "internalId",      width: 14 },
+    { header: "State ID",        key: "stateId",         width: 14 },
+    { header: "Insp Status",     key: "inspStatus",      width: 18 },
+    { header: "Insp Type",       key: "inspType",        width: 12 },
+    { header: "Next Due Date",   key: "nextDueDate",     width: 18, style: DATE_STYLE },
+    { header: "Scheduled Date",  key: "scheduledDate",   width: 18, style: DATE_STYLE },
   ];
 
   sheet.getRow(1).font = { bold: true };
 
   rows.forEach(r => {
+    const insp = latestInspMap.get(r.elevatorId);
     sheet.addRow({
-      customerName: r.customerName ?? "",
-      buildingName: r.buildingName ?? "",
-      elevatorName: r.elevatorName ?? "",
-      type:         r.type,
-      bank:         r.bank ?? "",
+      customerName:  r.customerName ?? "",
+      buildingName:  r.buildingName ?? "",
+      elevatorName:  r.elevatorName ?? "",
+      elevatorType:  r.elevatorType,
+      bank:          r.bank ?? "",
+      internalId:    r.internalId ?? "",
+      stateId:       r.stateId ?? "",
+      inspStatus:    insp?.status ?? "",
+      inspType:      insp?.inspection_type ?? "",
+      nextDueDate:   toDate(insp?.next_due_date),
+      scheduledDate: toDate(insp?.scheduled_date),
     });
   });
 
