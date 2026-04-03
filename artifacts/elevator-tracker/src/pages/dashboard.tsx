@@ -98,9 +98,9 @@ export default function Dashboard() {
   const overdueItems = attention?.filter((i) => i.status === "OVERDUE") ?? [];
 
   const todayStr = dayjs().format("YYYY-MM-DD");
-  const in30Str  = dayjs().add(30, "day").format("YYYY-MM-DD");
+  const in14Str  = dayjs().add(14, "day").format("YYYY-MM-DD");
   const upcoming = attention?.filter(
-    (i) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in30Str
+    (i) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in14Str
   ) ?? [];
 
   const statusChartData = (breakdown ?? []).map((b) => ({
@@ -131,7 +131,7 @@ export default function Dashboard() {
             <div className="text-5xl font-black text-green-600">{summary?.completedCount ?? 0}</div>
           </div>
           {/* OVERDUE */}
-          <div className="p-6 flex flex-col justify-center bg-red-50">
+          <div className="p-6 flex flex-col justify-center">
             <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">OVERDUE</div>
             <div className="text-5xl font-black text-red-600">{summary?.overdueCount ?? 0}</div>
           </div>
@@ -143,10 +143,10 @@ export default function Dashboard() {
             return (
               <div className={`p-6 flex flex-col justify-center ${isBad ? "bg-red-50" : isGood ? "bg-green-50" : ""}`}>
                 <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO SCHEDULE</div>
-                <div className={`text-5xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
+                <div className={`text-3xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
                   {val === null ? "—" : (val > 0 ? `+${val}` : `${val}`)}
                 </div>
-                <div className="text-xs text-zinc-400 mt-1">{isGood ? "ahead of due date" : isBad ? "after due date" : "no data"}</div>
+                {val !== null && <div className="text-xs text-zinc-400 mt-1">Days</div>}
               </div>
             );
           })()}
@@ -156,10 +156,10 @@ export default function Dashboard() {
             return (
               <div className="p-6 flex flex-col justify-center">
                 <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO COMPLETE</div>
-                <div className="text-5xl font-black text-zinc-900">
+                <div className="text-3xl font-black text-zinc-900">
                   {val === null ? "—" : val}
                 </div>
-                <div className="text-xs text-zinc-400 mt-1">{val !== null ? "due → completion (neg = early)" : "no data"}</div>
+                {val !== null && <div className="text-xs text-zinc-400 mt-1">Days</div>}
               </div>
             );
           })()}
@@ -306,9 +306,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Upcoming — 30 days */}
+          {/* Upcoming — 2 weeks */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="Upcoming — Next 30 Days" />
+            <SectionHeader title="Upcoming — Next 2 Weeks" />
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
@@ -323,7 +323,7 @@ export default function Dashboard() {
                   {upcoming.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
-                        No upcoming inspections in 30 days.
+                        No upcoming inspections in 2 weeks.
                       </TableCell>
                     </TableRow>
                   ) : upcoming.map((insp) => (
