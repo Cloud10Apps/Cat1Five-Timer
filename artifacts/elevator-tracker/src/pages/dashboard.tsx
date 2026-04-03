@@ -138,10 +138,10 @@ export default function Dashboard() {
           {/* AVG DAYS TO SCHEDULE */}
           {(() => {
             const val = summary?.avgDaysToSchedule ?? null;
-            const isGood = val !== null && val >= 0;
-            const isBad  = val !== null && val < 0;
+            const isGood = val !== null && val <= 0;
+            const isBad  = val !== null && val > 0;
             return (
-              <div className={`p-6 flex flex-col items-center justify-center text-center ${isBad ? "bg-red-50" : isGood ? "bg-green-50" : ""}`}>
+              <div className={`p-6 flex flex-col items-center justify-center text-center ${isBad ? "bg-red-50" : ""}`}>
                 <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO SCHEDULE</div>
                 <div className={`text-5xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
                   {val === null ? "—" : val}
