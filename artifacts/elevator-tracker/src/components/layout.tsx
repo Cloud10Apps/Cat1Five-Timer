@@ -6,9 +6,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
@@ -25,7 +22,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
-import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: ReactNode;
@@ -35,69 +32,114 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
 
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Customers", href: "/customers", icon: Users },
-    { name: "Buildings", href: "/buildings", icon: Building },
-    { name: "Elevators", href: "/elevators", icon: ArrowUpSquare },
+  const mainNav = [
+    { name: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
+    { name: "Customers",   href: "/customers",   icon: Users },
+    { name: "Buildings",   href: "/buildings",   icon: Building },
+    { name: "Elevators",   href: "/elevators",   icon: ArrowUpSquare },
     { name: "Inspections", href: "/inspections", icon: ClipboardCheck },
-    { name: "Calendar", href: "/calendar", icon: Calendar },
-    { name: "Reports", href: "/reports", icon: BarChart3 },
+    { name: "Calendar",    href: "/calendar",    icon: Calendar },
+    { name: "Reports",     href: "/reports",     icon: BarChart3 },
   ];
 
-  if (user?.role === "ADMIN") {
-    navigation.push({ name: "Admin", href: "/admin", icon: ShieldAlert });
-  }
-  navigation.push({ name: "Settings", href: "/settings", icon: Settings });
+  const bottomNav: { name: string; href: string; icon: typeof Settings }[] = [];
+  if (user?.role === "ADMIN") bottomNav.push({ name: "Admin", href: "/admin", icon: ShieldAlert as typeof Settings });
+  bottomNav.push({ name: "Settings", href: "/settings", icon: Settings });
+
+  const NavItem = ({ name, href, icon: Icon }: { name: string; href: string; icon: typeof Settings }) => {
+    const isActive = location === href;
+    return (
+      <Link
+        href={href}
+        className={cn(
+          "group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-150 select-none",
+          isActive
+            ? "bg-white text-zinc-950 shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
+            : "text-zinc-400 hover:text-white hover:bg-white/10"
+        )}
+      >
+        <div className={cn(
+          "flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-150 shrink-0",
+          isActive
+            ? "bg-zinc-950 text-white"
+            : "bg-white/5 text-zinc-400 group-hover:bg-white/15 group-hover:text-white"
+        )}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <span className={cn(
+          "text-base font-semibold tracking-wide leading-none",
+          isActive ? "text-zinc-950" : ""
+        )}>
+          {name}
+        </span>
+        {isActive && (
+          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-zinc-950/40" />
+        )}
+      </Link>
+    );
+  };
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <Sidebar className="border-r border-sidebar-border">
-          <SidebarHeader className="px-4 py-5 border-b border-sidebar-border">
+        <Sidebar className="border-r border-white/5">
+          {/* Logo */}
+          <SidebarHeader className="px-5 py-6 border-b border-white/5">
             <img src={logoSrc} alt="Cat1Five Timer" className="h-16 w-auto" />
           </SidebarHeader>
-          <SidebarContent className="py-3">
-            <SidebarMenu className="gap-1">
-              {navigation.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.href}
-                    tooltip={item.name}
-                    size="lg"
-                    className="h-14 px-4 rounded-lg text-base font-semibold"
-                  >
-                    <Link href={item.href} className="flex items-center gap-4">
-                      <item.icon className="h-6 w-6 shrink-0" />
-                      <span className="text-base">{item.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+
+          <SidebarContent className="px-3 py-4 flex flex-col gap-0 overflow-y-auto">
+            {/* Section label */}
+            <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-600">
+              Navigation
+            </p>
+
+            {/* Main nav */}
+            <nav className="flex flex-col gap-1">
+              {mainNav.map((item) => (
+                <NavItem key={item.href} {...item} />
               ))}
-            </SidebarMenu>
+            </nav>
+
+            {/* Divider */}
+            <div className="my-4 border-t border-white/5" />
+
+            {/* Bottom nav (Admin, Settings) */}
+            <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-600">
+              System
+            </p>
+            <nav className="flex flex-col gap-1">
+              {bottomNav.map((item) => (
+                <NavItem key={item.href} {...item} />
+              ))}
+            </nav>
           </SidebarContent>
-          <SidebarFooter className="border-t border-sidebar-border px-4 py-5">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold truncate text-sidebar-foreground">{user?.email}</span>
-                <span className="text-xs text-zinc-400 uppercase tracking-wide mt-0.5">{user?.role}</span>
+
+          {/* Footer — user info + logout */}
+          <SidebarFooter className="border-t border-white/5 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 text-white shrink-0 font-bold text-base uppercase">
+                {user?.email?.[0] ?? "?"}
               </div>
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 text-zinc-400 hover:text-sidebar-foreground hover:bg-sidebar-accent h-11 text-base font-semibold"
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-semibold truncate text-white leading-tight">{user?.email}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mt-0.5">{user?.role}</span>
+              </div>
+              <button
                 onClick={logout}
+                title="Logout"
+                className="flex items-center justify-center w-9 h-9 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors shrink-0"
               >
                 <LogOut className="h-5 w-5" />
-                Logout
-              </Button>
+              </button>
             </div>
           </SidebarFooter>
         </Sidebar>
+
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-card px-6">
             <SidebarTrigger />
-            <div className="w-full flex-1"></div>
+            <div className="w-full flex-1" />
           </header>
           <main className="flex-1 overflow-y-auto p-6 bg-background">
             {children}
