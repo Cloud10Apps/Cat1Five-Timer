@@ -104,15 +104,21 @@ router.get("/summary", async (req, res) => {
 router.get("/attention", async (req, res) => {
   const orgId = req.user!.organizationId;
   const today = dayjs();
-  const in30Days = today.add(30, "day").format("YYYY-MM-DD");
   const todayStr = today.format("YYYY-MM-DD");
+  const currentYear = today.year();
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
 
+  // Include: (a) all past-due non-completed from any year (overdue),
+  //          (b) all non-completed inspections due in the current year
   const conditions: any[] = [
     eq(inspectionsTable.organizationId, orgId),
-    sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date <= ${in30Days}::date`,
+    sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+    sql`(
+      ${inspectionsTable.nextDueDate}::date < ${todayStr}::date
+      OR EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}
+    )`,
   ];
   if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));
 

@@ -98,10 +98,10 @@ export default function Dashboard() {
   const overdueItems = (attention ?? []).filter((i: any) => i.status === "OVERDUE");
 
   const todayStr = dayjs().format("YYYY-MM-DD");
-  const in14Str  = dayjs().add(14, "day").format("YYYY-MM-DD");
+  // All non-overdue, non-completed inspections due this year (on or after today)
   const upcoming = (attention ?? []).filter(
-    (i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in14Str
-  );
+    (i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr
+  ).sort((a: any, b: any) => a.nextDueDate.localeCompare(b.nextDueDate));
 
   const statusChartData = (breakdown ?? []).map((b) => ({
     name:  b.status.replace(/_/g, " "),
@@ -299,7 +299,7 @@ export default function Dashboard() {
 
           {/* Upcoming — Next 2 Weeks */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="Upcoming — Next 2 Weeks" />
+            <SectionHeader title={`Upcoming — ${currentYear}`} />
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
@@ -314,7 +314,7 @@ export default function Dashboard() {
                   {upcoming.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
-                        No upcoming inspections in the next 2 weeks.
+                        No upcoming inspections for {currentYear}.
                       </TableCell>
                     </TableRow>
                   ) : upcoming.map((insp: any) => (
