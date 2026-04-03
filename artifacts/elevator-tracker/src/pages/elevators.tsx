@@ -326,12 +326,19 @@ export default function Elevators() {
       completionDate: data.completionDate || undefined,
     };
 
+    const invalidateInspections = () => {
+      queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+      if (editingElevator) {
+        queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator.id }), exact: false });
+      }
+    };
+
     if (editingInspection) {
       updateInspMutation.mutate(
         { id: editingInspection.id, data: payload },
         {
           onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+            invalidateInspections();
             toast({ title: "Inspection updated" });
             resetInspForm();
           },
@@ -343,7 +350,7 @@ export default function Elevators() {
         { data: payload },
         {
           onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+            invalidateInspections();
             toast({ title: "Inspection added" });
             resetInspForm();
           },
@@ -360,6 +367,9 @@ export default function Elevators() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+          if (editingElevator) {
+            queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator.id }), exact: false });
+          }
           toast({ title: "Inspection deleted" });
           setInspDeleteId(null);
         },
