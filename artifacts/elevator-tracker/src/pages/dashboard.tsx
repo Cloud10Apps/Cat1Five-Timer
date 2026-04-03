@@ -119,12 +119,12 @@ export default function Dashboard() {
         {/* ── KPI Strip ── */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
           {[
+            { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
+            { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
             { label: "TOTAL ELEVATORS", value: summary?.totalElevators ?? 0 },
             { label: "DUE THIS MONTH",  value: summary?.duethisMonth ?? 0 },
             { label: "OVERDUE",         value: overdueCount, isAlert: true },
             { label: "SCHEDULED",       value: summary?.scheduledCount ?? 0 },
-            { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
-            { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
           ].map((kpi, i) => (
             <div key={i} className={`p-6 flex flex-col justify-center ${kpi.isAlert ? "bg-red-50" : ""}`}>
               <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">
