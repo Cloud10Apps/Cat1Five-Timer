@@ -127,7 +127,7 @@ export default function Dashboard() {
             { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
           ].map((kpi, i) => (
             <div key={i} className={`p-6 flex flex-col justify-center ${kpi.isAlert ? "bg-red-50" : ""}`}>
-              <div className="text-zinc-400 text-[10px] uppercase tracking-widest font-semibold mb-2">
+              <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">
                 {kpi.label}
               </div>
               <div className={`text-5xl font-black ${kpi.isAlert ? "text-red-600" : "text-zinc-900"}`}>
