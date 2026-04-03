@@ -816,8 +816,8 @@ export default function Elevators() {
                                 <FormMessage /></FormItem>
                             )} />
                             {nextDuePreview && (
-                              <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                                Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreview}</strong>
+                              <div className="col-span-2 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">
+                                Calculated Next Due:&nbsp;<strong>{nextDuePreview}</strong>
                               </div>
                             )}
                             <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
@@ -880,8 +880,8 @@ export default function Elevators() {
                                   <FormMessage /></FormItem>
                               )} />
                               {nextDuePreview && (
-                                <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                                  Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreview}</strong>
+                                <div className="col-span-2 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">
+                                  Calculated Next Due:&nbsp;<strong>{nextDuePreview}</strong>
                                 </div>
                               )}
                             </div>
@@ -924,8 +924,8 @@ export default function Elevators() {
                                   <FormMessage /></FormItem>
                               )} />
                               {nextDuePreviewCat5 && (
-                                <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                                  Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreviewCat5}</strong>
+                                <div className="col-span-2 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">
+                                  Calculated Next Due:&nbsp;<strong>{nextDuePreviewCat5}</strong>
                                 </div>
                               )}
                             </div>
