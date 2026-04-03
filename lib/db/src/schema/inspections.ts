@@ -14,7 +14,7 @@ export const inspectionsTable = pgTable("inspections", {
   nextDueDate: date("next_due_date"),
   scheduledDate: date("scheduled_date"),
   completionDate: date("completion_date"),
-  status: text("status", { enum: ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"] }).notNull().default("NOT_STARTED"),
+  status: text("status", { enum: ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] }).notNull().default("NOT_STARTED"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

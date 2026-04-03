@@ -75,7 +75,7 @@ const inspectionSchema = z.object({
   lastInspectionDate: z.string().optional(),
   scheduledDate: z.string().optional(),
   completionDate: z.string().optional(),
-  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"] as const).optional(),
+  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const).optional(),
   notes: z.string().optional(),
 });
 
@@ -402,7 +402,6 @@ export default function Inspections() {
                               <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                               <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                               <SelectItem value="COMPLETED">Completed</SelectItem>
-                              <SelectItem value="OVERDUE">Overdue</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -534,7 +533,6 @@ export default function Inspections() {
               <SelectItem value="SCHEDULED">Scheduled</SelectItem>
               <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
               <SelectItem value="COMPLETED">Completed</SelectItem>
-              <SelectItem value="OVERDUE">Overdue</SelectItem>
             </SelectContent>
           </Select>
           <Select value={selectedType} onValueChange={setSelectedType}>

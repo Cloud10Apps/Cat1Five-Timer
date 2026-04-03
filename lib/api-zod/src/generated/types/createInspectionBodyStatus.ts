@@ -14,5 +14,4 @@ export const CreateInspectionBodyStatus = {
   SCHEDULED: "SCHEDULED",
   IN_PROGRESS: "IN_PROGRESS",
   COMPLETED: "COMPLETED",
-  OVERDUE: "OVERDUE",
 } as const;

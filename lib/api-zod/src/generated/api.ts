@@ -352,7 +352,7 @@ export const CreateInspectionBody = zod.object({
   scheduledDate: zod.coerce.date().optional(),
   completionDate: zod.coerce.date().optional(),
   status: zod
-    .enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"])
+    .enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"])
     .optional(),
   notes: zod.string().optional(),
 });
@@ -405,7 +405,7 @@ export const UpdateInspectionBody = zod.object({
   scheduledDate: zod.coerce.date().optional(),
   completionDate: zod.coerce.date().optional(),
   status: zod
-    .enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"])
+    .enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"])
     .optional(),
   notes: zod.string().optional(),
 });

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, count, gte, lte, inArray, avg, sql } from "drizzle-orm";
+import { eq, and, count, ne, gte, lte, inArray, avg, sql } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
@@ -39,6 +39,8 @@ router.get("/summary", async (req, res) => {
     ? sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.completionDate}::date) = ${m}`
     : undefined;
 
+  const todayStr = dayjs().format("YYYY-MM-DD");
+
   const makeCountQuery = (status: string) => {
     const dateFilter = status === "COMPLETED" ? completionDateFilter : dueDateFilter;
     return db.select({ count: count() })
@@ -47,6 +49,18 @@ router.get("/summary", async (req, res) => {
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
       .where(and(baseCondition, eq(inspectionsTable.status, status), dateFilter));
   };
+
+  // Overdue = not completed + due date is in the past
+  const overdueQuery = db.select({ count: count() })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      baseCondition,
+      ne(inspectionsTable.status, "COMPLETED"),
+      sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayStr}::date`,
+      dueDateFilter,
+    ));
 
   const [
     [notStartedRow],
@@ -59,7 +73,7 @@ router.get("/summary", async (req, res) => {
     makeCountQuery("NOT_STARTED"),
     makeCountQuery("SCHEDULED"),
     makeCountQuery("COMPLETED"),
-    makeCountQuery("OVERDUE"),
+    overdueQuery,
     // avg(scheduled_date - next_due_date) — negative = good (scheduled before due)
     db.select({
       avg: sql<string>`AVG(${inspectionsTable.scheduledDate}::date - ${inspectionsTable.nextDueDate}::date)`,
@@ -175,10 +189,13 @@ router.get("/status-breakdown", async (req, res) => {
   const y = req.query.year  ? Number(req.query.year)  : null;
   const hasFilter = m !== null && y !== null;
 
+  const todayBd = dayjs().format("YYYY-MM-DD");
   const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
-  const statuses = ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"];
+  const baseC = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
 
-  const results = await Promise.all(statuses.map(async (status) => {
+  const storedStatuses = ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"];
+
+  const storedResults = await Promise.all(storedStatuses.map(async (status) => {
     const dateFilter = hasFilter
       ? status === "COMPLETED"
         ? sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.completionDate}::date) = ${m}`
@@ -189,10 +206,26 @@ router.get("/status-breakdown", async (req, res) => {
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, status), buildingCustomerFilter, dateFilter));
+      .where(and(baseC, eq(inspectionsTable.status, status), dateFilter));
     return { status, count: Number(row.count) };
   }));
-  res.json(results);
+
+  // Overdue = not completed + due date is in the past (computed, not stored)
+  const dueDateFilter = hasFilter
+    ? sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.nextDueDate}::date) = ${m}`
+    : undefined;
+  const [overdueRow] = await db.select({ count: count() })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      baseC,
+      ne(inspectionsTable.status, "COMPLETED"),
+      sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayBd}::date`,
+      dueDateFilter,
+    ));
+
+  res.json([...storedResults, { status: "OVERDUE", count: Number(overdueRow.count) }]);
 });
 
 router.get("/overdue-by-building", async (req, res) => {
@@ -201,9 +234,11 @@ router.get("/overdue-by-building", async (req, res) => {
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
 
+  const todayObd = dayjs().format("YYYY-MM-DD");
   const conditions: any[] = [
     eq(inspectionsTable.organizationId, orgId),
-    eq(inspectionsTable.status, "OVERDUE"),
+    ne(inspectionsTable.status, "COMPLETED"),
+    sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayObd}::date`,
   ];
   if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));
 
