@@ -297,9 +297,19 @@ export default function Inspections() {
     ? dayjs(watchLastDate).add(Number(watchRecurrence), 'year').format('YYYY-MM-DD')
     : "N/A";
 
-  // Clear completion date when status is changed away from COMPLETED
+  // Auto-fill dates as status advances through stages
   useEffect(() => {
-    if (watchStatus !== "COMPLETED") {
+    const today = dayjs().format("YYYY-MM-DD");
+    if (watchStatus === "SCHEDULED") {
+      if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today);
+      form.setValue("completionDate", "");
+    } else if (watchStatus === "IN_PROGRESS") {
+      if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today);
+      form.setValue("completionDate", "");
+    } else if (watchStatus === "COMPLETED") {
+      if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today);
+      if (!form.getValues("completionDate")) form.setValue("completionDate", today);
+    } else {
       form.setValue("completionDate", "");
     }
   }, [watchStatus]);
