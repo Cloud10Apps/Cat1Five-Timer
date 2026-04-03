@@ -710,6 +710,7 @@ export default function Elevators() {
                         </div>
                         <Form {...inspForm}>
                           <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-3">
+                            {/* Row 1: Type + Status */}
                             <div className="grid grid-cols-2 gap-3">
                               <FormField
                                 control={inspForm.control}
@@ -756,6 +757,9 @@ export default function Elevators() {
                                   </FormItem>
                                 )}
                               />
+                            </div>
+                            {/* Row 2: Recurrence + Last Inspection Date + Next Due computed */}
+                            <div className="grid grid-cols-3 gap-3 items-end">
                               <FormField
                                 control={inspForm.control}
                                 name="recurrenceYears"
@@ -782,12 +786,19 @@ export default function Elevators() {
                                   </FormItem>
                                 )}
                               />
-                              {nextDuePreview && (
-                                <div className="col-span-2 bg-amber-500 rounded-lg px-4 py-3 flex items-center justify-between">
-                                  <span className="text-xs font-semibold text-amber-900 uppercase tracking-wider">Next Due</span>
-                                  <span className="text-xl font-bold text-white">{dayjs(nextDuePreview).format("MMM D, YYYY")}</span>
-                                </div>
-                              )}
+                              <div className={`rounded-lg px-3 py-2 flex flex-col items-center justify-center text-center h-[42px] ${nextDuePreview ? "bg-amber-500" : "bg-muted border border-dashed"}`}>
+                                {nextDuePreview ? (
+                                  <>
+                                    <span className="text-[10px] font-semibold text-amber-900 uppercase tracking-wider leading-none mb-0.5">Next Due</span>
+                                    <span className="text-sm font-bold text-white leading-tight">{dayjs(nextDuePreview).format("MMM D, YYYY")}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">Next Due</span>
+                                )}
+                              </div>
+                            </div>
+                            {/* Row 3: Scheduled + Completion dates */}
+                            <div className="grid grid-cols-2 gap-3">
                               <FormField
                                 control={inspForm.control}
                                 name="scheduledDate"
