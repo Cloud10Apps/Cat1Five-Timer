@@ -257,7 +257,9 @@ export default function Dashboard() {
                     />
                     <Legend
                       iconType="circle"
-                      wrapperStyle={{ fontSize: "15px", color: "#3f3f46", paddingTop: "16px" }}
+                      verticalAlign="top"
+                      align="center"
+                      wrapperStyle={{ fontSize: "15px", color: "#3f3f46", paddingBottom: "12px" }}
                     />
                     <Bar dataKey="notStarted" name="Not Started" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} maxBarSize={72} />
                     <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} maxBarSize={72} />
