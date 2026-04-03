@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,7 @@ import {
   useDeleteCustomer,
   Customer,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,7 +36,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, Search, Pencil, Trash2, Building } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Building, ChevronDown, ChevronRight, Users } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,11 +59,74 @@ const customerSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
+type CustomerUser = {
+  id: number;
+  email: string;
+  role: string;
+  isActive: boolean;
+};
+
+async function fetchCustomerUsers(customerId: number): Promise<CustomerUser[]> {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`/api/customers/${customerId}/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch customer users");
+  return res.json();
+}
+
+function CustomerUsersRow({ customerId, colSpan }: { customerId: number; colSpan: number }) {
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["customer-users", customerId],
+    queryFn: () => fetchCustomerUsers(customerId),
+  });
+
+  return (
+    <TableRow className="bg-zinc-50/50 hover:bg-zinc-50/50">
+      <TableCell colSpan={colSpan} className="py-3 px-8">
+        <div className="flex items-center gap-2 mb-3">
+          <Users className="h-4 w-4 text-zinc-500" />
+          <span className="text-sm font-semibold text-zinc-700">Associated Users</span>
+        </div>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-zinc-500">
+            <Spinner /> Loading users...
+          </div>
+        ) : !users || users.length === 0 ? (
+          <p className="text-sm text-zinc-400">No users assigned to this customer.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {users.map((u) => (
+              <div key={u.id} className="flex items-center gap-3 bg-white border border-zinc-200 rounded-md px-3 py-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-100 text-zinc-600 text-xs font-bold uppercase shrink-0">
+                  {u.email.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-zinc-900 truncate">{u.email}</div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${u.role === "ADMIN" ? "text-violet-600" : "text-zinc-500"}`}>
+                      {u.role}
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${u.isActive ? "text-green-600" : "text-red-500"}`}>
+                      {u.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export default function Customers() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
@@ -148,6 +211,8 @@ export default function Customers() {
     form.reset({ name: customer.name });
   };
 
+  const totalCols = isAdmin ? 4 : 3;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -217,6 +282,7 @@ export default function Customers() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10"></TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Created At</TableHead>
               {isAdmin && <TableHead className="text-right">Actions</TableHead>}
@@ -225,13 +291,13 @@ export default function Customers() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 3 : 2} className="text-center py-8">
+                <TableCell colSpan={totalCols} className="text-center py-8">
                   <Spinner />
                 </TableCell>
               </TableRow>
             ) : customers?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 3 : 2} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={totalCols} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <Building className="h-10 w-10 mb-2 opacity-20" />
                     <p>No customers found.</p>
@@ -240,62 +306,74 @@ export default function Customers() {
               </TableRow>
             ) : (
               customers?.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{dayjs(customer.createdAt).format("MMM D, YYYY")}</TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right space-x-2">
-                      <Dialog
-                        open={editingCustomer?.id === customer.id}
-                        onOpenChange={(open) => {
-                          if (!open) {
-                            setEditingCustomer(null);
-                            form.reset({ name: "" });
-                          }
-                        }}
-                      >
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(customer)}>
-                            <Pencil className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Customer</DialogTitle>
-                          </DialogHeader>
-                          <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                              <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Name</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
-                                {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                              </Button>
-                            </form>
-                          </Form>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(customer.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                <Fragment key={customer.id}>
+                  <TableRow className="cursor-pointer" onClick={() => setExpandedId(expandedId === customer.id ? null : customer.id)}>
+                    <TableCell className="w-10 px-3">
+                      {expandedId === customer.id ? (
+                        <ChevronDown className="h-4 w-4 text-zinc-500" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-zinc-400" />
+                      )}
                     </TableCell>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{dayjs(customer.createdAt).format("MMM D, YYYY")}</TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right space-x-2" onClick={(e) => e.stopPropagation()}>
+                        <Dialog
+                          open={editingCustomer?.id === customer.id}
+                          onOpenChange={(open) => {
+                            if (!open) {
+                              setEditingCustomer(null);
+                              form.reset({ name: "" });
+                            }
+                          }}
+                        >
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(customer)}>
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Customer</DialogTitle>
+                            </DialogHeader>
+                            <Form {...form}>
+                              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                <FormField
+                                  control={form.control}
+                                  name="name"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Name</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
+                                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                                </Button>
+                              </form>
+                            </Form>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(customer.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                  {expandedId === customer.id && (
+                    <CustomerUsersRow customerId={customer.id} colSpan={totalCols} />
                   )}
-                </TableRow>
+                </Fragment>
               ))
             )}
           </TableBody>
