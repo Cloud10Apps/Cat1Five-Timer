@@ -180,23 +180,46 @@ export default function Elevators() {
   );
 
   // Map: elevatorId → most-relevant inspection
-  // Priority: CAT5 always beats CAT1 (regardless of status),
-  // then descending nextDueDate within the same type
+  // Among OPEN (non-COMPLETED): earliest due year → CAT5 before CAT1 → earliest due date
+  // Falls back to best COMPLETED inspection if no open ones exist for the elevator
   const latestInspByElevator = useMemo(() => {
     const TYPE_PRIORITY: Record<string, number> = { CAT5: 0, CAT1: 1 };
-    const beats = (challenger: Inspection, champion: Inspection): boolean => {
+    const isOpen = (insp: Inspection) => insp.status !== "COMPLETED";
+
+    const beatsOpen = (challenger: Inspection, champion: Inspection): boolean => {
+      const ny = (challenger.nextDueDate ?? "9999").slice(0, 4);
+      const cy = (champion.nextDueDate ?? "9999").slice(0, 4);
+      if (ny !== cy) return ny < cy;
+      const np = TYPE_PRIORITY[challenger.inspectionType ?? ""] ?? 99;
+      const cp = TYPE_PRIORITY[champion.inspectionType ?? ""] ?? 99;
+      if (np !== cp) return np < cp;
+      return (challenger.nextDueDate ?? "") < (champion.nextDueDate ?? "");
+    };
+
+    const beatsClosed = (challenger: Inspection, champion: Inspection): boolean => {
       const np = TYPE_PRIORITY[challenger.inspectionType ?? ""] ?? 99;
       const cp = TYPE_PRIORITY[champion.inspectionType ?? ""] ?? 99;
       if (np !== cp) return np < cp;
       return (challenger.nextDueDate ?? "") > (champion.nextDueDate ?? "");
     };
-    const map = new Map<number, Inspection>();
+
+    const openMap = new Map<number, Inspection>();
+    const closedMap = new Map<number, Inspection>();
+
     for (const insp of allInspections ?? []) {
       if (!insp.elevatorId) continue;
-      const current = map.get(insp.elevatorId);
-      if (!current || beats(insp, current)) map.set(insp.elevatorId, insp);
+      if (isOpen(insp)) {
+        const cur = openMap.get(insp.elevatorId);
+        if (!cur || beatsOpen(insp, cur)) openMap.set(insp.elevatorId, insp);
+      } else {
+        const cur = closedMap.get(insp.elevatorId);
+        if (!cur || beatsClosed(insp, cur)) closedMap.set(insp.elevatorId, insp);
+      }
     }
-    return map;
+
+    const result = new Map<number, Inspection>(closedMap);
+    for (const [id, insp] of openMap) result.set(id, insp);
+    return result;
   }, [allInspections]);
 
   // Map: elevatorId → most recent lastInspectionDate across all inspections
