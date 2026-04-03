@@ -71,6 +71,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const elevatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -719,28 +720,25 @@ export default function Elevators() {
               </DialogHeader>
 
               {editingElevator ? (
-                <div className="space-y-6 pt-2">
-                  {/* ── Section 1: Unit Details ── */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Unit Details</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
-                    {elevatorFormFields}
-                  </div>
+                <Tabs defaultValue="inspection" className="pt-2">
+                  <TabsList className="w-full mb-4">
+                    <TabsTrigger value="unit" className="flex-1">Unit Details</TabsTrigger>
+                    <TabsTrigger value="inspection" className="flex-1">
+                      {editingInspection ? "Current Inspection" : "New Inspection"}
+                    </TabsTrigger>
+                  </TabsList>
 
-                  {/* ── Section 2: Current Inspection ── */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        {editingInspection ? "Current Inspection" : "New Inspection"}
-                      </span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
+                  {/* ── Tab 1: Unit Details ── */}
+                  <TabsContent value="unit">
+                    {elevatorFormFields}
+                  </TabsContent>
+
+                  {/* ── Tab 2: Inspection ── */}
+                  <TabsContent value="inspection">
                     <Form {...inspForm}>
                       <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          {/* Type */}
+                          {/* Row 1: Type + Status */}
                           <FormField
                             control={inspForm.control}
                             name="inspectionType"
@@ -760,7 +758,6 @@ export default function Elevators() {
                               </FormItem>
                             )}
                           />
-                          {/* Status */}
                           <FormField
                             control={inspForm.control}
                             name="status"
@@ -788,7 +785,8 @@ export default function Elevators() {
                               </FormItem>
                             )}
                           />
-                          {/* Last Inspection Date */}
+
+                          {/* Row 2: Last Inspection Date + Recurrence */}
                           <FormField
                             control={inspForm.control}
                             name="lastInspectionDate"
@@ -802,34 +800,34 @@ export default function Elevators() {
                               </FormItem>
                             )}
                           />
-                          {/* Recurrence + Calculated Next Due */}
-                          <div className="space-y-1">
-                            <FormField
-                              control={inspForm.control}
-                              name="recurrenceYears"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Recurrence (Years)</FormLabel>
-                                  <FormControl>
-                                    <Input type="number" min="1" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            {nextDuePreview && (
-                              <p className="text-xs text-muted-foreground">
-                                Calculated Next Due: <strong>{nextDuePreview}</strong>
-                              </p>
+                          <FormField
+                            control={inspForm.control}
+                            name="recurrenceYears"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Recurrence (Years)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="1" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
                             )}
-                          </div>
-                          {/* Scheduled Date */}
+                          />
+
+                          {/* Row 3: Calculated Next Due — spans full width */}
+                          {nextDuePreview && (
+                            <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                              Calculated Next Due:&nbsp;<strong className="text-foreground">{nextDuePreview}</strong>
+                            </div>
+                          )}
+
+                          {/* Row 4: Scheduled Date + Completion Date */}
                           <FormField
                             control={inspForm.control}
                             name="scheduledDate"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Scheduled Date (Optional)</FormLabel>
+                                <FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
                                 <FormControl>
                                   <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
                                 </FormControl>
@@ -837,13 +835,12 @@ export default function Elevators() {
                               </FormItem>
                             )}
                           />
-                          {/* Completion Date */}
                           <FormField
                             control={inspForm.control}
                             name="completionDate"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Completion Date (Optional)</FormLabel>
+                                <FormLabel>Completion Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
                                 <FormControl>
                                   <DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" />
                                 </FormControl>
@@ -852,6 +849,7 @@ export default function Elevators() {
                             )}
                           />
                         </div>
+
                         {/* Notes — full width */}
                         <FormField
                           control={inspForm.control}
@@ -881,8 +879,8 @@ export default function Elevators() {
                         </Button>
                       </form>
                     </Form>
-                  </div>
-                </div>
+                  </TabsContent>
+                </Tabs>
               ) : (
                 elevatorFormFields
               )}
