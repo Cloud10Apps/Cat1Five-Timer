@@ -153,22 +153,23 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fill: "#71717a", fontSize: 12 }}
+                    tick={{ fill: "#3f3f46", fontSize: 16 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                   />
                   <YAxis
                     dataKey="name"
                     type="category"
-                    tick={{ fill: "#71717a", fontSize: 11, fontWeight: 500 }}
+                    tick={{ fill: "#3f3f46", fontSize: 16, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
+                    width={120}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)" }}
-                    itemStyle={{ color: "#18181b", fontSize: "14px", fontWeight: 600 }}
-                    labelStyle={{ color: "#71717a", fontSize: "12px" }}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "16px" }}
+                    itemStyle={{ color: "#18181b", fontSize: "16px", fontWeight: 600 }}
+                    labelStyle={{ color: "#3f3f46", fontSize: "14px" }}
                   />
                   <Bar dataKey="value" barSize={24} radius={[0, 4, 4, 0]}>
                     {statusChartData.map((entry, index) => (
@@ -195,24 +196,24 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
                     <XAxis
                       dataKey="label"
-                      tick={{ fill: "#71717a", fontSize: 11 }}
+                      tick={{ fill: "#3f3f46", fontSize: 15 }}
                       axisLine={{ stroke: "#e4e4e7" }}
                       tickLine={false}
                       dy={8}
                     />
                     <YAxis
-                      tick={{ fill: "#71717a", fontSize: 11 }}
+                      tick={{ fill: "#3f3f46", fontSize: 15 }}
                       axisLine={false}
                       tickLine={false}
                       allowDecimals={false}
                     />
                     <Tooltip
                       cursor={{ fill: "#f4f4f5" }}
-                      contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)" }}
+                      contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "16px" }}
                     />
                     <Legend
                       iconType="circle"
-                      wrapperStyle={{ fontSize: "12px", color: "#71717a", paddingTop: "16px" }}
+                      wrapperStyle={{ fontSize: "15px", color: "#3f3f46", paddingTop: "16px" }}
                     />
                     <Bar dataKey="due"       name="Due"       fill="#d4d4d8" radius={[2, 2, 0, 0]} maxBarSize={14} />
                     <Bar dataKey="scheduled" name="Scheduled" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={14} />
