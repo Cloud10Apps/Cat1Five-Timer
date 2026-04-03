@@ -7,10 +7,10 @@
  */
 
 export interface DashboardSummary {
-  totalElevators: number;
-  duethisMonth: number;
-  overdueCount: number;
+  notStartedCount: number;
   scheduledCount: number;
-  totalCustomers: number;
-  totalBuildings: number;
+  completedCount: number;
+  overdueCount: number;
+  avgDaysToSchedule?: number | null;
+  avgDaysToComplete?: number | null;
 }

@@ -115,23 +115,54 @@ export default function Dashboard() {
 
         {/* ── KPI Strip ── */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
-          {[
-            { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
-            { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
-            { label: "TOTAL ELEVATORS", value: summary?.totalElevators ?? 0 },
-            { label: "INSPECTIONS DUE THIS MONTH", value: summary?.duethisMonth ?? 0 },
-            { label: "SCHEDULED THIS MONTH", value: summary?.scheduledCount ?? 0 },
-            { label: "OVERDUE INSPECTIONS", value: overdueCount, isAlert: true },
-          ].map((kpi, i) => (
-            <div key={i} className={`p-6 flex flex-col justify-center ${kpi.isAlert ? "bg-red-50" : ""}`}>
-              <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">
-                {kpi.label}
+          {/* NOT STARTED */}
+          <div className="p-6 flex flex-col justify-center">
+            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">NOT STARTED</div>
+            <div className="text-5xl font-black text-zinc-900">{summary?.notStartedCount ?? 0}</div>
+          </div>
+          {/* SCHEDULED */}
+          <div className="p-6 flex flex-col justify-center">
+            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">SCHEDULED</div>
+            <div className="text-5xl font-black text-blue-600">{summary?.scheduledCount ?? 0}</div>
+          </div>
+          {/* COMPLETED */}
+          <div className="p-6 flex flex-col justify-center">
+            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">COMPLETED</div>
+            <div className="text-5xl font-black text-green-600">{summary?.completedCount ?? 0}</div>
+          </div>
+          {/* OVERDUE */}
+          <div className="p-6 flex flex-col justify-center bg-red-50">
+            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">OVERDUE</div>
+            <div className="text-5xl font-black text-red-600">{summary?.overdueCount ?? 0}</div>
+          </div>
+          {/* AVG DAYS TO SCHEDULE */}
+          {(() => {
+            const val = summary?.avgDaysToSchedule ?? null;
+            const isGood = val !== null && val <= 0;
+            const isBad  = val !== null && val > 0;
+            return (
+              <div className={`p-6 flex flex-col justify-center ${isBad ? "bg-red-50" : isGood ? "bg-green-50" : ""}`}>
+                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO SCHEDULE</div>
+                <div className={`text-5xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
+                  {val === null ? "—" : (val > 0 ? `+${val}` : `${val}`)}
+                </div>
+                <div className="text-xs text-zinc-400 mt-1">{isGood ? "ahead of due date" : isBad ? "after due date" : "no data"}</div>
               </div>
-              <div className={`text-5xl font-black ${kpi.isAlert ? "text-red-600" : "text-zinc-900"}`}>
-                {kpi.value}
+            );
+          })()}
+          {/* AVG DAYS TO COMPLETE */}
+          {(() => {
+            const val = summary?.avgDaysToComplete ?? null;
+            return (
+              <div className="p-6 flex flex-col justify-center">
+                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO COMPLETE</div>
+                <div className="text-5xl font-black text-zinc-900">
+                  {val === null ? "—" : val}
+                </div>
+                <div className="text-xs text-zinc-400 mt-1">{val !== null ? "from schedule to done" : "no data"}</div>
               </div>
-            </div>
-          ))}
+            );
+          })()}
         </section>
 
         {/* ── Charts Row ── */}

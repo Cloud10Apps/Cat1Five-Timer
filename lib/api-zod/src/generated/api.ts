@@ -447,12 +447,12 @@ export const DeleteInspectionParams = zod.object({
  * @summary Get dashboard summary stats
  */
 export const GetDashboardSummaryResponse = zod.object({
-  totalElevators: zod.number(),
-  duethisMonth: zod.number(),
-  overdueCount: zod.number(),
+  notStartedCount: zod.number(),
   scheduledCount: zod.number(),
-  totalCustomers: zod.number(),
-  totalBuildings: zod.number(),
+  completedCount: zod.number(),
+  overdueCount: zod.number(),
+  avgDaysToSchedule: zod.number().nullish(),
+  avgDaysToComplete: zod.number().nullish(),
 });
 
 /**

@@ -1049,25 +1049,25 @@ components:
     DashboardSummary:
       type: object
       properties:
-        totalElevators:
-          type: integer
-        duethisMonth:
-          type: integer
-        overdueCount:
+        notStartedCount:
           type: integer
         scheduledCount:
           type: integer
-        totalCustomers:
+        completedCount:
           type: integer
-        totalBuildings:
+        overdueCount:
           type: integer
+        avgDaysToSchedule:
+          type: number
+          nullable: true
+        avgDaysToComplete:
+          type: number
+          nullable: true
       required:
-        - totalElevators
-        - duethisMonth
-        - overdueCount
+        - notStartedCount
         - scheduledCount
-        - totalCustomers
-        - totalBuildings
+        - completedCount
+        - overdueCount
 
     StatusBreakdownItem:
       type: object

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, count, gte, lte, inArray } from "drizzle-orm";
+import { eq, and, count, gte, lte, inArray, avg, sql } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
@@ -11,59 +11,68 @@ router.use(requireAuth);
 
 router.get("/summary", async (req, res) => {
   const orgId = req.user!.organizationId;
-  const today = dayjs();
-  const monthStart = today.startOf("month").format("YYYY-MM-DD");
-  const monthEnd = today.endOf("month").format("YYYY-MM-DD");
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
 
   if (allowedIds !== null && allowedIds.length === 0) {
-    res.json({ totalElevators: 0, duethisMonth: 0, overdueCount: 0, scheduledCount: 0, totalCustomers: 0, totalBuildings: 0 });
+    res.json({
+      notStartedCount: 0, scheduledCount: 0, completedCount: 0, overdueCount: 0,
+      avgDaysToSchedule: null, avgDaysToComplete: null,
+    });
     return;
   }
 
-  const customerFilter = allowedIds !== null ? inArray(customersTable.id, allowedIds) : undefined;
   const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
 
-  const [elevatorCount] = await db
-    .select({ count: count() })
-    .from(elevatorsTable)
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(eq(elevatorsTable.organizationId, orgId), buildingCustomerFilter));
+  const baseCondition = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
 
-  const [customerCount] = await db
-    .select({ count: count() })
-    .from(customersTable)
-    .where(and(eq(customersTable.organizationId, orgId), customerFilter));
+  const makeCountQuery = (status: string) =>
+    db.select({ count: count() })
+      .from(inspectionsTable)
+      .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+      .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+      .where(and(baseCondition, eq(inspectionsTable.status, status)));
 
-  const [buildingCount] = await db
-    .select({ count: count() })
-    .from(buildingsTable)
-    .where(and(eq(buildingsTable.organizationId, orgId), buildingCustomerFilter));
+  const [
+    [notStartedRow],
+    [scheduledRow],
+    [completedRow],
+    [overdueRow],
+    [avgScheduleRow],
+    [avgCompleteRow],
+  ] = await Promise.all([
+    makeCountQuery("NOT_STARTED"),
+    makeCountQuery("SCHEDULED"),
+    makeCountQuery("COMPLETED"),
+    makeCountQuery("OVERDUE"),
+    // avg(scheduled_date - due_date) — negative = good (scheduled before due)
+    db.select({
+      avg: sql<string>`AVG(${inspectionsTable.scheduledDate}::date - ${inspectionsTable.nextDueDate}::date)`,
+    })
+      .from(inspectionsTable)
+      .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+      .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+      .where(and(baseCondition, sql`${inspectionsTable.scheduledDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
+    // avg(completion_date - scheduled_date)
+    db.select({
+      avg: sql<string>`AVG(${inspectionsTable.completionDate}::date - ${inspectionsTable.scheduledDate}::date)`,
+    })
+      .from(inspectionsTable)
+      .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+      .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+      .where(and(baseCondition, sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.scheduledDate} IS NOT NULL`)),
+  ]);
 
-  const inspectionBase = db
-    .select({ count: count() })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id));
-
-  const [overdueCount] = await inspectionBase.where(
-    and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, "OVERDUE"), buildingCustomerFilter)
-  );
-  const [scheduledThisMonth] = await inspectionBase.where(
-    and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, "SCHEDULED"), gte(inspectionsTable.nextDueDate, monthStart), lte(inspectionsTable.nextDueDate, monthEnd), buildingCustomerFilter)
-  );
-  const [dueThisMonth] = await inspectionBase.where(
-    and(eq(inspectionsTable.organizationId, orgId), gte(inspectionsTable.nextDueDate, monthStart), lte(inspectionsTable.nextDueDate, monthEnd), buildingCustomerFilter)
-  );
+  const parseAvg = (val: string | null): number | null =>
+    val == null ? null : Math.round(parseFloat(val) * 10) / 10;
 
   res.json({
-    totalElevators: Number(elevatorCount.count),
-    duethisMonth: Number(dueThisMonth.count),
-    overdueCount: Number(overdueCount.count),
-    scheduledCount: Number(scheduledThisMonth.count),
-    totalCustomers: Number(customerCount.count),
-    totalBuildings: Number(buildingCount.count),
+    notStartedCount:    Number(notStartedRow.count),
+    scheduledCount:     Number(scheduledRow.count),
+    completedCount:     Number(completedRow.count),
+    overdueCount:       Number(overdueRow.count),
+    avgDaysToSchedule:  parseAvg(avgScheduleRow?.avg ?? null),
+    avgDaysToComplete:  parseAvg(avgCompleteRow?.avg ?? null),
   });
 });
 
