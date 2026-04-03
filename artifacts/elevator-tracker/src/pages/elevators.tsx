@@ -1011,19 +1011,19 @@ export default function Elevators() {
                     </span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Status</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Status</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Type</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Type</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Next Due</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Next Due</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Scheduled</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Scheduled</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Actions</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white">Actions</span>
                   </div>
                 </button>
 
@@ -1109,7 +1109,7 @@ export default function Elevators() {
                                           {/* Next Due — 125px */}
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {due ? (
-                                              <span className={`text-sm tabular-nums whitespace-nowrap ${isOverdue ? "text-red-600 font-semibold" : isSoon ? "text-amber-600 font-medium" : "text-zinc-800 font-medium"}`}>
+                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
@@ -1117,7 +1117,7 @@ export default function Elevators() {
                                           {/* Scheduled — 125px */}
                                           <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {scheduledDate ? (
-                                              <span className="text-sm tabular-nums whitespace-nowrap text-zinc-400">
+                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
