@@ -50,7 +50,7 @@ router.get("/summary", async (req, res) => {
       .where(and(baseCondition, eq(inspectionsTable.status, status), dateFilter));
   };
 
-  // Overdue = not completed + due date is in the past
+  // Overdue = not completed + due date is in the past — always filter-agnostic
   const overdueQuery = db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
@@ -59,7 +59,6 @@ router.get("/summary", async (req, res) => {
       baseCondition,
       ne(inspectionsTable.status, "COMPLETED"),
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayStr}::date`,
-      dueDateFilter,
     ));
 
   const [
@@ -214,6 +213,7 @@ router.get("/status-breakdown", async (req, res) => {
   const dueDateFilter = hasFilter
     ? sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.nextDueDate}::date) = ${m}`
     : undefined;
+  // Overdue is always filter-agnostic — all past-due non-completed, regardless of month/year filter
   const [overdueRow] = await db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
@@ -222,7 +222,6 @@ router.get("/status-breakdown", async (req, res) => {
       baseC,
       ne(inspectionsTable.status, "COMPLETED"),
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayBd}::date`,
-      dueDateFilter,
     ));
 
   res.json([...storedResults, { status: "OVERDUE", count: Number(overdueRow.count) }]);
