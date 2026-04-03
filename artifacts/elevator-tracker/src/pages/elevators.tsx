@@ -1080,7 +1080,7 @@ export default function Elevators() {
             options={MONTH_OPTIONS}
             placeholder="Due Month"
             searchPlaceholder="Search months..."
-            width="w-[130px]"
+            width="w-[160px]"
           />
           <FilterCombobox
             value={filterDueYear}
@@ -1088,7 +1088,7 @@ export default function Elevators() {
             options={yearFilterOptions}
             placeholder="Due Year"
             searchPlaceholder="Search years..."
-            width="w-[110px]"
+            width="w-[140px]"
           />
           {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
             <button
