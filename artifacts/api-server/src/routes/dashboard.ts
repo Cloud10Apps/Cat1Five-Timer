@@ -340,12 +340,9 @@ router.get("/monthly-forecast", async (req, res) => {
       const bucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
       if (bucket) bucket.notStarted++;
     }
-    // Scheduled: status=SCHEDULED, has a scheduledDate, not yet overdue — bucket by scheduledDate
-    if (
-      row.status === "SCHEDULED" &&
-      row.scheduledDate &&
-      (row.nextDueDate == null || row.nextDueDate >= today.format("YYYY-MM-DD"))
-    ) {
+    // Scheduled: any inspection with a scheduledDate — bucket by scheduledDate month
+    // (months array is current-year only, so out-of-year dates find no bucket)
+    if (row.scheduledDate) {
       const bucket = months.find((m) => m.key === row.scheduledDate!.substring(0, 7));
       if (bucket) bucket.scheduled++;
     }
