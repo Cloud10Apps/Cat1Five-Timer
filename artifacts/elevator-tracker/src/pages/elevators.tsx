@@ -179,18 +179,17 @@ export default function Elevators() {
     { query: { queryKey: getListInspectionsQueryKey({}) } }
   );
 
-  // Map: elevatorId → most-actionable inspection
-  // Priority: NOT_STARTED → OVERDUE → SCHEDULED → IN_PROGRESS → COMPLETED
-  // Within same status, latest nextDueDate wins
+  // Map: elevatorId → most-relevant inspection
+  // Priority: CAT5 before CAT1, then descending nextDueDate within same type
   const latestInspByElevator = useMemo(() => {
-    const STATUS_PRIORITY = ["NOT_STARTED", "OVERDUE", "SCHEDULED", "IN_PROGRESS", "COMPLETED"];
+    const TYPE_PRIORITY: Record<string, number> = { CAT5: 0, CAT1: 1 };
     const map = new Map<number, Inspection>();
     for (const insp of allInspections ?? []) {
       if (!insp.elevatorId) continue;
       const current = map.get(insp.elevatorId);
       if (!current) { map.set(insp.elevatorId, insp); continue; }
-      const np = STATUS_PRIORITY.indexOf(insp.status ?? "NOT_STARTED");
-      const cp = STATUS_PRIORITY.indexOf(current.status ?? "NOT_STARTED");
+      const np = TYPE_PRIORITY[insp.inspectionType ?? ""] ?? 99;
+      const cp = TYPE_PRIORITY[current.inspectionType ?? ""] ?? 99;
       if (np < cp || (np === cp && (insp.nextDueDate ?? "") > (current.nextDueDate ?? ""))) {
         map.set(insp.elevatorId, insp);
       }
