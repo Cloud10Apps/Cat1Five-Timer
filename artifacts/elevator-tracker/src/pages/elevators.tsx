@@ -1045,7 +1045,7 @@ export default function Elevators() {
               <TableHead>Type</TableHead>
               <TableHead>Bank</TableHead>
               <TableHead>Next Due</TableHead>
-              <TableHead>Inspections</TableHead>
+              <TableHead className="text-center">Inspection Activity</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -1122,9 +1122,9 @@ export default function Elevators() {
                       );
                     })()}
                   </TableCell>
-                  <TableCell className="py-2">
+                  <TableCell className="py-2 text-center">
                     {activeBadges.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1 justify-center">
                         {activeBadges.map(({ key, label, dot }) => (
                           <span
                             key={key}
