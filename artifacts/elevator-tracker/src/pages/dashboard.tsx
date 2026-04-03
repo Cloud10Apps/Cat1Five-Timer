@@ -232,7 +232,7 @@ export default function Dashboard() {
                   <BarChart
                     data={forecast}
                     margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-                    barCategoryGap="35%"
+                    barCategoryGap="20%"
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
                     <XAxis
@@ -259,10 +259,10 @@ export default function Dashboard() {
                       iconType="circle"
                       wrapperStyle={{ fontSize: "15px", color: "#3f3f46", paddingTop: "16px" }}
                     />
-                    <Bar dataKey="notStarted" name="Not Started" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} maxBarSize={40} />
-                    <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} maxBarSize={40} />
-                    <Bar dataKey="inProgress" name="In Progress" stackId="stack" fill="#f59e0b" radius={[0, 0, 0, 0]} maxBarSize={40} />
-                    <Bar dataKey="completed"  name="Completed"  stackId="stack" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="notStarted" name="Not Started" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} maxBarSize={72} />
+                    <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} maxBarSize={72} />
+                    <Bar dataKey="inProgress" name="In Progress" stackId="stack" fill="#f59e0b" radius={[0, 0, 0, 0]} maxBarSize={72} />
+                    <Bar dataKey="completed"  name="Completed"  stackId="stack" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={72} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
