@@ -1150,31 +1150,31 @@ export default function Elevators() {
                     </span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Unit ID</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Unit ID</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">State ID</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">State ID</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Unit Type</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Unit Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Status</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Status</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Insp Type</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Insp Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Last Inspection</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Last Inspection</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Next Due</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Next Due</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Scheduled</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Scheduled</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Actions</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Actions</span>
                   </div>
                 </button>
 
