@@ -783,9 +783,9 @@ export default function Elevators() {
                                 )}
                               />
                               {nextDuePreview && (
-                                <div className="col-span-2 bg-amber-50 border border-amber-200 rounded px-3 py-2 flex items-center gap-2">
-                                  <span className="text-sm text-amber-800 font-medium">Next Due:</span>
-                                  <span className="text-sm font-bold text-amber-900">{nextDuePreview}</span>
+                                <div className="col-span-2 bg-amber-500 rounded-lg px-4 py-3 flex items-center justify-between">
+                                  <span className="text-xs font-semibold text-amber-900 uppercase tracking-wider">Next Due</span>
+                                  <span className="text-xl font-bold text-white">{dayjs(nextDuePreview).format("MMM D, YYYY")}</span>
                                 </div>
                               )}
                               <FormField
