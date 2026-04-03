@@ -9,6 +9,8 @@ import type { CreateElevatorBodyType } from "./createElevatorBodyType";
 
 export interface CreateElevatorBody {
   name: string;
+  internalId?: string;
+  stateId?: string;
   description?: string;
   bank?: string;
   type: CreateElevatorBodyType;
