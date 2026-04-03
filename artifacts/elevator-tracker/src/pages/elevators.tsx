@@ -1107,7 +1107,7 @@ export default function Elevators() {
                           isSoon    ? "text-amber-600 font-medium" :
                                       "text-foreground"
                         }>
-                          {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                         </span>
                       );
                     })()}
