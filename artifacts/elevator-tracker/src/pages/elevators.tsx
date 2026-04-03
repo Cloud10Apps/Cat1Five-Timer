@@ -435,6 +435,7 @@ export default function Elevators() {
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId: editingElevator.id }), exact: false });
       toast({ title: "Both inspections created" });
+      setIsAddOpen(false);
     } catch {
       toast({ title: "Failed to create inspections", variant: "destructive" });
     }
@@ -763,7 +764,7 @@ export default function Elevators() {
               </DialogHeader>
 
               {editingElevator ? (
-                <Tabs defaultValue="inspection" className="pt-2">
+                <Tabs defaultValue="unit" className="pt-2">
                   <TabsList className="w-full mb-4">
                     <TabsTrigger value="unit" className="flex-1">Unit Details</TabsTrigger>
                     <TabsTrigger value="inspection" className="flex-1">
