@@ -302,10 +302,12 @@ export default function Elevators() {
     )
   ), [grouped]);
 
-  const collapseAll    = () => { setCollapsedCustomers(new Set(allCustomerIds)); setCollapsedBuildings(new Set(allBuildingIds)); setCollapsedBanks(new Set(allBankKeys)); };
-  const expandCustomers = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set(allBuildingIds)); setCollapsedBanks(new Set(allBankKeys)); };
-  const expandBuildings = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set()); setCollapsedBanks(new Set(allBankKeys)); };
-  const expandAll      = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set()); setCollapsedBanks(new Set()); };
+  const [activeDepth, setActiveDepth] = useState<"customers"|"buildings"|"banks"|"units">("units");
+
+  const collapseAll    = () => { setCollapsedCustomers(new Set(allCustomerIds)); setCollapsedBuildings(new Set(allBuildingIds)); setCollapsedBanks(new Set(allBankKeys)); setActiveDepth("customers"); };
+  const expandCustomers = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set(allBuildingIds)); setCollapsedBanks(new Set(allBankKeys)); setActiveDepth("buildings"); };
+  const expandBuildings = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set()); setCollapsedBanks(new Set(allBankKeys)); setActiveDepth("banks"); };
+  const expandAll      = () => { setCollapsedCustomers(new Set()); setCollapsedBuildings(new Set()); setCollapsedBanks(new Set()); setActiveDepth("units"); };
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1097,24 +1099,33 @@ export default function Elevators() {
       </div>
 
 
-      {/* ── Expand / Collapse controls ── */}
+      {/* ── Depth selector ── */}
       {!isLoading && grouped.length > 0 && (
-        <div className="flex items-center gap-1 flex-wrap">
-          <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider mr-1">View:</span>
-          {[
-            { label: "Collapse All",  action: collapseAll },
-            { label: "Customers",     action: expandCustomers },
-            { label: "Buildings",     action: expandBuildings },
-            { label: "Expand All",    action: expandAll },
-          ].map(({ label, action }) => (
-            <button
-              key={label}
-              onClick={action}
-              className="px-2.5 py-1 text-xs font-medium rounded border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-900 transition-colors shadow-sm"
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex items-center gap-0 rounded-lg border border-zinc-200 bg-white shadow-sm w-fit overflow-hidden">
+          {([
+            { key: "customers", label: "Customers", action: collapseAll },
+            { key: "buildings", label: "Buildings", action: expandCustomers },
+            { key: "banks",     label: "Banks",     action: expandBuildings },
+            { key: "units",     label: "Units",     action: expandAll },
+          ] as const).map(({ key, label, action }, i) => {
+            const isActive = activeDepth === key;
+            return (
+              <button
+                key={key}
+                onClick={action}
+                className={`relative flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors border-r border-zinc-200 last:border-r-0
+                  ${isActive
+                    ? "bg-amber-500 text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+                  }`}
+              >
+                {i > 0 && (
+                  <ChevronRight className={`h-3 w-3 shrink-0 ${isActive ? "text-white/70" : "text-zinc-300"}`} />
+                )}
+                {label}
+              </button>
+            );
+          })}
         </div>
       )}
 
