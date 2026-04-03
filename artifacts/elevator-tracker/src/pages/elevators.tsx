@@ -1177,7 +1177,7 @@ export default function Elevators() {
                         <div key={building.buildingId}>
                           {/* Building header */}
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-2.5 pl-8 bg-zinc-50 border-l-[3px] border-zinc-400 hover:bg-zinc-100 transition-colors text-left border-b border-zinc-200"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 pl-8 bg-zinc-50 border-l-[3px] border-zinc-500 hover:bg-zinc-100 transition-colors text-left border-b border-zinc-100"
                             onClick={() => toggleBuilding(building.buildingId)}
                           >
                             {isBuildingCollapsed
@@ -1185,9 +1185,6 @@ export default function Elevators() {
                               : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" />}
                             <BuildingIcon className="h-4 w-4 shrink-0 text-zinc-500" />
                             <span className="font-semibold text-sm text-zinc-700">{building.buildingName}</span>
-                            <span className="text-[11px] font-medium bg-zinc-200 text-zinc-500 px-2 py-0.5 rounded-full ml-1 shrink-0">
-                              {building.banks.reduce((s, bk) => s + bk.elevators.length, 0)}
-                            </span>
                           </button>
 
                           {!isBuildingCollapsed && (
@@ -1213,7 +1210,7 @@ export default function Elevators() {
                                     )}
 
                                     {/* Elevator rows — fixed-width right columns for alignment */}
-                                    {!isBankCollapsed && bank.elevators.map((elevator, rowIdx) => {
+                                    {!isBankCollapsed && bank.elevators.map((elevator) => {
                                       const latestInsp = latestInspByElevator.get(elevator.id);
                                       const due = latestInsp?.nextDueDate?.slice(0, 10);
                                       const today = new Date().toISOString().slice(0, 10);
@@ -1222,23 +1219,15 @@ export default function Elevators() {
                                       const scheduledDate = latestInsp?.scheduledDate?.slice(0, 10);
                                       const completionDate = lastCompletedByElevator.get(elevator.id);
                                       const nameIndent = hasBankName ? "pl-16" : "pl-12";
-                                      const daysOverdue  = isOverdue && due ? dayjs().diff(dayjs(due), "day") : null;
-                                      const daysUntilDue = isSoon   && due ? dayjs(due).diff(dayjs(), "day")  : null;
-                                      const rowBg = isOverdue
-                                        ? (rowIdx % 2 === 0 ? "bg-red-50/60"    : "bg-red-50/40")
-                                        : isSoon
-                                        ? (rowIdx % 2 === 0 ? "bg-amber-50/60"  : "bg-amber-50/30")
-                                        : (rowIdx % 2 === 0 ? "bg-white"         : "bg-zinc-50/50");
-                                      const accentBar = isOverdue ? "bg-red-400" : isSoon ? "bg-amber-400" : "bg-zinc-300";
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className={`grid grid-cols-[1fr_155px_85px_125px_125px_125px_100px] group relative transition-colors border-b border-zinc-100 ${rowBg} hover:brightness-95`}
+                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-100"
                                         >
-                                          {/* Left accent bar — color signals urgency */}
-                                          <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBar}`} />
+                                          {/* Amber accent bar — absolute left edge */}
+                                          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
                                           {/* Name + meta */}
-                                          <div className={`flex flex-col justify-center px-4 py-2.5 min-w-0 ${nameIndent}`}>
+                                          <div className={`flex flex-col justify-center px-4 py-2 min-w-0 ${nameIndent}`}>
                                             <div className="font-semibold text-sm leading-snug truncate text-zinc-900">{elevator.name}</div>
                                             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                                               <span className="text-xs text-zinc-500 capitalize">{elevator.type}</span>
@@ -1247,13 +1236,13 @@ export default function Elevators() {
                                             </div>
                                           </div>
                                           {/* Status — 155px */}
-                                          <div className="flex items-center px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {latestInsp
                                               ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
                                               : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Insp Type — 85px */}
-                                          <div className="flex items-center px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {latestInsp ? (
                                               <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                                                 {latestInsp.inspectionType}
@@ -1261,36 +1250,28 @@ export default function Elevators() {
                                             ) : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Last Completed — 125px */}
-                                          <div className="flex items-center px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {completionDate ? (
-                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-600">
+                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(completionDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-sm text-zinc-300">—</span>}
+                                            ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Next Due — 125px */}
-                                          <div className="flex flex-col justify-center px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {due ? (
-                                              <>
-                                                <span className={`text-xs tabular-nums whitespace-nowrap font-semibold leading-snug ${isOverdue ? "text-red-600" : isSoon ? "text-amber-600" : "text-zinc-700"}`}>
-                                                  {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
-                                                </span>
-                                                {daysOverdue !== null && (
-                                                  <span className="text-[10px] text-red-400 leading-tight mt-0.5">{daysOverdue}d overdue</span>
-                                                )}
-                                                {daysUntilDue !== null && (
-                                                  <span className="text-[10px] text-amber-500 leading-tight mt-0.5">in {daysUntilDue}d</span>
-                                                )}
-                                              </>
-                                            ) : <span className="text-sm text-zinc-300">—</span>}
+                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
+                                                {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                                              </span>
+                                            ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Scheduled — 125px */}
-                                          <div className="flex items-center px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center px-4 py-2 border-l border-zinc-200">
                                             {scheduledDate ? (
-                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-600">
+                                              <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-sm text-zinc-300">—</span>}
+                                            ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Actions — 100px */}
                                           <div className="flex items-center justify-center border-l border-zinc-200 gap-0.5">
