@@ -1236,7 +1236,7 @@ export default function Elevators() {
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
                                           {/* Name */}
-                                          <div className={`flex items-center px-4 py-1 min-w-0 ${nameIndent}`}>
+                                          <div className={`flex items-center justify-center px-4 py-1 min-w-0 ${nameIndent}`}>
                                             <div className="font-semibold text-xs leading-snug truncate text-zinc-900">{elevator.name}</div>
                                           </div>
                                           {/* Unit ID — 80px */}
