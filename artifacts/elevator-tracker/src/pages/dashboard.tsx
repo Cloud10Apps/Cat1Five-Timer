@@ -148,7 +148,7 @@ export default function Dashboard() {
                 <BarChart
                   data={statusChartData}
                   layout="vertical"
-                  margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
                   <XAxis
@@ -163,7 +163,7 @@ export default function Dashboard() {
                     tick={{ fill: "#3f3f46", fontSize: 16, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
-                    width={120}
+                    width={160}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
