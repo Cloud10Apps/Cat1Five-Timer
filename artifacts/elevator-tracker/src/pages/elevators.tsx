@@ -1222,7 +1222,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-100"
+                                          className="grid grid-cols-[1fr_155px_85px_125px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
