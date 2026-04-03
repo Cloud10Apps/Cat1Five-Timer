@@ -203,23 +203,6 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
-  // Map: elevatorId → status of the most recently scheduled inspection
-  const latestInspStatusByElevator = useMemo(() => {
-    // Track { status, anchor } per elevator; keep the entry with the latest anchor date
-    const raw = new Map<number, { status: string; anchor: string }>();
-    for (const insp of allInspections ?? []) {
-      if (!insp.elevatorId || !insp.status) continue;
-      const anchor = (insp.scheduledDate ?? insp.lastInspectionDate ?? "").slice(0, 10);
-      const existing = raw.get(insp.elevatorId);
-      if (!existing || anchor >= existing.anchor) {
-        raw.set(insp.elevatorId, { status: insp.status, anchor });
-      }
-    }
-    const map = new Map<number, string>();
-    raw.forEach(({ status }, id) => map.set(id, status));
-    return map;
-  }, [allInspections]);
-
   // Slider bounds: epoch-days spanning all known next-due dates ± buffer
   const { sliderBoundsMin, sliderBoundsMax } = useMemo(() => {
     const days = Array.from(nextDueDateByElevator.values())
@@ -1087,22 +1070,6 @@ export default function Elevators() {
         )}
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/50 w-fit">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">Latest Status</span>
-        {[
-          { key: "OVERDUE",     label: "Overdue",     color: "bg-red-500",   ring: "ring-red-200"   },
-          { key: "IN_PROGRESS", label: "In Progress", color: "bg-amber-500", ring: "ring-amber-200" },
-          { key: "SCHEDULED",   label: "Scheduled",   color: "bg-sky-500",   ring: "ring-sky-200"   },
-          { key: "NOT_STARTED", label: "Not Started", color: "bg-slate-400", ring: ""               },
-          { key: "COMPLETED",   label: "Completed",   color: "bg-green-500", ring: "ring-green-200" },
-        ].map(({ key, label, color, ring }) => (
-          <div key={key} className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${color} ${ring ? `ring-2 ${ring}` : ""}`} />
-            <span className="text-xs text-muted-foreground">{label}</span>
-          </div>
-        ))}
-      </div>
 
       <div className="border rounded-md">
         <Table>
@@ -1114,7 +1081,7 @@ export default function Elevators() {
               <TableHead>Type</TableHead>
               <TableHead>Bank</TableHead>
               <TableHead>Next Due</TableHead>
-              <TableHead>Current Status</TableHead>
+              <TableHead>Inspections</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -1166,19 +1133,6 @@ export default function Elevators() {
                             )}
                           </div>
                         )}
-                        {activeBadges.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {activeBadges.map(({ key, label, dot }) => (
-                              <span
-                                key={key}
-                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50"
-                              >
-                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
-                                {counts[key]} {label}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </TableCell>
@@ -1205,32 +1159,21 @@ export default function Elevators() {
                     })()}
                   </TableCell>
                   <TableCell className="py-4">
-                    {(() => {
-                      const STATUS_META: Record<string, { color: string; ring: string; label: string }> = {
-                        OVERDUE:     { color: "bg-red-500",   ring: "ring-2 ring-red-200 ring-offset-1",   label: "Overdue"     },
-                        IN_PROGRESS: { color: "bg-amber-500", ring: "ring-2 ring-amber-200 ring-offset-1", label: "In Progress" },
-                        SCHEDULED:   { color: "bg-sky-500",   ring: "ring-2 ring-sky-200 ring-offset-1",   label: "Scheduled"   },
-                        NOT_STARTED: { color: "bg-slate-400", ring: "",                                     label: "Not Started" },
-                        COMPLETED:   { color: "bg-green-500", ring: "ring-2 ring-green-200 ring-offset-1", label: "Completed"   },
-                      };
-                      const status = latestInspStatusByElevator.get(elevator.id);
-                      if (!status) return <span className="text-muted-foreground text-sm">—</span>;
-                      const meta = STATUS_META[status] ?? { color: "bg-slate-400", ring: "", label: status };
-                      return (
-                        <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 cursor-default">
-                                <span className={`w-3.5 h-3.5 rounded-full ${meta.color} ${meta.ring} ${status === "OVERDUE" ? "animate-pulse" : ""}`} />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="text-xs font-medium">
-                              {meta.label}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    })()}
+                    {activeBadges.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {activeBadges.map(({ key, label, dot }) => (
+                          <span
+                            key={key}
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/50 whitespace-nowrap"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+                            {counts[key]} {label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => {
