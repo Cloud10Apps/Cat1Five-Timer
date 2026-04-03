@@ -13,6 +13,14 @@ import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Spinner } from "@/components/ui/spinner";
 import { AlertTriangle } from "lucide-react";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   BarChart,
   Bar,
   XAxis,
@@ -32,7 +40,7 @@ const getStatusColor = (status: string) => {
     case "OVERDUE":     return "#ef4444";
     case "IN_PROGRESS": return "#f59e0b";
     case "SCHEDULED":   return "#3b82f6";
-    default:            return "#71717a";
+    default:            return "#d4d4d8";
   }
 };
 
@@ -48,32 +56,42 @@ async function fetchMonthlyForecast(): Promise<MonthBucket[]> {
   return res.json();
 }
 
-/* ─── Dark-themed status badge ─── */
-function DarkStatusBadge({ status }: { status: string }) {
+/* ─── Light-themed status badge ─── */
+function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    OVERDUE:     "bg-red-500/10 text-red-400 border-red-500/20",
-    SCHEDULED:   "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    NOT_STARTED: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-    IN_PROGRESS: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    COMPLETED:   "bg-green-500/10 text-green-400 border-green-500/20",
+    OVERDUE:     "bg-red-100 text-red-700 border-red-200",
+    SCHEDULED:   "bg-blue-100 text-blue-700 border-blue-200",
+    NOT_STARTED: "bg-zinc-100 text-zinc-600 border-zinc-200",
+    IN_PROGRESS: "bg-amber-100 text-amber-700 border-amber-200",
+    COMPLETED:   "bg-green-100 text-green-700 border-green-200",
   };
   return (
-    <span className={`px-2 py-1 text-xs font-medium rounded-sm border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
       {status.replace(/_/g, " ")}
     </span>
   );
 }
 
+/* ─── Section card header ─── */
+function SectionHeader({ title, badge }: { title: string; badge?: React.ReactNode }) {
+  return (
+    <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-2">
+      <h3 className="text-sm font-semibold text-zinc-700">{title}</h3>
+      {badge}
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const { data: summary,         isLoading: l1 } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
-  const { data: attention,       isLoading: l2 } = useGetAttentionInspections({ query: { queryKey: getGetAttentionInspectionsQueryKey() } });
-  const { data: breakdown,       isLoading: l3 } = useGetStatusBreakdown({ query: { queryKey: getGetStatusBreakdownQueryKey() } });
-  const { data: overdueBuildings,isLoading: l4 } = useGetOverdueByBuilding({ query: { queryKey: getGetOverdueByBuildingQueryKey() } });
-  const { data: forecast,        isLoading: l5 } = useQuery({ queryKey: ["monthly-forecast"], queryFn: fetchMonthlyForecast });
+  const { data: summary,          isLoading: l1 } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
+  const { data: attention,        isLoading: l2 } = useGetAttentionInspections({ query: { queryKey: getGetAttentionInspectionsQueryKey() } });
+  const { data: breakdown,        isLoading: l3 } = useGetStatusBreakdown({ query: { queryKey: getGetStatusBreakdownQueryKey() } });
+  const { data: overdueBuildings, isLoading: l4 } = useGetOverdueByBuilding({ query: { queryKey: getGetOverdueByBuildingQueryKey() } });
+  const { data: forecast,         isLoading: l5 } = useQuery({ queryKey: ["monthly-forecast"], queryFn: fetchMonthlyForecast });
 
   if (l1 || l2 || l3 || l4 || l5) {
     return (
-      <div className="flex h-[50vh] items-center justify-center bg-zinc-950">
+      <div className="flex h-[50vh] items-center justify-center bg-zinc-50">
         <Spinner size="lg" />
       </div>
     );
@@ -95,12 +113,11 @@ export default function Dashboard() {
   }));
 
   return (
-    <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-950 text-zinc-100 font-sans selection:bg-amber-500/30">
-
-      <div className="flex-1 p-6 md:p-8 space-y-8">
+    <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-50 text-zinc-900 font-sans">
+      <div className="flex-1 p-6 md:p-8 space-y-6">
 
         {/* ── KPI Strip ── */}
-        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-zinc-800 border border-zinc-800 rounded-lg bg-zinc-900/50 overflow-hidden">
+        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
           {[
             { label: "TOTAL ELEVATORS", value: summary?.totalElevators ?? 0 },
             { label: "DUE THIS MONTH",  value: summary?.duethisMonth ?? 0 },
@@ -109,11 +126,13 @@ export default function Dashboard() {
             { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
             { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
           ].map((kpi, i) => (
-            <div key={i} className="p-6 flex flex-col items-center text-center hover:bg-zinc-800/50 transition-colors gap-2">
-              <span className="text-zinc-500 text-xs font-semibold tracking-wider">{kpi.label}</span>
-              <span className={`text-4xl font-light tracking-tight ${kpi.isAlert && overdueCount > 0 ? "text-red-500" : "text-white"}`}>
+            <div key={i} className={`p-6 flex flex-col justify-center ${kpi.isAlert ? "bg-red-50" : ""}`}>
+              <div className="text-zinc-400 text-[10px] uppercase tracking-widest font-semibold mb-2">
+                {kpi.label}
+              </div>
+              <div className={`text-5xl font-black ${kpi.isAlert ? "text-red-600" : "text-zinc-900"}`}>
                 {kpi.value}
-              </span>
+              </div>
             </div>
           ))}
         </section>
@@ -122,34 +141,36 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Status Distribution — horizontal bar */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col h-[380px]">
-            <h2 className="text-xs font-semibold tracking-wider text-zinc-400 uppercase mb-6 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
-              Current Status Distribution
-            </h2>
-            <div className="flex-1 w-full">
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+            <SectionHeader title="Current Status Distribution" />
+            <div className="p-6 h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={statusChartData}
                   layout="vertical"
-                  margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
+                  margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#27272a" />
-                  <XAxis type="number" hide />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: "#71717a", fontSize: 12 }}
+                    axisLine={{ stroke: "#e4e4e7" }}
+                    tickLine={false}
+                  />
                   <YAxis
                     dataKey="name"
                     type="category"
+                    tick={{ fill: "#71717a", fontSize: 11, fontWeight: 500 }}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#a1a1aa", fontSize: 12 }}
-                    width={90}
                   />
                   <Tooltip
-                    cursor={{ fill: "#27272a", opacity: 0.4 }}
-                    contentStyle={{ backgroundColor: "#18181b", borderColor: "#3f3f46", color: "#f4f4f5", borderRadius: "6px" }}
-                    itemStyle={{ color: "#f4f4f5" }}
+                    cursor={{ fill: "#f4f4f5" }}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)" }}
+                    itemStyle={{ color: "#18181b", fontSize: "14px", fontWeight: 600 }}
+                    labelStyle={{ color: "#71717a", fontSize: "12px" }}
                   />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                  <Bar dataKey="value" barSize={24} radius={[0, 4, 4, 0]}>
                     {statusChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -160,45 +181,42 @@ export default function Dashboard() {
           </div>
 
           {/* 13-Month Forecast */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col h-[380px]">
-            <h2 className="text-xs font-semibold tracking-wider text-zinc-400 uppercase mb-6 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
-              13-Month Compliance Forecast
-            </h2>
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+            <SectionHeader title="13-Month Compliance Forecast" />
             <div className="flex-1 overflow-x-auto">
-              <div style={{ width: Math.max(560, (forecast?.length ?? 13) * 72), height: "100%" }}>
+              <div style={{ width: Math.max(560, (forecast?.length ?? 13) * 72), height: 360 }} className="px-4 py-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={forecast}
-                    margin={{ top: 10, right: 4, left: -20, bottom: 0 }}
+                    margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                     barCategoryGap="25%"
                     barGap={2}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
                     <XAxis
                       dataKey="label"
-                      axisLine={false}
+                      tick={{ fill: "#71717a", fontSize: 11 }}
+                      axisLine={{ stroke: "#e4e4e7" }}
                       tickLine={false}
-                      tick={{ fill: "#a1a1aa", fontSize: 11 }}
-                      dy={10}
+                      dy={8}
                     />
                     <YAxis
+                      tick={{ fill: "#71717a", fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#a1a1aa", fontSize: 11 }}
                       allowDecimals={false}
                     />
                     <Tooltip
-                      cursor={{ fill: "#27272a", opacity: 0.4 }}
-                      contentStyle={{ backgroundColor: "#18181b", borderColor: "#3f3f46", color: "#f4f4f5", borderRadius: "6px" }}
+                      cursor={{ fill: "#f4f4f5" }}
+                      contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)" }}
                     />
                     <Legend
                       iconType="circle"
-                      wrapperStyle={{ fontSize: "12px", paddingTop: "10px", color: "#a1a1aa" }}
+                      wrapperStyle={{ fontSize: "12px", color: "#71717a", paddingTop: "16px" }}
                     />
-                    <Bar dataKey="due"       name="Total Due"  fill="#3f3f46" radius={[2, 2, 0, 0]} maxBarSize={20} />
-                    <Bar dataKey="scheduled" name="Scheduled"  fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={20} />
-                    <Bar dataKey="completed" name="Completed"  fill="#22c55e" radius={[2, 2, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="due"       name="Due"       fill="#d4d4d8" radius={[2, 2, 0, 0]} maxBarSize={14} />
+                    <Bar dataKey="scheduled" name="Scheduled" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={14} />
+                    <Bar dataKey="completed" name="Completed" fill="#22c55e" radius={[2, 2, 0, 0]} maxBarSize={14} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -210,128 +228,126 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Requiring Attention */}
-          <div className="bg-zinc-900 border border-red-900/40 rounded-lg overflow-hidden shadow-[0_0_20px_rgba(239,68,68,0.04)]">
-            <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-              <h3 className="text-sm font-semibold text-zinc-200">Requiring Attention</h3>
-              {overdueItems.length > 0 && (
-                <span className="ml-auto text-[11px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-sm">
-                  {overdueItems.length} OVERDUE
-                </span>
-              )}
-            </div>
+          <div className="bg-white border border-zinc-200 border-t-4 border-t-red-500 rounded-lg shadow-sm overflow-hidden flex flex-col">
+            <SectionHeader
+              title="Requiring Attention"
+              badge={
+                overdueItems.length > 0 ? (
+                  <span className="ml-auto flex items-center gap-1 text-[11px] font-bold text-red-600">
+                    <AlertTriangle className="w-3 h-3" />
+                    {overdueItems.length} OVERDUE
+                  </span>
+                ) : undefined
+              }
+            />
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="text-xs text-zinc-500 uppercase">
-                    <th className="px-4 py-3 font-medium">Unit</th>
-                    <th className="px-4 py-3 font-medium">Building</th>
-                    <th className="px-4 py-3 font-medium">Due</th>
-                    <th className="px-4 py-3 font-medium text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/50">
+              <Table>
+                <TableHeader className="bg-zinc-50">
+                  <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Unit</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Building</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Due</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {(!attention || attention.length === 0) ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-zinc-500 text-xs">
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
                         No inspections requiring attention.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : attention.map((insp) => (
-                    <tr key={insp.id} className="hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-4 py-3 font-medium text-zinc-300 text-xs">{insp.elevatorName}</td>
-                      <td className="px-4 py-3 text-zinc-400 text-xs">{insp.buildingName}</td>
-                      <td className={`px-4 py-3 font-medium text-xs ${dayjs(insp.nextDueDate).isBefore(dayjs()) ? "text-red-400" : "text-zinc-400"}`}>
+                    <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-100">
+                      <TableCell className="font-medium text-sm py-3">{insp.elevatorName}</TableCell>
+                      <TableCell className="text-zinc-500 text-sm py-3">{insp.buildingName}</TableCell>
+                      <TableCell className={`text-sm py-3 font-medium ${dayjs(insp.nextDueDate).isBefore(dayjs()) ? "text-red-600" : "text-zinc-500"}`}>
                         {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DarkStatusBadge status={insp.status} />
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="text-right py-3">
+                        <StatusBadge status={insp.status} />
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
 
           {/* Highest Risk Buildings */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-            <div className="p-4 border-b border-zinc-800">
-              <h3 className="text-sm font-semibold text-zinc-200">Highest Risk Buildings</h3>
-            </div>
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+            <SectionHeader title="Highest Risk Buildings" />
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="text-xs text-zinc-500 uppercase">
-                    <th className="px-4 py-3 font-medium">Building</th>
-                    <th className="px-4 py-3 font-medium">Customer</th>
-                    <th className="px-4 py-3 font-medium text-right">Overdue</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/50">
+              <Table>
+                <TableHeader className="bg-zinc-50">
+                  <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Building</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Customer</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right">Overdue</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {(!overdueBuildings || overdueBuildings.length === 0) ? (
-                    <tr>
-                      <td colSpan={3} className="px-4 py-8 text-center text-zinc-500 text-xs">
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-zinc-400 py-8 text-sm">
                         No overdue inspections!
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : overdueBuildings.map((item) => (
-                    <tr key={item.buildingId} className="hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-4 py-3 font-medium text-zinc-300 text-xs">{item.buildingName}</td>
-                      <td className="px-4 py-3 text-zinc-400 text-xs">{item.customerName}</td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500/10 text-red-400 text-xs font-bold border border-red-500/20">
+                    <TableRow key={item.buildingId} className="hover:bg-zinc-50/80 border-b border-zinc-100">
+                      <TableCell className="font-medium text-sm py-3">{item.buildingName}</TableCell>
+                      <TableCell className="text-zinc-500 text-sm py-3">{item.customerName}</TableCell>
+                      <TableCell className="text-right py-3">
+                        <span className="inline-flex items-center justify-center bg-red-100 text-red-700 rounded-full font-bold h-6 w-6 text-xs">
                           {item.overdueCount}
                         </span>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
 
           {/* Upcoming — 30 days */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-            <div className="p-4 border-b border-zinc-800">
-              <h3 className="text-sm font-semibold text-zinc-200">Upcoming — Next 30 Days</h3>
-            </div>
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+            <SectionHeader title="Upcoming — Next 30 Days" />
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="text-xs text-zinc-500 uppercase">
-                    <th className="px-4 py-3 font-medium">Unit</th>
-                    <th className="px-4 py-3 font-medium">Type</th>
-                    <th className="px-4 py-3 font-medium">Due</th>
-                    <th className="px-4 py-3 font-medium text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/50">
+              <Table>
+                <TableHeader className="bg-zinc-50">
+                  <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Unit / Building</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Due</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {upcoming.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-zinc-500 text-xs">
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
                         No upcoming inspections in 30 days.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : upcoming.map((insp) => (
-                    <tr key={insp.id} className="hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-zinc-300 text-xs">{insp.elevatorName}</div>
-                        <div className="text-[11px] text-zinc-500">{insp.buildingName}</div>
-                      </td>
-                      <td className="px-4 py-3">
+                    <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-100">
+                      <TableCell className="py-3">
+                        <div className="font-medium text-sm">{insp.elevatorName}</div>
+                        <div className="text-xs text-zinc-500">{insp.buildingName}</div>
+                      </TableCell>
+                      <TableCell className="py-3">
                         <InspectionTypeBadge type={insp.inspectionType} />
-                      </td>
-                      <td className="px-4 py-3 text-zinc-400 text-xs">
+                      </TableCell>
+                      <TableCell className="text-zinc-500 text-sm py-3">
                         {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DarkStatusBadge status={insp.status} />
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="text-right py-3">
+                        <StatusBadge status={insp.status} />
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
 
