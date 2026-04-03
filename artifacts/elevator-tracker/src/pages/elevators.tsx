@@ -1060,7 +1060,7 @@ export default function Elevators() {
                       {/* amber accent bar */}
                       <div className="w-1 rounded-full bg-amber-400/70 mr-3 shrink-0 self-stretch min-h-[2rem]" />
                       <div className="min-w-0">
-                        <div className="font-semibold leading-snug">{elevator.name}</div>
+                        <div className="text-lg font-bold tracking-tight leading-snug">{elevator.name}</div>
                         {(elevator.internalId || elevator.stateId) && (
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             {elevator.internalId && (
