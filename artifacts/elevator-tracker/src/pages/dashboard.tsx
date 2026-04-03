@@ -122,7 +122,7 @@ export default function Dashboard() {
             { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
             { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
             { label: "TOTAL ELEVATORS", value: summary?.totalElevators ?? 0 },
-            { label: "DUE THIS MONTH",  value: summary?.duethisMonth ?? 0 },
+            { label: "INSPECTIONS DUE THIS MONTH", value: summary?.duethisMonth ?? 0 },
             { label: "OVERDUE",         value: overdueCount, isAlert: true },
             { label: "SCHEDULED",       value: summary?.scheduledCount ?? 0 },
           ].map((kpi, i) => (
