@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, ilike, inArray } from "drizzle-orm";
+import { db, buildingsTable, customersTable, elevatorsTable, inspectionsTable } from "@workspace/db";
+import { eq, and, ilike, inArray, count, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateBuildingBody, ListBuildingsQueryParams, GetBuildingParams, UpdateBuildingParams, DeleteBuildingParams } from "@workspace/api-zod";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
@@ -21,6 +21,19 @@ router.get("/", async (req, res) => {
   if (params.success && params.data.search) conditions.push(ilike(buildingsTable.name, `%${params.data.search}%`));
   if (allowedIds !== null) conditions.push(inArray(buildingsTable.customerId, allowedIds));
 
+  const elevatorCountSq = db
+    .select({ buildingId: elevatorsTable.buildingId, elevCnt: count().as("elev_cnt") })
+    .from(elevatorsTable)
+    .groupBy(elevatorsTable.buildingId)
+    .as("elevator_counts");
+
+  const inspectionCountSq = db
+    .select({ buildingId: elevatorsTable.buildingId, inspCnt: count().as("insp_cnt") })
+    .from(inspectionsTable)
+    .innerJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .groupBy(elevatorsTable.buildingId)
+    .as("inspection_counts");
+
   const buildings = await db
     .select({
       id: buildingsTable.id,
@@ -33,9 +46,13 @@ router.get("/", async (req, res) => {
       customerName: customersTable.name,
       organizationId: buildingsTable.organizationId,
       createdAt: buildingsTable.createdAt,
+      elevatorCount: elevatorCountSq.elevCnt,
+      inspectionCount: inspectionCountSq.inspCnt,
     })
     .from(buildingsTable)
     .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
+    .leftJoin(elevatorCountSq, eq(buildingsTable.id, elevatorCountSq.buildingId))
+    .leftJoin(inspectionCountSq, eq(buildingsTable.id, inspectionCountSq.buildingId))
     .where(and(...conditions))
     .orderBy(buildingsTable.name);
 
@@ -50,6 +67,8 @@ router.get("/", async (req, res) => {
     customerName: b.customerName ?? undefined,
     organizationId: b.organizationId,
     createdAt: b.createdAt.toISOString(),
+    elevatorCount: Number(b.elevatorCount ?? 0),
+    inspectionCount: Number(b.inspectionCount ?? 0),
   })));
 });
 

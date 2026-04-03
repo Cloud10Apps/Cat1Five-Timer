@@ -12,4 +12,5 @@ export type ListElevatorsParams = {
   customerId?: number;
   type?: ListElevatorsType;
   search?: string;
+  bank?: string;
 };

@@ -17,4 +17,6 @@ export interface Building {
   customerName?: string;
   organizationId: number;
   createdAt: Date;
+  elevatorCount?: number;
+  inspectionCount?: number;
 }

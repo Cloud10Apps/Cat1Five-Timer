@@ -126,6 +126,8 @@ export const ListBuildingsResponseItem = zod.object({
   customerName: zod.string().optional(),
   organizationId: zod.number(),
   createdAt: zod.coerce.date(),
+  elevatorCount: zod.number().optional(),
+  inspectionCount: zod.number().optional(),
 });
 export const ListBuildingsResponse = zod.array(ListBuildingsResponseItem);
 
@@ -159,6 +161,8 @@ export const GetBuildingResponse = zod.object({
   customerName: zod.string().optional(),
   organizationId: zod.number(),
   createdAt: zod.coerce.date(),
+  elevatorCount: zod.number().optional(),
+  inspectionCount: zod.number().optional(),
 });
 
 /**
@@ -188,6 +192,8 @@ export const UpdateBuildingResponse = zod.object({
   customerName: zod.string().optional(),
   organizationId: zod.number(),
   createdAt: zod.coerce.date(),
+  elevatorCount: zod.number().optional(),
+  inspectionCount: zod.number().optional(),
 });
 
 /**
@@ -211,8 +217,6 @@ export const ListElevatorsQueryParams = zod.object({
 export const ListElevatorsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
-  internalId: zod.string().optional(),
-  stateId: zod.string().optional(),
   description: zod.string().optional(),
   bank: zod.string().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]),
@@ -230,8 +234,6 @@ export const ListElevatorsResponse = zod.array(ListElevatorsResponseItem);
  */
 export const CreateElevatorBody = zod.object({
   name: zod.string(),
-  internalId: zod.string().optional(),
-  stateId: zod.string().optional(),
   description: zod.string().optional(),
   bank: zod.string().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]),
@@ -248,8 +250,6 @@ export const GetElevatorParams = zod.object({
 export const GetElevatorResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
-  internalId: zod.string().optional(),
-  stateId: zod.string().optional(),
   description: zod.string().optional(),
   bank: zod.string().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]),
@@ -270,8 +270,6 @@ export const UpdateElevatorParams = zod.object({
 
 export const UpdateElevatorBody = zod.object({
   name: zod.string(),
-  internalId: zod.string().optional(),
-  stateId: zod.string().optional(),
   description: zod.string().optional(),
   bank: zod.string().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]),
@@ -281,8 +279,6 @@ export const UpdateElevatorBody = zod.object({
 export const UpdateElevatorResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
-  internalId: zod.string().optional(),
-  stateId: zod.string().optional(),
   description: zod.string().optional(),
   bank: zod.string().optional(),
   type: zod.enum(["traction", "hydraulic", "other"]),
@@ -316,15 +312,6 @@ export const ListInspectionsQueryParams = zod.object({
   search: zod.coerce.string().optional(),
   month: zod.coerce.number().optional(),
   year: zod.coerce.number().optional(),
-  bank: zod.coerce.string().optional(),
-  lastInspectionDateFrom: zod.string().optional(),
-  lastInspectionDateTo: zod.string().optional(),
-  nextDueDateFrom: zod.string().optional(),
-  nextDueDateTo: zod.string().optional(),
-  scheduledDateFrom: zod.string().optional(),
-  scheduledDateTo: zod.string().optional(),
-  completionDateFrom: zod.string().optional(),
-  completionDateTo: zod.string().optional(),
 });
 
 export const ListInspectionsResponseItem = zod.object({

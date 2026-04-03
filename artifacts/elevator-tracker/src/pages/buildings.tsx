@@ -320,20 +320,21 @@ export default function Buildings() {
             <TableRow>
               <TableHead>Building</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Location</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Stats</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={5} className="text-center py-8">
                   <Spinner />
                 </TableCell>
               </TableRow>
             ) : buildings?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
                     <BuildingIcon className="h-10 w-10 mb-2 opacity-20" />
                     <p>No buildings found.</p>
@@ -341,12 +342,28 @@ export default function Buildings() {
                 </TableCell>
               </TableRow>
             ) : (
-              buildings?.map((building) => (
+              buildings?.map((building) => {
+                const addressParts = [building.address, building.city, building.state].filter(Boolean);
+                const fullAddress = addressParts.length > 0
+                  ? `${building.address || ""}${building.address && building.city ? ", " : ""}${building.city || ""}${building.city && building.state ? ", " : ""}${building.state || ""}${building.zip ? " " + building.zip : ""}`
+                  : "—";
+                const elevatorCount = building.elevatorCount ?? 0;
+                const inspectionCount = building.inspectionCount ?? 0;
+
+                return (
                 <TableRow key={building.id}>
                   <TableCell className="font-medium">{building.name}</TableCell>
                   <TableCell>{building.customerName}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground max-w-[280px]">{fullAddress}</TableCell>
                   <TableCell>
-                    {building.city} {building.state && `, ${building.state}`}
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5 text-xs font-semibold" title="Elevators">
+                        {elevatorCount} Elevators
+                      </span>
+                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 text-xs font-semibold" title="Inspections">
+                        {inspectionCount} Inspections
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => {
@@ -365,7 +382,7 @@ export default function Buildings() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))
+              );})
             )}
           </TableBody>
         </Table>

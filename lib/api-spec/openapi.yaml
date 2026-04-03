@@ -880,6 +880,10 @@ components:
         createdAt:
           type: string
           format: date-time
+        elevatorCount:
+          type: integer
+        inspectionCount:
+          type: integer
       required:
         - id
         - name

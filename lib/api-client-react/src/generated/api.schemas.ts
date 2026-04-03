@@ -88,6 +88,8 @@ export interface Building {
   customerName?: string;
   organizationId: number;
   createdAt: string;
+  elevatorCount?: number;
+  inspectionCount?: number;
 }
 
 export interface CreateBuildingBody {
@@ -110,8 +112,6 @@ export const ElevatorType = {
 export interface Elevator {
   id: number;
   name: string;
-  internalId?: string;
-  stateId?: string;
   description?: string;
   bank?: string;
   type: ElevatorType;
@@ -134,8 +134,6 @@ export const CreateElevatorBodyType = {
 
 export interface CreateElevatorBody {
   name: string;
-  internalId?: string;
-  stateId?: string;
   description?: string;
   bank?: string;
   type: CreateElevatorBodyType;
@@ -246,6 +244,7 @@ export type ListElevatorsParams = {
   customerId?: number;
   type?: ListElevatorsType;
   search?: string;
+  bank?: string;
 };
 
 export type ListElevatorsType =
@@ -267,15 +266,6 @@ export type ListInspectionsParams = {
   search?: string;
   month?: number;
   year?: number;
-  bank?: string;
-  lastInspectionDateFrom?: string;
-  lastInspectionDateTo?: string;
-  nextDueDateFrom?: string;
-  nextDueDateTo?: string;
-  scheduledDateFrom?: string;
-  scheduledDateTo?: string;
-  completionDateFrom?: string;
-  completionDateTo?: string;
 };
 
 export type ListInspectionsStatus =
