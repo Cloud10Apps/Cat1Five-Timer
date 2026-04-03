@@ -1236,29 +1236,29 @@ export default function Elevators() {
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
                                           {/* Name */}
-                                          <div className={`flex items-center px-4 py-1 min-w-0 ${nameIndent}`}>
+                                          <div className={`flex items-center px-4 py-1.5 min-w-0 ${nameIndent}`}>
                                             <div className="font-semibold text-xs leading-snug truncate text-zinc-900">{elevator.name}</div>
                                           </div>
                                           {/* Unit ID */}
-                                          <div className="flex items-center justify-center px-3 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-3 py-1.5 border-l border-zinc-200">
                                             <span className="text-xs tabular-nums text-zinc-700">{elevator.internalId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
                                           {/* State ID */}
-                                          <div className="flex items-center justify-center px-3 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-3 py-1.5 border-l border-zinc-200">
                                             <span className="text-xs tabular-nums text-zinc-700">{elevator.stateId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
                                           {/* Unit Type */}
-                                          <div className="flex items-center justify-center px-3 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-3 py-1.5 border-l border-zinc-200">
                                             <span className="text-xs font-medium text-zinc-700 capitalize">{elevator.type}</span>
                                           </div>
                                           {/* Status */}
-                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-4 py-1.5 border-l border-zinc-200">
                                             {latestInsp
                                               ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
                                               : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Insp Type */}
-                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-4 py-1.5 border-l border-zinc-200">
                                             {latestInsp ? (
                                               <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                                                 {latestInsp.inspectionType}
@@ -1266,7 +1266,7 @@ export default function Elevators() {
                                             ) : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Last Completed */}
-                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-4 py-1.5 border-l border-zinc-200">
                                             {completionDate ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(completionDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
@@ -1274,7 +1274,7 @@ export default function Elevators() {
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Next Due */}
-                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-4 py-1.5 border-l border-zinc-200">
                                             {due ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
@@ -1282,7 +1282,7 @@ export default function Elevators() {
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
                                           {/* Scheduled */}
-                                          <div className="flex items-center justify-center px-4 py-1 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center px-4 py-1.5 border-l border-zinc-200">
                                             {scheduledDate ? (
                                               <span className="text-xs tabular-nums whitespace-nowrap text-zinc-900">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
