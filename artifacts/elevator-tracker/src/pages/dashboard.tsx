@@ -11,12 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronRight,
-  ShieldAlert,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -29,8 +24,6 @@ import {
   Legend,
 } from "recharts";
 import dayjs from "dayjs";
-import { useLocation } from "wouter";
-import logoSrc from "@/assets/logo.svg";
 
 /* ─── colour helpers ─── */
 const getStatusColor = (status: string) => {
@@ -72,8 +65,6 @@ function DarkStatusBadge({ status }: { status: string }) {
 }
 
 export default function Dashboard() {
-  const [, setLocation] = useLocation();
-
   const { data: summary,         isLoading: l1 } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: attention,       isLoading: l2 } = useGetAttentionInspections({ query: { queryKey: getGetAttentionInspectionsQueryKey() } });
   const { data: breakdown,       isLoading: l3 } = useGetStatusBreakdown({ query: { queryKey: getGetStatusBreakdownQueryKey() } });
@@ -89,7 +80,6 @@ export default function Dashboard() {
   }
 
   const overdueCount = summary?.overdueCount ?? 0;
-  const isAllClear   = overdueCount === 0;
   const overdueItems = attention?.filter((i) => i.status === "OVERDUE") ?? [];
 
   const todayStr = dayjs().format("YYYY-MM-DD");
@@ -107,37 +97,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-950 text-zinc-100 font-sans selection:bg-amber-500/30">
 
-      {/* ── Top status line ── */}
-      <div className={`h-1.5 w-full shrink-0 ${isAllClear ? "bg-green-500" : "bg-red-500"}`} />
-
       <div className="flex-1 p-6 md:p-8 space-y-8">
-
-        {/* ── Header ── */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <img src={logoSrc} alt="Cat1Five Timer" className="h-14 rounded-sm" />
-
-          <div className="flex items-center gap-3">
-            {!isAllClear && (
-              <button
-                onClick={() => setLocation("/inspections")}
-                className="text-xs font-medium px-3 py-1.5 rounded border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors flex items-center gap-1"
-              >
-                View All <ChevronRight className="h-3 w-3" />
-              </button>
-            )}
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm border ${
-              isAllClear
-                ? "bg-green-500/10 border-green-500/20 text-green-400"
-                : "bg-red-500/10 border-red-500/20 text-red-400"
-            }`}>
-              {isAllClear ? (
-                <><CheckCircle2 className="w-4 h-4" /><span>All Systems Go</span></>
-              ) : (
-                <><ShieldAlert className="w-4 h-4" /><span>{overdueCount} Inspection{overdueCount !== 1 ? "s" : ""} Overdue</span></>
-              )}
-            </div>
-          </div>
-        </header>
 
         {/* ── KPI Strip ── */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-zinc-800 border border-zinc-800 rounded-lg bg-zinc-900/50 overflow-hidden">
@@ -149,8 +109,8 @@ export default function Dashboard() {
             { label: "TOTAL BUILDINGS", value: summary?.totalBuildings ?? 0 },
             { label: "TOTAL CUSTOMERS", value: summary?.totalCustomers ?? 0 },
           ].map((kpi, i) => (
-            <div key={i} className="p-6 flex flex-col justify-between hover:bg-zinc-800/50 transition-colors">
-              <span className="text-zinc-500 text-xs font-semibold tracking-wider mb-2">{kpi.label}</span>
+            <div key={i} className="p-6 flex flex-col items-center text-center hover:bg-zinc-800/50 transition-colors gap-2">
+              <span className="text-zinc-500 text-xs font-semibold tracking-wider">{kpi.label}</span>
               <span className={`text-4xl font-light tracking-tight ${kpi.isAlert && overdueCount > 0 ? "text-red-500" : "text-white"}`}>
                 {kpi.value}
               </span>
