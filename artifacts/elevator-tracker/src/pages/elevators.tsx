@@ -724,7 +724,9 @@ export default function Elevators() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Elevators</h1>
-          <p className="text-muted-foreground">This is where you set up new elevator units, add initial inspection records, and keep inspection statuses up to date so everything stays accurate from the start.</p>
+          <p className="mt-1 text-sm text-muted-foreground max-w-xl leading-relaxed">
+            Set up new elevator units, add initial inspection records, and keep statuses current &mdash; so your compliance data stays accurate from day one.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
