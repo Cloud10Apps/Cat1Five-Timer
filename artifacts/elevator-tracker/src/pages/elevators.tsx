@@ -1136,7 +1136,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_90px_155px_85px_125px_125px_125px_100px]"
+                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_80px_80px_90px_155px_85px_125px_125px_125px_100px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1149,7 +1149,13 @@ export default function Elevators() {
                       {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
                     </span>
                   </div>
-                  <div className="flex items-center px-4 py-3 border-l border-zinc-700">
+                  <div className="flex items-center px-3 py-3 border-l border-zinc-700">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Unit ID</span>
+                  </div>
+                  <div className="flex items-center px-3 py-3 border-l border-zinc-700">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">State ID</span>
+                  </div>
+                  <div className="flex items-center px-3 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Unit Type</span>
                   </div>
                   <div className="flex items-center px-4 py-3 border-l border-zinc-700">
@@ -1225,18 +1231,21 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_90px_155px_85px_125px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid grid-cols-[1fr_80px_80px_90px_155px_85px_125px_125px_125px_100px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
-                                          {/* Name + meta */}
-                                          <div className={`flex flex-col justify-center px-4 py-1 min-w-0 ${nameIndent}`}>
+                                          {/* Name */}
+                                          <div className={`flex items-center px-4 py-1 min-w-0 ${nameIndent}`}>
                                             <div className="font-semibold text-sm leading-snug truncate text-zinc-900">{elevator.name}</div>
-                                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                              {elevator.internalId && <span className="text-xs text-zinc-500">Unit {elevator.internalId}</span>}
-                                              {elevator.internalId && elevator.stateId && <span className="text-zinc-300 text-[10px]">•</span>}
-                                              {elevator.stateId && <span className="text-xs text-zinc-500">State {elevator.stateId}</span>}
-                                            </div>
+                                          </div>
+                                          {/* Unit ID — 80px */}
+                                          <div className="flex items-center px-3 py-1 border-l border-zinc-200">
+                                            <span className="text-xs tabular-nums text-zinc-700">{elevator.internalId ?? <span className="text-zinc-300">—</span>}</span>
+                                          </div>
+                                          {/* State ID — 80px */}
+                                          <div className="flex items-center px-3 py-1 border-l border-zinc-200">
+                                            <span className="text-xs tabular-nums text-zinc-700">{elevator.stateId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
                                           {/* Unit Type — 90px */}
                                           <div className="flex items-center px-3 py-1 border-l border-zinc-200">
