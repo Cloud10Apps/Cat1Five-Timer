@@ -22,16 +22,31 @@ router.get("/summary", async (req, res) => {
     return;
   }
 
-  const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
+  const m = req.query.month ? Number(req.query.month) : null;
+  const y = req.query.year  ? Number(req.query.year)  : null;
+  const hasFilter = m !== null && y !== null;
 
+  const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
   const baseCondition = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
 
-  const makeCountQuery = (status: string) =>
-    db.select({ count: count() })
+  // For non-completed statuses, filter by next_due_date in the selected month/year
+  const dueDateFilter = hasFilter
+    ? sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.nextDueDate}::date) = ${m}`
+    : undefined;
+
+  // For completed, filter by completion_date in the selected month/year
+  const completionDateFilter = hasFilter
+    ? sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.completionDate}::date) = ${m}`
+    : undefined;
+
+  const makeCountQuery = (status: string) => {
+    const dateFilter = status === "COMPLETED" ? completionDateFilter : dueDateFilter;
+    return db.select({ count: count() })
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseCondition, eq(inspectionsTable.status, status)));
+      .where(and(baseCondition, eq(inspectionsTable.status, status), dateFilter));
+  };
 
   const [
     [notStartedRow],
@@ -52,7 +67,7 @@ router.get("/summary", async (req, res) => {
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseCondition, sql`${inspectionsTable.scheduledDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
+      .where(and(baseCondition, dueDateFilter, sql`${inspectionsTable.scheduledDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
     // avg(completion_date - next_due_date) for COMPLETED inspections only
     db.select({
       avg: sql<string>`AVG(${inspectionsTable.completionDate}::date - ${inspectionsTable.nextDueDate}::date)`,
@@ -60,7 +75,7 @@ router.get("/summary", async (req, res) => {
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseCondition, eq(inspectionsTable.status, "COMPLETED"), sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
+      .where(and(baseCondition, eq(inspectionsTable.status, "COMPLETED"), completionDateFilter, sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`)),
   ]);
 
   const parseAvg = (val: string | null): number | null =>
@@ -82,12 +97,18 @@ router.get("/attention", async (req, res) => {
   const in30Days = today.add(30, "day").format("YYYY-MM-DD");
   const todayStr = today.format("YYYY-MM-DD");
 
+  const m = req.query.month ? Number(req.query.month) : null;
+  const y = req.query.year  ? Number(req.query.year)  : null;
+  const hasFilter = m !== null && y !== null;
+
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   if (allowedIds !== null && allowedIds.length === 0) { res.json([]); return; }
 
   const conditions: any[] = [
     eq(inspectionsTable.organizationId, orgId),
-    lte(inspectionsTable.nextDueDate, in30Days),
+    hasFilter
+      ? sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.nextDueDate}::date) = ${m}`
+      : lte(inspectionsTable.nextDueDate, in30Days),
   ];
   if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));
 
@@ -150,16 +171,25 @@ router.get("/status-breakdown", async (req, res) => {
     return;
   }
 
+  const m = req.query.month ? Number(req.query.month) : null;
+  const y = req.query.year  ? Number(req.query.year)  : null;
+  const hasFilter = m !== null && y !== null;
+
   const buildingCustomerFilter = allowedIds !== null ? inArray(buildingsTable.customerId, allowedIds) : undefined;
   const statuses = ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"];
 
   const results = await Promise.all(statuses.map(async (status) => {
+    const dateFilter = hasFilter
+      ? status === "COMPLETED"
+        ? sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.completionDate}::date) = ${m}`
+        : sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${y} AND EXTRACT(MONTH FROM ${inspectionsTable.nextDueDate}::date) = ${m}`
+      : undefined;
     const [row] = await db
       .select({ count: count() })
       .from(inspectionsTable)
       .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
       .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, status), buildingCustomerFilter));
+      .where(and(eq(inspectionsTable.organizationId, orgId), eq(inspectionsTable.status, status), buildingCustomerFilter, dateFilter));
     return { status, count: Number(row.count) };
   }));
   res.json(results);

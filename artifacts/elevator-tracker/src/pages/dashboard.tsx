@@ -1,15 +1,16 @@
-import {
-  useGetDashboardSummary,
-  useGetAttentionInspections,
-  useGetStatusBreakdown,
-  getGetDashboardSummaryQueryKey,
-  getGetAttentionInspectionsQueryKey,
-  getGetStatusBreakdownQueryKey,
-} from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Spinner } from "@/components/ui/spinner";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
+import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -42,17 +43,23 @@ const getStatusColor = (status: string) => {
   }
 };
 
-/* ─── monthly-forecast fetcher (not in generated client) ─── */
+/* ─── dashboard API fetchers ─── */
 type MonthBucket = { key: string; label: string; due: number; scheduled: number; completed: number };
 
-async function fetchMonthlyForecast(): Promise<MonthBucket[]> {
+function dashboardFetch(path: string, month?: number | null, year?: number | null) {
   const token = localStorage.getItem("token");
-  const res = await fetch("/api/dashboard/monthly-forecast", {
+  const params = new URLSearchParams();
+  if (month && year) { params.set("month", String(month)); params.set("year", String(year)); }
+  const qs = params.toString();
+  return fetch(`/api/dashboard/${path}${qs ? `?${qs}` : ""}`, {
     headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Failed to fetch monthly forecast");
-  return res.json();
+  }).then(r => { if (!r.ok) throw new Error(`Failed: ${path}`); return r.json(); });
 }
+
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
 
 /* ─── Light-themed status badge ─── */
 function StatusBadge({ status }: { status: string }) {
@@ -80,11 +87,30 @@ function SectionHeader({ title, badge }: { title: string; badge?: React.ReactNod
   );
 }
 
+const currentYear = dayjs().year();
+const YEARS = Array.from({ length: 8 }, (_, i) => currentYear - 2 + i);
+
 export default function Dashboard() {
-  const { data: summary,          isLoading: l1 } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
-  const { data: attention,        isLoading: l2 } = useGetAttentionInspections({ query: { queryKey: getGetAttentionInspectionsQueryKey() } });
-  const { data: breakdown,        isLoading: l3 } = useGetStatusBreakdown({ query: { queryKey: getGetStatusBreakdownQueryKey() } });
-  const { data: forecast,         isLoading: l4 } = useQuery({ queryKey: ["monthly-forecast"], queryFn: fetchMonthlyForecast });
+  const [filterMonth, setFilterMonth] = useState<number | null>(null);
+  const [filterYear,  setFilterYear]  = useState<number | null>(null);
+  const hasFilter = filterMonth !== null && filterYear !== null;
+
+  const { data: summary,   isLoading: l1 } = useQuery({
+    queryKey: ["/api/dashboard/summary",          filterMonth, filterYear],
+    queryFn:  () => dashboardFetch("summary",          filterMonth, filterYear),
+  });
+  const { data: attention, isLoading: l2 } = useQuery({
+    queryKey: ["/api/dashboard/attention",         filterMonth, filterYear],
+    queryFn:  () => dashboardFetch("attention",        filterMonth, filterYear),
+  });
+  const { data: breakdown, isLoading: l3 } = useQuery({
+    queryKey: ["/api/dashboard/status-breakdown",  filterMonth, filterYear],
+    queryFn:  () => dashboardFetch("status-breakdown", filterMonth, filterYear),
+  });
+  const { data: forecast,  isLoading: l4 } = useQuery({
+    queryKey: ["monthly-forecast"],
+    queryFn:  () => dashboardFetch("monthly-forecast"),
+  });
 
   if (l1 || l2 || l3 || l4) {
     return (
@@ -95,13 +121,13 @@ export default function Dashboard() {
   }
 
   const overdueCount = summary?.overdueCount ?? 0;
-  const overdueItems = attention?.filter((i) => i.status === "OVERDUE") ?? [];
+  const overdueItems = (attention ?? []).filter((i: any) => i.status === "OVERDUE");
 
   const todayStr = dayjs().format("YYYY-MM-DD");
   const in14Str  = dayjs().add(14, "day").format("YYYY-MM-DD");
-  const upcoming = attention?.filter(
-    (i) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in14Str
-  ) ?? [];
+  const upcoming = hasFilter
+    ? (attention ?? []).filter((i: any) => i.status !== "OVERDUE")
+    : (attention ?? []).filter((i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in14Str);
 
   const statusChartData = (breakdown ?? []).map((b) => ({
     name:  b.status.replace(/_/g, " "),
@@ -112,6 +138,53 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-50 text-zinc-900 font-sans">
       <div className="flex-1 p-6 md:p-8 space-y-6">
+
+        {/* ── Filter Bar ── */}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Filter by period</span>
+          <Select
+            value={filterMonth !== null ? String(filterMonth) : ""}
+            onValueChange={(v) => setFilterMonth(v ? Number(v) : null)}
+          >
+            <SelectTrigger className="w-36 h-8 text-sm">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((name, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filterYear !== null ? String(filterYear) : ""}
+            onValueChange={(v) => setFilterYear(v ? Number(v) : null)}
+          >
+            <SelectTrigger className="w-24 h-8 text-sm">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {YEARS.map((yr) => (
+                <SelectItem key={yr} value={String(yr)}>{yr}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasFilter && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-zinc-500 hover:text-zinc-900"
+              onClick={() => { setFilterMonth(null); setFilterYear(null); }}
+            >
+              <X className="w-3.5 h-3.5 mr-1" />
+              Clear
+            </Button>
+          )}
+          {hasFilter && (
+            <span className="text-xs text-zinc-400 bg-zinc-100 px-2.5 py-1 rounded-full">
+              Showing: {MONTHS[filterMonth! - 1]} {filterYear} — completed filtered by completion date
+            </span>
+          )}
+        </div>
 
         {/* ── KPI Strip ── */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
@@ -306,9 +379,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Upcoming — 2 weeks */}
+          {/* Upcoming */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="Upcoming — Next 2 Weeks" />
+            <SectionHeader title={hasFilter ? `Due in ${MONTHS[filterMonth! - 1]} ${filterYear}` : "Upcoming — Next 2 Weeks"} />
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
