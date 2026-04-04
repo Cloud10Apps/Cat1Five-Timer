@@ -368,7 +368,7 @@ export default function Dashboard() {
 
           {/* Status Distribution — horizontal bar */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title={`${currentYear} Status Distribution`} />
+            <SectionHeader title={`${currentYear} Inspections by Status`} />
             <div className="p-6 h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -411,7 +411,7 @@ export default function Dashboard() {
 
           {/* 12-Month Forecast — fits container, no scroll */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title={`${currentYear} Monthly Compliance Forecast`} />
+            <SectionHeader title={`${currentYear} Inspections by Month`} />
             <div className="p-4" style={{ height: 360 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
