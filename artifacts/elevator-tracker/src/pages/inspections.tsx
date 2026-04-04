@@ -41,7 +41,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsUpDown, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -337,10 +340,37 @@ export default function Inspections() {
                     <FormField control={form.control} name="elevatorId" render={({ field }) => (
                       <FormItem className="col-span-2 md:col-span-1">
                         <FormLabel>Elevator</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value ? field.value.toString() : ""} disabled={!!editingInspection}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select an elevator" /></SelectTrigger></FormControl>
-                          <SelectContent>{elevators?.map(e => <SelectItem key={e.id} value={e.id.toString()}>{e.name} ({e.buildingName})</SelectItem>)}</SelectContent>
-                        </Select>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button variant="outline" role="combobox" disabled={!!editingInspection}
+                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}>
+                                {field.value
+                                  ? (() => { const e = elevators?.find(e => e.id === Number(field.value)); return e ? `${e.name} (${e.buildingName})` : "Select an elevator"; })()
+                                  : "Select an elevator"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search elevators..." />
+                              <CommandList>
+                                <CommandEmpty>No elevator found.</CommandEmpty>
+                                <CommandGroup>
+                                  {elevators?.map(e => (
+                                    <CommandItem key={e.id} value={`${e.name} ${e.buildingName}`}
+                                      onSelect={() => field.onChange(e.id.toString())}>
+                                      <Check className={cn("mr-2 h-4 w-4", Number(field.value) === e.id ? "opacity-100" : "opacity-0")} />
+                                      <span>{e.name}</span>
+                                      <span className="ml-1 text-xs text-muted-foreground">({e.buildingName})</span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )} />
