@@ -554,9 +554,11 @@ export default function Inspections() {
               const bg = rowBg(rowIdx, isOverdue, noNextDue);
               const hoverCls = rowBgHover(rowIdx, isOverdue, noNextDue);
               const meta = elevatorMeta.get(insp.elevatorId);
+              // Apply bg directly to every cell so all columns share the same shade
+              const tc = (...extras: string[]) => [tdBase, bg, ...extras].filter(Boolean).join(" ");
 
               return (
-                <tr key={insp.id} className={`group transition-colors ${bg} ${hoverCls}`}>
+                <tr key={insp.id} className={`group transition-colors ${hoverCls}`}>
                   {/* Sticky: Customer */}
                   <td className={stickyTd("left-0", bg)} style={{ minWidth: 150 }}>
                     <span title={insp.customerName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[138px]">{insp.customerName ?? "—"}</span>
@@ -566,51 +568,51 @@ export default function Inspections() {
                     <span title={insp.buildingName ?? undefined} className="text-zinc-700 truncate block max-w-[118px]">{insp.buildingName ?? "—"}</span>
                   </td>
                   {/* Bank */}
-                  <td className={tdBase}>
+                  <td className={tc()}>
                     <span className="text-zinc-500">{meta?.bank || <span className="text-zinc-300 italic">—</span>}</span>
                   </td>
                   {/* Elevator */}
-                  <td className={tdBase}>
+                  <td className={tc()}>
                     <span title={insp.elevatorName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[188px]">{insp.elevatorName ?? "—"}</span>
                   </td>
                   {/* Unit Type */}
-                  <td className={tdBase}>
+                  <td className={tc()}>
                     {(insp as any).elevatorType
                       ? <span className="capitalize text-zinc-600">{(insp as any).elevatorType === "hydraulic" ? "Hydraulic" : (insp as any).elevatorType === "traction" ? "Traction" : "Other"}</span>
                       : <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Inspection Type */}
-                  <td className={`${tdBase} text-center`}>
+                  <td className={tc("text-center")}>
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                       {insp.inspectionType}
                     </span>
                   </td>
                   {/* Last Inspection */}
-                  <td className={`${tdBase} tabular-nums`}>
+                  <td className={tc("tabular-nums")}>
                     {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Recurrence */}
-                  <td className={`${tdBase} tabular-nums text-zinc-400 text-center`}>
+                  <td className={tc("tabular-nums text-zinc-400 text-center")}>
                     {insp.recurrenceYears === 1 ? "1 yr" : `${insp.recurrenceYears} yrs`}
                   </td>
                   {/* Next Due */}
-                  <td className={`${tdBase} tabular-nums font-medium ${isOverdue ? "text-red-600" : "text-zinc-700"}`}>
+                  <td className={tc(`tabular-nums font-medium ${isOverdue ? "text-red-600" : "text-zinc-700"}`)}>
                     {fmt(insp.nextDueDate) ?? <span className="text-zinc-300 font-normal">—</span>}
                   </td>
                   {/* Scheduled */}
-                  <td className={`${tdBase} tabular-nums`}>
+                  <td className={tc("tabular-nums")}>
                     {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Completed */}
-                  <td className={`${tdBase} tabular-nums`}>
+                  <td className={tc("tabular-nums")}>
                     {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Status */}
-                  <td className={tdBase}>
+                  <td className={tc()}>
                     <StatusBadge status={insp.status} />
                   </td>
                   {/* Actions */}
-                  <td className={`${tdBase} text-right`}>
+                  <td className={tc("text-right")}>
                     <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => { openEdit(insp); setIsAddOpen(true); }} className="p-1.5 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors">
                         <Pencil className="h-3.5 w-3.5" />
