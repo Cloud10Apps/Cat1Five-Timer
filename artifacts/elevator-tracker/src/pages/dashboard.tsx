@@ -342,14 +342,14 @@ export default function Dashboard() {
                     type="number"
                     allowDecimals={false}
                     tickCount={6}
-                    tick={{ fill: "#3f3f46", fontSize: 13 }}
+                    tick={{ fill: "#3f3f46", fontSize: 15 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                   />
                   <YAxis
                     dataKey="label"
                     type="category"
-                    tick={{ fill: "#3f3f46", fontSize: 13, fontWeight: 600 }}
+                    tick={{ fill: "#3f3f46", fontSize: 15, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                     width={110}
@@ -384,14 +384,14 @@ export default function Dashboard() {
                     type="number"
                     allowDecimals={false}
                     tickCount={6}
-                    tick={{ fill: "#3f3f46", fontSize: 13 }}
+                    tick={{ fill: "#3f3f46", fontSize: 15 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                   />
                   <YAxis
                     dataKey="name"
                     type="category"
-                    tick={{ fill: "#3f3f46", fontSize: 13, fontWeight: 600 }}
+                    tick={{ fill: "#3f3f46", fontSize: 15, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                     width={160}
@@ -425,13 +425,13 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: "#3f3f46", fontSize: 13 }}
+                    tick={{ fill: "#3f3f46", fontSize: 15 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                     height={28}
                   />
                   <YAxis
-                    tick={{ fill: "#3f3f46", fontSize: 13 }}
+                    tick={{ fill: "#3f3f46", fontSize: 15 }}
                     axisLine={false}
                     tickLine={false}
                     allowDecimals={false}
