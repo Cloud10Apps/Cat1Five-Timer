@@ -473,7 +473,16 @@ export default function Inspections() {
           <button onClick={() => setShowDateFilters(v => !v)} className={`h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors ${showDateFilters || hasDateFilters ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"}`}>
             <CalendarDays className="h-3.5 w-3.5" />
             Date Ranges
-            {hasDateFilters && <span className="h-1.5 w-1.5 rounded-full bg-blue-500 inline-block" />}
+            {hasDateFilters ? (
+              <span
+                role="button"
+                aria-label="Clear date filters"
+                onClick={e => { e.stopPropagation(); clearDateFilters(); }}
+                className="h-3.5 w-3.5 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer shrink-0"
+              >
+                <X className="h-2 w-2 text-white" />
+              </span>
+            ) : null}
             {showDateFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
 
