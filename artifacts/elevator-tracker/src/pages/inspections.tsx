@@ -41,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, ClipboardList, Download, CalendarDays, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog,
@@ -58,7 +58,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/status-badge";
 import { FilterCombobox } from "@/components/filter-combobox";
 import dayjs from "dayjs";
-import { useDebounce } from "@/hooks/use-debounce";
 
 const PAGE_SIZE = 50;
 
@@ -100,8 +99,6 @@ function fmt(date?: string) {
 }
 
 export default function Inspections() {
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 300);
   const [selectedStatus,   setSelectedStatus]   = useState("all");
   const [selectedInspType, setSelectedInspType] = useState("all");
   const [selectedUnitType, setSelectedUnitType] = useState("all");
@@ -126,7 +123,7 @@ export default function Inspections() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo);
-  const hasAnyFilter = selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedElevatorId !== "all" || selectedBank !== "all" || selectedStatus !== "all" || selectedInspType !== "all" || selectedUnitType !== "all" || search !== "" || hasDateFilters;
+  const hasAnyFilter = selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedElevatorId !== "all" || selectedBank !== "all" || selectedStatus !== "all" || selectedInspType !== "all" || selectedUnitType !== "all" || hasDateFilters;
 
   const clearDateFilters = useCallback(() => {
     setLastInspFrom(""); setLastInspTo(""); setNextDueFrom(""); setNextDueTo("");
@@ -136,7 +133,7 @@ export default function Inspections() {
   const clearAllFilters = useCallback(() => {
     setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedElevatorId("all");
     setSelectedBank("all"); setSelectedStatus("all"); setSelectedInspType("all"); setSelectedUnitType("all");
-    setSearch(""); clearDateFilters();
+    clearDateFilters();
   }, [clearDateFilters]);
 
   const handleCustomerChange = (val: string) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedElevatorId("all"); setCurrentPage(1); };
@@ -150,7 +147,6 @@ export default function Inspections() {
   const bankFilter        = selectedBank        !== "all" ? selectedBank                 : undefined;
 
   const queryParams = {
-    search: debouncedSearch || undefined,
     status: statusFilter,
     inspectionType: inspTypeFilter,
     customerId: customerIdFilter,
@@ -430,13 +426,6 @@ export default function Inspections() {
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
           <div className="h-4 w-px bg-zinc-200" />
-
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
-            <input placeholder="Search elevators, buildings..." className="pl-8 h-8 text-xs border border-zinc-200 rounded-md bg-white w-[210px] focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-zinc-400"
-              value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
-          </div>
 
           <FilterCombobox value={selectedCustomerId} onValueChange={handleCustomerChange} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[175px]" />
           <FilterCombobox value={selectedBuildingId} onValueChange={handleBuildingChange} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[155px]" />
