@@ -523,6 +523,7 @@ export default function Inspections() {
               <th className={stickyTh("top-0 left-[150px]")} style={{ minWidth: 130 }}>Building</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 105 }}>Bank</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 200 }}>Elevator</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 100 }}>Unit Type</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 148 }}>Status</th>
               <th className={`${thBase} sticky top-0 z-20 text-center`} style={{ minWidth: 76 }}>Type</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Last Insp.</th>
@@ -536,10 +537,10 @@ export default function Inspections() {
 
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={12} className="py-20 text-center"><Spinner /></td></tr>
+              <tr><td colSpan={13} className="py-20 text-center"><Spinner /></td></tr>
             ) : pagedRows.length === 0 ? (
               <tr>
-                <td colSpan={12} className="py-20 text-center">
+                <td colSpan={13} className="py-20 text-center">
                   <div className="flex flex-col items-center gap-2 text-zinc-400">
                     <ClipboardList className="h-10 w-10 opacity-20" />
                     <p className="text-sm font-medium">No inspections found</p>
@@ -571,6 +572,12 @@ export default function Inspections() {
                   {/* Elevator */}
                   <td className={tdBase}>
                     <span className="font-medium text-zinc-800 truncate block max-w-[188px]">{insp.elevatorName ?? "—"}</span>
+                  </td>
+                  {/* Unit Type */}
+                  <td className={tdBase}>
+                    {(insp as any).elevatorType
+                      ? <span className="capitalize text-zinc-600">{(insp as any).elevatorType === "hydraulic" ? "Hydraulic" : (insp as any).elevatorType === "traction" ? "Traction" : "Other"}</span>
+                      : <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Status */}
                   <td className={tdBase}>
