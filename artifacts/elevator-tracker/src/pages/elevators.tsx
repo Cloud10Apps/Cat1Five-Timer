@@ -305,26 +305,14 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
-  // Map: elevatorId → Set of all due years across all its inspections
-  const dueYearsByElevator = useMemo(() => {
-    const map = new Map<number, Set<string>>();
-    for (const insp of allInspections ?? []) {
-      if (!insp.elevatorId || !insp.nextDueDate) continue;
-      const year = insp.nextDueDate.slice(0, 4);
-      if (!map.has(insp.elevatorId)) map.set(insp.elevatorId, new Set());
-      map.get(insp.elevatorId)!.add(year);
-    }
-    return map;
-  }, [allInspections]);
-
-  // Derive available years from ALL inspection next-due dates (not just the per-elevator winner)
+  // Derive available years from the displayed next-due date per elevator (matches what the column shows)
   const dueYearOptions = useMemo(() => {
     const years = new Set<string>();
-    for (const insp of allInspections ?? []) {
-      if (insp.nextDueDate) years.add(insp.nextDueDate.slice(0, 4));
+    for (const due of nextDueDateByElevator.values()) {
+      years.add(due.slice(0, 4));
     }
     return Array.from(years).sort();
-  }, [allInspections]);
+  }, [nextDueDateByElevator]);
 
   const yearFilterOptions = useMemo(() =>
     dueYearOptions.map((y) => ({ value: y, label: y })),
@@ -334,9 +322,10 @@ export default function Elevators() {
   const filteredElevators = useMemo(() => {
     return (elevators ?? []).filter((el) => {
       if (selectedElevatorId !== "all" && el.id.toString() !== selectedElevatorId) return false;
-      // Year filter: elevator passes if ANY of its inspections has a due date in the selected year
+      // Year filter: check against the per-elevator displayed next-due date (same value shown in the column)
       if (filterDueYear !== "all") {
-        if (!dueYearsByElevator.get(el.id)?.has(filterDueYear)) return false;
+        const due = nextDueDateByElevator.get(el.id);
+        if (!due || due.slice(0, 4) !== filterDueYear) return false;
       }
       // Month filter: check against the per-elevator latest due date
       if (filterDueMonth !== "all") {
@@ -353,7 +342,7 @@ export default function Elevators() {
       }
       return true;
     });
-  }, [elevators, selectedElevatorId, nextDueDateByElevator, dueYearsByElevator, filterDueMonth, filterDueYear, selectedInspType, latestInspByElevator, filterAgingBucket]);
+  }, [elevators, selectedElevatorId, nextDueDateByElevator, filterDueMonth, filterDueYear, selectedInspType, latestInspByElevator, filterAgingBucket]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
