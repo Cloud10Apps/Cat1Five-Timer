@@ -213,9 +213,6 @@ export default function Elevators() {
   }, [elevators]);
 
   // Filter combobox option arrays
-  const customerOptions = useMemo(() =>
-    (customers ?? []).map((c) => ({ value: c.id.toString(), label: c.name })),
-    [customers]);
   const buildingOptions = useMemo(() =>
     (buildings ?? []).map((b) => ({ value: b.id.toString(), label: b.name })),
     [buildings]);
@@ -847,7 +844,17 @@ export default function Elevators() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <select
+            value={selectedCustomerId}
+            onChange={e => { setSelectedCustomerId(e.target.value); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+            className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[180px]"
+          >
+            <option value="all">All Customers</option>
+            {customers?.map((c) => (
+              <option key={c.id} value={c.id.toString()}>{c.name}</option>
+            ))}
+          </select>
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export Excel
@@ -1077,14 +1084,6 @@ export default function Elevators() {
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
           <div className="h-4 w-px bg-zinc-200" />
-          <FilterCombobox
-            value={selectedCustomerId}
-            onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
-            options={customerOptions}
-            placeholder="All Customers"
-            searchPlaceholder="Search customers..."
-            width="w-[185px]"
-          />
           <FilterCombobox
             value={selectedBuildingId}
             onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
