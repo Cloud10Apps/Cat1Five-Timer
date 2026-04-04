@@ -103,6 +103,7 @@ export default function Elevators() {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedBank, setSelectedBank] = useState<string>("all");
   const [selectedElevatorId, setSelectedElevatorId] = useState<string>("all");
+  const [selectedInspType, setSelectedInspType] = useState<string>("all");
   const [filterDueMonth, setFilterDueMonth] = useState<string>("all");
   const [filterDueYear,  setFilterDueYear]  = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -273,16 +274,20 @@ export default function Elevators() {
     dueYearOptions.map((y) => ({ value: y, label: y })),
     [dueYearOptions]);
 
-  // Client-side filter by elevator, due month, and due year
+  // Client-side filter by elevator, due month, due year, and inspection type
   const filteredElevators = useMemo(() => {
     return (elevators ?? []).filter((el) => {
       if (selectedElevatorId !== "all" && el.id.toString() !== selectedElevatorId) return false;
       const due = nextDueDateByElevator.get(el.id);
       if (filterDueYear  !== "all") { if (!due || due.slice(0, 4) !== filterDueYear)  return false; }
       if (filterDueMonth !== "all") { if (!due || due.slice(5, 7) !== filterDueMonth) return false; }
+      if (selectedInspType !== "all") {
+        const insp = latestInspByElevator.get(el.id);
+        if (!insp || insp.inspectionType !== selectedInspType) return false;
+      }
       return true;
     });
-  }, [elevators, selectedElevatorId, nextDueDateByElevator, filterDueMonth, filterDueYear]);
+  }, [elevators, selectedElevatorId, nextDueDateByElevator, filterDueMonth, filterDueYear, selectedInspType, latestInspByElevator]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -1069,9 +1074,20 @@ export default function Elevators() {
               { value: "hydraulic", label: "Hydraulic" },
               { value: "other",     label: "Other" },
             ]}
-            placeholder="All Types"
-            searchPlaceholder="Search types..."
-            width="w-[155px]"
+            placeholder="All Unit Types"
+            searchPlaceholder="Search unit types..."
+            width="w-[165px]"
+          />
+          <FilterCombobox
+            value={selectedInspType}
+            onValueChange={setSelectedInspType}
+            options={[
+              { value: "CAT1", label: "CAT 1" },
+              { value: "CAT5", label: "CAT 5" },
+            ]}
+            placeholder="All Insp Types"
+            searchPlaceholder="Search inspection types..."
+            width="w-[160px]"
           />
           <div className="h-4 w-px bg-zinc-200" />
           <FilterCombobox
@@ -1090,7 +1106,7 @@ export default function Elevators() {
             searchPlaceholder="Search years..."
             width="w-[140px]"
           />
-          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
+          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || selectedInspType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
             <button
               onClick={() => {
                 setSelectedCustomerId("all");
@@ -1098,6 +1114,7 @@ export default function Elevators() {
                 setSelectedBank("all");
                 setSelectedElevatorId("all");
                 setSelectedType("all");
+                setSelectedInspType("all");
                 setFilterDueMonth("all");
                 setFilterDueYear("all");
               }}
