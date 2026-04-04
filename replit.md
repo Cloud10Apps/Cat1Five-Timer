@@ -21,6 +21,7 @@ Multi-tenant SaaS platform for managing elevator inspections, compliance schedul
 - **Build**: esbuild (ESM bundle)
 - **Excel export**: ExcelJS
 - **Date handling**: dayjs
+- **Payments**: Stripe (via Replit integration) + stripe-replit-sync
 
 ## Architecture
 

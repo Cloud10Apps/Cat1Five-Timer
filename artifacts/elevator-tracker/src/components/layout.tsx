@@ -19,6 +19,7 @@ import {
   Settings,
   LogOut,
   ShieldAlert,
+  CreditCard,
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
@@ -41,7 +42,10 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   const bottomNav: { name: string; href: string; icon: typeof Settings }[] = [];
-  if (user?.role === "ADMIN") bottomNav.push({ name: "Admin", href: "/admin", icon: ShieldAlert as typeof Settings });
+  if (user?.role === "ADMIN") {
+    bottomNav.push({ name: "Admin",    href: "/admin",   icon: ShieldAlert as typeof Settings });
+    bottomNav.push({ name: "Billing",  href: "/billing", icon: CreditCard as typeof Settings });
+  }
   bottomNav.push({ name: "Settings", href: "/settings", icon: Settings });
 
   const NavItem = ({ name, href, icon: Icon }: { name: string; href: string; icon: typeof Settings }) => {

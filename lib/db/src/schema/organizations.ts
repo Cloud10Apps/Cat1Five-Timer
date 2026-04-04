@@ -5,6 +5,8 @@ import { z } from "zod/v4";
 export const organizationsTable = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -15,6 +15,7 @@ import Inspections from "@/pages/inspections";
 import CalendarView from "@/pages/calendar";
 import Admin from "@/pages/admin";
 import Settings from "@/pages/settings";
+import Billing from "@/pages/billing";
 
 let queryClient: QueryClient;
 queryClient = new QueryClient({
@@ -62,6 +63,9 @@ function Router() {
       </Route>
       <Route path="/admin">
         <ProtectedRoute requireAdmin><Admin /></ProtectedRoute>
+      </Route>
+      <Route path="/billing">
+        <ProtectedRoute requireAdmin><Billing /></ProtectedRoute>
       </Route>
       
       <Route path="/">

@@ -8,6 +8,7 @@ import inspectionsRouter from "./inspections.js";
 import dashboardRouter from "./dashboard.js";
 import usersRouter from "./users.js";
 import exportRouter from "./export.js";
+import billingRouter from "./billing.js";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use("/inspections", inspectionsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/users", usersRouter);
 router.use("/export", exportRouter);
+router.use("/billing", billingRouter);
 
 export default router;
