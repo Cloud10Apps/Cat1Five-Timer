@@ -310,7 +310,7 @@ router.put("/:id", async (req, res) => {
   const formatted = formatInspection(row);
   const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
   const warning = (followUp.created === false && followUp.reason === "duplicate_year")
-    ? `A follow-up ${inspectionType === "CAT5" ? "Cat5" : "Cat1"} inspection for ${followUp.dueYear} was not auto-created because one already exists for that year. To add a new record, first delete the conflicting inspection from the Inspection History menu.`
+    ? `We couldn't create a follow-up ${inspectionType === "CAT5" ? "Cat5" : "Cat1"} inspection for ${followUp.dueYear} because one already exists for that year. To add a new inspection, first remove the existing one from the Inspections menu.`
     : undefined;
   res.json({ ...formatted, _warning: warning });
 });
