@@ -191,7 +191,7 @@ export default function Inspections() {
   const customerOptions = useMemo(() => (customers ?? []).map(c => ({ value: String(c.id), label: c.name })), [customers]);
   const buildingOptions = useMemo(() => filteredBuildings.map(b => ({ value: String(b.id), label: b.name })), [filteredBuildings]);
   const bankOptions     = useMemo(() => allBanks.map(b => ({ value: b, label: b })), [allBanks]);
-  const elevatorOptions = useMemo(() => filteredElevators.map(e => ({ value: String(e.id), label: e.name })), [filteredElevators]);
+  const elevatorOptions = useMemo(() => filteredElevators.map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") })), [filteredElevators]);
 
   // Client-side unit type filter + sort
   const processedRows = useMemo(() => {
