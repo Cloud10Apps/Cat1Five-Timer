@@ -64,11 +64,11 @@ export function FilterCombobox({
             width,
             isFiltered
               ? "border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
-              : "text-zinc-500 hover:text-zinc-800"
+              : "text-zinc-700 hover:text-zinc-900"
           )}
         >
           <span className="truncate">{selectedLabel}</span>
-          <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-70" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-0" align="start" style={{ width: "220px" }}>
