@@ -139,8 +139,10 @@ async function maybeCreateFollowUp(
 
   if (existing.length > 0) return { created: false, reason: "already_exists" };
 
-  // Block if any record already occupies the same due year for this elevator + type
-  const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId);
+  // Block if any OTHER record already occupies the same due year for this elevator + type
+  // Exclude the current inspection itself to avoid a false positive when its own nextDueDate
+  // falls in the same year as the computed follow-up nextDueDate.
+  const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId, completedInspection.id);
   if (dupCheck) return { created: false, reason: "duplicate_year", dueYear: dupCheck.dueYear };
 
   await db.insert(inspectionsTable).values({
