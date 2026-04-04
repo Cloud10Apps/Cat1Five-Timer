@@ -209,44 +209,47 @@ export default function Dashboard() {
         {/* ── Charts Row ── */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Inspection Aging — vertical bar */}
+          {/* Inspection Aging — horizontal bar */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader title="Open Inspection Aging" />
             <div className="p-6 h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={aging ?? []}
-                  margin={{ top: 16, right: 16, left: -20, bottom: 8 }}
-                  barCategoryGap="28%"
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
                   <XAxis
-                    dataKey="label"
-                    tick={{ fill: "#3f3f46", fontSize: 12, fontWeight: 600 }}
+                    type="number"
+                    allowDecimals={false}
+                    tickCount={6}
+                    tick={{ fill: "#3f3f46", fontSize: 13 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
-                    height={32}
                   />
                   <YAxis
-                    allowDecimals={false}
-                    tick={{ fill: "#3f3f46", fontSize: 12 }}
+                    dataKey="label"
+                    type="category"
+                    tick={{ fill: "#3f3f46", fontSize: 13, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
+                    width={90}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
                     contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
                     formatter={(value: any, _: any, props: any) => [value, props.payload.bucket === "Current" ? "Not yet overdue" : "Days overdue"]}
-                    labelFormatter={(label: string) => label}
                   />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={36}>
+                  <Bar dataKey="count" barSize={22} radius={[0, 4, 4, 0]}>
                     {(aging ?? []).map((entry: any) => {
                       const colors: Record<string, string> = {
                         "Current": "#22c55e",
                         "1–30":    "#f59e0b",
                         "31–60":   "#f97316",
                         "61–90":   "#ef4444",
-                        "91+":     "#991b1b",
+                        "91–120":  "#dc2626",
+                        "121+":    "#7f1d1d",
                       };
                       return <Cell key={entry.bucket} fill={colors[entry.bucket] ?? "#d4d4d8"} />;
                     })}
