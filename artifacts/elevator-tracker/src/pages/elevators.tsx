@@ -104,7 +104,7 @@ const AGING_BUCKET_OPTIONS = [
   { value: "31-60",    label: "31–60 Days"   },
   { value: "61-90",    label: "61–90 Days"   },
   { value: "91-120",   label: "91–120 Days"  },
-  { value: "120plus",  label: "120+ Days"    },
+  { value: "120plus",  label: "121+ Days"    },
 ];
 
 function getAgingDays(due: string | null | undefined): number | null {
