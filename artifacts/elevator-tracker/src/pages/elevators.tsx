@@ -1174,135 +1174,188 @@ export default function Elevators() {
       {(() => {
         const activeFilterCount = [selectedCustomerId, selectedBuildingId, selectedBank, selectedElevatorId, selectedType, selectedInspType, filterDueMonth, filterDueYear, selectedStatus, filterAgingBucket].filter(v => v !== "all").length;
         const clearAll = () => { setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); setSelectedType("all"); setSelectedInspType("all"); setFilterDueMonth("all"); setFilterDueYear("all"); setFilterAgingBucket("all"); setSelectedStatus("all"); };
+        const unitTypeOpts = [
+          { value: "traction",  label: "Traction" },
+          { value: "hydraulic", label: "Hydraulic" },
+          { value: "other",     label: "Other" },
+        ];
+        const inspTypeOpts = [
+          { value: "CAT1", label: "CAT 1" },
+          { value: "CAT5", label: "CAT 5" },
+        ];
+        const statusOpts = [
+          { value: "NOT_STARTED", label: "Not Scheduled" },
+          { value: "SCHEDULED",   label: "Scheduled" },
+          { value: "IN_PROGRESS", label: "In Progress" },
+          { value: "COMPLETED",   label: "Completed" },
+        ];
+        const activeChips: { label: string; value: string; onRemove: () => void }[] = [];
+        if (selectedCustomerId !== "all") activeChips.push({ label: "Customer", value: customerOptions.find(o => o.value === selectedCustomerId)?.label ?? selectedCustomerId, onRemove: () => { setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); } });
+        if (selectedBuildingId !== "all") activeChips.push({ label: "Building", value: buildingOptions.find(o => o.value === selectedBuildingId)?.label ?? selectedBuildingId, onRemove: () => { setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); } });
+        if (selectedBank !== "all") activeChips.push({ label: "Bank", value: selectedBank, onRemove: () => { setSelectedBank("all"); setSelectedElevatorId("all"); } });
+        if (selectedElevatorId !== "all") activeChips.push({ label: "Elevator", value: elevatorFilterOptions.find(o => o.value === selectedElevatorId)?.label ?? selectedElevatorId, onRemove: () => setSelectedElevatorId("all") });
+        if (selectedType !== "all") activeChips.push({ label: "Unit Type", value: unitTypeOpts.find(o => o.value === selectedType)?.label ?? selectedType, onRemove: () => setSelectedType("all") });
+        if (selectedInspType !== "all") activeChips.push({ label: "Insp Type", value: inspTypeOpts.find(o => o.value === selectedInspType)?.label ?? selectedInspType, onRemove: () => setSelectedInspType("all") });
+        if (filterDueMonth !== "all") activeChips.push({ label: "Due Month", value: MONTH_OPTIONS.find(o => o.value === filterDueMonth)?.label ?? filterDueMonth, onRemove: () => setFilterDueMonth("all") });
+        if (filterDueYear !== "all") activeChips.push({ label: "Due Year", value: filterDueYear, onRemove: () => setFilterDueYear("all") });
+        if (selectedStatus !== "all") activeChips.push({ label: "Status", value: statusOpts.find(o => o.value === selectedStatus)?.label ?? selectedStatus, onRemove: () => setSelectedStatus("all") });
+        if (filterAgingBucket !== "all") activeChips.push({ label: "Aging", value: AGING_BUCKET_OPTIONS.find(o => o.value === filterAgingBucket)?.label ?? filterAgingBucket, onRemove: () => setFilterAgingBucket("all") });
+
         return (
       <div className="flex flex-col gap-3">
-        <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
 
-          {/* Header strip */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600">
-            <div className="flex items-center gap-2.5">
-              <SlidersHorizontal className="h-4 w-4 text-blue-200" />
-              <span className="text-sm font-bold text-white uppercase tracking-wider">Filters</span>
+          {/* Single unified filter row */}
+          <div className="flex items-center gap-0 px-3 py-2.5 min-h-[52px]">
+
+            {/* Left: label + count */}
+            <div className="flex items-center gap-2 pr-3 mr-2 border-r border-zinc-200 shrink-0 self-stretch py-0.5">
+              <SlidersHorizontal className="h-[15px] w-[15px] text-zinc-400" />
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
               {activeFilterCount > 0 && (
-                <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-amber-400 text-blue-900 text-[11px] font-bold leading-none">
+                <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
                   {activeFilterCount}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-blue-200 tabular-nums">
-                <span className="font-bold text-white">{filteredElevators.length}</span>
-                <span className="ml-1.5">{filteredElevators.length === 1 ? "elevator" : "elevators"}</span>
+
+            {/* Middle: grouped comboboxes */}
+            <div className="flex flex-wrap items-center gap-1.5 flex-1">
+
+              {/* Group 1 — Location */}
+              <FilterCombobox
+                value={selectedCustomerId}
+                onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+                options={customerOptions}
+                placeholder="All Customers"
+                searchPlaceholder="Search customers..."
+                width="w-[175px]"
+              />
+              <FilterCombobox
+                value={selectedBuildingId}
+                onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+                options={buildingOptions}
+                placeholder="All Buildings"
+                searchPlaceholder="Search buildings..."
+                width="w-[150px]"
+              />
+              <FilterCombobox
+                value={selectedBank}
+                onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
+                options={bankFilterOptions}
+                placeholder="All Banks"
+                searchPlaceholder="Search banks..."
+                disabled={bankFilterOptions.length === 0}
+                width="w-[120px]"
+              />
+              <FilterCombobox
+                value={selectedElevatorId}
+                onValueChange={setSelectedElevatorId}
+                options={elevatorFilterOptions}
+                placeholder="All Elevators"
+                searchPlaceholder="Search elevators..."
+                disabled={elevatorFilterOptions.length === 0}
+                width="w-[160px]"
+              />
+
+              {/* Divider */}
+              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
+
+              {/* Group 2 — Type */}
+              <FilterCombobox
+                value={selectedType}
+                onValueChange={setSelectedType}
+                options={unitTypeOpts}
+                placeholder="All Unit Types"
+                searchPlaceholder="Search unit types..."
+                width="w-[155px]"
+              />
+              <FilterCombobox
+                value={selectedInspType}
+                onValueChange={setSelectedInspType}
+                options={inspTypeOpts}
+                placeholder="All Insp Types"
+                searchPlaceholder="Search insp types..."
+                width="w-[155px]"
+              />
+
+              {/* Divider */}
+              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
+
+              {/* Group 3 — Schedule & Status */}
+              <FilterCombobox
+                value={filterDueMonth}
+                onValueChange={setFilterDueMonth}
+                options={MONTH_OPTIONS}
+                placeholder="Due Month"
+                searchPlaceholder="Search months..."
+                width="w-[150px]"
+              />
+              <FilterCombobox
+                value={filterDueYear}
+                onValueChange={setFilterDueYear}
+                options={yearFilterOptions}
+                placeholder="Due Year"
+                searchPlaceholder="Search years..."
+                width="w-[130px]"
+              />
+              <FilterCombobox
+                value={selectedStatus}
+                onValueChange={setSelectedStatus}
+                options={statusOpts}
+                placeholder="All Statuses"
+                searchPlaceholder="Search statuses..."
+                width="w-[160px]"
+              />
+              <FilterCombobox
+                value={filterAgingBucket}
+                onValueChange={setFilterAgingBucket}
+                options={AGING_BUCKET_OPTIONS}
+                placeholder="Aging Bucket"
+                searchPlaceholder="Search buckets..."
+                width="w-[150px]"
+              />
+            </div>
+
+            {/* Right: result count + clear */}
+            <div className="flex items-center gap-2 pl-3 ml-2 border-l border-zinc-200 shrink-0">
+              <span className="text-xs tabular-nums whitespace-nowrap">
+                <span className="font-bold text-zinc-700">{filteredElevators.length}</span>
+                <span className="text-zinc-400 ml-1">{filteredElevators.length === 1 ? "elevator" : "elevators"}</span>
               </span>
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearAll}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-white/20 hover:bg-red-500 border border-white/30 hover:border-red-400 px-2.5 py-1 rounded-md transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors whitespace-nowrap"
                 >
-                  <X className="h-3 w-3" /> Clear all
+                  <X className="h-[11px] w-[11px]" /> Clear
                 </button>
               )}
             </div>
           </div>
 
-          {/* Filter dropdowns */}
-          <div className="flex flex-wrap items-center gap-2 px-4 py-3">
-            <FilterCombobox
-              value={selectedCustomerId}
-              onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
-              options={customerOptions}
-              placeholder="All Customers"
-              searchPlaceholder="Search customers..."
-              width="w-[185px]"
-            />
-            <FilterCombobox
-              value={selectedBuildingId}
-              onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
-              options={buildingOptions}
-              placeholder="All Buildings"
-              searchPlaceholder="Search buildings..."
-              width="w-[155px]"
-            />
-            <FilterCombobox
-              value={selectedBank}
-              onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
-              options={bankFilterOptions}
-              placeholder="All Banks"
-              searchPlaceholder="Search banks..."
-              disabled={bankFilterOptions.length === 0}
-              width="w-[130px]"
-            />
-            <FilterCombobox
-              value={selectedElevatorId}
-              onValueChange={setSelectedElevatorId}
-              options={elevatorFilterOptions}
-              placeholder="All Elevators"
-              searchPlaceholder="Search elevators..."
-              disabled={elevatorFilterOptions.length === 0}
-              width="w-[170px]"
-            />
-            <FilterCombobox
-              value={selectedType}
-              onValueChange={setSelectedType}
-              options={[
-                { value: "traction",  label: "Traction" },
-                { value: "hydraulic", label: "Hydraulic" },
-                { value: "other",     label: "Other" },
-              ]}
-              placeholder="All Unit Types"
-              searchPlaceholder="Search unit types..."
-              width="w-[165px]"
-            />
-            <FilterCombobox
-              value={selectedInspType}
-              onValueChange={setSelectedInspType}
-              options={[
-                { value: "CAT1", label: "CAT 1" },
-                { value: "CAT5", label: "CAT 5" },
-              ]}
-              placeholder="All Insp Types"
-              searchPlaceholder="Search inspection types..."
-              width="w-[185px]"
-            />
-            <div className="h-4 w-px bg-zinc-200" />
-            <FilterCombobox
-              value={filterDueMonth}
-              onValueChange={setFilterDueMonth}
-              options={MONTH_OPTIONS}
-              placeholder="Due Month"
-              searchPlaceholder="Search months..."
-              width="w-[160px]"
-            />
-            <FilterCombobox
-              value={filterDueYear}
-              onValueChange={setFilterDueYear}
-              options={yearFilterOptions}
-              placeholder="Due Year"
-              searchPlaceholder="Search years..."
-              width="w-[140px]"
-            />
-            <FilterCombobox
-              value={selectedStatus}
-              onValueChange={setSelectedStatus}
-              options={[
-                { value: "NOT_STARTED", label: "Not Scheduled" },
-                { value: "SCHEDULED",   label: "Scheduled" },
-                { value: "IN_PROGRESS", label: "In Progress" },
-                { value: "COMPLETED",   label: "Completed" },
-              ]}
-              placeholder="All Statuses"
-              searchPlaceholder="Search statuses..."
-              width="w-[170px]"
-            />
-            <FilterCombobox
-              value={filterAgingBucket}
-              onValueChange={setFilterAgingBucket}
-              options={AGING_BUCKET_OPTIONS}
-              placeholder="Aging Bucket"
-              searchPlaceholder="Search buckets..."
-              width="w-[160px]"
-            />
-          </div>
+          {/* Active filter chips — only when filters are applied */}
+          {activeChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 border-t border-zinc-100">
+              <span className="text-[11px] font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
+              {activeChips.map((chip) => (
+                <span
+                  key={chip.label}
+                  className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[11px] font-medium text-blue-700 leading-none whitespace-nowrap"
+                >
+                  <span className="text-blue-400 font-normal">{chip.label}:</span>
+                  {chip.value}
+                  <button
+                    onClick={chip.onRemove}
+                    className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors"
+                    aria-label={`Remove ${chip.label} filter`}
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Row 2: expand/collapse depth selector */}
