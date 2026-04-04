@@ -122,6 +122,10 @@ export default function Inspections() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  // Cascading form selectors (not part of schema, just filter the elevator list)
+  const [formCustomerId, setFormCustomerId] = useState("");
+  const [formBuildingId, setFormBuildingId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo);
@@ -192,6 +196,17 @@ export default function Inspections() {
   const bankOptions     = useMemo(() => allBanks.map(b => ({ value: b, label: b })), [allBanks]);
   const elevatorOptions = useMemo(() => filteredElevators.map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") })), [filteredElevators]);
 
+  // Form-scoped cascading options (independent of the filter bar)
+  const formBuildingList = useMemo(() =>
+    formCustomerId ? (buildings ?? []).filter(b => String(b.customerId) === formCustomerId) : (buildings ?? []),
+    [buildings, formCustomerId]
+  );
+  const formElevatorList = useMemo(() => {
+    if (formBuildingId) return (elevators ?? []).filter(e => String(e.buildingId) === formBuildingId);
+    if (formCustomerId) return (elevators ?? []).filter(e => formBuildingList.some(b => b.id === e.buildingId));
+    return elevators ?? [];
+  }, [elevators, formBuildingId, formCustomerId, formBuildingList]);
+
   // Client-side unit type filter + sort
   const processedRows = useMemo(() => {
     const filtered = (inspections ?? []).filter(insp => {
@@ -258,6 +273,11 @@ export default function Inspections() {
 
   const openEdit = (inspection: Inspection) => {
     setEditingInspection(inspection);
+    // Pre-populate cascading selectors from the elevator's building/customer
+    const elev = elevators?.find(e => e.id === inspection.elevatorId);
+    const bldg = buildings?.find(b => b.id === elev?.buildingId);
+    setFormCustomerId(bldg?.customerId ? String(bldg.customerId) : "");
+    setFormBuildingId(elev?.buildingId ? String(elev.buildingId) : "");
     form.reset({
       elevatorId: inspection.elevatorId,
       inspectionType: inspection.inspectionType,
@@ -325,9 +345,9 @@ export default function Inspections() {
           <Button variant="outline" onClick={handleExport} className="gap-2">
             <Download className="h-4 w-4" /> Export Excel
           </Button>
-          <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) { form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" }); setEditingInspection(null); } }}>
+          <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) { form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" }); setEditingInspection(null); setFormCustomerId(""); setFormBuildingId(""); } }}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingInspection(null); form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" }); }} className="gap-2">
+              <Button onClick={() => { setEditingInspection(null); form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" }); setFormCustomerId(""); setFormBuildingId(""); }} className="gap-2">
                 <Plus className="h-4 w-4" /> Add Inspection
               </Button>
             </DialogTrigger>
@@ -336,17 +356,56 @@ export default function Inspections() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
+
+                    {/* ── Cascading selectors: Customer → Building → Elevator ── */}
+                    <div className="col-span-2 grid grid-cols-2 gap-4">
+                      {/* Customer */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium leading-none">Customer</label>
+                        <Select
+                          value={formCustomerId}
+                          onValueChange={(v) => { setFormCustomerId(v); setFormBuildingId(""); form.setValue("elevatorId", 0); }}
+                          disabled={!!editingInspection}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select a customer" /></SelectTrigger>
+                          <SelectContent>
+                            {(customers ?? []).map(c => (
+                              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Building */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium leading-none">Building</label>
+                        <Select
+                          value={formBuildingId}
+                          onValueChange={(v) => { setFormBuildingId(v); form.setValue("elevatorId", 0); }}
+                          disabled={!!editingInspection || !formCustomerId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={!formCustomerId ? "Select a customer first" : "Select a building"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {formBuildingList.map(b => (
+                              <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     <FormField control={form.control} name="elevatorId" render={({ field }) => (
                       <FormItem className="col-span-2 md:col-span-1">
                         <FormLabel>Elevator</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
-                              <Button variant="outline" role="combobox" disabled={!!editingInspection}
+                              <Button variant="outline" role="combobox" disabled={!!editingInspection || !formBuildingId}
                                 className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}>
                                 {field.value
-                                  ? (() => { const e = elevators?.find(e => e.id === Number(field.value)); return e ? `${e.name} (${e.buildingName})` : "Select an elevator"; })()
-                                  : "Select an elevator"}
+                                  ? (() => { const e = elevators?.find(e => e.id === Number(field.value)); return e ? e.name : "Select an elevator"; })()
+                                  : (!formBuildingId ? "Select a building first" : "Select an elevator")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
@@ -357,12 +416,11 @@ export default function Inspections() {
                               <CommandList>
                                 <CommandEmpty>No elevator found.</CommandEmpty>
                                 <CommandGroup>
-                                  {elevators?.map(e => (
+                                  {formElevatorList.map(e => (
                                     <CommandItem key={e.id} value={`${e.name} ${e.buildingName}`}
                                       onSelect={() => field.onChange(e.id.toString())}>
                                       <Check className={cn("mr-2 h-4 w-4", Number(field.value) === e.id ? "opacity-100" : "opacity-0")} />
                                       <span>{e.name}</span>
-                                      <span className="ml-1 text-xs text-muted-foreground">({e.buildingName})</span>
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
