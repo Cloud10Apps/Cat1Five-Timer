@@ -375,6 +375,7 @@ export default function Dashboard() {
                   <TableRow className="hover:bg-transparent border-b border-zinc-100">
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Status</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Was Due</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Aging</TableHead>
                   </TableRow>
@@ -382,7 +383,7 @@ export default function Dashboard() {
                 <TableBody>
                   {overdueItems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
+                      <TableCell colSpan={5} className="text-center text-zinc-400 py-8 text-sm">
                         No overdue inspections.
                       </TableCell>
                     </TableRow>
@@ -397,8 +398,11 @@ export default function Dashboard() {
                         <TableCell className="py-3">
                           <InspectionTypeBadge type={insp.inspectionType} />
                         </TableCell>
+                        <TableCell className="py-3">
+                          <StatusBadge status={insp.status} />
+                        </TableCell>
                         <TableCell className="text-right py-3 pr-4">
-                          <div className="text-sm font-semibold text-red-600 leading-snug">
+                          <div className="text-sm font-semibold text-zinc-900 leading-snug">
                             {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                           </div>
                         </TableCell>
@@ -422,6 +426,7 @@ export default function Dashboard() {
                   <TableRow className="hover:bg-transparent border-b border-zinc-100">
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Status</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Due</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Aging</TableHead>
                   </TableRow>
@@ -429,13 +434,12 @@ export default function Dashboard() {
                 <TableBody>
                   {upcoming.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
+                      <TableCell colSpan={5} className="text-center text-zinc-400 py-8 text-sm">
                         No inspections due in the next 14 days.
                       </TableCell>
                     </TableRow>
                   ) : upcoming.map((insp: any) => {
                     const daysUntil = insp.nextDueDate ? dayjs(insp.nextDueDate).diff(dayjs(), "day") : null;
-                    const isUrgent = daysUntil !== null && daysUntil <= 3;
                     return (
                       <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-100">
                         <TableCell className="py-3 pl-4">
@@ -445,8 +449,11 @@ export default function Dashboard() {
                         <TableCell className="py-3">
                           <InspectionTypeBadge type={insp.inspectionType} />
                         </TableCell>
+                        <TableCell className="py-3">
+                          <StatusBadge status={insp.status} />
+                        </TableCell>
                         <TableCell className="text-right py-3 pr-4">
-                          <div className={`text-sm font-semibold leading-snug ${isUrgent ? "text-amber-600" : "text-zinc-700"}`}>
+                          <div className="text-sm font-semibold text-zinc-900 leading-snug">
                             {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                           </div>
                         </TableCell>

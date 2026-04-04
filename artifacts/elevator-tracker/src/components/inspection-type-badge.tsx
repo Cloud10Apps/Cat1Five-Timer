@@ -18,7 +18,6 @@ export function InspectionTypeBadge({ type, className }: InspectionTypeBadgeProp
       >
         <ShieldCheck className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
         <span>CAT5</span>
-        <span className="font-medium opacity-75">· 5-Year</span>
       </span>
     );
   }
@@ -32,7 +31,6 @@ export function InspectionTypeBadge({ type, className }: InspectionTypeBadgeProp
       )}
     >
       <span>CAT1</span>
-      <span className="font-normal opacity-70">· Annual</span>
     </span>
   );
 }
