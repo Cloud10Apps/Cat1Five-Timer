@@ -111,7 +111,7 @@ async function checkDuplicate(
 type FollowUpResult = { created: true } | { created: false; reason: "already_exists" | "duplicate_year"; dueYear?: string } | { created: false; reason: "not_applicable" };
 
 async function maybeCreateFollowUp(
-  completedInspection: { id: number; elevatorId: number; inspectionType: string; recurrenceYears: number; completionDate: string | null | undefined; status: string },
+  completedInspection: { id: number; elevatorId: number; inspectionType: string; recurrenceYears: number; completionDate: string | null | undefined; nextDueDate: string | null | undefined; status: string },
   orgId: number
 ): Promise<FollowUpResult> {
   if (completedInspection.status !== "COMPLETED" || !completedInspection.completionDate) {
@@ -119,7 +119,14 @@ async function maybeCreateFollowUp(
   }
 
   const newLastDate = completedInspection.completionDate;
-  const newNextDue = computeNextDueDate(newLastDate, completedInspection.recurrenceYears);
+  // If the inspection was completed EARLY (before its scheduled nextDueDate), base the
+  // follow-up cycle on the original nextDueDate so we don't create another record in the
+  // same year as the one just completed.
+  const cycleBase =
+    completedInspection.nextDueDate && completedInspection.completionDate < completedInspection.nextDueDate
+      ? completedInspection.nextDueDate
+      : completedInspection.completionDate;
+  const newNextDue = computeNextDueDate(cycleBase, completedInspection.recurrenceYears);
   if (!newNextDue) return { created: false, reason: "not_applicable" };
 
   // Skip if a follow-up already references this exact completion date as its lastInspectionDate
@@ -267,7 +274,7 @@ router.post("/", async (req, res) => {
 
   const row = await fetchInspection(inserted[0].id, orgId);
   const formatted = formatInspection(row);
-  await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
+  await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
   res.status(201).json(formatted);
 });
 
@@ -306,7 +313,7 @@ router.put("/:id", async (req, res) => {
     return;
   }
   const formatted = formatInspection(row);
-  const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
+  const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
   const warning = (followUp.created === false && followUp.reason === "duplicate_year")
     ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this year, so a follow-up inspection record was not created. Please review the records in the Inspection menu, verify that all dates are accurate, and resolve any discrepancies.`
     : undefined;
