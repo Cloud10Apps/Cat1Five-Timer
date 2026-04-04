@@ -356,7 +356,9 @@ export default function Dashboard() {
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "12px" }}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "8px", boxShadow: "0 4px 12px 0 rgb(0 0 0 / 0.12)", fontSize: "15px", padding: "10px 16px", minWidth: "180px" }}
+                    itemStyle={{ fontSize: "15px", fontWeight: 600, paddingTop: "3px", paddingBottom: "3px" }}
+                    labelStyle={{ fontSize: "15px", fontWeight: 700, color: "#18181b", marginBottom: "6px" }}
                   />
                   <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill="#d4d4d8" radius={[0, 0, 0, 0]} barSize={20} />
                   <Bar dataKey="scheduled"  name="Scheduled"   stackId="s" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={20} />
@@ -395,9 +397,9 @@ export default function Dashboard() {
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
-                    itemStyle={{ color: "#18181b", fontSize: "13px", fontWeight: 600 }}
-                    labelStyle={{ color: "#3f3f46", fontSize: "13px" }}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "8px", boxShadow: "0 4px 12px 0 rgb(0 0 0 / 0.12)", fontSize: "15px", padding: "10px 16px", minWidth: "180px" }}
+                    itemStyle={{ color: "#18181b", fontSize: "15px", fontWeight: 600, paddingTop: "3px", paddingBottom: "3px" }}
+                    labelStyle={{ color: "#18181b", fontSize: "15px", fontWeight: 700, marginBottom: "6px" }}
                   />
                   <Bar dataKey="value" barSize={24} radius={[0, 4, 4, 0]}>
                     {statusChartData.map((entry, index) => (
@@ -435,7 +437,9 @@ export default function Dashboard() {
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "8px", boxShadow: "0 4px 12px 0 rgb(0 0 0 / 0.12)", fontSize: "15px", padding: "10px 16px", minWidth: "180px" }}
+                    itemStyle={{ fontSize: "15px", fontWeight: 600, paddingTop: "3px", paddingBottom: "3px" }}
+                    labelStyle={{ fontSize: "15px", fontWeight: 700, color: "#18181b", marginBottom: "6px" }}
                   />
                   <Bar dataKey="notStarted" name="Not Scheduled" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} />
