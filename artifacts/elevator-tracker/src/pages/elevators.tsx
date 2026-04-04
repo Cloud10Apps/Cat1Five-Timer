@@ -1246,7 +1246,7 @@ export default function Elevators() {
                 placeholder="All Banks"
                 searchPlaceholder="Search banks..."
                 disabled={bankFilterOptions.length === 0}
-                width="w-[120px]"
+                width="w-[150px]"
               />
               <FilterCombobox
                 value={selectedElevatorId}
@@ -1268,7 +1268,7 @@ export default function Elevators() {
                 options={unitTypeOpts}
                 placeholder="All Unit Types"
                 searchPlaceholder="Search unit types..."
-                width="w-[155px]"
+                width="w-[185px]"
               />
               <FilterCombobox
                 value={selectedInspType}
@@ -1276,7 +1276,7 @@ export default function Elevators() {
                 options={inspTypeOpts}
                 placeholder="All Insp Types"
                 searchPlaceholder="Search insp types..."
-                width="w-[155px]"
+                width="w-[180px]"
               />
 
               {/* Divider */}
@@ -1313,7 +1313,7 @@ export default function Elevators() {
                 options={AGING_BUCKET_OPTIONS}
                 placeholder="Aging Bucket"
                 searchPlaceholder="Search buckets..."
-                width="w-[150px]"
+                width="w-[170px]"
               />
             </div>
 

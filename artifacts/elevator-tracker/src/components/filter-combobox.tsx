@@ -60,11 +60,11 @@ export function FilterCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "h-8 justify-between font-normal text-xs px-2.5",
+            "h-8 justify-between font-medium text-xs px-2.5",
             width,
             isFiltered
               ? "border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
-              : "text-zinc-700 hover:text-zinc-900"
+              : "text-zinc-800 hover:text-zinc-950"
           )}
         >
           <span className="truncate">{selectedLabel}</span>
