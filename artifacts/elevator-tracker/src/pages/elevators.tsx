@@ -180,7 +180,7 @@ export default function Elevators() {
   const elevatorFilterOptions = useMemo(() =>
     elevatorOptions.map((el) => ({
       value: el.id.toString(),
-      label: el.name + (el.unitId ? ` (${el.unitId})` : ""),
+      label: el.name + (el.buildingName ? ` – ${el.buildingName}` : ""),
     })),
     [elevatorOptions]);
   const MONTH_OPTIONS = [
