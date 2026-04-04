@@ -301,7 +301,7 @@ export default function Inspections() {
   useEffect(() => { if (watchScheduledDate && form.getValues("status") === "NOT_STARTED") form.setValue("status", "SCHEDULED"); }, [watchScheduledDate]);
 
   // Shared TH class builder
-  const thBase = "px-3 py-2.5 text-left text-[11px] font-semibold text-zinc-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-zinc-200 bg-zinc-50 select-none";
+  const thBase = "px-3 py-2.5 text-left text-[11px] font-semibold text-white uppercase tracking-wider whitespace-nowrap border-b-2 border-zinc-800 bg-zinc-950 select-none";
   const stickyTh = (left: string) => `${thBase} sticky ${left} z-30`;
 
   // Shared TD class builder
