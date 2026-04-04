@@ -387,12 +387,12 @@ router.get("/aging", async (req, res) => {
 
   if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([
-      EMPTY("Current", "Current",    0),
-      EMPTY("1–30",    "1–30 days",  1),
-      EMPTY("31–60",   "31–60 days", 31),
-      EMPTY("61–90",   "61–90 days", 61),
-      EMPTY("91–120",  "91–120 days",91),
-      EMPTY("121+",    "121+ days",  121),
+      EMPTY("Current", "Current",             0),
+      EMPTY("1–30",    "Overdue 1–30 Days",   1),
+      EMPTY("31–60",   "Overdue 31–60 Days",  31),
+      EMPTY("61–90",   "Overdue 61–90 Days",  61),
+      EMPTY("91–120",  "Overdue 91–120 Days", 91),
+      EMPTY("121+",    "Overdue 121+ Days",   121),
     ]);
     return;
   }
@@ -440,11 +440,11 @@ router.get("/aging", async (req, res) => {
   const ORDER = ["Current", "1–30", "31–60", "61–90", "91–120", "121+"];
   const LABELS: Record<string, string> = {
     "Current": "Current",
-    "1–30":    "1–30 days",
-    "31–60":   "31–60 days",
-    "61–90":   "61–90 days",
-    "91–120":  "91–120 days",
-    "121+":    "121+ days",
+    "1–30":    "Overdue 1–30 Days",
+    "31–60":   "Overdue 31–60 Days",
+    "61–90":   "Overdue 61–90 Days",
+    "91–120":  "Overdue 91–120 Days",
+    "121+":    "Overdue 121+ Days",
   };
   const DAYS: Record<string, number> = { "Current": 0, "1–30": 1, "31–60": 31, "61–90": 61, "91–120": 91, "121+": 121 };
 
