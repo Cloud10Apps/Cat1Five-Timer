@@ -477,11 +477,11 @@ export default function Dashboard() {
               <Table>
                 <TableHeader className="bg-zinc-50">
                   <TableRow className="hover:bg-transparent border-b border-zinc-100">
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Status</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Was Due</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Aging</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4 text-center">Unit / Building</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Type</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Status</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center pr-4">Was Due</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center pr-4">Aging</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -543,11 +543,11 @@ export default function Dashboard() {
               <Table>
                 <TableHeader className="bg-zinc-50">
                   <TableRow className="hover:bg-transparent border-b border-zinc-100">
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Status</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Due</TableHead>
-                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Aging</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4 text-center">Unit / Building</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Type</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Status</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center pr-4">Due</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center pr-4">Aging</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
