@@ -144,21 +144,41 @@ router.get("/elevators", async (req, res) => {
     .where(and(...conditions))
     .orderBy(customersTable.name, buildingsTable.name, elevatorsTable.name);
 
-  // Latest inspection per elevator using DISTINCT ON (PostgreSQL)
+  // Most urgent open inspection per elevator using DISTINCT ON (PostgreSQL)
+  // Picks the earliest next_due_date among non-COMPLETED inspections.
+  // Falls back to the most recent completed inspection if no open ones exist.
   const elevatorIds = rows.map(r => r.elevatorId);
   type LatestInsp = { elevator_id: number; status: string; inspection_type: string; next_due_date: string | null; scheduled_date: string | null };
   let latestInspMap = new Map<number, LatestInsp>();
   if (elevatorIds.length > 0) {
-    const latestInspRows = await db.execute<LatestInsp>(sql`
+    const idArray = sql.raw(`ARRAY[${elevatorIds.join(",")}]`);
+    // Open inspections: earliest due date first
+    const openRows = await db.execute<LatestInsp>(sql`
       SELECT DISTINCT ON (elevator_id)
         elevator_id, status, inspection_type, next_due_date, scheduled_date
       FROM inspections
       WHERE organization_id = ${orgId}
-        AND elevator_id = ANY(${sql.raw(`ARRAY[${elevatorIds.join(",")}]`)})
-      ORDER BY elevator_id, next_due_date DESC NULLS LAST
+        AND elevator_id = ANY(${idArray})
+        AND status != 'COMPLETED'
+      ORDER BY elevator_id, next_due_date ASC NULLS LAST
     `);
-    for (const r of latestInspRows.rows) {
+    for (const r of openRows.rows) {
       latestInspMap.set(r.elevator_id, r);
+    }
+    // Fallback: for elevators with no open inspections, use most recent completed
+    const missingIds = elevatorIds.filter(id => !latestInspMap.has(id));
+    if (missingIds.length > 0) {
+      const fallbackRows = await db.execute<LatestInsp>(sql`
+        SELECT DISTINCT ON (elevator_id)
+          elevator_id, status, inspection_type, next_due_date, scheduled_date
+        FROM inspections
+        WHERE organization_id = ${orgId}
+          AND elevator_id = ANY(${sql.raw(`ARRAY[${missingIds.join(",")}]`)})
+        ORDER BY elevator_id, next_due_date DESC NULLS LAST
+      `);
+      for (const r of fallbackRows.rows) {
+        latestInspMap.set(r.elevator_id, r);
+      }
     }
   }
 
