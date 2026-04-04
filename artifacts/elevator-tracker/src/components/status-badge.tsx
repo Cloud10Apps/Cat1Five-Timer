@@ -25,7 +25,7 @@ const BADGE_STYLES: Record<string, string> = {
 export function StatusBadge({ status }: { status: string }) {
   const style = BADGE_STYLES[status] ?? BADGE_STYLES.NOT_STARTED;
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[13px] font-medium tracking-tight whitespace-nowrap ${style}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-medium tracking-tight whitespace-nowrap ${style}`}>
       {STATUS_LABELS[status] ?? status}
     </span>
   );
