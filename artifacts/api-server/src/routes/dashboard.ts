@@ -376,4 +376,65 @@ router.get("/monthly-forecast", async (req, res) => {
   res.json(months);
 });
 
+router.get("/aging", async (req, res) => {
+  const orgId = req.user!.organizationId;
+  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+  const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
+  if (effectiveIds !== null && effectiveIds.length === 0) {
+    res.json([
+      { bucket: "Current",  label: "Current",   days: 0,  count: 0 },
+      { bucket: "1–30",     label: "1–30 days", days: 1,  count: 0 },
+      { bucket: "31–60",    label: "31–60",     days: 31, count: 0 },
+      { bucket: "61–90",    label: "61–90",     days: 61, count: 0 },
+      { bucket: "91+",      label: "91+ days",  days: 91, count: 0 },
+    ]);
+    return;
+  }
+
+  const buildingCustomerFilter = effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
+
+  const rows = await db
+    .select({
+      bucket: sql<string>`CASE
+        WHEN ${inspectionsTable.nextDueDate}::date >= CURRENT_DATE THEN 'Current'
+        WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 1 AND 30 THEN '1–30'
+        WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 31 AND 60 THEN '31–60'
+        WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 61 AND 90 THEN '61–90'
+        ELSE '91+'
+      END`,
+      count: count(),
+    })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .where(and(
+      eq(inspectionsTable.organizationId, orgId),
+      buildingCustomerFilter,
+      sql`${inspectionsTable.completionDate} IS NULL`,
+      sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+    ))
+    .groupBy(sql`1`);
+
+  const ORDER = ["Current", "1–30", "31–60", "61–90", "91+"];
+  const LABELS: Record<string, string> = {
+    "Current": "Current",
+    "1–30":    "1–30 days",
+    "31–60":   "31–60 days",
+    "61–90":   "61–90 days",
+    "91+":     "91+ days",
+  };
+  const DAYS: Record<string, number> = { "Current": 0, "1–30": 1, "31–60": 31, "61–90": 61, "91+": 91 };
+
+  const countMap = Object.fromEntries(rows.map(r => [r.bucket, Number(r.count)]));
+
+  res.json(ORDER.map(b => ({
+    bucket: b,
+    label:  LABELS[b],
+    days:   DAYS[b],
+    count:  countMap[b] ?? 0,
+  })));
+});
+
 export default router;
