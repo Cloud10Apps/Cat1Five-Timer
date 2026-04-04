@@ -263,12 +263,14 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
-  // Derive available years from actual next-due dates
+  // Derive available years from ALL inspection next-due dates (not just the per-elevator winner)
   const dueYearOptions = useMemo(() => {
     const years = new Set<string>();
-    for (const d of nextDueDateByElevator.values()) years.add(d.slice(0, 4));
+    for (const insp of allInspections ?? []) {
+      if (insp.nextDueDate) years.add(insp.nextDueDate.slice(0, 4));
+    }
     return Array.from(years).sort();
-  }, [nextDueDateByElevator]);
+  }, [allInspections]);
 
   const yearFilterOptions = useMemo(() =>
     dueYearOptions.map((y) => ({ value: y, label: y })),
