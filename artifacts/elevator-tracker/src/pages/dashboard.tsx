@@ -87,7 +87,7 @@ function StatusBadge({ status }: { status: string }) {
     COMPLETED:   "bg-green-100 text-green-700 border-green-200",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
       {status.replace(/_/g, " ")}
     </span>
   );
