@@ -135,7 +135,7 @@ function AgingBucketPill({ due }: { due: string | null | undefined }) {
     bucket === "91-120"   ? "bg-red-200     text-red-800     border-red-300"     :
                             "bg-red-300     text-red-900     border-red-400";
   return (
-    <span className={`text-xs font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${cls}`}>
+    <span className={`text-sm font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${cls}`}>
       {label}
     </span>
   );
@@ -968,7 +968,7 @@ export default function Elevators() {
                         {/* CAT1 section */}
                         <div className="rounded-lg border border-zinc-200 p-4 space-y-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-white tracking-wide">CAT1</span>
+                            <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-white tracking-wide">CAT1</span>
                             <span className="text-sm font-medium text-zinc-700">Annual Inspection</span>
                           </div>
                           <Form {...inspForm}>
@@ -1012,7 +1012,7 @@ export default function Elevators() {
                         {/* CAT5 section */}
                         <div className="rounded-lg border border-yellow-300 p-4 space-y-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-zinc-900 tracking-wide">CAT5</span>
+                            <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-zinc-900 tracking-wide">CAT5</span>
                             <span className="text-sm font-medium text-zinc-700">5-Year Inspection</span>
                           </div>
                           <Form {...inspCat5Form}>
@@ -1075,7 +1075,7 @@ export default function Elevators() {
 
         {/* Row 1: filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
+          <span className="text-sm font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
           <div className="h-4 w-px bg-zinc-200" />
           <FilterCombobox
             value={selectedCustomerId}
@@ -1172,7 +1172,7 @@ export default function Elevators() {
                 setFilterDueYear("all");
                 setFilterAgingBucket("all");
               }}
-              className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 hover:text-red-700 transition-colors"
+              className="h-8 px-3 flex items-center gap-1.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 hover:text-red-700 transition-colors"
             >
               <X className="h-3.5 w-3.5" /> Clear filters
             </button>
@@ -1182,7 +1182,7 @@ export default function Elevators() {
         {/* Row 2: expand/collapse depth selector */}
         {!isLoading && grouped.length > 0 && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
+            <span className="text-sm font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
             <nav className="flex items-center gap-0.5">
               {([
                 { key: "customers", label: "Customers", action: collapseAll },
@@ -1194,11 +1194,11 @@ export default function Elevators() {
                 return (
                   <span key={key} className="flex items-center gap-0.5">
                     {i > 0 && (
-                      <span className="text-zinc-300 text-xs select-none px-0.5">/</span>
+                      <span className="text-zinc-300 text-sm select-none px-0.5">/</span>
                     )}
                     <button
                       onClick={action}
-                      className={`px-1.5 py-0.5 rounded text-xs transition-colors ${
+                      className={`px-1.5 py-0.5 rounded text-sm transition-colors ${
                         isActive
                           ? "text-blue-600 font-semibold"
                           : "text-zinc-400 hover:text-zinc-700 font-medium"
@@ -1232,7 +1232,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_110px_130px_80px]"
+                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_130px_130px_80px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1241,42 +1241,42 @@ export default function Elevators() {
                       : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
                     <Users className="h-5 w-5 shrink-0 text-zinc-400" />
                     <span className="font-bold text-base tracking-tight truncate">{customer.customerName}</span>
-                    <span className="text-xs font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
+                    <span className="text-sm font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
                       {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
                     </span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Unit ID</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Unit ID</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">State ID</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">State ID</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Unit Type</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Unit Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Status</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Status</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Insp Type</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Insp Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Last Inspection</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Last Inspection</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Next Due</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Next Due</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Aging (Days)</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Aging (Days)</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Aging Bucket</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Aging Bucket</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Scheduled</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Scheduled</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Actions</span>
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white text-center">Actions</span>
                   </div>
                 </button>
 
@@ -1315,7 +1315,7 @@ export default function Elevators() {
                                         ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300" />
                                         : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-300" />}
                                       <Layers className={`h-4 w-4 shrink-0 ${bank.bankName !== "" ? "text-zinc-300" : "text-zinc-200"}`} />
-                                      <span className={`text-xs font-semibold uppercase tracking-wide ${bank.bankName !== "" ? "text-zinc-500" : "text-zinc-400 italic"}`}>
+                                      <span className={`text-sm font-semibold uppercase tracking-wide ${bank.bankName !== "" ? "text-zinc-500" : "text-zinc-400 italic"}`}>
                                         {bankLabel}
                                       </span>
                                     </button>
@@ -1333,25 +1333,25 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_110px_130px_80px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_130px_130px_80px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
                                           {/* Name */}
                                           <div className={`flex items-center px-4 py-1.5 min-w-0 ${nameIndent}`}>
-                                            <div className="font-semibold text-xs leading-snug truncate text-zinc-900">{elevator.name}</div>
+                                            <div className="font-semibold text-sm leading-snug truncate text-zinc-900">{elevator.name}</div>
                                           </div>
                                           {/* Unit ID */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
-                                            <span className="text-xs tabular-nums text-zinc-700 truncate">{elevator.internalId ?? <span className="text-zinc-300">—</span>}</span>
+                                            <span className="text-sm tabular-nums text-zinc-700 truncate">{elevator.internalId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
                                           {/* State ID */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
-                                            <span className="text-xs tabular-nums text-zinc-700 truncate">{elevator.stateId ?? <span className="text-zinc-300">—</span>}</span>
+                                            <span className="text-sm tabular-nums text-zinc-700 truncate">{elevator.stateId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
                                           {/* Unit Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
-                                            <span className="text-xs font-medium text-zinc-700 capitalize truncate">{elevator.type}</span>
+                                            <span className="text-sm font-medium text-zinc-700 capitalize truncate">{elevator.type}</span>
                                           </div>
                                           {/* Status */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
@@ -1362,7 +1362,7 @@ export default function Elevators() {
                                           {/* Insp Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
                                             {latestInsp ? (
-                                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
+                                              <span className={`text-sm font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-zinc-400 text-sm">—</span>}
@@ -1370,7 +1370,7 @@ export default function Elevators() {
                                           {/* Last Completed */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
                                             {completionDate ? (
-                                              <span className="text-xs tabular-nums truncate text-zinc-900">
+                                              <span className="text-sm tabular-nums truncate text-zinc-900">
                                                 {new Date(completionDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
@@ -1378,7 +1378,7 @@ export default function Elevators() {
                                           {/* Next Due */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
                                             {due ? (
-                                              <span className="text-xs tabular-nums truncate text-zinc-900">
+                                              <span className="text-sm tabular-nums truncate text-zinc-900">
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
@@ -1389,7 +1389,7 @@ export default function Elevators() {
                                               const days = getAgingDays(due);
                                               if (days === null) return <span className="text-zinc-300 text-sm">—</span>;
                                               const color = days > 90 ? "text-red-700 font-bold" : days > 60 ? "text-red-600 font-semibold" : days > 30 ? "text-orange-600 font-semibold" : days > 0 ? "text-amber-600 font-semibold" : "text-emerald-600";
-                                              return <span className={`text-xs tabular-nums ${color}`}>{days > 0 ? `+${days}` : days}</span>;
+                                              return <span className={`text-sm tabular-nums ${color}`}>{days > 0 ? `+${days}` : days}</span>;
                                             })()}
                                           </div>
                                           {/* Aging Bucket */}
@@ -1399,7 +1399,7 @@ export default function Elevators() {
                                           {/* Scheduled */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
                                             {scheduledDate ? (
-                                              <span className="text-xs tabular-nums truncate text-zinc-900">
+                                              <span className="text-sm tabular-nums truncate text-zinc-900">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
