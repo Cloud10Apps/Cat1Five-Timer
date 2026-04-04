@@ -101,8 +101,8 @@ function StatusBadge({ status }: { status: string }) {
 /* ─── Section card header ─── */
 function SectionHeader({ title, badge }: { title: string; badge?: React.ReactNode }) {
   return (
-    <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-2">
-      <h3 className="text-sm font-semibold text-zinc-700">{title}</h3>
+    <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-center gap-2">
+      <h3 className="text-sm font-semibold text-zinc-700 text-center">{title}</h3>
       {badge}
     </div>
   );
