@@ -99,11 +99,12 @@ type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
 /* ── Aging bucket helpers ── */
 const AGING_BUCKET_OPTIONS = [
-  { value: "current", label: "Current"    },
-  { value: "1-30",    label: "1–30 Days"  },
-  { value: "31-60",   label: "31–60 Days" },
-  { value: "61-90",   label: "61–90 Days" },
-  { value: "90plus",  label: "90+ Days"   },
+  { value: "current",  label: "Current"      },
+  { value: "1-30",     label: "1–30 Days"    },
+  { value: "31-60",    label: "31–60 Days"   },
+  { value: "61-90",    label: "61–90 Days"   },
+  { value: "91-120",   label: "91–120 Days"  },
+  { value: "120plus",  label: "120+ Days"    },
 ];
 
 function getAgingDays(due: string | null | undefined): number | null {
@@ -114,11 +115,12 @@ function getAgingDays(due: string | null | undefined): number | null {
 function getAgingBucketValue(due: string | null | undefined): string | null {
   const days = getAgingDays(due);
   if (days === null) return null;
-  if (days <= 0) return "current";
-  if (days <= 30) return "1-30";
-  if (days <= 60) return "31-60";
-  if (days <= 90) return "61-90";
-  return "90plus";
+  if (days <= 0)   return "current";
+  if (days <= 30)  return "1-30";
+  if (days <= 60)  return "31-60";
+  if (days <= 90)  return "61-90";
+  if (days <= 120) return "91-120";
+  return "120plus";
 }
 
 function AgingBucketPill({ due }: { due: string | null | undefined }) {
@@ -126,11 +128,12 @@ function AgingBucketPill({ due }: { due: string | null | undefined }) {
   if (!bucket) return <span className="text-zinc-300 text-sm">—</span>;
   const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
-    bucket === "current" ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
-    bucket === "1-30"    ? "bg-amber-100  text-amber-700  border-amber-200"     :
-    bucket === "31-60"   ? "bg-orange-100 text-orange-700 border-orange-200"    :
-    bucket === "61-90"   ? "bg-red-100    text-red-700    border-red-200"       :
-                           "bg-red-200    text-red-800    border-red-300";
+    bucket === "current"  ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+    bucket === "1-30"     ? "bg-amber-100   text-amber-700   border-amber-200"   :
+    bucket === "31-60"    ? "bg-orange-100  text-orange-700  border-orange-200"  :
+    bucket === "61-90"    ? "bg-red-100     text-red-700     border-red-200"     :
+    bucket === "91-120"   ? "bg-red-200     text-red-800     border-red-300"     :
+                            "bg-red-300     text-red-900     border-red-400";
   return (
     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${cls}`}>
       {label}
