@@ -1229,10 +1229,10 @@ export default function Elevators() {
           {grouped.map((customer) => {
             const isCustomerCollapsed = collapsedCustomers.has(customer.customerId);
             return (
-              <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
+              <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-x-auto shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_130px_130px_80px]"
+                  className="w-full grid min-w-[1500px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_110px_110px_120px_150px_105px_145px_145px_90px_150px_145px_80px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1333,7 +1333,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_130px_130px_80px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid min-w-[1500px] grid-cols-[1fr_110px_110px_120px_150px_105px_145px_145px_90px_150px_145px_80px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
