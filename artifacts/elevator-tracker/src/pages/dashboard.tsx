@@ -225,17 +225,17 @@ export default function Dashboard() {
                     type="number"
                     allowDecimals={false}
                     tickCount={6}
-                    tick={{ fill: "#3f3f46", fontSize: 12 }}
+                    tick={{ fill: "#3f3f46", fontSize: 13 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                   />
                   <YAxis
                     dataKey="label"
                     type="category"
-                    tick={{ fill: "#3f3f46", fontSize: 12, fontWeight: 600 }}
+                    tick={{ fill: "#3f3f46", fontSize: 13, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
-                    width={90}
+                    width={96}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
@@ -264,23 +264,23 @@ export default function Dashboard() {
                     type="number"
                     allowDecimals={false}
                     tickCount={6}
-                    tick={{ fill: "#3f3f46", fontSize: 16 }}
+                    tick={{ fill: "#3f3f46", fontSize: 13 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                   />
                   <YAxis
                     dataKey="name"
                     type="category"
-                    tick={{ fill: "#3f3f46", fontSize: 16, fontWeight: 600 }}
+                    tick={{ fill: "#3f3f46", fontSize: 13, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                     width={160}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "16px" }}
-                    itemStyle={{ color: "#18181b", fontSize: "16px", fontWeight: 600 }}
-                    labelStyle={{ color: "#3f3f46", fontSize: "14px" }}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
+                    itemStyle={{ color: "#18181b", fontSize: "13px", fontWeight: 600 }}
+                    labelStyle={{ color: "#3f3f46", fontSize: "13px" }}
                   />
                   <Bar dataKey="value" barSize={24} radius={[0, 4, 4, 0]}>
                     {statusChartData.map((entry, index) => (
@@ -305,13 +305,13 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: "#3f3f46", fontSize: 12 }}
+                    tick={{ fill: "#3f3f46", fontSize: 13 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                     height={28}
                   />
                   <YAxis
-                    tick={{ fill: "#3f3f46", fontSize: 12 }}
+                    tick={{ fill: "#3f3f46", fontSize: 13 }}
                     axisLine={false}
                     tickLine={false}
                     allowDecimals={false}
