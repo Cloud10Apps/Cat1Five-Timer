@@ -399,7 +399,7 @@ export default function Dashboard() {
                           <InspectionTypeBadge type={insp.inspectionType} />
                         </TableCell>
                         <TableCell className="py-3">
-                          <StatusBadge status={insp.status} />
+                          <StatusBadge status={insp.rawStatus} />
                         </TableCell>
                         <TableCell className="text-right py-3 pr-4">
                           <div className="text-sm font-semibold text-zinc-900 leading-snug">
