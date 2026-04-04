@@ -457,7 +457,7 @@ export default function Dashboard() {
           {/* Overdue Inspections */}
           <div className="bg-white border border-zinc-200 border-t-4 border-t-red-500 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader
-              title="Overdue Inspections"
+              title="All Overdue Inspections"
               action={
                 <button
                   onClick={() => downloadXlsx("overdue", `overdue_inspections_${new Date().toISOString().slice(0, 10)}.xlsx`)}
