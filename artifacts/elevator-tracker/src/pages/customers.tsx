@@ -222,9 +222,7 @@ export default function Customers() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            This menu lists the customers you have access to. For any changes, please contact your system administrator.
-          </p>
+          <p className="text-muted-foreground italic">This menu lists the customers you have access to. For any changes, please contact your system administrator.</p>
         </div>
 
         {isAdmin && (
