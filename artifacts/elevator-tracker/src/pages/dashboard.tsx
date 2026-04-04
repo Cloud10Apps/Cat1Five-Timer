@@ -23,6 +23,12 @@ import {
 } from "recharts";
 import dayjs from "dayjs";
 
+/* ─── label helpers ─── */
+/** "NOT_STARTED" or "NOT STARTED" → "Not Started" */
+function toLabel(s: string) {
+  return s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 /* ─── colour helpers ─── */
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -87,8 +93,8 @@ function StatusBadge({ status }: { status: string }) {
     COMPLETED:   "bg-green-100 text-green-700 border-green-200",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
-      {status.replace(/_/g, " ")}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
+      {toLabel(status)}
     </span>
   );
 }
@@ -152,7 +158,7 @@ export default function Dashboard() {
   ).sort((a: any, b: any) => a.nextDueDate.localeCompare(b.nextDueDate));
 
   const statusChartData = (breakdown ?? []).map((b) => ({
-    name:  b.status.replace(/_/g, " "),
+    name:  toLabel(b.status),
     value: b.count,
     color: getStatusColor(b.status),
   }));
@@ -262,7 +268,7 @@ export default function Dashboard() {
                     axisLine={false}
                     tickLine={false}
                     width={110}
-                    tickFormatter={(v: string) => v}
+                    tickFormatter={(v: string) => v.replace(/\b\w/g, c => c.toUpperCase())}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
