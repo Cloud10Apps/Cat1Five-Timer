@@ -1,0 +1,98 @@
+🧠 ROLE
+
+You are a senior product designer and full-stack engineer.
+Design a clean, modern, highly readable “Inspection History” report view that feels like a professional SaaS data table (similar to Notion, Airtable, or Stripe reporting views).
+
+🎯 FEATURE NAME (IMPORTANT)
+
+
+🧾 PURPOSE
+
+This page provides a complete historical view of all inspections across all elevators, allowing users to:
+
+View every inspection ever performed
+Understand inspection cadence and compliance
+Quickly scan status across customers, buildings, and units
+
+This should feel like a reporting / export-style view, not a CRUD table.
+
+🧱 LAYOUT STRUCTURE
+A flat table, not a hierarchy like the Elevator tab.
+
+📊 TABLE DESIGN (CROSS-TAB STYLE)
+
+Each row represents one inspection record
+
+Columns (in this order):
+Customer
+Building
+Bank
+Elevator
+Status (badge) Use color-coded badges:
+Inspection Type (CAT1 / CAT5 badge)
+Last Inspection Date
+Recurrence (years)
+Next Due Date
+Scheduled Date
+Completion Date
+Notes
+
+
+🎨 UI DESIGN REQUIREMENTS
+Clean SaaS look (like Notion / Airtable)
+Use:
+Sticky header
+Alternating row shading
+Soft borders
+Rounded containers
+Use pagination or virtualized table if large dataset. Avoid loading everything at once
+✨ UX DETAILS (MAKE IT FEEL PREMIUM)
+Hover highlight rows
+Sticky first columns (Customer / Building)
+Subtle icons for inspection types (gold Cat5, black for Cat1 just like the Elevator menu)
+
+
+📅 DATE FORMATTING
+Format: MM/DD/YYYY as Date
+Highlight overdue rows subtly (light red background)
+
+🔍 FILTERING (TOP BAR)
+
+Add filters:
+
+Customer
+Building
+Bank
+Elevator
+Elevator Type
+Status
+
+Include search:
+
+Elevator name
+Building name
+⚡ SORTING LOGIC (MANDATORY)
+
+Default sort:
+
+Customer
+Building
+Bank
+Elevator
+Unit TYpe
+Inspection Type
+Next Due Date (ascending)
+
+
+🧾 NOTES COLUMN
+Expandable text (truncate with “...”)
+Click to expand full note
+
+📥 EXPORT ALIGNMENT
+This view should match the structure of the Excel export.
+👉 “What you see = what you export”
+
+
+🎯 FINAL GOAL
+👉 Instantly answer:
+“What’s the history for this elevator?”
