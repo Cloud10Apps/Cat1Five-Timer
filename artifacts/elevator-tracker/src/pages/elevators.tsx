@@ -292,27 +292,14 @@ export default function Elevators() {
     return map;
   }, [allInspections]);
 
-  // Map: elevatorId → latest nextDueDate (YYYY-MM-DD string)
-  const nextDueDateByElevator = useMemo(() => {
-    const map = new Map<number, string>();
-    for (const insp of allInspections ?? []) {
-      if (!insp.elevatorId || !insp.nextDueDate) continue;
-      const current = map.get(insp.elevatorId);
-      if (!current || insp.nextDueDate > current) {
-        map.set(insp.elevatorId, insp.nextDueDate.slice(0, 10));
-      }
-    }
-    return map;
-  }, [allInspections]);
-
-  // Derive available years from the displayed next-due date per elevator (matches what the column shows)
+  // Derive available years from the displayed next-due date per elevator (matches what the column and filters show)
   const dueYearOptions = useMemo(() => {
     const years = new Set<string>();
-    for (const due of nextDueDateByElevator.values()) {
-      years.add(due.slice(0, 4));
+    for (const insp of latestInspByElevator.values()) {
+      if (insp.nextDueDate) years.add(insp.nextDueDate.slice(0, 4));
     }
     return Array.from(years).sort();
-  }, [nextDueDateByElevator]);
+  }, [latestInspByElevator]);
 
   const yearFilterOptions = useMemo(() =>
     dueYearOptions.map((y) => ({ value: y, label: y })),
@@ -322,27 +309,26 @@ export default function Elevators() {
   const filteredElevators = useMemo(() => {
     return (elevators ?? []).filter((el) => {
       if (selectedElevatorId !== "all" && el.id.toString() !== selectedElevatorId) return false;
-      // Year filter: check against the per-elevator displayed next-due date (same value shown in the column)
+      // All date-based filters use the same source as the row display: latestInspByElevator
+      const rowInsp = latestInspByElevator.get(el.id);
+      const rowDue  = rowInsp?.nextDueDate?.slice(0, 10);
+      // Year filter
       if (filterDueYear !== "all") {
-        const due = nextDueDateByElevator.get(el.id);
-        if (!due || due.slice(0, 4) !== filterDueYear) return false;
+        if (!rowDue || rowDue.slice(0, 4) !== filterDueYear) return false;
       }
-      // Month filter: check against the per-elevator latest due date
+      // Month filter
       if (filterDueMonth !== "all") {
-        const due = nextDueDateByElevator.get(el.id);
-        if (!due || due.slice(5, 7) !== filterDueMonth) return false;
+        if (!rowDue || rowDue.slice(5, 7) !== filterDueMonth) return false;
       }
       if (selectedInspType !== "all") {
-        const insp = latestInspByElevator.get(el.id);
-        if (!insp || insp.inspectionType !== selectedInspType) return false;
+        if (!rowInsp || rowInsp.inspectionType !== selectedInspType) return false;
       }
       if (filterAgingBucket !== "all") {
-        const due = nextDueDateByElevator.get(el.id);
-        if (getAgingBucketValue(due) !== filterAgingBucket) return false;
+        if (getAgingBucketValue(rowDue) !== filterAgingBucket) return false;
       }
       return true;
     });
-  }, [elevators, selectedElevatorId, nextDueDateByElevator, filterDueMonth, filterDueYear, selectedInspType, latestInspByElevator, filterAgingBucket]);
+  }, [elevators, selectedElevatorId, latestInspByElevator, filterDueMonth, filterDueYear, selectedInspType, filterAgingBucket]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
