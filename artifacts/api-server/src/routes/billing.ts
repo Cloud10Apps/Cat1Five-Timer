@@ -72,6 +72,7 @@ router.post("/checkout", requireAdmin, async (req, res) => {
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: Math.max(userCount, 1) }],
     mode: "subscription",
+    subscription_data: { trial_period_days: 14 },
     success_url: `${baseUrl}/billing?success=1`,
     cancel_url: `${baseUrl}/billing?canceled=1`,
   });
