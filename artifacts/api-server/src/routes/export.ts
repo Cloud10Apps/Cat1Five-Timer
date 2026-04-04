@@ -229,4 +229,156 @@ router.get("/elevators", async (req, res) => {
   res.end();
 });
 
+router.get("/overdue", async (req, res) => {
+  const orgId = req.user!.organizationId;
+  const todayStr = dayjs().format("YYYY-MM-DD");
+  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+
+  const conditions: any[] = [
+    eq(inspectionsTable.organizationId, orgId),
+    sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+    sql`${inspectionsTable.nextDueDate}::date < ${todayStr}::date`,
+    sql`${inspectionsTable.status} != 'COMPLETED'`,
+  ];
+  if (allowedIds !== null) {
+    if (allowedIds.length === 0) { conditions.push(sql`1=0`); }
+    else conditions.push(inArray(customersTable.id, allowedIds));
+  }
+  if (customerIdParam) conditions.push(eq(customersTable.id, customerIdParam));
+
+  const rows = await db
+    .select({
+      customerName:   customersTable.name,
+      buildingName:   buildingsTable.name,
+      elevatorName:   elevatorsTable.name,
+      inspectionType: inspectionsTable.inspectionType,
+      status:         inspectionsTable.status,
+      nextDueDate:    inspectionsTable.nextDueDate,
+      scheduledDate:  inspectionsTable.scheduledDate,
+      notes:          inspectionsTable.notes,
+    })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
+    .where(and(...conditions))
+    .orderBy(inspectionsTable.nextDueDate);
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Overdue Inspections");
+
+  sheet.columns = [
+    { header: "Customer",        key: "customerName",   width: 25 },
+    { header: "Building",        key: "buildingName",   width: 30 },
+    { header: "Elevator",        key: "elevatorName",   width: 25 },
+    { header: "Type",            key: "inspectionType", width: 10 },
+    { header: "Status",          key: "status",         width: 15 },
+    { header: "Was Due",         key: "nextDueDate",    width: 18, style: DATE_STYLE },
+    { header: "Days Overdue",    key: "daysOverdue",    width: 14 },
+    { header: "Scheduled Date",  key: "scheduledDate",  width: 18, style: DATE_STYLE },
+    { header: "Notes",           key: "notes",          width: 40 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+
+  rows.forEach(r => {
+    const daysOverdue = r.nextDueDate ? dayjs().diff(dayjs(r.nextDueDate), "day") : null;
+    sheet.addRow({
+      customerName:   r.customerName ?? "",
+      buildingName:   r.buildingName ?? "",
+      elevatorName:   r.elevatorName ?? "",
+      inspectionType: r.inspectionType,
+      status:         r.status,
+      nextDueDate:    toDate(r.nextDueDate),
+      daysOverdue:    daysOverdue ?? "",
+      scheduledDate:  toDate(r.scheduledDate),
+      notes:          r.notes ?? "",
+    });
+  });
+
+  const filename = `overdue_inspections_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  await workbook.xlsx.write(res);
+  res.end();
+});
+
+router.get("/upcoming", async (req, res) => {
+  const orgId = req.user!.organizationId;
+  const todayStr = dayjs().format("YYYY-MM-DD");
+  const in14Days  = dayjs().add(14, "day").format("YYYY-MM-DD");
+  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+
+  const allowedIds = await getAccessibleCustomerIds(req.user!);
+
+  const conditions: any[] = [
+    eq(inspectionsTable.organizationId, orgId),
+    sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+    sql`${inspectionsTable.nextDueDate}::date >= ${todayStr}::date`,
+    sql`${inspectionsTable.nextDueDate}::date <= ${in14Days}::date`,
+    sql`${inspectionsTable.status} != 'COMPLETED'`,
+  ];
+  if (allowedIds !== null) {
+    if (allowedIds.length === 0) { conditions.push(sql`1=0`); }
+    else conditions.push(inArray(customersTable.id, allowedIds));
+  }
+  if (customerIdParam) conditions.push(eq(customersTable.id, customerIdParam));
+
+  const rows = await db
+    .select({
+      customerName:   customersTable.name,
+      buildingName:   buildingsTable.name,
+      elevatorName:   elevatorsTable.name,
+      inspectionType: inspectionsTable.inspectionType,
+      status:         inspectionsTable.status,
+      nextDueDate:    inspectionsTable.nextDueDate,
+      scheduledDate:  inspectionsTable.scheduledDate,
+      notes:          inspectionsTable.notes,
+    })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
+    .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
+    .where(and(...conditions))
+    .orderBy(inspectionsTable.nextDueDate);
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Upcoming Inspections");
+
+  sheet.columns = [
+    { header: "Customer",        key: "customerName",   width: 25 },
+    { header: "Building",        key: "buildingName",   width: 30 },
+    { header: "Elevator",        key: "elevatorName",   width: 25 },
+    { header: "Type",            key: "inspectionType", width: 10 },
+    { header: "Status",          key: "status",         width: 15 },
+    { header: "Due Date",        key: "nextDueDate",    width: 18, style: DATE_STYLE },
+    { header: "Days Until Due",  key: "daysUntil",      width: 14 },
+    { header: "Scheduled Date",  key: "scheduledDate",  width: 18, style: DATE_STYLE },
+    { header: "Notes",           key: "notes",          width: 40 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+
+  rows.forEach(r => {
+    const daysUntil = r.nextDueDate ? dayjs(r.nextDueDate).diff(dayjs(), "day") : null;
+    sheet.addRow({
+      customerName:   r.customerName ?? "",
+      buildingName:   r.buildingName ?? "",
+      elevatorName:   r.elevatorName ?? "",
+      inspectionType: r.inspectionType,
+      status:         r.status,
+      nextDueDate:    toDate(r.nextDueDate),
+      daysUntil:      daysUntil ?? "",
+      scheduledDate:  toDate(r.scheduledDate),
+      notes:          r.notes ?? "",
+    });
+  });
+
+  const filename = `upcoming_inspections_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  await workbook.xlsx.write(res);
+  res.end();
+});
+
 export default router;

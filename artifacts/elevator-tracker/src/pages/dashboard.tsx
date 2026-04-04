@@ -99,11 +99,15 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 /* ─── Section card header ─── */
-function SectionHeader({ title, badge }: { title: string; badge?: React.ReactNode }) {
+function SectionHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-center gap-2">
-      <h3 className="text-sm font-semibold text-zinc-700 text-center">{title}</h3>
-      {badge}
+    <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-2">
+      <div className="flex-1" />
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-zinc-700 text-center">{title}</h3>
+        {badge}
+      </div>
+      <div className="flex-1 flex justify-end">{action}</div>
     </div>
   );
 }
@@ -142,6 +146,25 @@ export default function Dashboard() {
     DASHBOARD_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
     setLastUpdated(new Date());
     setSecondsAgo(0);
+  }
+
+  async function downloadXlsx(endpoint: "overdue" | "upcoming", filename: string) {
+    const params = new URLSearchParams();
+    if (selectedCustomerId) params.append("customerId", String(selectedCustomerId));
+    const token = localStorage.getItem("token");
+    const res = await fetch(`/api/export/${endpoint}?${params.toString()}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   const { data: customers } = useQuery({
@@ -429,7 +452,22 @@ export default function Dashboard() {
 
           {/* Overdue Inspections */}
           <div className="bg-white border border-zinc-200 border-t-4 border-t-red-500 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="Overdue Inspections" />
+            <SectionHeader
+              title="Overdue Inspections"
+              action={
+                <button
+                  onClick={() => downloadXlsx("overdue", `overdue_inspections_${new Date().toISOString().slice(0, 10)}.xlsx`)}
+                  title="Download as Excel"
+                  className="inline-flex items-center gap-1 h-6 px-2 rounded border border-zinc-200 bg-white text-xs text-zinc-500 hover:text-zinc-800 hover:border-zinc-300 shadow-sm transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
+                    <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" />
+                  </svg>
+                  Export
+                </button>
+              }
+            />
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
@@ -480,7 +518,22 @@ export default function Dashboard() {
 
           {/* Upcoming — Next 2 Weeks */}
           <div className="bg-white border border-zinc-200 border-t-4 border-t-zinc-700 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="Upcoming — Next 14 Days" />
+            <SectionHeader
+              title="Upcoming — Next 14 Days"
+              action={
+                <button
+                  onClick={() => downloadXlsx("upcoming", `upcoming_inspections_${new Date().toISOString().slice(0, 10)}.xlsx`)}
+                  title="Download as Excel"
+                  className="inline-flex items-center gap-1 h-6 px-2 rounded border border-zinc-200 bg-white text-xs text-zinc-500 hover:text-zinc-800 hover:border-zinc-300 shadow-sm transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
+                    <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" />
+                  </svg>
+                  Export
+                </button>
+              }
+            />
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
