@@ -1179,10 +1179,10 @@ export default function Elevators() {
         <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden">
 
           {/* Header strip */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 bg-zinc-50/60">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between px-4 py-3 bg-zinc-900">
+            <div className="flex items-center gap-2.5">
               <SlidersHorizontal className="h-4 w-4 text-zinc-400" />
-              <span className="text-sm font-semibold text-zinc-500 tracking-tight">Filters</span>
+              <span className="text-sm font-bold text-white uppercase tracking-wider">Filters</span>
               {activeFilterCount > 0 && (
                 <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-amber-500 text-white text-[11px] font-bold leading-none">
                   {activeFilterCount}
@@ -1190,14 +1190,14 @@ export default function Elevators() {
               )}
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-zinc-500">
-                <span className="font-bold text-zinc-900 tabular-nums">{filteredElevators.length}</span>
+              <span className="text-sm text-zinc-400 tabular-nums">
+                <span className="font-bold text-white">{filteredElevators.length}</span>
                 <span className="ml-1.5">{filteredElevators.length === 1 ? "elevator" : "elevators"}</span>
               </span>
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearAll}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-white hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-1 rounded-md transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-800 hover:bg-red-900/50 border border-zinc-700 hover:border-red-700/60 px-2.5 py-1 rounded-md transition-colors"
                 >
                   <X className="h-3 w-3" /> Clear all
                 </button>
@@ -1308,7 +1308,6 @@ export default function Elevators() {
         {/* Row 2: expand/collapse depth selector */}
         {!isLoading && grouped.length > 0 && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-sm font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
             <nav className="flex items-center gap-0.5">
               {([
                 { key: "customers", label: "Customers", action: collapseAll },
