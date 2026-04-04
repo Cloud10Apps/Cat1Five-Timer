@@ -106,19 +106,21 @@ async function checkDuplicate(
   return { elevatorName: rows[0].elevatorName ?? `Unit ${elevatorId}`, dueYear };
 }
 
+type FollowUpResult = { created: true } | { created: false; reason: "already_exists" | "duplicate_year"; dueYear?: string } | { created: false; reason: "not_applicable" };
+
 async function maybeCreateFollowUp(
   completedInspection: { id: number; elevatorId: number; inspectionType: string; recurrenceYears: number; completionDate: string | null | undefined; status: string },
   orgId: number
-) {
-  if (completedInspection.status !== "COMPLETED" || !completedInspection.completionDate) return;
+): Promise<FollowUpResult> {
+  if (completedInspection.status !== "COMPLETED" || !completedInspection.completionDate) {
+    return { created: false, reason: "not_applicable" };
+  }
 
   const newLastDate = completedInspection.completionDate;
   const newNextDue = computeNextDueDate(newLastDate, completedInspection.recurrenceYears);
-  if (!newNextDue) return;
+  if (!newNextDue) return { created: false, reason: "not_applicable" };
 
-  // Only skip if a follow-up already exists that directly references this exact completion date
-  // as its lastInspectionDate — meaning we already created a follow-up from this specific event.
-  // This prevents duplicates on re-saves without blocking unrelated records in the chain.
+  // Skip if a follow-up already references this exact completion date as its lastInspectionDate
   const existing = await db
     .select({ id: inspectionsTable.id })
     .from(inspectionsTable)
@@ -133,10 +135,11 @@ async function maybeCreateFollowUp(
     )
     .limit(1);
 
-  if (existing.length > 0) return;
+  if (existing.length > 0) return { created: false, reason: "already_exists" };
 
+  // Block if any record already occupies the same due year for this elevator + type
   const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId);
-  if (dupCheck) return;
+  if (dupCheck) return { created: false, reason: "duplicate_year", dueYear: dupCheck.dueYear };
 
   await db.insert(inspectionsTable).values({
     elevatorId: completedInspection.elevatorId,
@@ -150,6 +153,7 @@ async function maybeCreateFollowUp(
     status: "NOT_STARTED",
     notes: null,
   });
+  return { created: true };
 }
 
 router.get("/", async (req, res) => {
@@ -304,8 +308,11 @@ router.put("/:id", async (req, res) => {
     return;
   }
   const formatted = formatInspection(row);
-  await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
-  res.json(formatted);
+  const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
+  const warning = (followUp.created === false && followUp.reason === "duplicate_year")
+    ? `A follow-up ${inspectionType === "CAT5" ? "Cat5" : "Cat1"} inspection for ${followUp.dueYear} was not auto-created because one already exists for that year. To add a new record, first delete the conflicting inspection from the Inspection History menu.`
+    : undefined;
+  res.json({ ...formatted, _warning: warning });
 });
 
 router.delete("/:id", async (req, res) => {

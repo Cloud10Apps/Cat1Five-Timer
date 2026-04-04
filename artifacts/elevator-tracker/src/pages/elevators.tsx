@@ -453,9 +453,10 @@ export default function Elevators() {
       updateInspMutation.mutate(
         { id: editingInspection.id, data: payload },
         {
-          onSuccess: () => {
+          onSuccess: (data: any) => {
             invalidateInspections();
             toast({ title: "Inspection saved" });
+            if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive" });
             setIsAddOpen(false);
           },
           onError: (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not save inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },

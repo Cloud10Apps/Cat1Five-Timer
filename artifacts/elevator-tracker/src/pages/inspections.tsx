@@ -235,7 +235,7 @@ export default function Inspections() {
   const onSubmit = (data: InspectionFormValues) => {
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data }, {
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); },
+        onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive" }); },
         onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not update inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
       });
     } else {
