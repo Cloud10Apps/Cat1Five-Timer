@@ -209,51 +209,46 @@ export default function Dashboard() {
         {/* ── Charts Row ── */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Inspection Aging — horizontal bar */}
+          {/* Inspection Aging — horizontal stacked bar by status */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader title="Open Inspection Aging" />
-            <div className="p-6 h-[360px] w-full">
+            <div className="p-4 h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={aging ?? []}
                   layout="vertical"
-                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                  margin={{ top: 4, right: 24, left: 10, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
                   <XAxis
                     type="number"
                     allowDecimals={false}
                     tickCount={6}
-                    tick={{ fill: "#3f3f46", fontSize: 13 }}
+                    tick={{ fill: "#3f3f46", fontSize: 12 }}
                     axisLine={{ stroke: "#e4e4e7" }}
                     tickLine={false}
                   />
                   <YAxis
                     dataKey="label"
                     type="category"
-                    tick={{ fill: "#3f3f46", fontSize: 13, fontWeight: 600 }}
+                    tick={{ fill: "#3f3f46", fontSize: 12, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                     width={90}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
-                    formatter={(value: any, _: any, props: any) => [value, props.payload.bucket === "Current" ? "Not yet overdue" : "Days overdue"]}
+                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "12px" }}
                   />
-                  <Bar dataKey="count" barSize={22} radius={[0, 4, 4, 0]}>
-                    {(aging ?? []).map((entry: any) => {
-                      const colors: Record<string, string> = {
-                        "Current": "#22c55e",
-                        "1–30":    "#f59e0b",
-                        "31–60":   "#f97316",
-                        "61–90":   "#ef4444",
-                        "91–120":  "#dc2626",
-                        "121+":    "#7f1d1d",
-                      };
-                      return <Cell key={entry.bucket} fill={colors[entry.bucket] ?? "#d4d4d8"} />;
-                    })}
-                  </Bar>
+                  <Legend
+                    iconType="circle"
+                    verticalAlign="top"
+                    align="center"
+                    wrapperStyle={{ fontSize: "11px", color: "#3f3f46", paddingBottom: "6px" }}
+                  />
+                  <Bar dataKey="notStarted" name="Not Started" stackId="s" fill="#d4d4d8" radius={[0, 0, 0, 0]} barSize={20} />
+                  <Bar dataKey="scheduled"  name="Scheduled"   stackId="s" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={20} />
+                  <Bar dataKey="inProgress" name="In Progress" stackId="s" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

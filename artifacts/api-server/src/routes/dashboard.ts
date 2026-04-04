@@ -382,14 +382,17 @@ router.get("/aging", async (req, res) => {
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
+  const EMPTY = (b: string, label: string, days: number) =>
+    ({ bucket: b, label, days, notStarted: 0, scheduled: 0, inProgress: 0 });
+
   if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([
-      { bucket: "Current",  label: "Current",    days: 0,   count: 0 },
-      { bucket: "1–30",     label: "1–30 days",  days: 1,   count: 0 },
-      { bucket: "31–60",    label: "31–60 days", days: 31,  count: 0 },
-      { bucket: "61–90",    label: "61–90 days", days: 61,  count: 0 },
-      { bucket: "91–120",   label: "91–120 days",days: 91,  count: 0 },
-      { bucket: "121+",     label: "121+ days",  days: 121, count: 0 },
+      EMPTY("Current", "Current",    0),
+      EMPTY("1–30",    "1–30 days",  1),
+      EMPTY("31–60",   "31–60 days", 31),
+      EMPTY("61–90",   "61–90 days", 61),
+      EMPTY("91–120",  "91–120 days",91),
+      EMPTY("121+",    "121+ days",  121),
     ]);
     return;
   }
@@ -406,6 +409,7 @@ router.get("/aging", async (req, res) => {
         WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 91 AND 120 THEN '91–120'
         ELSE '121+'
       END`,
+      status: inspectionsTable.status,
       count: count(),
     })
     .from(inspectionsTable)
@@ -417,7 +421,7 @@ router.get("/aging", async (req, res) => {
       sql`${inspectionsTable.completionDate} IS NULL`,
       sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
     ))
-    .groupBy(sql`1`);
+    .groupBy(sql`1`, inspectionsTable.status);
 
   const ORDER = ["Current", "1–30", "31–60", "61–90", "91–120", "121+"];
   const LABELS: Record<string, string> = {
@@ -430,14 +434,21 @@ router.get("/aging", async (req, res) => {
   };
   const DAYS: Record<string, number> = { "Current": 0, "1–30": 1, "31–60": 31, "61–90": 61, "91–120": 91, "121+": 121 };
 
-  const countMap = Object.fromEntries(rows.map(r => [r.bucket, Number(r.count)]));
+  type BucketData = { bucket: string; label: string; days: number; notStarted: number; scheduled: number; inProgress: number };
+  const bucketMap = new Map<string, BucketData>(
+    ORDER.map(b => [b, EMPTY(b, LABELS[b], DAYS[b])])
+  );
 
-  res.json(ORDER.map(b => ({
-    bucket: b,
-    label:  LABELS[b],
-    days:   DAYS[b],
-    count:  countMap[b] ?? 0,
-  })));
+  for (const row of rows) {
+    const entry = bucketMap.get(row.bucket);
+    if (!entry) continue;
+    const n = Number(row.count);
+    if (row.status === "NOT_STARTED")  entry.notStarted  += n;
+    else if (row.status === "SCHEDULED")   entry.scheduled   += n;
+    else if (row.status === "IN_PROGRESS") entry.inProgress  += n;
+  }
+
+  res.json(ORDER.map(b => bucketMap.get(b)!));
 });
 
 export default router;
