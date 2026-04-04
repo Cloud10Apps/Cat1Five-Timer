@@ -194,7 +194,7 @@ router.get("/attention", async (req, res) => {
     .where(and(...conditions));
 
   res.json(rows
-    .filter(r => r.status !== "COMPLETED")
+    .filter(r => !r.completionDate)
     .map(r => ({
       id: r.id,
       elevatorId: r.elevatorId,
@@ -209,7 +209,7 @@ router.get("/attention", async (req, res) => {
       nextDueDate: r.nextDueDate ?? undefined,
       scheduledDate: r.scheduledDate ?? undefined,
       completionDate: r.completionDate ?? undefined,
-      status: r.nextDueDate && r.nextDueDate < todayStr && r.status !== "COMPLETED" ? "OVERDUE" : r.status,
+      status: r.nextDueDate && r.nextDueDate < todayStr && !r.completionDate ? "OVERDUE" : r.status,
       rawStatus: r.status,
       notes: r.notes ?? undefined,
       organizationId: r.organizationId,
@@ -264,14 +264,14 @@ router.get("/status-breakdown", async (req, res) => {
     })
   );
 
-  // Overdue = all past-due non-completed, regardless of year
+  // Overdue = all past-due open (no completion date), regardless of year
   const [overdueRow] = await db.select({ count: count() })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
     .where(and(
       baseC,
-      ne(inspectionsTable.status, "COMPLETED"),
+      sql`${inspectionsTable.completionDate} IS NULL`,
       sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayBd}::date`,
     ));
 
@@ -287,7 +287,7 @@ router.get("/overdue-by-building", async (req, res) => {
 
   const conditions: any[] = [
     eq(inspectionsTable.organizationId, orgId),
-    ne(inspectionsTable.status, "COMPLETED"),
+    sql`${inspectionsTable.completionDate} IS NULL`,
     sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayObd}::date`,
   ];
   if (allowedIds !== null) conditions.push(inArray(customersTable.id, allowedIds));

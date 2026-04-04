@@ -255,11 +255,11 @@ export default function Elevators() {
   );
 
   // Map: elevatorId → most-relevant inspection
-  // Among OPEN (non-COMPLETED): earliest due year → CAT5 before CAT1 → earliest due date
-  // Falls back to best COMPLETED inspection if no open ones exist for the elevator
+  // Among OPEN (no completion date): earliest due year → CAT5 before CAT1 → earliest due date
+  // Elevators with no open inspections are absent from this map (aging shows "—")
   const latestInspByElevator = useMemo(() => {
     const TYPE_PRIORITY: Record<string, number> = { CAT5: 0, CAT1: 1 };
-    const isOpen = (insp: Inspection) => insp.status !== "COMPLETED";
+    const isOpen = (insp: Inspection) => !insp.completionDate;
 
     const beatsOpen = (challenger: Inspection, champion: Inspection): boolean => {
       const ny = (challenger.nextDueDate ?? "9999").slice(0, 4);
