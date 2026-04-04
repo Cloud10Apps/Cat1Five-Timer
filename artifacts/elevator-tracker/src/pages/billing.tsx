@@ -95,9 +95,10 @@ export default function Billing() {
         method: "POST",
         body: JSON.stringify({ priceId }),
       });
-      window.location.href = url;
+      window.open(url, "_blank");
     } catch (err: any) {
       toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
+    } finally {
       setCheckoutLoading(false);
     }
   };
@@ -106,9 +107,10 @@ export default function Billing() {
     setPortalLoading(true);
     try {
       const { url } = await apiFetch("/api/billing/portal", { method: "POST" });
-      window.location.href = url;
+      window.open(url, "_blank");
     } catch (err: any) {
       toast({ title: "Could not open billing portal", description: err.message, variant: "destructive" });
+    } finally {
       setPortalLoading(false);
     }
   };
