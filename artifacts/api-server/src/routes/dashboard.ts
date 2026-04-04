@@ -397,31 +397,45 @@ router.get("/aging", async (req, res) => {
     return;
   }
 
-  const buildingCustomerFilter = effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
+  // Use one inspection per elevator (highest-priority open one), matching the
+  // elevators-page display rule: earliest due year → CAT5 before CAT1 → earliest date.
+  const customerClause = effectiveIds !== null && effectiveIds.length > 0
+    ? sql`AND b.customer_id = ANY(ARRAY[${sql.join(effectiveIds.map(id => sql`${id}`), sql`, `)}])`
+    : sql``;
 
-  const rows = await db
-    .select({
-      bucket: sql<string>`CASE
-        WHEN ${inspectionsTable.nextDueDate}::date >= CURRENT_DATE THEN 'Current'
-        WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 1 AND 30 THEN '1–30'
-        WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 31 AND 60 THEN '31–60'
-        WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 61 AND 90 THEN '61–90'
-        WHEN CURRENT_DATE - ${inspectionsTable.nextDueDate}::date BETWEEN 91 AND 120 THEN '91–120'
+  const rows = await db.execute(sql`
+    WITH prioritized AS (
+      SELECT DISTINCT ON (i.elevator_id)
+        i.elevator_id,
+        i.next_due_date,
+        i.status
+      FROM inspections i
+      JOIN elevators e  ON e.id  = i.elevator_id
+      JOIN buildings b  ON b.id  = e.building_id
+      WHERE i.organization_id = ${orgId}
+        AND i.completion_date IS NULL
+        AND i.next_due_date   IS NOT NULL
+        ${customerClause}
+      ORDER BY
+        i.elevator_id,
+        EXTRACT(YEAR FROM i.next_due_date::date) ASC,
+        CASE i.inspection_type WHEN 'CAT5' THEN 0 WHEN 'CAT1' THEN 1 ELSE 99 END ASC,
+        i.next_due_date ASC
+    )
+    SELECT
+      CASE
+        WHEN next_due_date::date >= CURRENT_DATE                           THEN 'Current'
+        WHEN CURRENT_DATE - next_due_date::date BETWEEN 1  AND 30         THEN '1–30'
+        WHEN CURRENT_DATE - next_due_date::date BETWEEN 31 AND 60         THEN '31–60'
+        WHEN CURRENT_DATE - next_due_date::date BETWEEN 61 AND 90         THEN '61–90'
+        WHEN CURRENT_DATE - next_due_date::date BETWEEN 91 AND 120        THEN '91–120'
         ELSE '121+'
-      END`,
-      status: inspectionsTable.status,
-      count: count(),
-    })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      eq(inspectionsTable.organizationId, orgId),
-      buildingCustomerFilter,
-      sql`${inspectionsTable.completionDate} IS NULL`,
-      sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
-    ))
-    .groupBy(sql`1`, inspectionsTable.status);
+      END AS bucket,
+      status,
+      COUNT(*) AS count
+    FROM prioritized
+    GROUP BY 1, status
+  `) as unknown as { rows: { bucket: string; status: string; count: string }[] };
 
   const ORDER = ["Current", "1–30", "31–60", "61–90", "91–120", "121+"];
   const LABELS: Record<string, string> = {
@@ -439,7 +453,7 @@ router.get("/aging", async (req, res) => {
     ORDER.map(b => [b, EMPTY(b, LABELS[b], DAYS[b])])
   );
 
-  for (const row of rows) {
+  for (const row of rows.rows) {
     const entry = bucketMap.get(row.bucket);
     if (!entry) continue;
     const n = Number(row.count);
