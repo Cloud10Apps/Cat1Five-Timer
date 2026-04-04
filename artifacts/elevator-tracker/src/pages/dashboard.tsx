@@ -23,8 +23,9 @@ import {
 import dayjs from "dayjs";
 
 /* ─── label helpers ─── */
-/** "NOT_STARTED" or "NOT STARTED" → "Not Started" */
+/** "NOT_STARTED" or "NOT STARTED" → "Not Scheduled" */
 function toLabel(s: string) {
+  if (s === "NOT_STARTED" || s === "NOT STARTED") return "Not Scheduled";
   return s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
@@ -275,7 +276,7 @@ export default function Dashboard() {
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
           {/* NOT STARTED */}
           <div className="p-6 flex flex-col items-center justify-center text-center">
-            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">NOT STARTED</div>
+            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">NOT SCHEDULED</div>
             <div className="text-5xl font-black text-zinc-900">{summary?.notStartedCount ?? 0}</div>
           </div>
           {/* SCHEDULED */}
