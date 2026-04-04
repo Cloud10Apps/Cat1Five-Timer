@@ -236,12 +236,12 @@ export default function Inspections() {
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data }, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); },
-        onError:   (error: any) => { const msg = error?.data?.error; toast({ title: "Could not update inspection", description: msg, variant: "destructive" }); },
+        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not update inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
       });
     } else {
       createMutation.mutate({ data }, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); },
-        onError:   (error: any) => { const msg = error?.data?.error; toast({ title: "Could not add inspection", description: msg, variant: "destructive" }); },
+        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not add inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
       });
     }
   };

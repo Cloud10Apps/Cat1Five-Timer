@@ -135,6 +135,9 @@ async function maybeCreateFollowUp(
 
   if (existing.length > 0) return;
 
+  const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId);
+  if (dupCheck) return;
+
   await db.insert(inspectionsTable).values({
     elevatorId: completedInspection.elevatorId,
     organizationId: orgId,

@@ -458,7 +458,7 @@ export default function Elevators() {
             toast({ title: "Inspection saved" });
             setIsAddOpen(false);
           },
-          onError: () => toast({ title: "Failed to save inspection", variant: "destructive" }),
+          onError: (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not save inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
         }
       );
     } else {
@@ -470,7 +470,7 @@ export default function Elevators() {
             toast({ title: "Inspection created" });
             if (created && (created as any).id) setEditingInspection(created as Inspection);
           },
-          onError: (error: any) => { const msg = error?.data?.error; toast({ title: "Could not create inspection", description: msg, variant: "destructive" }); },
+          onError: (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not create inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
         }
       );
     }
