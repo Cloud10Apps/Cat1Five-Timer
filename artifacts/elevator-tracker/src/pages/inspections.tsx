@@ -319,7 +319,7 @@ export default function Inspections() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">All Inspections</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Complete compliance record across all elevators, buildings, and customers.</p>
+          <p className="text-sm text-muted-foreground mt-0.5 italic">Complete compliance record across all elevators, buildings, and customers.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" onClick={handleExport} className="gap-2">
@@ -574,7 +574,7 @@ export default function Inspections() {
                   </td>
                   {/* Bank */}
                   <td className={tc()}>
-                    <span className="text-zinc-500">{meta?.bank || <span className="text-zinc-300 italic">—</span>}</span>
+                    <span className="text-zinc-800">{meta?.bank || <span className="text-zinc-300 italic">—</span>}</span>
                   </td>
                   {/* Elevator */}
                   <td className={tc()}>
@@ -618,13 +618,13 @@ export default function Inspections() {
                   </td>
                   {/* Actions */}
                   <td className={tc("text-right")}>
-                    <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { openEdit(insp); setIsAddOpen(true); }} className="p-1.5 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => setDeleteId(insp.id)} disabled={deleteMutation.isPending} className="p-1.5 rounded hover:bg-red-50 text-zinc-300 hover:text-red-500 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEdit(insp); setIsAddOpen(true); }}>
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(insp.id)} disabled={deleteMutation.isPending}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
