@@ -530,7 +530,7 @@ export default function Inspections() {
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Scheduled</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Completed</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 148 }}>Status</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 60  }}></th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 60  }}>Actions</th>
             </tr>
           </thead>
 
