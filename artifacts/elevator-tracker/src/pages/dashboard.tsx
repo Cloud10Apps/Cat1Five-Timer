@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -108,35 +108,78 @@ function SectionHeader({ title, badge }: { title: string; badge?: React.ReactNod
   );
 }
 
+/** Shared live-data options: always consider data stale, poll every 2 min, refresh on tab focus */
+const LIVE_OPTS = {
+  staleTime: 0,
+  refetchInterval: 2 * 60 * 1000,
+  refetchOnWindowFocus: true,
+} as const;
+
+const DASHBOARD_KEYS = [
+  "/api/customers",
+  "/api/dashboard/summary",
+  "/api/dashboard/attention",
+  "/api/dashboard/status-breakdown",
+  "monthly-forecast",
+  "/api/dashboard/aging/v2",
+];
+
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [secondsAgo, setSecondsAgo] = useState(0);
+
+  /* tick the "last updated X seconds ago" counter */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsAgo(Math.floor((Date.now() - lastUpdated.getTime()) / 1000));
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
+
+  function refreshAll() {
+    DASHBOARD_KEYS.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
+    setLastUpdated(new Date());
+    setSecondsAgo(0);
+  }
 
   const { data: customers } = useQuery({
     queryKey: ["/api/customers"],
     queryFn: customersFetch,
+    ...LIVE_OPTS,
   });
 
-  const { data: summary,   isLoading: l1 } = useQuery({
+  const { data: summary,   isLoading: l1, dataUpdatedAt: t1 } = useQuery({
     queryKey: ["/api/dashboard/summary", selectedCustomerId],
     queryFn:  () => dashboardFetch("summary", selectedCustomerId),
+    ...LIVE_OPTS,
   });
   const { data: attention, isLoading: l2 } = useQuery({
     queryKey: ["/api/dashboard/attention", selectedCustomerId],
     queryFn:  () => dashboardFetch("attention", selectedCustomerId),
+    ...LIVE_OPTS,
   });
   const { data: breakdown, isLoading: l3 } = useQuery({
     queryKey: ["/api/dashboard/status-breakdown", selectedCustomerId],
     queryFn:  () => dashboardFetch("status-breakdown", selectedCustomerId),
+    ...LIVE_OPTS,
   });
   const { data: forecast,  isLoading: l4 } = useQuery({
     queryKey: ["monthly-forecast", selectedCustomerId],
     queryFn:  () => dashboardFetch("monthly-forecast", selectedCustomerId),
+    ...LIVE_OPTS,
   });
   const { data: aging, isLoading: l5 } = useQuery({
     queryKey: ["/api/dashboard/aging/v2", selectedCustomerId],
     queryFn:  () => dashboardFetch("aging", selectedCustomerId),
-    staleTime: 0,
+    ...LIVE_OPTS,
   });
+
+  /* Update lastUpdated whenever fresh data arrives */
+  useEffect(() => {
+    if (t1) { setLastUpdated(new Date(t1)); setSecondsAgo(0); }
+  }, [t1]);
 
   if (l1 || l2 || l3 || l4 || l5) {
     return (
@@ -169,9 +212,25 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-50 text-zinc-900 font-sans">
       <div className="flex-1 p-6 md:p-8 space-y-6">
 
-        {/* ── Header row: centered title + customer selector ── */}
+        {/* ── Header row: centered title + controls ── */}
         <div className="flex items-center gap-3">
-          <div className="flex-1" />
+          <div className="flex-1 flex items-center gap-2">
+            <button
+              onClick={refreshAll}
+              title="Refresh dashboard"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-zinc-200 bg-white text-xs text-zinc-500 hover:text-zinc-800 hover:border-zinc-300 shadow-sm transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                <path fillRule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08 1.01.75.75 0 1 1-1.3-.75 6 6 0 0 1 9.44-1.345l.842.841V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.345l-.842-.841v1.273a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.84.841a4.5 4.5 0 0 0 7.08-1.01.75.75 0 0 1 1.025-.295Z" clipRule="evenodd" />
+              </svg>
+              Refresh
+            </button>
+            <span className="text-xs text-zinc-400">
+              {secondsAgo < 60
+                ? "Just updated"
+                : `Updated ${Math.floor(secondsAgo / 60)}m ago`}
+            </span>
+          </div>
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
             {currentYear} Inspection Activity
           </h1>
