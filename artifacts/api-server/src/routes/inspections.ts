@@ -291,19 +291,6 @@ router.put("/:id", async (req, res) => {
   const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = body.data;
   const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
 
-  // Only block on duplicate year if the next-due year is actually changing from what's stored.
-  // This allows edits to records that are already in a pre-existing year-collision.
-  const existing = await fetchInspection(params.data.id, orgId);
-  const yearChanging = existing?.nextDueDate?.slice(0, 4) !== nextDueDate?.slice(0, 4);
-  if (yearChanging) {
-    const dup = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId, params.data.id);
-    if (dup) {
-      const typeLabel = inspectionType === "CAT5" ? "Cat5" : "Cat1";
-      res.status(409).json({ error: `A ${typeLabel} inspection for "${dup.elevatorName}" already exists with a Due Year of ${dup.dueYear}` });
-      return;
-    }
-  }
-
   await db.update(inspectionsTable)
     .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspectionDate ?? null, nextDueDate, scheduledDate: scheduledDate ?? null, completionDate: (status === "COMPLETED" ? completionDate : null) ?? null, status: status ?? "NOT_STARTED", notes: notes ?? null })
     .where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
