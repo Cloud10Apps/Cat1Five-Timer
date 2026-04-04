@@ -240,12 +240,12 @@ export default function Inspections() {
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data }, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); },
-        onError:   () => { toast({ title: "Failed to update inspection", variant: "destructive" }); },
+        onError:   (error: any) => { const msg = error?.data?.error; toast({ title: "Could not update inspection", description: msg, variant: "destructive" }); },
       });
     } else {
       createMutation.mutate({ data }, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); },
-        onError:   () => { toast({ title: "Failed to add inspection", variant: "destructive" }); },
+        onError:   (error: any) => { const msg = error?.data?.error; toast({ title: "Could not add inspection", description: msg, variant: "destructive" }); },
       });
     }
   };

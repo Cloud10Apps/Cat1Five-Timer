@@ -79,6 +79,33 @@ function formatInspection(r: any) {
   };
 }
 
+async function checkDuplicate(
+  elevatorId: number,
+  inspectionType: string,
+  nextDueDate: string | null,
+  orgId: number,
+  excludeId?: number
+): Promise<{ elevatorName: string; dueYear: string } | null> {
+  if (!nextDueDate) return null;
+  const dueYear = nextDueDate.slice(0, 4);
+  const conditions: any[] = [
+    eq(inspectionsTable.elevatorId, elevatorId),
+    eq(inspectionsTable.inspectionType, inspectionType as any),
+    eq(inspectionsTable.organizationId, orgId),
+    gte(inspectionsTable.nextDueDate, `${dueYear}-01-01`),
+    lte(inspectionsTable.nextDueDate, `${dueYear}-12-31`),
+  ];
+  if (excludeId !== undefined) conditions.push(ne(inspectionsTable.id, excludeId));
+  const rows = await db
+    .select({ id: inspectionsTable.id, elevatorName: elevatorsTable.name })
+    .from(inspectionsTable)
+    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
+    .where(and(...conditions))
+    .limit(1);
+  if (rows.length === 0) return null;
+  return { elevatorName: rows[0].elevatorName ?? `Unit ${elevatorId}`, dueYear };
+}
+
 async function maybeCreateFollowUp(
   completedInspection: { id: number; elevatorId: number; inspectionType: string; recurrenceYears: number; completionDate: string | null | undefined; status: string },
   orgId: number
@@ -206,6 +233,13 @@ router.post("/", async (req, res) => {
 
   const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
 
+  const dup = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId);
+  if (dup) {
+    const typeLabel = inspectionType === "CAT5" ? "Cat5" : "Cat1";
+    res.status(409).json({ error: `A ${typeLabel} inspection for "${dup.elevatorName}" already exists with a Due Year of ${dup.dueYear}` });
+    return;
+  }
+
   const inserted = await db.insert(inspectionsTable).values({
     elevatorId,
     organizationId: orgId,
@@ -249,6 +283,13 @@ router.put("/:id", async (req, res) => {
   const orgId = req.user!.organizationId;
   const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = body.data;
   const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
+
+  const dup = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId, params.data.id);
+  if (dup) {
+    const typeLabel = inspectionType === "CAT5" ? "Cat5" : "Cat1";
+    res.status(409).json({ error: `A ${typeLabel} inspection for "${dup.elevatorName}" already exists with a Due Year of ${dup.dueYear}` });
+    return;
+  }
 
   await db.update(inspectionsTable)
     .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspectionDate ?? null, nextDueDate, scheduledDate: scheduledDate ?? null, completionDate: (status === "COMPLETED" ? completionDate : null) ?? null, status: status ?? "NOT_STARTED", notes: notes ?? null })

@@ -470,7 +470,7 @@ export default function Elevators() {
             toast({ title: "Inspection created" });
             if (created && (created as any).id) setEditingInspection(created as Inspection);
           },
-          onError: () => toast({ title: "Failed to create inspection", variant: "destructive" }),
+          onError: (error: any) => { const msg = error?.data?.error; toast({ title: "Could not create inspection", description: msg, variant: "destructive" }); },
         }
       );
     }
