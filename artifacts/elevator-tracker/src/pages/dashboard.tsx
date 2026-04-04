@@ -352,7 +352,7 @@ export default function Dashboard() {
                     tick={{ fill: "#3f3f46", fontSize: 15, fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
-                    width={190}
+                    width={230}
                   />
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
