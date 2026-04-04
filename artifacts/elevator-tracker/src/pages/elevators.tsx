@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -72,6 +72,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 const elevatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -154,6 +157,9 @@ export default function Elevators() {
   const [selectedStatus,    setSelectedStatus]    = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
+  const [formCustomerId, setFormCustomerId] = useState<string>("all");
+  const [formCustomerOpen, setFormCustomerOpen] = useState(false);
+  const [formBuildingOpen, setFormBuildingOpen] = useState(false);
 
   // Collapsible group state
   const [collapsedCustomers, setCollapsedCustomers] = useState<Set<number>>(new Set());
@@ -206,6 +212,8 @@ export default function Elevators() {
     { customerId: customerIdFilter }, 
     { query: { queryKey: getListBuildingsQueryKey({ customerId: customerIdFilter }) } }
   );
+  // Unfiltered buildings used by the Add/Edit form so the user can pick any customer → building
+  const { data: allBuildings } = useListBuildings({}, { query: { queryKey: getListBuildingsQueryKey({}) } });
 
   // Elevator options for the dropdown (from the API-filtered list, before client-side filters)
   const elevatorOptions = useMemo(() => {
@@ -647,6 +655,7 @@ export default function Elevators() {
 
   const openEdit = (elevator: Elevator) => {
     setEditingElevator(elevator);
+    setFormCustomerId(elevator.customerId ? elevator.customerId.toString() : "all");
     form.reset({
       name: elevator.name,
       internalId: elevator.internalId || "",
@@ -696,34 +705,116 @@ export default function Elevators() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-        <div className="space-y-3">
+        {/* ── Step 1: Customer picker (local state, not a form field) ── */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium leading-none">Customer</p>
+          <Popover open={formCustomerOpen} onOpenChange={setFormCustomerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                role="combobox"
+                className={cn(
+                  "w-full justify-between font-normal",
+                  formCustomerId === "all" && "text-muted-foreground"
+                )}
+              >
+                <span className="truncate">
+                  {formCustomerId === "all"
+                    ? "Select a customer…"
+                    : (customers?.find((c) => c.id.toString() === formCustomerId)?.name ?? "Select a customer…")}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+              <Command>
+                <CommandInput placeholder="Search customers…" className="h-9" />
+                <CommandList>
+                  <CommandEmpty className="py-4 text-center text-sm text-muted-foreground">No customers found.</CommandEmpty>
+                  <CommandGroup>
+                    {customers?.map((c) => (
+                      <CommandItem
+                        key={c.id}
+                        value={c.name}
+                        onSelect={() => {
+                          setFormCustomerId(c.id.toString());
+                          form.setValue("buildingId", 0);
+                          setFormCustomerOpen(false);
+                        }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", formCustomerId === c.id.toString() ? "opacity-100" : "opacity-0")} />
+                        {c.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* ── Step 2: Building picker (RHF field, filtered by selected customer) ── */}
+        <div className="space-y-2">
           <FormField
             control={form.control}
             name="buildingId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Building</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value ? field.value.toString() : ""}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a building" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {buildings?.map((building) => (
-                      <SelectItem key={building.id} value={building.id.toString()}>
-                        {building.name}
-                        <span className="ml-1.5 text-muted-foreground">({building.customerName})</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const filteredBuildings = (allBuildings ?? []).filter(
+                (b) => formCustomerId === "all" || b.customerId === Number(formCustomerId)
+              );
+              const selectedBuilding = (allBuildings ?? []).find((b) => b.id === field.value);
+              return (
+                <FormItem>
+                  <FormLabel>Building</FormLabel>
+                  <Popover open={formBuildingOpen} onOpenChange={setFormBuildingOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          disabled={formCustomerId === "all"}
+                          className={cn(
+                            "w-full justify-between font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          <span className="truncate">
+                            {selectedBuilding ? selectedBuilding.name : (formCustomerId === "all" ? "Select a customer first" : "Select a building…")}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search buildings…" className="h-9" />
+                        <CommandList>
+                          <CommandEmpty className="py-4 text-center text-sm text-muted-foreground">No buildings found.</CommandEmpty>
+                          <CommandGroup>
+                            {filteredBuildings.map((b) => (
+                              <CommandItem
+                                key={b.id}
+                                value={b.name}
+                                onSelect={() => {
+                                  field.onChange(b.id);
+                                  setFormBuildingOpen(false);
+                                }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", field.value === b.id ? "opacity-100" : "opacity-0")} />
+                                {b.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         </div>
 
@@ -863,12 +954,16 @@ export default function Elevators() {
               form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
               setEditingElevator(null);
               resetInspForm();
+              setFormCustomerId("all");
+              setFormCustomerOpen(false);
+              setFormBuildingOpen(false);
             }
           }}>
             <DialogTrigger asChild>
               <Button onClick={() => {
                 setEditingElevator(null);
                 resetInspForm();
+                setFormCustomerId("all");
                 form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
               }}>
                 <Plus className="mr-2 h-4 w-4" />
