@@ -97,6 +97,47 @@ const inspectionSchema = z.object({
 
 type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
+/* ── Aging bucket helpers ── */
+const AGING_BUCKET_OPTIONS = [
+  { value: "current", label: "Current"    },
+  { value: "1-30",    label: "1–30 Days"  },
+  { value: "31-60",   label: "31–60 Days" },
+  { value: "61-90",   label: "61–90 Days" },
+  { value: "90plus",  label: "90+ Days"   },
+];
+
+function getAgingDays(due: string | null | undefined): number | null {
+  if (!due) return null;
+  return dayjs().diff(dayjs(due), "day");
+}
+
+function getAgingBucketValue(due: string | null | undefined): string | null {
+  const days = getAgingDays(due);
+  if (days === null) return null;
+  if (days <= 0) return "current";
+  if (days <= 30) return "1-30";
+  if (days <= 60) return "31-60";
+  if (days <= 90) return "61-90";
+  return "90plus";
+}
+
+function AgingBucketPill({ due }: { due: string | null | undefined }) {
+  const bucket = getAgingBucketValue(due);
+  if (!bucket) return <span className="text-zinc-300 text-sm">—</span>;
+  const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
+  const cls =
+    bucket === "current" ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+    bucket === "1-30"    ? "bg-amber-100  text-amber-700  border-amber-200"     :
+    bucket === "31-60"   ? "bg-orange-100 text-orange-700 border-orange-200"    :
+    bucket === "61-90"   ? "bg-red-100    text-red-700    border-red-200"       :
+                           "bg-red-200    text-red-800    border-red-300";
+  return (
+    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
 export default function Elevators() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
@@ -104,8 +145,9 @@ export default function Elevators() {
   const [selectedBank, setSelectedBank] = useState<string>("all");
   const [selectedElevatorId, setSelectedElevatorId] = useState<string>("all");
   const [selectedInspType, setSelectedInspType] = useState<string>("all");
-  const [filterDueMonth, setFilterDueMonth] = useState<string>("all");
-  const [filterDueYear,  setFilterDueYear]  = useState<string>("all");
+  const [filterDueMonth,    setFilterDueMonth]    = useState<string>("all");
+  const [filterDueYear,     setFilterDueYear]     = useState<string>("all");
+  const [filterAgingBucket, setFilterAgingBucket] = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
 
@@ -305,9 +347,13 @@ export default function Elevators() {
         const insp = latestInspByElevator.get(el.id);
         if (!insp || insp.inspectionType !== selectedInspType) return false;
       }
+      if (filterAgingBucket !== "all") {
+        const due = nextDueDateByElevator.get(el.id);
+        if (getAgingBucketValue(due) !== filterAgingBucket) return false;
+      }
       return true;
     });
-  }, [elevators, selectedElevatorId, nextDueDateByElevator, dueYearsByElevator, filterDueMonth, filterDueYear, selectedInspType, latestInspByElevator]);
+  }, [elevators, selectedElevatorId, nextDueDateByElevator, dueYearsByElevator, filterDueMonth, filterDueYear, selectedInspType, latestInspByElevator, filterAgingBucket]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -1127,7 +1173,15 @@ export default function Elevators() {
             searchPlaceholder="Search years..."
             width="w-[140px]"
           />
-          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || selectedInspType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all") && (
+          <FilterCombobox
+            value={filterAgingBucket}
+            onValueChange={setFilterAgingBucket}
+            options={AGING_BUCKET_OPTIONS}
+            placeholder="Aging Bucket"
+            searchPlaceholder="Search buckets..."
+            width="w-[160px]"
+          />
+          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || selectedInspType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all" || filterAgingBucket !== "all") && (
             <button
               onClick={() => {
                 setSelectedCustomerId("all");
@@ -1138,6 +1192,7 @@ export default function Elevators() {
                 setSelectedInspType("all");
                 setFilterDueMonth("all");
                 setFilterDueYear("all");
+                setFilterAgingBucket("all");
               }}
               className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 hover:text-red-700 transition-colors"
             >
@@ -1199,7 +1254,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_130px_80px]"
+                  className="w-full grid bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_110px_130px_80px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1232,6 +1287,12 @@ export default function Elevators() {
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Next Due</span>
+                  </div>
+                  <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Aging (Days)</span>
+                  </div>
+                  <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Aging Bucket</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Scheduled</span>
@@ -1294,7 +1355,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_130px_80px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid grid-cols-[1fr_100px_100px_100px_170px_85px_130px_130px_80px_110px_130px_80px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
@@ -1343,6 +1404,19 @@ export default function Elevators() {
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
+                                          </div>
+                                          {/* Aging Days */}
+                                          <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
+                                            {(() => {
+                                              const days = getAgingDays(due);
+                                              if (days === null) return <span className="text-zinc-300 text-sm">—</span>;
+                                              const color = days > 90 ? "text-red-700 font-bold" : days > 60 ? "text-red-600 font-semibold" : days > 30 ? "text-orange-600 font-semibold" : days > 0 ? "text-amber-600 font-semibold" : "text-emerald-600";
+                                              return <span className={`text-xs tabular-nums ${color}`}>{days > 0 ? `+${days}` : days}</span>;
+                                            })()}
+                                          </div>
+                                          {/* Aging Bucket */}
+                                          <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
+                                            <AgingBucketPill due={due} />
                                           </div>
                                           {/* Scheduled */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
