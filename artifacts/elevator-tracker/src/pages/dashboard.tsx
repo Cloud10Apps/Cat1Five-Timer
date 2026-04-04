@@ -170,21 +170,24 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-50 text-zinc-900 font-sans">
       <div className="flex-1 p-6 md:p-8 space-y-6">
 
-        {/* ── Header row: year badge + customer selector ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <span className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">
+        {/* ── Header row: centered title + customer selector ── */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1" />
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
             {currentYear} Inspection Activity
-          </span>
-          <select
-            value={selectedCustomerId ?? ""}
-            onChange={e => setSelectedCustomerId(e.target.value ? parseInt(e.target.value) : null)}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[200px]"
-          >
-            <option value="">All Customers</option>
-            {customerList.map((c: any) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+          </h1>
+          <div className="flex-1 flex justify-end">
+            <select
+              value={selectedCustomerId ?? ""}
+              onChange={e => setSelectedCustomerId(e.target.value ? parseInt(e.target.value) : null)}
+              className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[200px]"
+            >
+              <option value="">All Customers</option>
+              {customerList.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* ── KPI Strip ── */}
