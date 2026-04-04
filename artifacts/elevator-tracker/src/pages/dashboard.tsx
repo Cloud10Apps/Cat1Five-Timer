@@ -476,7 +476,7 @@ export default function Dashboard() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
-                  <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                  <TableRow className="hover:bg-transparent border-b border-zinc-200">
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4 text-center">Unit / Building</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Type</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Status</TableHead>
@@ -494,7 +494,7 @@ export default function Dashboard() {
                   ) : overdueItems.map((insp: any) => {
                     const daysOver = insp.nextDueDate ? dayjs().diff(dayjs(insp.nextDueDate), "day") : null;
                     return (
-                      <TableRow key={insp.id} className="hover:bg-red-50/40 border-b border-zinc-100 relative">
+                      <TableRow key={insp.id} className="hover:bg-red-50/40 border-b border-zinc-200 relative">
                         <TableCell className="py-3 pl-4">
                           <div className="font-semibold text-sm text-zinc-900 leading-snug">{insp.elevatorName}</div>
                           <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
@@ -542,7 +542,7 @@ export default function Dashboard() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-50">
-                  <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                  <TableRow className="hover:bg-transparent border-b border-zinc-200">
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4 text-center">Unit / Building</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Type</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-center">Status</TableHead>
@@ -560,7 +560,7 @@ export default function Dashboard() {
                   ) : upcoming.map((insp: any) => {
                     const daysUntil = insp.nextDueDate ? dayjs(insp.nextDueDate).diff(dayjs(), "day") : null;
                     return (
-                      <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-100">
+                      <TableRow key={insp.id} className="hover:bg-zinc-50/80 border-b border-zinc-200">
                         <TableCell className="py-3 pl-4">
                           <div className="font-semibold text-sm text-zinc-900 leading-snug">{insp.elevatorName}</div>
                           <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
