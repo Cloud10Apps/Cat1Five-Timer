@@ -151,6 +151,7 @@ export default function Elevators() {
   const [filterDueMonth,    setFilterDueMonth]    = useState<string>("all");
   const [filterDueYear,     setFilterDueYear]     = useState<string>("all");
   const [filterAgingBucket, setFilterAgingBucket] = useState<string>("all");
+  const [selectedStatus,    setSelectedStatus]    = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
 
@@ -329,9 +330,13 @@ export default function Elevators() {
       if (filterAgingBucket !== "all") {
         if (getAgingBucketValue(rowDue) !== filterAgingBucket) return false;
       }
+      if (selectedStatus !== "all") {
+        const trueStatus = rowInsp ? ((rowInsp as any).trueStatus ?? rowInsp.status) : "NOT_STARTED";
+        if (trueStatus !== selectedStatus) return false;
+      }
       return true;
     });
-  }, [elevators, selectedElevatorId, latestInspByElevator, filterDueMonth, filterDueYear, selectedInspType, filterAgingBucket]);
+  }, [elevators, selectedElevatorId, latestInspByElevator, filterDueMonth, filterDueYear, selectedInspType, filterAgingBucket, selectedStatus]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -1159,7 +1164,20 @@ export default function Elevators() {
             searchPlaceholder="Search buckets..."
             width="w-[160px]"
           />
-          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || selectedInspType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all" || filterAgingBucket !== "all") && (
+          <FilterCombobox
+            value={selectedStatus}
+            onValueChange={setSelectedStatus}
+            options={[
+              { value: "NOT_STARTED", label: "Not Scheduled" },
+              { value: "SCHEDULED",   label: "Scheduled" },
+              { value: "IN_PROGRESS", label: "In Progress" },
+              { value: "COMPLETED",   label: "Completed" },
+            ]}
+            placeholder="All Statuses"
+            searchPlaceholder="Search statuses..."
+            width="w-[170px]"
+          />
+          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || selectedInspType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all" || filterAgingBucket !== "all" || selectedStatus !== "all") && (
             <button
               onClick={() => {
                 setSelectedCustomerId("all");
@@ -1171,6 +1189,7 @@ export default function Elevators() {
                 setFilterDueMonth("all");
                 setFilterDueYear("all");
                 setFilterAgingBucket("all");
+                setSelectedStatus("all");
               }}
               className="h-8 px-3 flex items-center gap-1.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 hover:text-red-700 transition-colors"
             >
