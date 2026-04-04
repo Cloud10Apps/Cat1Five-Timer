@@ -82,7 +82,6 @@ const STATUS_OPTIONS = [
   { value: "SCHEDULED",   label: "Scheduled" },
   { value: "IN_PROGRESS", label: "In Progress" },
   { value: "COMPLETED",   label: "Completed" },
-  { value: "OVERDUE",     label: "Overdue" },
 ];
 
 const INSP_TYPE_OPTIONS = [
