@@ -554,17 +554,22 @@ export default function Inspections() {
               const bg = rowBg(rowIdx, isOverdue, noNextDue);
               const hoverCls = rowBgHover(rowIdx, isOverdue, noNextDue);
               const meta = elevatorMeta.get(insp.elevatorId);
-              // Apply bg directly to every cell so all columns share the same shade
-              const tc = (...extras: string[]) => [tdBase, bg, ...extras].filter(Boolean).join(" ");
+              // Group separator: bold top border whenever the elevator changes
+              const prevInsp = rowIdx > 0 ? pagedRows[rowIdx - 1] : null;
+              const isNewGroup = rowIdx === 0 || prevInsp?.elevatorId !== insp.elevatorId;
+              const sep = isNewGroup && rowIdx > 0 ? "border-t-[3px] border-t-zinc-400" : "";
+              // Apply bg + separator directly to every cell
+              const tc = (...extras: string[]) => [tdBase, bg, sep, ...extras].filter(Boolean).join(" ");
+              const stickyCls = (pos: string) => `${stickyTd(pos, bg)} ${sep}`.trim();
 
               return (
                 <tr key={insp.id} className={`group transition-colors ${hoverCls}`}>
                   {/* Sticky: Customer */}
-                  <td className={stickyTd("left-0", bg)} style={{ minWidth: 150 }}>
+                  <td className={stickyCls("left-0")} style={{ minWidth: 150 }}>
                     <span title={insp.customerName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[138px]">{insp.customerName ?? "—"}</span>
                   </td>
                   {/* Sticky: Building */}
-                  <td className={stickyTd("left-[150px]", bg)} style={{ minWidth: 130, borderRight: "1px solid #e4e4e7" }}>
+                  <td className={stickyCls("left-[150px]")} style={{ minWidth: 130, borderRight: "1px solid #e4e4e7" }}>
                     <span title={insp.buildingName ?? undefined} className="text-zinc-700 truncate block max-w-[118px]">{insp.buildingName ?? "—"}</span>
                   </td>
                   {/* Bank */}
