@@ -307,10 +307,10 @@ export default function Inspections() {
   const tdBase = "px-3 py-2 text-xs text-zinc-700 border-b border-zinc-200 whitespace-nowrap align-middle";
   const stickyTd = (left: string, bg: string) => `${tdBase} sticky ${left} z-10 ${bg}`;
 
-  const rowBg = (idx: number, overdue: boolean) =>
-    overdue ? "bg-red-50" : idx % 2 === 0 ? "bg-white" : "bg-zinc-50/60";
-  const rowBgHover = (idx: number, overdue: boolean) =>
-    overdue ? "hover:bg-red-100/60" : idx % 2 === 0 ? "hover:bg-blue-50/30" : "hover:bg-blue-50/40";
+  const rowBg = (idx: number, overdue: boolean, noNextDue: boolean) =>
+    noNextDue ? "bg-red-200/60" : overdue ? "bg-red-50" : idx % 2 === 0 ? "bg-white" : "bg-zinc-50/60";
+  const rowBgHover = (idx: number, overdue: boolean, noNextDue: boolean) =>
+    noNextDue ? "hover:bg-red-200/80" : overdue ? "hover:bg-red-100/60" : idx % 2 === 0 ? "hover:bg-blue-50/30" : "hover:bg-blue-50/40";
 
   return (
     <div className="flex flex-col gap-5 animate-in fade-in duration-500 h-full">
@@ -550,8 +550,9 @@ export default function Inspections() {
             ) : pagedRows.map((insp, rowIdx) => {
               const today = dayjs();
               const isOverdue = insp.status !== "COMPLETED" && !!insp.nextDueDate && dayjs(insp.nextDueDate).isBefore(today);
-              const bg = rowBg(rowIdx, isOverdue);
-              const hoverCls = rowBgHover(rowIdx, isOverdue);
+              const noNextDue = !insp.nextDueDate && insp.status !== "COMPLETED";
+              const bg = rowBg(rowIdx, isOverdue, noNextDue);
+              const hoverCls = rowBgHover(rowIdx, isOverdue, noNextDue);
               const meta = elevatorMeta.get(insp.elevatorId);
 
               return (
