@@ -4,6 +4,7 @@ import { db, usersTable, userCustomersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { UpdateUserBody, InviteUserBody, UpdateUserParams } from "@workspace/api-zod";
+import { syncSeatsToStripe } from "../syncSeats.js";
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.post("/invite", requireAdmin, async (req, res) => {
     isActive: true,
     allCustomers: true,
   }).returning();
+  syncSeatsToStripe(orgId).catch(() => {});
   res.status(201).json(formatUser(inserted[0]));
 });
 
@@ -65,6 +67,9 @@ router.put("/:id", requireAdmin, async (req, res) => {
   if (!updated[0]) {
     res.status(404).json({ error: "Not found" });
     return;
+  }
+  if (body.data.isActive !== undefined) {
+    syncSeatsToStripe(orgId).catch(() => {});
   }
   res.json(formatUser(updated[0]));
 });
