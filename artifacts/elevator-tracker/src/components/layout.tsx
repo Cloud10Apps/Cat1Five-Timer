@@ -36,7 +36,7 @@ export function Layout({ children }: LayoutProps) {
     { name: "Customers",   href: "/customers",   icon: Users },
     { name: "Buildings",   href: "/buildings",   icon: Building },
     { name: "Elevators",   href: "/elevators",   icon: ArrowUpSquare },
-    { name: "Inspection History", href: "/inspections", icon: ClipboardCheck },
+    { name: "Inspections", href: "/inspections", icon: ClipboardCheck },
     { name: "Calendar",    href: "/calendar",    icon: Calendar },
   ];
 
