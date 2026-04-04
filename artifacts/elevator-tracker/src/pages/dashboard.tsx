@@ -102,8 +102,9 @@ export default function Dashboard() {
     queryFn:  () => dashboardFetch("monthly-forecast", selectedCustomerId),
   });
   const { data: aging, isLoading: l5 } = useQuery({
-    queryKey: ["/api/dashboard/aging", selectedCustomerId],
+    queryKey: ["/api/dashboard/aging/v2", selectedCustomerId],
     queryFn:  () => dashboardFetch("aging", selectedCustomerId),
+    staleTime: 0,
   });
 
   if (l1 || l2 || l3 || l4 || l5) {
@@ -239,12 +240,6 @@ export default function Dashboard() {
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
                     contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "12px" }}
-                  />
-                  <Legend
-                    iconType="circle"
-                    verticalAlign="top"
-                    align="center"
-                    wrapperStyle={{ fontSize: "11px", color: "#3f3f46", paddingBottom: "6px" }}
                   />
                   <Bar dataKey="notStarted" name="Not Started" stackId="s" fill="#d4d4d8" radius={[0, 0, 0, 0]} barSize={20} />
                   <Bar dataKey="scheduled"  name="Scheduled"   stackId="s" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={20} />
