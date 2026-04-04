@@ -1157,14 +1157,6 @@ export default function Elevators() {
             width="w-[140px]"
           />
           <FilterCombobox
-            value={filterAgingBucket}
-            onValueChange={setFilterAgingBucket}
-            options={AGING_BUCKET_OPTIONS}
-            placeholder="Aging Bucket"
-            searchPlaceholder="Search buckets..."
-            width="w-[160px]"
-          />
-          <FilterCombobox
             value={selectedStatus}
             onValueChange={setSelectedStatus}
             options={[
@@ -1176,6 +1168,14 @@ export default function Elevators() {
             placeholder="All Statuses"
             searchPlaceholder="Search statuses..."
             width="w-[170px]"
+          />
+          <FilterCombobox
+            value={filterAgingBucket}
+            onValueChange={setFilterAgingBucket}
+            options={AGING_BUCKET_OPTIONS}
+            placeholder="Aging Bucket"
+            searchPlaceholder="Search buckets..."
+            width="w-[160px]"
           />
           {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || selectedInspType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all" || filterAgingBucket !== "all" || selectedStatus !== "all") && (
             <button
