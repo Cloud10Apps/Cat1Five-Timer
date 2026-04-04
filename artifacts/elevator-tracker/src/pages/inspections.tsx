@@ -464,8 +464,8 @@ export default function Inspections() {
           <div className="h-4 w-px bg-zinc-200" />
 
           <FilterCombobox value={selectedStatus}   onValueChange={(v) => { setSelectedStatus(v);   setCurrentPage(1); }} options={STATUS_OPTIONS}     placeholder="All Statuses"    searchPlaceholder="Search statuses..."         width="w-[145px]" />
-          <FilterCombobox value={selectedInspType} onValueChange={(v) => { setSelectedInspType(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS}  placeholder="All Insp Types"  searchPlaceholder="Search inspection types..." width="w-[155px]" />
-          <FilterCombobox value={selectedUnitType} onValueChange={(v) => { setSelectedUnitType(v); setCurrentPage(1); }} options={UNIT_TYPE_OPTIONS}  placeholder="All Unit Types"  searchPlaceholder="Search unit types..."       width="w-[150px]" />
+          <FilterCombobox value={selectedInspType} onValueChange={(v) => { setSelectedInspType(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS}  placeholder="All Insp Types"  searchPlaceholder="Search inspection types..." width="w-[175px]" />
+          <FilterCombobox value={selectedUnitType} onValueChange={(v) => { setSelectedUnitType(v); setCurrentPage(1); }} options={UNIT_TYPE_OPTIONS}  placeholder="All Unit Types"  searchPlaceholder="Search unit types..."       width="w-[170px]" />
 
           <div className="h-4 w-px bg-zinc-200" />
 
@@ -523,13 +523,13 @@ export default function Inspections() {
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 105 }}>Bank</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 200 }}>Elevator</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 100 }}>Unit Type</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 148 }}>Status</th>
               <th className={`${thBase} sticky top-0 z-20 text-center`} style={{ minWidth: 76 }}>Type</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Last Insp.</th>
               <th className={`${thBase} sticky top-0 z-20 text-center`} style={{ minWidth: 68 }}>Recur.</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Next Due</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Scheduled</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Completed</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 148 }}>Status</th>
               <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 60  }}></th>
             </tr>
           </thead>
@@ -578,10 +578,6 @@ export default function Inspections() {
                       ? <span className="capitalize text-zinc-600">{(insp as any).elevatorType === "hydraulic" ? "Hydraulic" : (insp as any).elevatorType === "traction" ? "Traction" : "Other"}</span>
                       : <span className="text-zinc-300">—</span>}
                   </td>
-                  {/* Status */}
-                  <td className={tdBase}>
-                    <StatusBadge status={insp.status} />
-                  </td>
                   {/* Inspection Type */}
                   <td className={`${tdBase} text-center`}>
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
@@ -607,6 +603,10 @@ export default function Inspections() {
                   {/* Completed */}
                   <td className={`${tdBase} tabular-nums`}>
                     {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
+                  </td>
+                  {/* Status */}
+                  <td className={tdBase}>
+                    <StatusBadge status={insp.status} />
                   </td>
                   {/* Actions */}
                   <td className={`${tdBase} text-right`}>
