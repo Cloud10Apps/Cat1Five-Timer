@@ -7,7 +7,7 @@ export const STATUS_COLORS: Record<string, string> = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  NOT_STARTED: "Not Started",
+  NOT_STARTED: "Not Scheduled",
   SCHEDULED: "Scheduled",
   IN_PROGRESS: "In Progress",
   COMPLETED: "Completed",

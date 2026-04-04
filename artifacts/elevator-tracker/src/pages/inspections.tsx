@@ -78,7 +78,7 @@ const inspectionSchema = z.object({
 type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
 const STATUS_OPTIONS = [
-  { value: "NOT_STARTED", label: "Not Started" },
+  { value: "NOT_STARTED", label: "Not Scheduled" },
   { value: "SCHEDULED",   label: "Scheduled" },
   { value: "IN_PROGRESS", label: "In Progress" },
   { value: "COMPLETED",   label: "Completed" },
@@ -437,7 +437,7 @@ export default function Inspections() {
                         <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val !== "COMPLETED") form.setValue("completionDate", ""); }}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                            <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
                             <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                             <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                             <SelectItem value="COMPLETED">Completed</SelectItem>

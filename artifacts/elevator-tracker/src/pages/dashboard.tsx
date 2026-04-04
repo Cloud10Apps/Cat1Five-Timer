@@ -358,7 +358,7 @@ export default function Dashboard() {
                     cursor={{ fill: "#f4f4f5" }}
                     contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "12px" }}
                   />
-                  <Bar dataKey="notStarted" name="Not Started" stackId="s" fill="#d4d4d8" radius={[0, 0, 0, 0]} barSize={20} />
+                  <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill="#d4d4d8" radius={[0, 0, 0, 0]} barSize={20} />
                   <Bar dataKey="scheduled"  name="Scheduled"   stackId="s" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={20} />
                   <Bar dataKey="inProgress" name="In Progress" stackId="s" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20} />
                 </BarChart>
@@ -437,7 +437,7 @@ export default function Dashboard() {
                     cursor={{ fill: "#f4f4f5" }}
                     contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
                   />
-                  <Bar dataKey="notStarted" name="Not Started" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="notStarted" name="Not Scheduled" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="inProgress" name="In Progress" stackId="stack" fill="#f59e0b" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="completed"  name="Completed"  stackId="stack" fill="#22c55e" radius={[3, 3, 0, 0]} />

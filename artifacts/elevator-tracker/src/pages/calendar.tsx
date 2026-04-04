@@ -346,7 +346,7 @@ export default function CalendarView() {
                               <SelectTrigger><SelectValue /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                              <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
                               <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                               <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                               <SelectItem value="COMPLETED">Completed</SelectItem>
