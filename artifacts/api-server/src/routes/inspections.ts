@@ -75,6 +75,7 @@ function formatInspection(r: any) {
     scheduledDate: r.scheduledDate ?? undefined,
     completionDate: r.completionDate ?? undefined,
     status,
+    trueStatus: r.status,
     notes: r.notes ?? undefined,
     organizationId: r.organizationId,
     createdAt: r.createdAt.toISOString(),

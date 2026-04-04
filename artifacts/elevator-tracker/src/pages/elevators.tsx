@@ -1355,7 +1355,7 @@ export default function Elevators() {
                                           {/* Status */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
                                             {latestInsp
-                                              ? <StatusBadge status={latestInsp.status ?? "NOT_STARTED"} />
+                                              ? <StatusBadge status={(latestInsp as any).trueStatus ?? latestInsp.status ?? "NOT_STARTED"} />
                                               : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Insp Type */}
