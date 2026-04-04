@@ -1329,7 +1329,7 @@ export default function Elevators() {
                                       const isSoon = !isOverdue && !!due && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                                       const scheduledDate = latestInsp?.scheduledDate?.slice(0, 10);
                                       const completionDate = lastCompletedByElevator.get(elevator.id);
-                                      const nameIndent = "pl-24";
+                                      const nameIndent = "pl-40";
                                       return (
                                         <div
                                           key={elevator.id}
