@@ -328,7 +328,7 @@ export default function Dashboard() {
 
           {/* Inspection Aging — horizontal stacked bar by status */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="Open Inspection Aging" />
+            <SectionHeader title="Open Inspections by Aging and Status" />
             <div className="p-4 h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
