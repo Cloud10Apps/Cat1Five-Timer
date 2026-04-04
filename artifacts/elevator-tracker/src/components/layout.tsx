@@ -78,7 +78,7 @@ export function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <SidebarProvider style={{ "--sidebar-width": "18rem" } as React.CSSProperties}>
+    <SidebarProvider style={{ "--sidebar-width": "15rem" } as React.CSSProperties}>
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar className="border-r border-white/5">
           {/* Logo — centered with symmetric padding */}
@@ -135,11 +135,11 @@ export function Layout({ children }: LayoutProps) {
         </Sidebar>
 
         <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-card px-6">
+          <header className="flex h-12 items-center gap-4 border-b bg-card px-4">
             <SidebarTrigger />
             <div className="w-full flex-1" />
           </header>
-          <main className="flex-1 overflow-y-auto p-6 bg-background">
+          <main className="flex-1 overflow-y-auto p-4 bg-background">
             {children}
           </main>
         </div>

@@ -579,7 +579,7 @@ export default function Inspections() {
       </div>
 
       {/* ── Table ── */}
-      <div className="relative overflow-auto rounded-xl border border-zinc-200 shadow-sm bg-white" style={{ maxHeight: "calc(100vh - 310px)" }}>
+      <div className="relative overflow-auto rounded-xl border border-zinc-200 shadow-sm bg-white" style={{ maxHeight: "calc(100vh - 290px)" }}>
         <table className="min-w-full border-separate border-spacing-0 text-sm">
 
           {/* Sticky header */}

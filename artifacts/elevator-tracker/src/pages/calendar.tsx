@@ -201,7 +201,7 @@ export default function CalendarView() {
   const selectedDayInspections = selectedDate ? getDayInspections(selectedDate) : [];
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-500" style={{ height: "calc(100vh - 112px)" }}>
+    <div className="flex flex-col animate-in fade-in duration-500" style={{ height: "calc(100vh - 96px)" }}>
       {/* Header */}
       <div className="flex justify-between items-center mb-4 shrink-0">
         <div>
