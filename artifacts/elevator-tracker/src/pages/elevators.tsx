@@ -135,7 +135,7 @@ function AgingBucketPill({ due }: { due: string | null | undefined }) {
     bucket === "91-120"   ? "bg-red-200     text-red-800     border-red-300"     :
                             "bg-red-300     text-red-900     border-red-400";
   return (
-    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${cls}`}>
+    <span className={`text-xs font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${cls}`}>
       {label}
     </span>
   );
@@ -1075,7 +1075,7 @@ export default function Elevators() {
 
         {/* Row 1: filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
+          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
           <div className="h-4 w-px bg-zinc-200" />
           <FilterCombobox
             value={selectedCustomerId}
@@ -1182,7 +1182,7 @@ export default function Elevators() {
         {/* Row 2: expand/collapse depth selector */}
         {!isLoading && grouped.length > 0 && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none">Expand</span>
             <nav className="flex items-center gap-0.5">
               {([
                 { key: "customers", label: "Customers", action: collapseAll },
@@ -1246,37 +1246,37 @@ export default function Elevators() {
                     </span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Unit ID</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Unit ID</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">State ID</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">State ID</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Unit Type</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Unit Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Status</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Status</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Insp Type</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Insp Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Last Inspection</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Last Inspection</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Next Due</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Next Due</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Aging (Days)</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Aging (Days)</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Aging Bucket</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Aging Bucket</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Scheduled</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Scheduled</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white text-center">Actions</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white text-center">Actions</span>
                   </div>
                 </button>
 
@@ -1362,7 +1362,7 @@ export default function Elevators() {
                                           {/* Insp Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
                                             {latestInsp ? (
-                                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
+                                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                                                 {latestInsp.inspectionType}
                                               </span>
                                             ) : <span className="text-zinc-400 text-sm">—</span>}
