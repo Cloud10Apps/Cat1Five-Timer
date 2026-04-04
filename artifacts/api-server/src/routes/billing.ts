@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, organizationsTable } from "@workspace/db";
-import { eq, count } from "drizzle-orm";
+import { eq, count, and } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { getUncachableStripeClient, getStripePublishableKey } from "../stripeClient.js";
 import { stripeStorage } from "../stripeStorage.js";
@@ -20,12 +20,12 @@ router.get("/status", async (req, res) => {
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
 
   if (!org.stripeSubscriptionId) {
-    const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(eq(usersTable.organizationId, orgId));
+    const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
     return res.json({ status: "inactive", subscription: null, userCount });
   }
 
   const subscription = await stripeStorage.getSubscription(org.stripeSubscriptionId);
-  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(eq(usersTable.organizationId, orgId));
+  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
 
   res.json({
     status: subscription?.status ?? "inactive",
@@ -51,7 +51,7 @@ router.post("/checkout", requireAdmin, async (req, res) => {
   if (!priceId) return res.status(400).json({ error: "priceId required" });
 
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
-  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(eq(usersTable.organizationId, orgId));
+  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
 
   const stripe = await getUncachableStripeClient();
 
@@ -107,7 +107,7 @@ router.post("/sync-seats", requireAdmin, async (req, res) => {
     return res.status(400).json({ error: "No active subscription" });
   }
 
-  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(eq(usersTable.organizationId, orgId));
+  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
   const stripe = await getUncachableStripeClient();
 
   const subscription = await stripe.subscriptions.retrieve(org.stripeSubscriptionId);
