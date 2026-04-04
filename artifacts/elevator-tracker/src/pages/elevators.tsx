@@ -1179,25 +1179,25 @@ export default function Elevators() {
         <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden">
 
           {/* Header strip */}
-          <div className="flex items-center justify-between px-4 py-3 bg-zinc-900">
+          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600">
             <div className="flex items-center gap-2.5">
-              <SlidersHorizontal className="h-4 w-4 text-zinc-400" />
+              <SlidersHorizontal className="h-4 w-4 text-blue-200" />
               <span className="text-sm font-bold text-white uppercase tracking-wider">Filters</span>
               {activeFilterCount > 0 && (
-                <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-amber-500 text-white text-[11px] font-bold leading-none">
+                <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-amber-400 text-blue-900 text-[11px] font-bold leading-none">
                   {activeFilterCount}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-zinc-400 tabular-nums">
+              <span className="text-sm text-blue-200 tabular-nums">
                 <span className="font-bold text-white">{filteredElevators.length}</span>
                 <span className="ml-1.5">{filteredElevators.length === 1 ? "elevator" : "elevators"}</span>
               </span>
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearAll}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-800 hover:bg-red-900/50 border border-zinc-700 hover:border-red-700/60 px-2.5 py-1 rounded-md transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-white/20 hover:bg-red-500 border border-white/30 hover:border-red-400 px-2.5 py-1 rounded-md transition-colors"
                 >
                   <X className="h-3 w-3" /> Clear all
                 </button>
