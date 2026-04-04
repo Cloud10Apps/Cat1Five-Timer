@@ -499,18 +499,18 @@ export default function Dashboard() {
                           <div className="font-semibold text-sm text-zinc-900 leading-snug">{insp.elevatorName}</div>
                           <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
                         </TableCell>
-                        <TableCell className="py-3">
+                        <TableCell className="py-3 text-center">
                           <InspectionTypeBadge type={insp.inspectionType} />
                         </TableCell>
-                        <TableCell className="py-3">
+                        <TableCell className="py-3 text-center">
                           <StatusBadge status={insp.rawStatus} />
                         </TableCell>
-                        <TableCell className="text-right py-3 pr-4">
+                        <TableCell className="text-center py-3 pr-4">
                           <div className="text-sm font-semibold text-zinc-900 leading-snug">
                             {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right py-3 pr-4">
+                        <TableCell className="text-center py-3 pr-4">
                           {daysOver !== null && <AgingBadge days={daysOver} mode="overdue" />}
                         </TableCell>
                       </TableRow>
@@ -565,18 +565,18 @@ export default function Dashboard() {
                           <div className="font-semibold text-sm text-zinc-900 leading-snug">{insp.elevatorName}</div>
                           <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
                         </TableCell>
-                        <TableCell className="py-3">
+                        <TableCell className="py-3 text-center">
                           <InspectionTypeBadge type={insp.inspectionType} />
                         </TableCell>
-                        <TableCell className="py-3">
+                        <TableCell className="py-3 text-center">
                           <StatusBadge status={insp.status} />
                         </TableCell>
-                        <TableCell className="text-right py-3 pr-4">
+                        <TableCell className="text-center py-3 pr-4">
                           <div className="text-sm font-semibold text-zinc-900 leading-snug">
                             {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right py-3 pr-4">
+                        <TableCell className="text-center py-3 pr-4">
                           {daysUntil !== null && <AgingBadge days={daysUntil} mode="upcoming" />}
                         </TableCell>
                       </TableRow>
