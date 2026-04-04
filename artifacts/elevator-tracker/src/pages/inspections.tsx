@@ -238,12 +238,12 @@ export default function Inspections() {
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data }, {
         onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive" }); },
-        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not update inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
+        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the All Inspections menu first." : ""; toast({ title: "Could not update inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
       });
     } else {
       createMutation.mutate({ data }, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); },
-        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not add inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
+        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the All Inspections menu first." : ""; toast({ title: "Could not add inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
       });
     }
   };
@@ -318,7 +318,7 @@ export default function Inspections() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inspection History</h1>
+          <h1 className="text-3xl font-bold tracking-tight">All Inspections</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Complete compliance record across all elevators, buildings, and customers.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -559,11 +559,11 @@ export default function Inspections() {
                 <tr key={insp.id} className={`group transition-colors ${bg} ${hoverCls}`}>
                   {/* Sticky: Customer */}
                   <td className={stickyTd("left-0", bg)} style={{ minWidth: 150 }}>
-                    <span className="font-medium text-zinc-800 truncate block max-w-[138px]">{insp.customerName ?? "—"}</span>
+                    <span title={insp.customerName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[138px]">{insp.customerName ?? "—"}</span>
                   </td>
                   {/* Sticky: Building */}
                   <td className={stickyTd("left-[150px]", bg)} style={{ minWidth: 130, borderRight: "1px solid #e4e4e7" }}>
-                    <span className="text-zinc-700 truncate block max-w-[118px]">{insp.buildingName ?? "—"}</span>
+                    <span title={insp.buildingName ?? undefined} className="text-zinc-700 truncate block max-w-[118px]">{insp.buildingName ?? "—"}</span>
                   </td>
                   {/* Bank */}
                   <td className={tdBase}>
@@ -571,7 +571,7 @@ export default function Inspections() {
                   </td>
                   {/* Elevator */}
                   <td className={tdBase}>
-                    <span className="font-medium text-zinc-800 truncate block max-w-[188px]">{insp.elevatorName ?? "—"}</span>
+                    <span title={insp.elevatorName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[188px]">{insp.elevatorName ?? "—"}</span>
                   </td>
                   {/* Unit Type */}
                   <td className={tdBase}>
