@@ -152,7 +152,7 @@ router.get("/elevators", async (req, res) => {
   let latestInspMap = new Map<number, LatestInsp>();
   if (elevatorIds.length > 0) {
     const idArray = sql.raw(`ARRAY[${elevatorIds.join(",")}]`);
-    // Open inspections: earliest due date first
+    // Open inspections: earliest due year → CAT5 before CAT1 → earliest due date
     const openRows = await db.execute<LatestInsp>(sql`
       SELECT DISTINCT ON (elevator_id)
         elevator_id, status, inspection_type, next_due_date, scheduled_date
@@ -160,7 +160,11 @@ router.get("/elevators", async (req, res) => {
       WHERE organization_id = ${orgId}
         AND elevator_id = ANY(${idArray})
         AND status != 'COMPLETED'
-      ORDER BY elevator_id, next_due_date ASC NULLS LAST
+      ORDER BY
+        elevator_id,
+        EXTRACT(YEAR FROM next_due_date::date) ASC NULLS LAST,
+        CASE inspection_type WHEN 'CAT5' THEN 0 ELSE 1 END ASC,
+        next_due_date ASC NULLS LAST
     `);
     for (const r of openRows.rows) {
       latestInspMap.set(r.elevator_id, r);
