@@ -310,7 +310,7 @@ router.put("/:id", async (req, res) => {
   const formatted = formatInspection(row);
   const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, status: status ?? "NOT_STARTED" }, orgId);
   const warning = (followUp.created === false && followUp.reason === "duplicate_year")
-    ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this due year, so a follow-up inspection record was not created. Please review the records in the Inspection menu, verify that all dates are accurate, and resolve any discrepancies.`
+    ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this year, so a follow-up inspection record was not created. Please review the records in the Inspection menu, verify that all dates are accurate, and resolve any discrepancies.`
     : undefined;
   res.json({ ...formatted, _warning: warning });
 });
