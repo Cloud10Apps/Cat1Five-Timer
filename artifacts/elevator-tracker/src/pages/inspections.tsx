@@ -538,7 +538,7 @@ export default function Inspections() {
             options={TYPE_OPTIONS}
             placeholder="All Types"
             searchPlaceholder="Search types..."
-            width="w-[120px]"
+            width="w-[150px]"
           />
 
           <div className="h-4 w-px bg-zinc-200" />

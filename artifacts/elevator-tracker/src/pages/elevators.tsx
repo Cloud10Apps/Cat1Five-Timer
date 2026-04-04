@@ -1087,7 +1087,7 @@ export default function Elevators() {
             ]}
             placeholder="All Insp Types"
             searchPlaceholder="Search inspection types..."
-            width="w-[160px]"
+            width="w-[185px]"
           />
           <div className="h-4 w-px bg-zinc-200" />
           <FilterCombobox
