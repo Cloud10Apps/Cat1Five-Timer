@@ -34,6 +34,32 @@ const getStatusColor = (status: string) => {
   }
 };
 
+/* ─── Aging badge ─── */
+function AgingBadge({ days, mode }: { days: number; mode: "overdue" | "upcoming" }) {
+  if (mode === "overdue") {
+    let cls = "bg-amber-100 text-amber-800";
+    if (days > 120) cls = "bg-red-900 text-white";
+    else if (days > 90) cls = "bg-red-700 text-white";
+    else if (days > 60) cls = "bg-red-500 text-white";
+    else if (days > 30) cls = "bg-orange-500 text-white";
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${cls}`}>
+        {days}d overdue
+      </span>
+    );
+  }
+  let cls = "bg-green-100 text-green-800";
+  let label = days === 0 ? "Today" : `${days}d away`;
+  if (days === 0)       cls = "bg-red-100 text-red-700";
+  else if (days <= 3)   cls = "bg-amber-100 text-amber-800";
+  else if (days <= 7)   cls = "bg-yellow-100 text-yellow-800";
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
 /* ─── dashboard API fetchers ─── */
 type MonthBucket = { key: string; label: string; due: number; scheduled: number; completed: number };
 
@@ -350,12 +376,13 @@ export default function Dashboard() {
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Was Due</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Aging</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {overdueItems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-zinc-400 py-8 text-sm">
+                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
                         No overdue inspections.
                       </TableCell>
                     </TableRow>
@@ -374,9 +401,9 @@ export default function Dashboard() {
                           <div className="text-sm font-semibold text-red-600 leading-snug">
                             {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                           </div>
-                          {daysOver !== null && (
-                            <div className="text-xs text-red-400 mt-0.5">{daysOver} day{daysOver !== 1 ? "s" : ""} overdue</div>
-                          )}
+                        </TableCell>
+                        <TableCell className="text-right py-3 pr-4">
+                          {daysOver !== null && <AgingBadge days={daysOver} mode="overdue" />}
                         </TableCell>
                       </TableRow>
                     );
@@ -396,12 +423,13 @@ export default function Dashboard() {
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 pl-4">Unit / Building</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9">Type</TableHead>
                     <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Due</TableHead>
+                    <TableHead className="text-zinc-500 text-xs uppercase tracking-wider font-semibold h-9 text-right pr-4">Aging</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {upcoming.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-zinc-400 py-8 text-sm">
+                      <TableCell colSpan={4} className="text-center text-zinc-400 py-8 text-sm">
                         No inspections due in the next 14 days.
                       </TableCell>
                     </TableRow>
@@ -421,11 +449,9 @@ export default function Dashboard() {
                           <div className={`text-sm font-semibold leading-snug ${isUrgent ? "text-amber-600" : "text-zinc-700"}`}>
                             {insp.nextDueDate ? dayjs(insp.nextDueDate).format("MMM D, YYYY") : "N/A"}
                           </div>
-                          {daysUntil !== null && (
-                            <div className={`text-xs mt-0.5 ${isUrgent ? "text-amber-500" : "text-zinc-400"}`}>
-                              {daysUntil === 0 ? "due today" : `in ${daysUntil} day${daysUntil !== 1 ? "s" : ""}`}
-                            </div>
-                          )}
+                        </TableCell>
+                        <TableCell className="text-right py-3 pr-4">
+                          {daysUntil !== null && <AgingBadge days={daysUntil} mode="upcoming" />}
                         </TableCell>
                       </TableRow>
                     );
