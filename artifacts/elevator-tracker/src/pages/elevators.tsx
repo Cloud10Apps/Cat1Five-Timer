@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -1075,127 +1075,139 @@ export default function Elevators() {
         </div>
       </div>
 
-      {/* ── Filters row ── */}
-      <div className="flex flex-col gap-2">
+      {/* ── Filters ── */}
+      {(() => {
+        const activeFilterCount = [selectedCustomerId, selectedBuildingId, selectedBank, selectedElevatorId, selectedType, selectedInspType, filterDueMonth, filterDueYear, selectedStatus, filterAgingBucket].filter(v => v !== "all").length;
+        const clearAll = () => { setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); setSelectedType("all"); setSelectedInspType("all"); setFilterDueMonth("all"); setFilterDueYear("all"); setFilterAgingBucket("all"); setSelectedStatus("all"); };
+        return (
+      <div className="flex flex-col gap-3">
+        <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden">
 
-        {/* Row 1: filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
-          <div className="h-4 w-px bg-zinc-200" />
-          <FilterCombobox
-            value={selectedCustomerId}
-            onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
-            options={customerOptions}
-            placeholder="All Customers"
-            searchPlaceholder="Search customers..."
-            width="w-[185px]"
-          />
-          <FilterCombobox
-            value={selectedBuildingId}
-            onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
-            options={buildingOptions}
-            placeholder="All Buildings"
-            searchPlaceholder="Search buildings..."
-            width="w-[155px]"
-          />
-          <FilterCombobox
-            value={selectedBank}
-            onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
-            options={bankFilterOptions}
-            placeholder="All Banks"
-            searchPlaceholder="Search banks..."
-            disabled={bankFilterOptions.length === 0}
-            width="w-[130px]"
-          />
-          <FilterCombobox
-            value={selectedElevatorId}
-            onValueChange={setSelectedElevatorId}
-            options={elevatorFilterOptions}
-            placeholder="All Elevators"
-            searchPlaceholder="Search elevators..."
-            disabled={elevatorFilterOptions.length === 0}
-            width="w-[170px]"
-          />
-          <FilterCombobox
-            value={selectedType}
-            onValueChange={setSelectedType}
-            options={[
-              { value: "traction",  label: "Traction" },
-              { value: "hydraulic", label: "Hydraulic" },
-              { value: "other",     label: "Other" },
-            ]}
-            placeholder="All Unit Types"
-            searchPlaceholder="Search unit types..."
-            width="w-[165px]"
-          />
-          <FilterCombobox
-            value={selectedInspType}
-            onValueChange={setSelectedInspType}
-            options={[
-              { value: "CAT1", label: "CAT 1" },
-              { value: "CAT5", label: "CAT 5" },
-            ]}
-            placeholder="All Insp Types"
-            searchPlaceholder="Search inspection types..."
-            width="w-[185px]"
-          />
-          <div className="h-4 w-px bg-zinc-200" />
-          <FilterCombobox
-            value={filterDueMonth}
-            onValueChange={setFilterDueMonth}
-            options={MONTH_OPTIONS}
-            placeholder="Due Month"
-            searchPlaceholder="Search months..."
-            width="w-[160px]"
-          />
-          <FilterCombobox
-            value={filterDueYear}
-            onValueChange={setFilterDueYear}
-            options={yearFilterOptions}
-            placeholder="Due Year"
-            searchPlaceholder="Search years..."
-            width="w-[140px]"
-          />
-          <FilterCombobox
-            value={selectedStatus}
-            onValueChange={setSelectedStatus}
-            options={[
-              { value: "NOT_STARTED", label: "Not Scheduled" },
-              { value: "SCHEDULED",   label: "Scheduled" },
-              { value: "IN_PROGRESS", label: "In Progress" },
-              { value: "COMPLETED",   label: "Completed" },
-            ]}
-            placeholder="All Statuses"
-            searchPlaceholder="Search statuses..."
-            width="w-[170px]"
-          />
-          <FilterCombobox
-            value={filterAgingBucket}
-            onValueChange={setFilterAgingBucket}
-            options={AGING_BUCKET_OPTIONS}
-            placeholder="Aging Bucket"
-            searchPlaceholder="Search buckets..."
-            width="w-[160px]"
-          />
-          {(selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedBank !== "all" || selectedElevatorId !== "all" || selectedType !== "all" || selectedInspType !== "all" || filterDueMonth !== "all" || filterDueYear !== "all" || filterAgingBucket !== "all" || selectedStatus !== "all") && (
-            <button
-              onClick={() => {
-                setSelectedCustomerId("all");
-                setSelectedBuildingId("all");
-                setSelectedBank("all");
-                setSelectedElevatorId("all");
-                setSelectedType("all");
-                setSelectedInspType("all");
-                setFilterDueMonth("all");
-                setFilterDueYear("all");
-                setFilterAgingBucket("all");
-                setSelectedStatus("all");
-              }}
-              className="h-8 px-3 flex items-center gap-1.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 hover:text-red-700 transition-colors"
-            >
-              <X className="h-3.5 w-3.5" /> Clear filters
-            </button>
-          )}
+          {/* Header strip */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 bg-zinc-50/60">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-zinc-400" />
+              <span className="text-sm font-semibold text-zinc-500 tracking-tight">Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-amber-500 text-white text-[11px] font-bold leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-zinc-500">
+                <span className="font-bold text-zinc-900 tabular-nums">{filteredElevators.length}</span>
+                <span className="ml-1.5">{filteredElevators.length === 1 ? "elevator" : "elevators"}</span>
+              </span>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearAll}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-white hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-1 rounded-md transition-colors"
+                >
+                  <X className="h-3 w-3" /> Clear all
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter dropdowns */}
+          <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+            <FilterCombobox
+              value={selectedCustomerId}
+              onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+              options={customerOptions}
+              placeholder="All Customers"
+              searchPlaceholder="Search customers..."
+              width="w-[185px]"
+            />
+            <FilterCombobox
+              value={selectedBuildingId}
+              onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+              options={buildingOptions}
+              placeholder="All Buildings"
+              searchPlaceholder="Search buildings..."
+              width="w-[155px]"
+            />
+            <FilterCombobox
+              value={selectedBank}
+              onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
+              options={bankFilterOptions}
+              placeholder="All Banks"
+              searchPlaceholder="Search banks..."
+              disabled={bankFilterOptions.length === 0}
+              width="w-[130px]"
+            />
+            <FilterCombobox
+              value={selectedElevatorId}
+              onValueChange={setSelectedElevatorId}
+              options={elevatorFilterOptions}
+              placeholder="All Elevators"
+              searchPlaceholder="Search elevators..."
+              disabled={elevatorFilterOptions.length === 0}
+              width="w-[170px]"
+            />
+            <FilterCombobox
+              value={selectedType}
+              onValueChange={setSelectedType}
+              options={[
+                { value: "traction",  label: "Traction" },
+                { value: "hydraulic", label: "Hydraulic" },
+                { value: "other",     label: "Other" },
+              ]}
+              placeholder="All Unit Types"
+              searchPlaceholder="Search unit types..."
+              width="w-[165px]"
+            />
+            <FilterCombobox
+              value={selectedInspType}
+              onValueChange={setSelectedInspType}
+              options={[
+                { value: "CAT1", label: "CAT 1" },
+                { value: "CAT5", label: "CAT 5" },
+              ]}
+              placeholder="All Insp Types"
+              searchPlaceholder="Search inspection types..."
+              width="w-[185px]"
+            />
+            <div className="h-4 w-px bg-zinc-200" />
+            <FilterCombobox
+              value={filterDueMonth}
+              onValueChange={setFilterDueMonth}
+              options={MONTH_OPTIONS}
+              placeholder="Due Month"
+              searchPlaceholder="Search months..."
+              width="w-[160px]"
+            />
+            <FilterCombobox
+              value={filterDueYear}
+              onValueChange={setFilterDueYear}
+              options={yearFilterOptions}
+              placeholder="Due Year"
+              searchPlaceholder="Search years..."
+              width="w-[140px]"
+            />
+            <FilterCombobox
+              value={selectedStatus}
+              onValueChange={setSelectedStatus}
+              options={[
+                { value: "NOT_STARTED", label: "Not Scheduled" },
+                { value: "SCHEDULED",   label: "Scheduled" },
+                { value: "IN_PROGRESS", label: "In Progress" },
+                { value: "COMPLETED",   label: "Completed" },
+              ]}
+              placeholder="All Statuses"
+              searchPlaceholder="Search statuses..."
+              width="w-[170px]"
+            />
+            <FilterCombobox
+              value={filterAgingBucket}
+              onValueChange={setFilterAgingBucket}
+              options={AGING_BUCKET_OPTIONS}
+              placeholder="Aging Bucket"
+              searchPlaceholder="Search buckets..."
+              width="w-[160px]"
+            />
+          </div>
         </div>
 
         {/* Row 2: expand/collapse depth selector */}
@@ -1232,6 +1244,8 @@ export default function Elevators() {
           </div>
         )}
       </div>
+        );
+      })()}
 
       {/* ── Accordion tree: Customer → Building → Bank → Elevator ── */}
       {isLoading ? (
