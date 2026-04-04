@@ -56,7 +56,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/status-badge";
-import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { FilterCombobox } from "@/components/filter-combobox";
 import dayjs from "dayjs";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -124,7 +123,6 @@ export default function Inspections() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
 
   const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo);
@@ -303,14 +301,12 @@ export default function Inspections() {
   }, [watchStatus]);
   useEffect(() => { if (watchScheduledDate && form.getValues("status") === "NOT_STARTED") form.setValue("status", "SCHEDULED"); }, [watchScheduledDate]);
 
-  const toggleNote = (id: number) => setExpandedNotes(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-
   // Shared TH class builder
   const thBase = "px-3 py-2.5 text-left text-[11px] font-semibold text-zinc-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-zinc-200 bg-zinc-50 select-none";
   const stickyTh = (left: string) => `${thBase} sticky ${left} z-30`;
 
   // Shared TD class builder
-  const tdBase = "px-3 py-2 text-xs text-zinc-700 border-b border-zinc-100 whitespace-nowrap align-middle";
+  const tdBase = "px-3 py-2 text-xs text-zinc-700 border-b border-zinc-200 whitespace-nowrap align-middle";
   const stickyTd = (left: string, bg: string) => `${tdBase} sticky ${left} z-10 ${bg}`;
 
   const rowBg = (idx: number, overdue: boolean) =>
@@ -504,28 +500,27 @@ export default function Inspections() {
           {/* Sticky header */}
           <thead>
             <tr>
-              <th className={stickyTh("top-0 left-0")}     style={{ minWidth: 150 }}>Customer</th>
+              <th className={stickyTh("top-0 left-0")}       style={{ minWidth: 150 }}>Customer</th>
               <th className={stickyTh("top-0 left-[150px]")} style={{ minWidth: 130 }}>Building</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 100 }}>Bank</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 140 }}>Elevator</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 150 }}>Status</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 90  }}>Type</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 120 }}>Last Insp.</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 75  }}>Recur.</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 120 }}>Next Due</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 115 }}>Scheduled</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 115 }}>Completed</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 220 }}>Notes</th>
-              <th className={`${thBase} sticky top-0 z-20`} style={{ minWidth: 70  }}></th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 105 }}>Bank</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 200 }}>Elevator</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 148 }}>Status</th>
+              <th className={`${thBase} sticky top-0 z-20 text-center`} style={{ minWidth: 76 }}>Type</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Last Insp.</th>
+              <th className={`${thBase} sticky top-0 z-20 text-center`} style={{ minWidth: 68 }}>Recur.</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Next Due</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Scheduled</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Completed</th>
+              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 60  }}></th>
             </tr>
           </thead>
 
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={13} className="py-20 text-center"><Spinner /></td></tr>
+              <tr><td colSpan={12} className="py-20 text-center"><Spinner /></td></tr>
             ) : pagedRows.length === 0 ? (
               <tr>
-                <td colSpan={13} className="py-20 text-center">
+                <td colSpan={12} className="py-20 text-center">
                   <div className="flex flex-col items-center gap-2 text-zinc-400">
                     <ClipboardList className="h-10 w-10 opacity-20" />
                     <p className="text-sm font-medium">No inspections found</p>
@@ -539,7 +534,6 @@ export default function Inspections() {
               const bg = rowBg(rowIdx, isOverdue);
               const hoverCls = rowBgHover(rowIdx, isOverdue);
               const meta = elevatorMeta.get(insp.elevatorId);
-              const noteExpanded = expandedNotes.has(insp.id);
 
               return (
                 <tr key={insp.id} className={`group transition-colors ${bg} ${hoverCls}`}>
@@ -557,7 +551,7 @@ export default function Inspections() {
                   </td>
                   {/* Elevator */}
                   <td className={tdBase}>
-                    <span className="font-medium text-zinc-800 truncate block max-w-[128px]">{insp.elevatorName ?? "—"}</span>
+                    <span className="font-medium text-zinc-800 truncate block max-w-[188px]">{insp.elevatorName ?? "—"}</span>
                   </td>
                   {/* Status */}
                   <td className={tdBase}>
@@ -565,7 +559,9 @@ export default function Inspections() {
                   </td>
                   {/* Inspection Type */}
                   <td className={`${tdBase} text-center`}>
-                    <InspectionTypeBadge type={insp.inspectionType} />
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
+                      {insp.inspectionType}
+                    </span>
                   </td>
                   {/* Last Inspection */}
                   <td className={`${tdBase} tabular-nums`}>
@@ -586,22 +582,6 @@ export default function Inspections() {
                   {/* Completed */}
                   <td className={`${tdBase} tabular-nums`}>
                     {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
-                  </td>
-                  {/* Notes — expandable */}
-                  <td className={tdBase} style={{ maxWidth: 220 }}>
-                    {insp.notes ? (
-                      <button onClick={() => toggleNote(insp.id)} className="text-left w-full group/note">
-                        {noteExpanded
-                          ? <span className="text-zinc-700 whitespace-normal break-words">{insp.notes} <span className="text-blue-500 hover:underline text-[11px] ml-1">less</span></span>
-                          : <span className="flex items-center gap-1">
-                              <span className="text-zinc-600 truncate max-w-[170px] block">{insp.notes}</span>
-                              <span className="text-blue-500 hover:underline text-[11px] shrink-0">more</span>
-                            </span>
-                        }
-                      </button>
-                    ) : (
-                      <span className="text-zinc-300">—</span>
-                    )}
                   </td>
                   {/* Actions */}
                   <td className={`${tdBase} text-right`}>
