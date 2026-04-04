@@ -19,7 +19,6 @@ import {
   ResponsiveContainer,
   Cell,
   CartesianGrid,
-  Legend,
 } from "recharts";
 import dayjs from "dayjs";
 
@@ -330,7 +329,7 @@ export default function Dashboard() {
 
           {/* 12-Month Forecast — fits container, no scroll */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title={`Monthly Compliance Forecast — ${currentYear}`} />
+            <SectionHeader title={`${currentYear} Monthly Compliance Forecast`} />
             <div className="p-4" style={{ height: 360 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -355,12 +354,6 @@ export default function Dashboard() {
                   <Tooltip
                     cursor={{ fill: "#f4f4f5" }}
                     contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "6px", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", fontSize: "13px" }}
-                  />
-                  <Legend
-                    iconType="circle"
-                    verticalAlign="top"
-                    align="center"
-                    wrapperStyle={{ fontSize: "12px", color: "#3f3f46", paddingBottom: "8px" }}
                   />
                   <Bar dataKey="notStarted" name="Not Started" stackId="stack" fill="#d4d4d8" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="scheduled"  name="Scheduled"  stackId="stack" fill="#3b82f6" radius={[0, 0, 0, 0]} />
