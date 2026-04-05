@@ -102,7 +102,7 @@ type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
 /* ── Aging bucket helpers ── */
 const AGING_BUCKET_OPTIONS = [
-  { value: "current",  label: "Current"      },
+  { value: "current",  label: "Not Yet Due"  },
   { value: "1-30",     label: "1–30 Days"    },
   { value: "31-60",    label: "31–60 Days"   },
   { value: "61-90",    label: "61–90 Days"   },

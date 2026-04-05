@@ -48,7 +48,7 @@ function getAgingBucketKey(nextDueDate: string | null | undefined, computedStatu
 function getAgingBucketDisplay(key: string | null): string {
   if (!key) return "";
   const map: Record<string, string> = {
-    "current":  "Current",
+    "current":  "Not Yet Due",
     "1-30":     "1–30 Days",
     "31-60":    "31–60 Days",
     "61-90":    "61–90 Days",
@@ -245,7 +245,7 @@ function statusLabel(status: string, nextDueDate: string | null | undefined): st
 function agingBucketLabel(nextDueDate: string | null | undefined): string {
   if (!nextDueDate) return "";
   const days = dayjs().diff(dayjs(nextDueDate), "day");
-  if (days <= 0)   return "Current";
+  if (days <= 0)   return "Not Yet Due";
   if (days <= 30)  return "1–30 Days";
   if (days <= 60)  return "31–60 Days";
   if (days <= 90)  return "61–90 Days";
