@@ -1027,8 +1027,18 @@ export default function Elevators() {
                               <p className="text-[11px] text-zinc-400 leading-none">From last date + recurrence</p>
                             </div>
                           </div>
-                          {/* Row 2: Status + Scheduled Date */}
+                          {/* Row 2: Type + Status */}
                           <div className="grid grid-cols-2 gap-4">
+                            <FormField control={inspForm.control} name="inspectionType" render={({ field }) => (
+                              <FormItem><FormLabel>Type</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
+                                    <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
+                                  </SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
                             <FormField control={inspForm.control} name="status" render={({ field }) => (
                               <FormItem><FormLabel>Status</FormLabel>
                                 <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else if (val === "COMPLETED") { inspForm.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { inspForm.setValue("completionDate", ""); } }}>
@@ -1041,23 +1051,13 @@ export default function Elevators() {
                                   </SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
+                          </div>
+                          {/* Row 3: Scheduled Date + Completion Date */}
+                          <div className="grid grid-cols-2 gap-4">
                             <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
                               <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
                                 <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
                                 <FormMessage /></FormItem>
-                            )} />
-                          </div>
-                          {/* Row 3: Type + Completion Date */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField control={inspForm.control} name="inspectionType" render={({ field }) => (
-                              <FormItem><FormLabel>Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
-                                    <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
-                                  </SelectContent>
-                                </Select><FormMessage /></FormItem>
                             )} />
                             <FormField control={inspForm.control} name="completionDate" render={({ field }) => (
                               <FormItem><FormLabel>Completion Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
