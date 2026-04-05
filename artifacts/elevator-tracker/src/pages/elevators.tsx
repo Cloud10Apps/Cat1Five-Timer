@@ -967,8 +967,15 @@ export default function Elevators() {
                   </span>
                   {editingElevator ? editingElevator.name : "Add New Unit"}
                 </DialogTitle>
-                {editingElevator && (
+                {editingElevator ? (
                   <p className="text-sm text-muted-foreground pl-10">{editingElevator.buildingName} · {editingElevator.customerName}</p>
+                ) : (
+                  <div className="mt-1 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
+                    <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+                      Complete the unit details on the <span className="font-semibold">Unit Details</span> tab, then switch to the <span className="font-semibold">New Inspection</span> tab to seed the system with the initial CAT 1 and CAT 5 inspection records for this unit.
+                    </p>
+                  </div>
                 )}
               </DialogHeader>
 
