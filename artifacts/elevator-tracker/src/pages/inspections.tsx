@@ -761,7 +761,7 @@ export default function Inspections() {
                     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-zinc-900 text-white text-sm font-bold shrink-0">
                       {group.customerName.substring(0, 2).toUpperCase()}
                     </div>
-                    <span className="text-base font-bold text-zinc-900 tracking-tight">{group.customerName}</span>
+                    <span className="font-bold text-zinc-900 tracking-tight text-[25px]">{group.customerName}</span>
                   </div>
                 );
               }
