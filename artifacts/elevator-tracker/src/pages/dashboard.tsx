@@ -574,7 +574,7 @@ export default function Dashboard() {
                       <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Type</TableHead>
                       <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Status</TableHead>
                       <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Due Date</TableHead>
-                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">Timing</TableHead>
+                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">Due Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
