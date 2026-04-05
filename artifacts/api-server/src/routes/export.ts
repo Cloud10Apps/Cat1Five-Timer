@@ -37,25 +37,28 @@ const STATUS_LABEL_MAP: Record<string, string> = {
 function getAgingBucketKey(nextDueDate: string | null | undefined, computedStatus: string): string | null {
   if (computedStatus === "COMPLETED" || !nextDueDate) return null;
   const days = dayjs().diff(dayjs(nextDueDate), "day");
-  if (days === 0)  return "due-today";
-  if (days > 90)   return "overdue-91+";
-  if (days > 60)   return "overdue-61-90";
-  if (days > 30)   return "overdue-31-60";
-  if (days > 0)    return "overdue-1-30";
-  if (days >= -7)  return "due-7";
-  if (days >= -14) return "due-14";
-  if (days >= -30) return "due-30";
-  return "due-60+";
+  if (days === 0)   return "due-today";
+  if (days > 90)    return "overdue-91+";
+  if (days > 60)    return "overdue-61-90";
+  if (days > 30)    return "overdue-31-60";
+  if (days > 0)     return "overdue-1-30";
+  if (days >= -7)   return "due-1-7";
+  if (days >= -14)  return "due-8-14";
+  if (days >= -30)  return "due-15-30";
+  if (days >= -60)  return "due-31-60";
+  if (days >= -90)  return "due-61-90";
+  return null;
 }
 
 function getAgingBucketDisplay(key: string | null): string {
   if (!key) return "";
   const map: Record<string, string> = {
     "due-today":     "Due Today",
-    "due-7":         "Due in 7 Days",
-    "due-14":        "Due in 14 Days",
-    "due-30":        "Due in 30 Days",
-    "due-60+":       "Due in 60+ Days",
+    "due-1-7":       "Due in 1–7 Days",
+    "due-8-14":      "Due in 8–14 Days",
+    "due-15-30":     "Due in 15–30 Days",
+    "due-31-60":     "Due in 31–60 Days",
+    "due-61-90":     "Due in 61–90 Days",
     "overdue-1-30":  "Overdue 1–30 Days",
     "overdue-31-60": "Overdue 31–60 Days",
     "overdue-61-90": "Overdue 61–90 Days",

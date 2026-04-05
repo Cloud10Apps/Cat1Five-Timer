@@ -335,15 +335,16 @@ router.get("/aging", async (req, res) => {
 
   if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([
-      EMPTY("due-today",     "Due Today",            0),
-      EMPTY("due-7",         "Due in 7 Days",       -7),
-      EMPTY("due-14",        "Due in 14 Days",     -14),
-      EMPTY("due-30",        "Due in 30 Days",     -30),
-      EMPTY("due-60+",       "Due in 60+ Days",    -60),
-      EMPTY("overdue-1-30",  "Overdue 1–30 Days",    1),
-      EMPTY("overdue-31-60", "Overdue 31–60 Days",  31),
-      EMPTY("overdue-61-90", "Overdue 61–90 Days",  61),
-      EMPTY("overdue-91+",   "Overdue 91+ Days",    91),
+      EMPTY("due-today",     "Due Today",             0),
+      EMPTY("due-1-7",       "Due in 1–7 Days",      -1),
+      EMPTY("due-8-14",      "Due in 8–14 Days",     -8),
+      EMPTY("due-15-30",     "Due in 15–30 Days",   -15),
+      EMPTY("due-31-60",     "Due in 31–60 Days",   -31),
+      EMPTY("due-61-90",     "Due in 61–90 Days",   -61),
+      EMPTY("overdue-1-30",  "Overdue 1–30 Days",     1),
+      EMPTY("overdue-31-60", "Overdue 31–60 Days",   31),
+      EMPTY("overdue-61-90", "Overdue 61–90 Days",   61),
+      EMPTY("overdue-91+",   "Overdue 91+ Days",     91),
     ]);
     return;
   }
@@ -354,15 +355,16 @@ router.get("/aging", async (req, res) => {
   const rows = await db.execute(sql`
     SELECT
       CASE
-        WHEN i.next_due_date::date = CURRENT_DATE                                    THEN 'due-today'
-        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7    THEN 'due-7'
-        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 8 AND CURRENT_DATE + 14   THEN 'due-14'
-        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 15 AND CURRENT_DATE + 30  THEN 'due-30'
-        WHEN i.next_due_date::date > CURRENT_DATE + 30                               THEN 'due-60+'
-        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 1  AND 30                 THEN 'overdue-1-30'
-        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 31 AND 60                 THEN 'overdue-31-60'
-        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 61 AND 90                 THEN 'overdue-61-90'
-        ELSE 'overdue-91+'
+        WHEN i.next_due_date::date = CURRENT_DATE                                      THEN 'due-today'
+        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 1  AND CURRENT_DATE + 7     THEN 'due-1-7'
+        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 8  AND CURRENT_DATE + 14    THEN 'due-8-14'
+        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 15 AND CURRENT_DATE + 30    THEN 'due-15-30'
+        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 31 AND CURRENT_DATE + 60    THEN 'due-31-60'
+        WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 61 AND CURRENT_DATE + 90    THEN 'due-61-90'
+        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 1  AND 30                   THEN 'overdue-1-30'
+        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 31 AND 60                   THEN 'overdue-31-60'
+        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 61 AND 90                   THEN 'overdue-61-90'
+        WHEN i.next_due_date::date < CURRENT_DATE - 90                                THEN 'overdue-91+'
       END AS bucket,
       i.status,
       COUNT(*) AS count
@@ -376,20 +378,21 @@ router.get("/aging", async (req, res) => {
     GROUP BY 1, i.status
   `) as unknown as { rows: { bucket: string; status: string; count: string }[] };
 
-  const ORDER = ["due-today", "due-7", "due-14", "due-30", "due-60+", "overdue-1-30", "overdue-31-60", "overdue-61-90", "overdue-91+"];
+  const ORDER = ["due-today", "due-1-7", "due-8-14", "due-15-30", "due-31-60", "due-61-90", "overdue-1-30", "overdue-31-60", "overdue-61-90", "overdue-91+"];
   const LABELS: Record<string, string> = {
     "due-today":     "Due Today",
-    "due-7":         "Due in 7 Days",
-    "due-14":        "Due in 14 Days",
-    "due-30":        "Due in 30 Days",
-    "due-60+":       "Due in 60+ Days",
+    "due-1-7":       "Due in 1–7 Days",
+    "due-8-14":      "Due in 8–14 Days",
+    "due-15-30":     "Due in 15–30 Days",
+    "due-31-60":     "Due in 31–60 Days",
+    "due-61-90":     "Due in 61–90 Days",
     "overdue-1-30":  "Overdue 1–30 Days",
     "overdue-31-60": "Overdue 31–60 Days",
     "overdue-61-90": "Overdue 61–90 Days",
     "overdue-91+":   "Overdue 91+ Days",
   };
   const DAYS: Record<string, number> = {
-    "due-today": 0, "due-7": -7, "due-14": -14, "due-30": -30, "due-60+": -60,
+    "due-today": 0, "due-1-7": -1, "due-8-14": -8, "due-15-30": -15, "due-31-60": -31, "due-61-90": -61,
     "overdue-1-30": 1, "overdue-31-60": 31, "overdue-61-90": 61, "overdue-91+": 91,
   };
 

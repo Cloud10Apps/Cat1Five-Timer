@@ -58,15 +58,16 @@ const MONTH_OPTIONS = [
 ];
 
 const AGING_BUCKET_OPTIONS = [
-  { value: "due-today",     label: "Due Today"          },
-  { value: "due-7",         label: "Due in 7 Days"      },
-  { value: "due-14",        label: "Due in 14 Days"     },
-  { value: "due-30",        label: "Due in 30 Days"     },
-  { value: "due-60+",       label: "Due in 60+ Days"    },
-  { value: "overdue-1-30",  label: "Overdue 1–30 Days"  },
-  { value: "overdue-31-60", label: "Overdue 31–60 Days" },
-  { value: "overdue-61-90", label: "Overdue 61–90 Days" },
-  { value: "overdue-91+",   label: "Overdue 91+ Days"   },
+  { value: "due-today",     label: "Due Today"           },
+  { value: "due-1-7",       label: "Due in 1–7 Days"     },
+  { value: "due-8-14",      label: "Due in 8–14 Days"    },
+  { value: "due-15-30",     label: "Due in 15–30 Days"   },
+  { value: "due-31-60",     label: "Due in 31–60 Days"   },
+  { value: "due-61-90",     label: "Due in 61–90 Days"   },
+  { value: "overdue-1-30",  label: "Overdue 1–30 Days"   },
+  { value: "overdue-31-60", label: "Overdue 31–60 Days"  },
+  { value: "overdue-61-90", label: "Overdue 61–90 Days"  },
+  { value: "overdue-91+",   label: "Overdue 91+ Days"    },
 ];
 
 const STATUS_OPTIONS = [
@@ -86,15 +87,17 @@ function getAgingBucketValue(due: string | null | undefined, status?: string): s
   if (status === "COMPLETED") return null;
   if (!due) return null;
   const days = dayjs().diff(dayjs(due), "day");
-  if (days === 0)  return "due-today";
-  if (days > 90)   return "overdue-91+";
-  if (days > 60)   return "overdue-61-90";
-  if (days > 30)   return "overdue-31-60";
-  if (days > 0)    return "overdue-1-30";
-  if (days >= -7)  return "due-7";
-  if (days >= -14) return "due-14";
-  if (days >= -30) return "due-30";
-  return "due-60+";
+  if (days === 0)   return "due-today";
+  if (days > 90)    return "overdue-91+";
+  if (days > 60)    return "overdue-61-90";
+  if (days > 30)    return "overdue-31-60";
+  if (days > 0)     return "overdue-1-30";
+  if (days >= -7)   return "due-1-7";
+  if (days >= -14)  return "due-8-14";
+  if (days >= -30)  return "due-15-30";
+  if (days >= -60)  return "due-31-60";
+  if (days >= -90)  return "due-61-90";
+  return null;
 }
 
 function AgingPill({ due, status }: { due?: string | null; status?: string }) {
@@ -102,11 +105,12 @@ function AgingPill({ due, status }: { due?: string | null; status?: string }) {
   if (!bucket) return <span className="text-zinc-300 text-sm">—</span>;
   const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
-    bucket === "due-today"     ? "bg-violet-100 text-violet-800 border-violet-200" :
-    bucket === "due-7"         ? "bg-sky-100    text-sky-800    border-sky-200"    :
-    bucket === "due-14"        ? "bg-blue-100   text-blue-800   border-blue-200"   :
-    bucket === "due-30"        ? "bg-slate-100  text-slate-700  border-slate-200"  :
-    bucket === "due-60+"       ? "bg-zinc-100   text-zinc-600   border-zinc-200"   :
+    bucket === "due-today"     ? "bg-blue-900   text-white      border-blue-900"   :
+    bucket === "due-1-7"       ? "bg-blue-100   text-blue-900   border-blue-300"   :
+    bucket === "due-8-14"      ? "bg-blue-100   text-blue-800   border-blue-200"   :
+    bucket === "due-15-30"     ? "bg-sky-100    text-sky-800    border-sky-200"    :
+    bucket === "due-31-60"     ? "bg-sky-50     text-sky-700    border-sky-200"    :
+    bucket === "due-61-90"     ? "bg-slate-100  text-slate-600  border-slate-200"  :
     bucket === "overdue-1-30"  ? "bg-amber-100  text-amber-700  border-amber-200"  :
     bucket === "overdue-31-60" ? "bg-orange-100 text-orange-700 border-orange-200" :
     bucket === "overdue-61-90" ? "bg-red-100    text-red-700    border-red-200"    :

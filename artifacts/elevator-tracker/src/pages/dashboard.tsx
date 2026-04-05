@@ -18,11 +18,12 @@ function toLabel(s: string) {
 
 /* ─── Upcoming / Overdue bucket colours ─── */
 const UPCOMING_COLORS: Record<string, string> = {
-  "due-today": "#1e3a8a",
-  "due-7":     "#1d4ed8",
-  "due-14":    "#3b82f6",
-  "due-30":    "#60a5fa",
-  "due-60+":   "#93c5fd",
+  "due-today":  "#1e3a8a",
+  "due-1-7":    "#1d4ed8",
+  "due-8-14":   "#2563eb",
+  "due-15-30":  "#3b82f6",
+  "due-31-60":  "#60a5fa",
+  "due-61-90":  "#93c5fd",
 };
 const OVERDUE_COLORS: Record<string, string> = {
   "overdue-1-30":  "#fb923c",
@@ -274,7 +275,7 @@ export default function Dashboard() {
 
   const statusChartData = ((breakdown??[]) as any[]).map(b=>({ name:toLabel(b.status), value:b.count, color:getStatusColor(b.status) }));
   const agingData       = ((aging??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0) }));
-  const upcomingData    = agingData.filter((b:any) => ["due-today","due-7","due-14","due-30","due-60+"].includes(b.bucket) && b._total > 0);
+  const upcomingData    = agingData.filter((b:any) => ["due-today","due-1-7","due-8-14","due-15-30","due-31-60","due-61-90"].includes(b.bucket) && b._total > 0);
   const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket) && b._total > 0);
   const forecastData    = ((forecast??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0)+(b.completed??0) }));
   const year            = dayjs().year();
@@ -385,7 +386,7 @@ export default function Dashboard() {
 
             {/* Upcoming inspections */}
             <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <UpcomingCardHeader title="Upcoming Inspections by Due Window" />
+              <UpcomingCardHeader title="Upcoming Inspections (Next 90 Days)" />
               <div className="p-5 h-[300px] flex items-center">
                 {upcomingData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
