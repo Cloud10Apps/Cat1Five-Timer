@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle, Info } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -923,9 +923,12 @@ export default function Elevators() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Elevators</h1>
-          <p className="mt-1 text-sm text-muted-foreground max-w-xl leading-relaxed italic">
-            This menu keeps all current open inspections front and center. Once completed, inspection records are automatically moved to the Inspection Records menu for historical tracking.
-          </p>
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2 max-w-xl">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+              This menu keeps all current open inspections front and center. Once completed, inspection records are automatically moved to the <span className="font-semibold">Inspection Records</span> menu for historical tracking.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
