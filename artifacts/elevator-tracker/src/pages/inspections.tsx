@@ -388,8 +388,25 @@ export default function Inspections() {
 
   const handleExport = async () => {
     const params = new URLSearchParams();
-    selectedStatuses.forEach(s => params.append("status", s));
-    selectedInspTypes.forEach(t => params.append("inspectionType", t));
+    // Pass all active filters so the export mirrors exactly what's visible on screen
+    selectedStatuses.forEach(s     => params.append("status",         s));
+    selectedInspTypes.forEach(t    => params.append("inspectionType", t));
+    selectedCustomerIds.forEach(id => params.append("customerId",     id));
+    selectedBuildingIds.forEach(id => params.append("buildingId",     id));
+    selectedElevatorIds.forEach(id => params.append("elevatorId",     id));
+    selectedBanks.forEach(b        => params.append("bank",           b));
+    selectedUnitTypes.forEach(t    => params.append("elevatorType",   t));
+    filterDueMonths.forEach(m      => params.append("dueMonth",       m));
+    filterDueYears.forEach(y       => params.append("dueYear",        y));
+    filterAgingBuckets.forEach(b   => params.append("agingBucket",    b));
+    if (lastInspFrom)   params.set("lastInspectionDateFrom", lastInspFrom);
+    if (lastInspTo)     params.set("lastInspectionDateTo",   lastInspTo);
+    if (nextDueFrom)    params.set("nextDueDateFrom",        nextDueFrom);
+    if (nextDueTo)      params.set("nextDueDateTo",          nextDueTo);
+    if (scheduledFrom)  params.set("scheduledDateFrom",      scheduledFrom);
+    if (scheduledTo)    params.set("scheduledDateTo",        scheduledTo);
+    if (completionFrom) params.set("completionDateFrom",     completionFrom);
+    if (completionTo)   params.set("completionDateTo",       completionTo);
     const token = localStorage.getItem("token");
     const res = await fetch(`/api/export/inspections?${params.toString()}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) return;
