@@ -1,64 +1,42 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  useListInspections,
-  getListInspectionsQueryKey,
-  useCreateInspection,
-  useUpdateInspection,
-  useDeleteInspection,
-  useListElevators,
-  getListElevatorsQueryKey,
-  useListBuildings,
-  getListBuildingsQueryKey,
-  useListCustomers,
-  getListCustomersQueryKey,
+  useListInspections, getListInspectionsQueryKey,
+  useCreateInspection, useUpdateInspection, useDeleteInspection,
+  useListElevators, getListElevatorsQueryKey,
+  useListBuildings, getListBuildingsQueryKey,
+  useListCustomers, getListCustomersQueryKey,
   Inspection,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
   Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays,
   X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  ChevronsUpDown, Check, SlidersHorizontal,
+  ChevronsUpDown, Check, SlidersHorizontal, Building2, Layers,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
@@ -66,7 +44,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { FilterCombobox } from "@/components/filter-combobox";
 import dayjs from "dayjs";
 
-const PAGE_SIZE = 50;
+/* ─── Constants ─────────────────────────────────────────────── */
+const PAGE_GROUPS = 20; // elevator cards per page
 
 const MONTH_OPTIONS = [
   { value: "01", label: "January" },  { value: "02", label: "February" },
@@ -77,6 +56,15 @@ const MONTH_OPTIONS = [
   { value: "11", label: "November" }, { value: "12", label: "December" },
 ];
 
+const AGING_BUCKET_OPTIONS = [
+  { value: "current",  label: "Current"     },
+  { value: "1-30",     label: "1–30 Days"   },
+  { value: "31-60",    label: "31–60 Days"  },
+  { value: "61-90",    label: "61–90 Days"  },
+  { value: "91-120",   label: "91–120 Days" },
+  { value: "120plus",  label: "121+ Days"   },
+];
+
 const STATUS_OPTIONS = [
   { value: "NOT_STARTED", label: "Not Scheduled" },
   { value: "SCHEDULED",   label: "Scheduled" },
@@ -84,46 +72,82 @@ const STATUS_OPTIONS = [
   { value: "COMPLETED",   label: "Completed" },
 ];
 
-const INSP_TYPE_OPTIONS = [
-  { value: "CAT1", label: "CAT 1" },
-  { value: "CAT5", label: "CAT 5" },
-];
+const INSP_TYPE_OPTIONS   = [{ value: "CAT1", label: "CAT 1" }, { value: "CAT5", label: "CAT 5" }];
+const UNIT_TYPE_OPTIONS   = [{ value: "traction", label: "Traction" }, { value: "hydraulic", label: "Hydraulic" }, { value: "other", label: "Other" }];
 
-const UNIT_TYPE_OPTIONS = [
-  { value: "traction",  label: "Traction" },
-  { value: "hydraulic", label: "Hydraulic" },
-  { value: "other",     label: "Other" },
-];
+/* ─── Helpers ────────────────────────────────────────────────── */
+function fmt(date?: string | null) { return date ? dayjs(date).format("MM/DD/YYYY") : null; }
 
-const inspectionSchema = z.object({
-  elevatorId: z.coerce.number().min(1, "Elevator is required"),
-  inspectionType: z.enum(["CAT1", "CAT5"] as const),
-  recurrenceYears: z.coerce.number().min(1, "Recurrence is required"),
-  lastInspectionDate: z.string().optional(),
-  scheduledDate: z.string().optional(),
-  completionDate: z.string().optional(),
-  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const).optional(),
-  notes: z.string().optional(),
-});
-
-type InspectionFormValues = z.infer<typeof inspectionSchema>;
-
-function fmt(date?: string | null) {
-  if (!date) return null;
-  return dayjs(date).format("MM/DD/YYYY");
+function getAgingBucketValue(due: string | null | undefined, status?: string): string | null {
+  if (status === "COMPLETED") return null;
+  if (!due) return null;
+  const days = dayjs().diff(dayjs(due), "day");
+  if (days <= 0)   return "current";
+  if (days <= 30)  return "1-30";
+  if (days <= 60)  return "31-60";
+  if (days <= 90)  return "61-90";
+  if (days <= 120) return "91-120";
+  return "120plus";
 }
 
+function AgingPill({ due, status }: { due?: string | null; status?: string }) {
+  const bucket = getAgingBucketValue(due, status);
+  if (!bucket) return <span className="text-zinc-300 text-sm">—</span>;
+  const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
+  const cls =
+    bucket === "current"  ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+    bucket === "1-30"     ? "bg-amber-100   text-amber-700   border-amber-200"   :
+    bucket === "31-60"    ? "bg-orange-100  text-orange-700  border-orange-200"  :
+    bucket === "61-90"    ? "bg-red-100     text-red-700     border-red-200"     :
+    bucket === "91-120"   ? "bg-red-200     text-red-800     border-red-300"     :
+                            "bg-red-300     text-red-900     border-red-400";
+  return (
+    <span className={`inline-flex items-center text-sm font-semibold px-2 py-0.5 rounded border whitespace-nowrap ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
+/* ─── Form schema ────────────────────────────────────────────── */
+const inspectionSchema = z.object({
+  elevatorId:        z.coerce.number().min(1, "Elevator is required"),
+  inspectionType:    z.enum(["CAT1", "CAT5"] as const),
+  recurrenceYears:   z.coerce.number().min(1, "Recurrence is required"),
+  lastInspectionDate: z.string().optional(),
+  scheduledDate:     z.string().optional(),
+  completionDate:    z.string().optional(),
+  status:            z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const).optional(),
+  notes:             z.string().optional(),
+});
+type InspectionFormValues = z.infer<typeof inspectionSchema>;
+
+/* ─── Grouped type ───────────────────────────────────────────── */
+type ElevGroup = {
+  elevatorId:   number;
+  elevatorName: string;
+  elevatorType: string;
+  bank:         string;
+  customerId:   number;
+  customerName: string;
+  buildingId:   number;
+  buildingName: string;
+  rows:         Inspection[];
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
 export default function Inspections() {
+
   /* ── Filter state ── */
-  const [selectedStatuses,    setSelectedStatuses]    = useState<string[]>([]);
-  const [selectedInspTypes,   setSelectedInspTypes]   = useState<string[]>([]);
-  const [selectedUnitTypes,   setSelectedUnitTypes]   = useState<string[]>([]);
-  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
-  const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>([]);
-  const [selectedElevatorIds, setSelectedElevatorIds] = useState<string[]>([]);
-  const [selectedBanks,       setSelectedBanks]       = useState<string[]>([]);
-  const [filterDueMonths,     setFilterDueMonths]     = useState<string[]>([]);
-  const [filterDueYears,      setFilterDueYears]      = useState<string[]>([]);
+  const [selectedStatuses,     setSelectedStatuses]     = useState<string[]>([]);
+  const [selectedInspTypes,    setSelectedInspTypes]    = useState<string[]>([]);
+  const [selectedUnitTypes,    setSelectedUnitTypes]    = useState<string[]>([]);
+  const [selectedCustomerIds,  setSelectedCustomerIds]  = useState<string[]>([]);
+  const [selectedBuildingIds,  setSelectedBuildingIds]  = useState<string[]>([]);
+  const [selectedElevatorIds,  setSelectedElevatorIds]  = useState<string[]>([]);
+  const [selectedBanks,        setSelectedBanks]        = useState<string[]>([]);
+  const [filterDueMonths,      setFilterDueMonths]      = useState<string[]>([]);
+  const [filterDueYears,       setFilterDueYears]       = useState<string[]>([]);
+  const [filterAgingBuckets,   setFilterAgingBuckets]   = useState<string[]>([]);
 
   /* ── Date range panel ── */
   const [showDateFilters, setShowDateFilters] = useState(false);
@@ -136,17 +160,19 @@ export default function Inspections() {
   const [completionFrom, setCompletionFrom] = useState("");
   const [completionTo,   setCompletionTo]   = useState("");
 
-  /* ── Dialog / delete state ── */
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  /* ── Dialog / delete / bulk state ── */
+  const [isAddOpen,         setIsAddOpen]         = useState(false);
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId,          setDeleteId]          = useState<number | null>(null);
+  const [bulkDeleteOpen,    setBulkDeleteOpen]    = useState(false);
+  const [selectedIds,       setSelectedIds]        = useState<Set<number>>(new Set());
 
-  /* ── Cascading form selectors ── */
+  /* ── Form cascade selectors ── */
   const [formCustomerId, setFormCustomerId] = useState("");
   const [formBuildingId, setFormBuildingId] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage,    setCurrentPage]    = useState(1);
 
-  /* ── Derived booleans ── */
+  /* ── Derived ── */
   const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo);
 
   /* ── Clear helpers ── */
@@ -159,38 +185,28 @@ export default function Inspections() {
     setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedElevatorIds([]);
     setSelectedBanks([]); setSelectedStatuses([]); setSelectedInspTypes([]);
     setSelectedUnitTypes([]); setFilterDueMonths([]); setFilterDueYears([]);
-    clearDateFilters();
+    setFilterAgingBuckets([]); clearDateFilters();
   }, [clearDateFilters]);
 
-  /* ── Cascade change handlers ── */
-  const handleCustomerChange = (val: string[]) => {
-    setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedElevatorIds([]); setCurrentPage(1);
-  };
-  const handleBuildingChange = (val: string[]) => {
-    setSelectedBuildingIds(val); setSelectedElevatorIds([]); setCurrentPage(1);
-  };
+  const handleCustomerChange = (val: string[]) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedElevatorIds([]); setCurrentPage(1); };
+  const handleBuildingChange = (val: string[]) => { setSelectedBuildingIds(val); setSelectedElevatorIds([]); setCurrentPage(1); };
 
   /* ── Data fetching ── */
   const dateQueryParams = {
-    lastInspectionDateFrom: lastInspFrom || undefined,
-    lastInspectionDateTo:   lastInspTo   || undefined,
-    nextDueDateFrom:  nextDueFrom  || undefined,
-    nextDueDateTo:    nextDueTo    || undefined,
-    scheduledDateFrom: scheduledFrom || undefined,
-    scheduledDateTo:   scheduledTo   || undefined,
-    completionDateFrom: completionFrom || undefined,
-    completionDateTo:   completionTo   || undefined,
+    lastInspectionDateFrom: lastInspFrom || undefined, lastInspectionDateTo: lastInspTo || undefined,
+    nextDueDateFrom: nextDueFrom || undefined,         nextDueDateTo: nextDueTo || undefined,
+    scheduledDateFrom: scheduledFrom || undefined,     scheduledDateTo: scheduledTo || undefined,
+    completionDateFrom: completionFrom || undefined,   completionDateTo: completionTo || undefined,
   };
-
   const { data: allInspections, isLoading } = useListInspections(dateQueryParams, { query: { queryKey: getListInspectionsQueryKey(dateQueryParams) } });
-  const { data: elevators }  = useListElevators({},  { query: { queryKey: getListElevatorsQueryKey({}) } });
-  const { data: customers }  = useListCustomers({},  { query: { queryKey: getListCustomersQueryKey({}) } });
-  const { data: buildings }  = useListBuildings({},  { query: { queryKey: getListBuildingsQueryKey({}) } });
+  const { data: elevators } = useListElevators({}, { query: { queryKey: getListElevatorsQueryKey({}) } });
+  const { data: customers } = useListCustomers({}, { query: { queryKey: getListCustomersQueryKey({}) } });
+  const { data: buildings } = useListBuildings({}, { query: { queryKey: getListBuildingsQueryKey({}) } });
 
   /* ── Elevator meta map ── */
   const elevatorMeta = useMemo(() => {
-    const map = new Map<number, { bank: string; type: string; customerId: number; buildingId: number }>();
-    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId, buildingId: e.buildingId });
+    const map = new Map<number, { bank: string; type: string; customerId: number; buildingId: number; name: string }>();
+    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId, buildingId: e.buildingId, name: e.name });
     return map;
   }, [elevators]);
 
@@ -198,55 +214,42 @@ export default function Inspections() {
   const inspections = useMemo(() => {
     return (allInspections ?? []).filter(insp => {
       const meta = elevatorMeta.get(insp.elevatorId);
-      if (selectedCustomerIds.length > 0 && (!meta || !selectedCustomerIds.includes(String(meta.customerId)))) return false;
-      if (selectedBuildingIds.length > 0 && (!meta || !selectedBuildingIds.includes(String(meta.buildingId)))) return false;
-      if (selectedBanks.length > 0       && (!meta || !selectedBanks.includes(meta.bank)))                     return false;
-      if (selectedElevatorIds.length > 0 && !selectedElevatorIds.includes(String(insp.elevatorId)))            return false;
-      if (selectedStatuses.length > 0    && !selectedStatuses.includes((insp as any).trueStatus ?? insp.status)) return false;
-      if (selectedInspTypes.length > 0   && !selectedInspTypes.includes(insp.inspectionType))                  return false;
-      if (selectedUnitTypes.length > 0   && (!meta || !selectedUnitTypes.includes(meta.type)))                 return false;
-      if (filterDueMonths.length > 0) {
-        const month = insp.nextDueDate ? dayjs(insp.nextDueDate).format("MM") : null;
-        if (!month || !filterDueMonths.includes(month)) return false;
-      }
-      if (filterDueYears.length > 0) {
-        const year = insp.nextDueDate ? dayjs(insp.nextDueDate).format("YYYY") : null;
-        if (!year || !filterDueYears.includes(year)) return false;
-      }
+      if (selectedCustomerIds.length  > 0 && (!meta || !selectedCustomerIds.includes(String(meta.customerId))))  return false;
+      if (selectedBuildingIds.length  > 0 && (!meta || !selectedBuildingIds.includes(String(meta.buildingId))))  return false;
+      if (selectedBanks.length        > 0 && (!meta || !selectedBanks.includes(meta.bank)))                      return false;
+      if (selectedElevatorIds.length  > 0 && !selectedElevatorIds.includes(String(insp.elevatorId)))             return false;
+      if (selectedStatuses.length     > 0 && !selectedStatuses.includes((insp as any).trueStatus ?? insp.status)) return false;
+      if (selectedInspTypes.length    > 0 && !selectedInspTypes.includes(insp.inspectionType))                   return false;
+      if (selectedUnitTypes.length    > 0 && (!meta || !selectedUnitTypes.includes(meta.type)))                  return false;
+      if (filterDueMonths.length      > 0) { const m = insp.nextDueDate ? dayjs(insp.nextDueDate).format("MM") : null; if (!m || !filterDueMonths.includes(m)) return false; }
+      if (filterDueYears.length       > 0) { const y = insp.nextDueDate ? dayjs(insp.nextDueDate).format("YYYY") : null; if (!y || !filterDueYears.includes(y)) return false; }
+      if (filterAgingBuckets.length   > 0) { const b = getAgingBucketValue(insp.nextDueDate, insp.status); if (!b || !filterAgingBuckets.includes(b)) return false; }
       return true;
     });
-  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears]);
+  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears, filterAgingBuckets]);
 
   /* ── Cascade filter options ── */
   const customerOptions = useMemo(() => (customers ?? []).map(c => ({ value: String(c.id), label: c.name })), [customers]);
-
   const buildingOptions = useMemo(() => {
-    const list = selectedCustomerIds.length > 0
-      ? (buildings ?? []).filter(b => selectedCustomerIds.includes(String(b.customerId)))
-      : (buildings ?? []);
+    const list = selectedCustomerIds.length > 0 ? (buildings ?? []).filter(b => selectedCustomerIds.includes(String(b.customerId))) : (buildings ?? []);
     return list.map(b => ({ value: String(b.id), label: b.name }));
   }, [buildings, selectedCustomerIds]);
-
   const bankOptions = useMemo(() => {
     let src = elevators ?? [];
     if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
     if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
     return Array.from(new Set(src.map(e => e.bank).filter(Boolean) as string[])).sort().map(b => ({ value: b, label: b }));
   }, [elevators, selectedCustomerIds, selectedBuildingIds]);
-
   const elevatorOptions = useMemo(() => {
     let src = elevators ?? [];
     if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
     if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
-    if (selectedBanks.length > 0)       src = src.filter(e => selectedBanks.includes(e.bank ?? ""));
+    if (selectedBanks.length       > 0) src = src.filter(e => selectedBanks.includes(e.bank ?? ""));
     return [...src].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")).map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") }));
   }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks]);
-
   const yearFilterOptions = useMemo(() => {
     const years = new Set<string>();
-    for (const insp of allInspections ?? []) {
-      if (insp.nextDueDate) years.add(dayjs(insp.nextDueDate).format("YYYY"));
-    }
+    for (const insp of allInspections ?? []) { if (insp.nextDueDate) years.add(dayjs(insp.nextDueDate).format("YYYY")); }
     return Array.from(years).sort().map(y => ({ value: y, label: y }));
   }, [allInspections]);
 
@@ -254,39 +257,67 @@ export default function Inspections() {
   const formBuildingList = useMemo(() =>
     formCustomerId ? (buildings ?? []).filter(b => String(b.customerId) === formCustomerId) : (buildings ?? []),
     [buildings, formCustomerId]);
-
   const formElevatorList = useMemo(() => {
     if (formBuildingId) return (elevators ?? []).filter(e => String(e.buildingId) === formBuildingId);
     if (formCustomerId) return (elevators ?? []).filter(e => formBuildingList.some(b => b.id === e.buildingId));
     return elevators ?? [];
   }, [elevators, formBuildingId, formCustomerId, formBuildingList]);
 
-  /* ── Sort + paginate ── */
-  const processedRows = useMemo(() => {
-    return [...(inspections ?? [])].sort((a, b) => {
+  /* ── Build elevator groups (sort + group) ── */
+  const allGroups = useMemo((): ElevGroup[] => {
+    const map = new Map<number, ElevGroup>();
+    const sorted = [...(inspections ?? [])].sort((a, b) => {
       const c1 = (a.customerName ?? "").localeCompare(b.customerName ?? ""); if (c1 !== 0) return c1;
       const c2 = (a.buildingName ?? "").localeCompare(b.buildingName ?? ""); if (c2 !== 0) return c2;
-      const bankA = elevatorMeta.get(a.elevatorId)?.bank ?? "";
-      const bankB = elevatorMeta.get(b.elevatorId)?.bank ?? "";
-      const c3 = bankA.localeCompare(bankB); if (c3 !== 0) return c3;
+      const bkA = elevatorMeta.get(a.elevatorId)?.bank ?? "", bkB = elevatorMeta.get(b.elevatorId)?.bank ?? "";
+      const c3 = bkA.localeCompare(bkB); if (c3 !== 0) return c3;
       const c4 = (a.elevatorName ?? "").localeCompare(b.elevatorName ?? ""); if (c4 !== 0) return c4;
-      const c6 = a.inspectionType.localeCompare(b.inspectionType); if (c6 !== 0) return c6;
-      return (a.nextDueDate ?? "9999").localeCompare(b.nextDueDate ?? "9999");
+      return a.inspectionType.localeCompare(b.inspectionType);
     });
+    for (const insp of sorted) {
+      const meta = elevatorMeta.get(insp.elevatorId);
+      if (!map.has(insp.elevatorId)) {
+        map.set(insp.elevatorId, {
+          elevatorId:   insp.elevatorId,
+          elevatorName: insp.elevatorName ?? `Elevator #${insp.elevatorId}`,
+          elevatorType: (insp as any).elevatorType ?? meta?.type ?? "",
+          bank:         meta?.bank ?? "",
+          customerId:   meta?.customerId ?? 0,
+          customerName: insp.customerName ?? "—",
+          buildingId:   meta?.buildingId ?? 0,
+          buildingName: insp.buildingName ?? "—",
+          rows: [],
+        });
+      }
+      map.get(insp.elevatorId)!.rows.push(insp);
+    }
+    // Preserve sort order (Map preserves insertion order)
+    return Array.from(map.values());
   }, [inspections, elevatorMeta]);
 
-  const totalPages = Math.max(1, Math.ceil(processedRows.length / PAGE_SIZE));
-  const safePage   = Math.min(currentPage, totalPages);
-  const pagedRows  = processedRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  /* ── Pagination over groups ── */
+  const totalGroupPages = Math.max(1, Math.ceil(allGroups.length / PAGE_GROUPS));
+  const safePage        = Math.min(currentPage, totalGroupPages);
+  const pagedGroups     = allGroups.slice((safePage - 1) * PAGE_GROUPS, safePage * PAGE_GROUPS);
 
   useEffect(() => { setCurrentPage(1); }, [inspections]);
 
+  /* ── Select helpers ── */
+  const pagedIds = useMemo(() => pagedGroups.flatMap(g => g.rows.map(r => r.id)), [pagedGroups]);
+  const allPageSelected = pagedIds.length > 0 && pagedIds.every(id => selectedIds.has(id));
+  const somePageSelected = pagedIds.some(id => selectedIds.has(id));
+  const toggleOne = (id: number) => setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleAll = () => {
+    if (allPageSelected) { setSelectedIds(prev => { const n = new Set(prev); pagedIds.forEach(id => n.delete(id)); return n; }); }
+    else { setSelectedIds(prev => { const n = new Set(prev); pagedIds.forEach(id => n.add(id)); return n; }); }
+  };
+
   /* ── Mutations ── */
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const createMutation = useCreateInspection();
-  const updateMutation = useUpdateInspection();
-  const deleteMutation = useDeleteInspection();
+  const queryClient     = useQueryClient();
+  const { toast }       = useToast();
+  const createMutation  = useCreateInspection();
+  const updateMutation  = useUpdateInspection();
+  const deleteMutation  = useDeleteInspection();
 
   const form = useForm<InspectionFormValues>({
     resolver: zodResolver(inspectionSchema),
@@ -296,13 +327,13 @@ export default function Inspections() {
   const onSubmit = (data: InspectionFormValues) => {
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data }, {
-        onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive", duration: 10000 }); },
-        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the All Inspections menu first." : ""; toast({ title: "Could not update inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
+        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
+        onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not update inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
     } else {
       createMutation.mutate({ data }, {
-        onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive", duration: 10000 }); },
-        onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the All Inspections menu first." : ""; toast({ title: "Could not add inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
+        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
+        onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not add inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
     }
   };
@@ -311,25 +342,37 @@ export default function Inspections() {
     if (deleteId === null) return;
     deleteMutation.mutate({ id: deleteId }, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); toast({ title: "Inspection deleted" }); setDeleteId(null); },
-      onError:   () => { toast({ title: "Failed to delete inspection", variant: "destructive" }); setDeleteId(null); },
+      onError:   () => { toast({ title: "Failed to delete", variant: "destructive" }); setDeleteId(null); },
     });
   };
 
-  const openEdit = (inspection: Inspection) => {
-    setEditingInspection(inspection);
-    const elev = elevators?.find(e => e.id === inspection.elevatorId);
+  const confirmBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    let failed = 0;
+    for (const id of ids) {
+      try { await deleteMutation.mutateAsync({ id }); }
+      catch { failed++; }
+    }
+    queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+    setSelectedIds(new Set()); setBulkDeleteOpen(false);
+    if (failed > 0) toast({ title: `Deleted ${ids.length - failed}; ${failed} failed`, variant: "destructive" });
+    else toast({ title: `Deleted ${ids.length} inspection${ids.length !== 1 ? "s" : ""}` });
+  };
+
+  const openEdit = (insp: Inspection) => {
+    setEditingInspection(insp);
+    const elev = elevators?.find(e => e.id === insp.elevatorId);
     const bldg = buildings?.find(b => b.id === elev?.buildingId);
     setFormCustomerId(bldg?.customerId ? String(bldg.customerId) : "");
     setFormBuildingId(elev?.buildingId ? String(elev.buildingId) : "");
     form.reset({
-      elevatorId: inspection.elevatorId,
-      inspectionType: inspection.inspectionType,
-      recurrenceYears: inspection.recurrenceYears,
-      status: inspection.status === "OVERDUE" ? "NOT_STARTED" : inspection.status,
-      lastInspectionDate: inspection.lastInspectionDate ? dayjs(inspection.lastInspectionDate).format("YYYY-MM-DD") : "",
-      scheduledDate: inspection.scheduledDate ? dayjs(inspection.scheduledDate).format("YYYY-MM-DD") : "",
-      completionDate: inspection.completionDate ? dayjs(inspection.completionDate).format("YYYY-MM-DD") : "",
-      notes: inspection.notes || "",
+      elevatorId: insp.elevatorId, inspectionType: insp.inspectionType,
+      recurrenceYears: insp.recurrenceYears,
+      status: insp.status === "OVERDUE" ? "NOT_STARTED" : insp.status,
+      lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      scheduledDate:  insp.scheduledDate  ? dayjs(insp.scheduledDate).format("YYYY-MM-DD")  : "",
+      completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",
+      notes: insp.notes || "",
     });
   };
 
@@ -340,53 +383,58 @@ export default function Inspections() {
     const token = localStorage.getItem("token");
     const res = await fetch(`/api/export/inspections?${params.toString()}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) return;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `inspections_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const blob = await res.blob(); const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url;
+    a.download = `inspections_${new Date().toISOString().slice(0, 10)}.xlsx`;
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   };
 
-  const watchLastDate       = form.watch("lastInspectionDate");
-  const watchRecurrence     = form.watch("recurrenceYears");
-  const watchStatus         = form.watch("status");
-  const watchScheduledDate  = form.watch("scheduledDate");
-  const watchCompletionDate = form.watch("completionDate");
-  const nextDuePreview = watchLastDate && watchRecurrence ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD") : "N/A";
+  const watchLastDate      = form.watch("lastInspectionDate");
+  const watchRecurrence    = form.watch("recurrenceYears");
+  const watchStatus        = form.watch("status");
+  const watchScheduled     = form.watch("scheduledDate");
+  const watchCompletion    = form.watch("completionDate");
+  const nextDuePreview = watchLastDate && watchRecurrence
+    ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD") : "N/A";
 
-  useEffect(() => { if (watchCompletionDate) form.setValue("status", "COMPLETED"); }, [watchCompletionDate]);
+  useEffect(() => { if (watchCompletion) form.setValue("status", "COMPLETED"); }, [watchCompletion]);
   useEffect(() => {
     const today = dayjs().format("YYYY-MM-DD");
     if (watchStatus === "SCHEDULED" || watchStatus === "IN_PROGRESS") { if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today); }
     else if (watchStatus === "COMPLETED") { if (!form.getValues("scheduledDate")) form.setValue("scheduledDate", today); if (!form.getValues("completionDate")) form.setValue("completionDate", today); }
   }, [watchStatus]);
-  useEffect(() => { if (watchScheduledDate && form.getValues("status") === "NOT_STARTED") form.setValue("status", "SCHEDULED"); }, [watchScheduledDate]);
+  useEffect(() => { if (watchScheduled && form.getValues("status") === "NOT_STARTED") form.setValue("status", "SCHEDULED"); }, [watchScheduled]);
 
-  /* ── Filter bar derived values ── */
+  /* ── Filter bar chips ── */
   const activeFilterCount = [
     selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds,
-    selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses,
+    selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears,
+    selectedStatuses, filterAgingBuckets,
   ].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
 
   const chipLabel = (arr: string[], opts: { value: string; label: string }[], single: string) =>
     arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
 
   const activeChips: { label: string; value: string; onRemove: () => void }[] = [];
-  if (selectedCustomerIds.length > 0) activeChips.push({ label: "Customer",  value: chipLabel(selectedCustomerIds, customerOptions,    "customers"), onRemove: () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
-  if (selectedBuildingIds.length > 0) activeChips.push({ label: "Building",  value: chipLabel(selectedBuildingIds, buildingOptions,    "buildings"), onRemove: () => { setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
-  if (selectedBanks.length > 0)       activeChips.push({ label: "Bank",      value: chipLabel(selectedBanks,       bankOptions,        "banks"),     onRemove: () => { setSelectedBanks([]); setSelectedElevatorIds([]); } });
-  if (selectedElevatorIds.length > 0) activeChips.push({ label: "Elevator",  value: chipLabel(selectedElevatorIds, elevatorOptions,    "elevators"), onRemove: () => setSelectedElevatorIds([]) });
-  if (selectedUnitTypes.length > 0)   activeChips.push({ label: "Unit Type", value: chipLabel(selectedUnitTypes,   UNIT_TYPE_OPTIONS,  "types"),     onRemove: () => setSelectedUnitTypes([]) });
-  if (selectedInspTypes.length > 0)   activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes,   INSP_TYPE_OPTIONS,  "types"),     onRemove: () => setSelectedInspTypes([]) });
-  if (filterDueMonths.length > 0)     activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths,     MONTH_OPTIONS,      "months"),    onRemove: () => setFilterDueMonths([]) });
-  if (filterDueYears.length > 0)      activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears,      yearFilterOptions,  "years"),     onRemove: () => setFilterDueYears([]) });
-  if (selectedStatuses.length > 0)    activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses,    STATUS_OPTIONS,     "statuses"),  onRemove: () => setSelectedStatuses([]) });
-  if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                       onRemove: () => clearDateFilters() });
+  if (selectedCustomerIds.length  > 0) activeChips.push({ label: "Customer",  value: chipLabel(selectedCustomerIds, customerOptions,      "customers"), onRemove: () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
+  if (selectedBuildingIds.length  > 0) activeChips.push({ label: "Building",  value: chipLabel(selectedBuildingIds, buildingOptions,      "buildings"), onRemove: () => { setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
+  if (selectedBanks.length        > 0) activeChips.push({ label: "Bank",      value: chipLabel(selectedBanks,       bankOptions,          "banks"),     onRemove: () => { setSelectedBanks([]); setSelectedElevatorIds([]); } });
+  if (selectedElevatorIds.length  > 0) activeChips.push({ label: "Elevator",  value: chipLabel(selectedElevatorIds, elevatorOptions,      "elevators"), onRemove: () => setSelectedElevatorIds([]) });
+  if (selectedUnitTypes.length    > 0) activeChips.push({ label: "Unit Type", value: chipLabel(selectedUnitTypes,   UNIT_TYPE_OPTIONS,    "types"),     onRemove: () => setSelectedUnitTypes([]) });
+  if (selectedInspTypes.length    > 0) activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes,   INSP_TYPE_OPTIONS,    "types"),     onRemove: () => setSelectedInspTypes([]) });
+  if (filterDueMonths.length      > 0) activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths,     MONTH_OPTIONS,        "months"),    onRemove: () => setFilterDueMonths([]) });
+  if (filterDueYears.length       > 0) activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears,      yearFilterOptions,    "years"),     onRemove: () => setFilterDueYears([]) });
+  if (selectedStatuses.length     > 0) activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses,    STATUS_OPTIONS,       "statuses"),  onRemove: () => setSelectedStatuses([]) });
+  if (filterAgingBuckets.length   > 0) activeChips.push({ label: "Aging",     value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"),   onRemove: () => setFilterAgingBuckets([]) });
+  if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
+
+  /* ── Section header helpers ── */
+  const totalInspCount = allGroups.reduce((s, g) => s + g.rows.length, 0);
 
   return (
-    <div className="flex flex-col gap-5 animate-in fade-in duration-500 h-full">
+    <div className="flex flex-col gap-5 animate-in fade-in duration-500">
 
-      {/* ── Header ── */}
+      {/* ── Page header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">All Inspections</h1>
@@ -431,9 +479,7 @@ export default function Inspections() {
                             <FormControl>
                               <Button variant="outline" role="combobox" disabled={!!editingInspection || !formBuildingId}
                                 className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}>
-                                {field.value
-                                  ? (() => { const e = elevators?.find(e => e.id === Number(field.value)); return e ? e.name : "Select an elevator"; })()
-                                  : (!formBuildingId ? "Select a building first" : "Select an elevator")}
+                                {field.value ? (() => { const e = elevators?.find(e => e.id === Number(field.value)); return e ? e.name : "Select an elevator"; })() : (!formBuildingId ? "Select a building first" : "Select an elevator")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
@@ -447,7 +493,7 @@ export default function Inspections() {
                                   {formElevatorList.map(e => (
                                     <CommandItem key={e.id} value={`${e.name} ${e.buildingName}`} onSelect={() => field.onChange(e.id.toString())}>
                                       <Check className={cn("mr-2 h-4 w-4", Number(field.value) === e.id ? "opacity-100" : "opacity-0")} />
-                                      {e.name}{e.buildingName ? <span className="ml-1.5 text-muted-foreground text-xs">{e.buildingName}</span> : null}
+                                      {e.name}{e.buildingName && <span className="ml-1.5 text-muted-foreground text-xs">{e.buildingName}</span>}
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -535,81 +581,48 @@ export default function Inspections() {
         </div>
       </div>
 
-      {/* ── Filter bar (Elevators-style) ── */}
+      {/* ── Filter bar ── */}
       <div className="flex flex-col gap-3">
         <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
-
-          {/* Single unified filter row */}
           <div className="flex items-center gap-0 px-3 py-2.5 min-h-[52px]">
 
-            {/* Left: label + count */}
+            {/* Left label */}
             <div className="flex items-center gap-2 pr-3 mr-2 border-r border-zinc-200 shrink-0 self-stretch py-0.5">
               <SlidersHorizontal className="h-[15px] w-[15px] text-zinc-400" />
               <span className="text-[13px] font-bold text-zinc-900 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
               {activeFilterCount > 0 && (
-                <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
-                  {activeFilterCount}
-                </span>
+                <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">{activeFilterCount}</span>
               )}
             </div>
 
-            {/* Middle: grouped comboboxes */}
+            {/* Middle combobox groups */}
             <div className="flex flex-wrap items-center gap-1.5 flex-1">
-
               {/* Group 1 — Location */}
-              <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange}
-                options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[175px]" />
-              <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange}
-                options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[150px]" />
-              <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setSelectedElevatorIds([]); setCurrentPage(1); }}
-                options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..."
-                disabled={bankOptions.length === 0} width="w-[150px]" />
-              <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }}
-                options={elevatorOptions} placeholder="All Elevators" searchPlaceholder="Search elevators..."
-                disabled={elevatorOptions.length === 0} width="w-[160px]" />
-
-              {/* Divider */}
+              <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange}           options={customerOptions}     placeholder="All Customers"  searchPlaceholder="Search customers..."  width="w-[175px]" />
+              <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange}           options={buildingOptions}     placeholder="All Buildings"  searchPlaceholder="Search buildings..."  width="w-[150px]" />
+              <FilterCombobox value={selectedBanks}       onValueChange={(v) => { setSelectedBanks(v); setSelectedElevatorIds([]); setCurrentPage(1); }}  options={bankOptions}        placeholder="All Banks"      searchPlaceholder="Search banks..."      disabled={bankOptions.length === 0}      width="w-[150px]" />
+              <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }}   options={elevatorOptions}    placeholder="All Elevators" searchPlaceholder="Search elevators..."  disabled={elevatorOptions.length === 0}  width="w-[160px]" />
               <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
-
               {/* Group 2 — Type */}
-              <FilterCombobox value={selectedUnitTypes} onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }}
-                options={UNIT_TYPE_OPTIONS} placeholder="All Unit Types" searchPlaceholder="Search unit types..." width="w-[175px]" />
-              <FilterCombobox value={selectedInspTypes} onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }}
-                options={INSP_TYPE_OPTIONS} placeholder="All Insp Types" searchPlaceholder="Search insp types..." width="w-[170px]" />
-
-              {/* Divider */}
+              <FilterCombobox value={selectedUnitTypes}   onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }}     options={UNIT_TYPE_OPTIONS}  placeholder="All Unit Types" searchPlaceholder="Search unit types..."  width="w-[175px]" />
+              <FilterCombobox value={selectedInspTypes}   onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }}     options={INSP_TYPE_OPTIONS}  placeholder="All Insp Types" searchPlaceholder="Search insp types..."  width="w-[170px]" />
               <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
-
               {/* Group 3 — Schedule & Status */}
-              <FilterCombobox value={filterDueMonths} onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }}
-                options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[150px]" />
-              <FilterCombobox value={filterDueYears} onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }}
-                options={yearFilterOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[130px]" />
-              <FilterCombobox value={selectedStatuses} onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}
-                options={STATUS_OPTIONS} placeholder="All Statuses" searchPlaceholder="Search statuses..." width="w-[160px]" />
-
-              {/* Divider */}
+              <FilterCombobox value={filterDueMonths}     onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }}       options={MONTH_OPTIONS}      placeholder="Due Month"     searchPlaceholder="Search months..."     width="w-[150px]" />
+              <FilterCombobox value={filterDueYears}      onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }}        options={yearFilterOptions}  placeholder="Due Year"      searchPlaceholder="Search years..."      width="w-[130px]" />
+              <FilterCombobox value={selectedStatuses}    onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}      options={STATUS_OPTIONS}     placeholder="All Statuses"  searchPlaceholder="Search statuses..."   width="w-[160px]" />
+              <FilterCombobox value={filterAgingBuckets}  onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }}    options={AGING_BUCKET_OPTIONS} placeholder="Aging Bucket" searchPlaceholder="Search buckets..."   width="w-[165px]" />
               <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
-
               {/* Date Ranges toggle */}
-              <button
-                onClick={() => setShowDateFilters(v => !v)}
-                className={cn(
-                  "h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap",
-                  showDateFilters || hasDateFilters
-                    ? "bg-blue-50 border-blue-300 text-blue-700"
-                    : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
-                )}
-              >
+              <button onClick={() => setShowDateFilters(v => !v)}
+                className={cn("h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap",
+                  showDateFilters || hasDateFilters ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700")}>
                 <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                 Date Ranges
                 {hasDateFilters && (
-                  <span
-                    role="button"
-                    aria-label="Clear date filters"
+                  <span role="button" aria-label="Clear date filters"
                     onClick={e => { e.stopPropagation(); clearDateFilters(); }}
-                    className="h-[14px] w-[14px] rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer shrink-0"
-                  >
+                    className="h-[14px] w-[14px] rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer shrink-0">
                     <X className="h-2 w-2 text-white" />
                   </span>
                 )}
@@ -617,35 +630,31 @@ export default function Inspections() {
               </button>
             </div>
 
-            {/* Right: result count + clear */}
+            {/* Right: count + clear */}
             <div className="flex items-center gap-2 pl-3 ml-2 border-l border-zinc-200 shrink-0">
               <span className="text-xs tabular-nums whitespace-nowrap">
-                <span className="font-bold text-zinc-700">{processedRows.length}</span>
-                <span className="text-zinc-400 ml-1">{processedRows.length === 1 ? "inspection" : "inspections"}</span>
+                <span className="font-bold text-zinc-700">{totalInspCount}</span>
+                <span className="text-zinc-400 ml-1">{totalInspCount === 1 ? "inspection" : "inspections"}</span>
               </span>
               {activeFilterCount > 0 && (
-                <button
-                  onClick={clearAllFilters}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors whitespace-nowrap"
-                >
+                <button onClick={clearAllFilters}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors whitespace-nowrap">
                   <X className="h-[11px] w-[11px]" /> Clear
                 </button>
               )}
             </div>
           </div>
 
-          {/* Active filter chips */}
+          {/* Active chips */}
           {activeChips.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 border-t border-zinc-100">
               <span className="text-[11px] font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
-              {activeChips.map((chip) => (
+              {activeChips.map(chip => (
                 <span key={chip.label}
                   className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[11px] font-medium text-blue-700 leading-none whitespace-nowrap">
-                  <span className="text-blue-400 font-normal">{chip.label}:</span>
-                  {chip.value}
+                  <span className="text-blue-400 font-normal">{chip.label}:</span>{chip.value}
                   <button onClick={chip.onRemove}
-                    className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors"
-                    aria-label={`Remove ${chip.label} filter`}>
+                    className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -679,13 +688,9 @@ export default function Inspections() {
                 <div key={label} className="space-y-1.5">
                   <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-[0.1em]">{label}</p>
                   <div className="flex gap-1.5 items-center">
-                    <input type="date"
-                      className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0"
-                      value={from} onChange={e => setFrom(e.target.value)} />
+                    <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
                     <span className="text-zinc-300 text-xs shrink-0">–</span>
-                    <input type="date"
-                      className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0"
-                      value={to} onChange={e => setTo(e.target.value)} />
+                    <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to}   onChange={e => setTo(e.target.value)} />
                   </div>
                 </div>
               ))}
@@ -694,212 +699,262 @@ export default function Inspections() {
         )}
       </div>
 
-      {/* ── Report table ── */}
-      <div className="relative overflow-auto rounded-xl border border-zinc-200 shadow-sm bg-white" style={{ maxHeight: "calc(100vh - 310px)" }}>
-        <table className="min-w-full border-separate border-spacing-0">
-
-          <thead>
-            <tr>
-              {/* Sticky double-column header */}
-              <th className="sticky top-0 left-0 z-30 px-4 py-3 text-left bg-zinc-900 border-b-2 border-zinc-700"
-                style={{ minWidth: 152 }}>
-                <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider whitespace-nowrap">Customer</span>
-              </th>
-              <th className="sticky top-0 left-[152px] z-30 px-4 py-3 text-left bg-zinc-900 border-b-2 border-zinc-700"
-                style={{ minWidth: 132, borderRight: "1px solid #3f3f46" }}>
-                <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider whitespace-nowrap">Building</span>
-              </th>
-              {[
-                { label: "Bank",       width: 105 },
-                { label: "Elevator",   width: 200 },
-                { label: "Unit Type",  width: 105 },
-                { label: "Type",       width: 78, center: true },
-                { label: "Last Insp.", width: 114 },
-                { label: "Recur.",     width: 68, center: true },
-                { label: "Next Due",   width: 114 },
-                { label: "Scheduled",  width: 114 },
-                { label: "Completed",  width: 114 },
-                { label: "Status",     width: 150 },
-                { label: "Actions",    width: 64 },
-              ].map(({ label, width, center }) => (
-                <th key={label}
-                  className={`sticky top-0 z-20 px-4 py-3 bg-zinc-900 border-b-2 border-zinc-700 whitespace-nowrap ${center ? "text-center" : "text-left"}`}
-                  style={{ minWidth: width }}>
-                  <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">{label}</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={13} className="py-20 text-center"><Spinner /></td></tr>
-            ) : pagedRows.length === 0 ? (
-              <tr>
-                <td colSpan={13} className="py-20 text-center">
-                  <div className="flex flex-col items-center gap-2 text-zinc-400">
-                    <ClipboardList className="h-10 w-10 opacity-20" />
-                    <p className="text-sm font-medium">No inspections found</p>
-                    <p className="text-xs text-zinc-400">Try adjusting your filters</p>
-                  </div>
-                </td>
-              </tr>
-            ) : pagedRows.map((insp, rowIdx) => {
-              const today = dayjs();
-              const isOverdue = insp.status !== "COMPLETED" && !!insp.nextDueDate && dayjs(insp.nextDueDate).isBefore(today);
-              const noNextDue = !insp.nextDueDate && insp.status !== "COMPLETED";
-              const meta = elevatorMeta.get(insp.elevatorId);
-              const prevInsp = rowIdx > 0 ? pagedRows[rowIdx - 1] : null;
-              const isNewGroup = rowIdx === 0 || prevInsp?.elevatorId !== insp.elevatorId;
-
-              const rowBase =
-                noNextDue  ? "bg-red-100/70"  :
-                isOverdue  ? "bg-red-50/80"    :
-                rowIdx % 2 === 0 ? "bg-white" : "bg-zinc-50/70";
-              const rowHover =
-                noNextDue  ? "hover:bg-red-100"   :
-                isOverdue  ? "hover:bg-red-100/60" :
-                "hover:bg-blue-50/40";
-              const groupBorder = isNewGroup && rowIdx > 0 ? "border-t-2 border-t-zinc-300" : "";
-              const cellBase = `px-4 py-2.5 text-xs text-zinc-700 border-b border-zinc-100 whitespace-nowrap align-middle ${rowBase} ${groupBorder}`;
-              const stickyCell = (left: string, extra = "") =>
-                `${cellBase} sticky ${left} z-10 ${extra}`;
-
-              return (
-                <tr key={insp.id} className={`group transition-colors ${rowHover}`}>
-                  {/* Sticky: Customer */}
-                  <td className={stickyCell("left-0")} style={{ minWidth: 152 }}>
-                    <span title={insp.customerName ?? undefined} className="font-semibold text-zinc-800 truncate block max-w-[136px]">
-                      {insp.customerName ?? "—"}
-                    </span>
-                  </td>
-                  {/* Sticky: Building */}
-                  <td className={stickyCell("left-[152px]")} style={{ minWidth: 132, borderRight: "1px solid #e4e4e7" }}>
-                    <span title={insp.buildingName ?? undefined} className="text-zinc-600 truncate block max-w-[116px]">
-                      {insp.buildingName ?? "—"}
-                    </span>
-                  </td>
-                  {/* Bank */}
-                  <td className={cellBase}>
-                    {meta?.bank ? <span className="text-zinc-700">{meta.bank}</span> : <span className="text-zinc-300">—</span>}
-                  </td>
-                  {/* Elevator */}
-                  <td className={cellBase}>
-                    <span title={insp.elevatorName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[188px]">
-                      {insp.elevatorName ?? "—"}
-                    </span>
-                  </td>
-                  {/* Unit Type */}
-                  <td className={cellBase}>
-                    {(insp as any).elevatorType
-                      ? <span className="capitalize text-zinc-600">{(insp as any).elevatorType === "hydraulic" ? "Hydraulic" : (insp as any).elevatorType === "traction" ? "Traction" : "Other"}</span>
-                      : <span className="text-zinc-300">—</span>}
-                  </td>
-                  {/* Insp Type */}
-                  <td className={`${cellBase} text-center`}>
-                    <span className={`inline-flex items-center justify-center text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
-                      {insp.inspectionType}
-                    </span>
-                  </td>
-                  {/* Last Inspection */}
-                  <td className={`${cellBase} tabular-nums`}>
-                    {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
-                  </td>
-                  {/* Recurrence */}
-                  <td className={`${cellBase} tabular-nums text-zinc-400 text-center`}>
-                    {insp.recurrenceYears === 1 ? "1 yr" : `${insp.recurrenceYears} yrs`}
-                  </td>
-                  {/* Next Due */}
-                  <td className={`${cellBase} tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-700"}`}>
-                    {fmt(insp.nextDueDate) ?? <span className="text-red-400 font-normal">Not set</span>}
-                  </td>
-                  {/* Scheduled */}
-                  <td className={`${cellBase} tabular-nums`}>
-                    {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
-                  </td>
-                  {/* Completed */}
-                  <td className={`${cellBase} tabular-nums`}>
-                    {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
-                  </td>
-                  {/* Status */}
-                  <td className={cellBase}>
-                    <StatusBadge status={insp.status} />
-                  </td>
-                  {/* Actions */}
-                  <td className={`${cellBase} text-right`}>
-                    <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEdit(insp); setIsAddOpen(true); }}>
-                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(insp.id)} disabled={deleteMutation.isPending}>
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── Footer: count + pagination ── */}
-      {!isLoading && processedRows.length > 0 && (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-zinc-400">
-            Showing{" "}
-            <span className="font-semibold text-zinc-600">{(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, processedRows.length)}</span>
-            {" "}of{" "}
-            <span className="font-semibold text-zinc-600">{processedRows.length}</span>
-            {" "}{processedRows.length === 1 ? "inspection" : "inspections"}
-          </span>
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-                className="h-7 w-7 flex items-center justify-center rounded border border-zinc-200 text-zinc-500 hover:bg-zinc-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
-                .reduce<(number | "...")[]>((acc, p, i, arr) => {
-                  if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("...");
-                  acc.push(p); return acc;
-                }, [])
-                .map((p, i) =>
-                  p === "..." ? (
-                    <span key={`ellipsis-${i}`} className="px-1 text-zinc-300 text-xs">…</span>
-                  ) : (
-                    <button key={p} onClick={() => setCurrentPage(p as number)}
-                      className={cn(
-                        "h-7 min-w-[28px] px-1.5 flex items-center justify-center rounded border text-xs transition-colors",
-                        safePage === p
-                          ? "bg-blue-600 border-blue-600 text-white font-semibold"
-                          : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-                      )}>
-                      {p}
-                    </button>
-                  )
-                )
-              }
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                className="h-7 w-7 flex items-center justify-center rounded border border-zinc-200 text-zinc-500 hover:bg-zinc-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
+      {/* ── Bulk-select action bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-2 z-40 flex items-center justify-between bg-zinc-900 text-white rounded-lg px-4 py-3 shadow-xl border border-zinc-700">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold">{selectedIds.size} inspection{selectedIds.size !== 1 ? "s" : ""} selected</span>
+            <button onClick={() => setSelectedIds(new Set())} className="text-zinc-400 hover:text-white text-xs underline">Deselect all</button>
+          </div>
+          <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)} className="gap-1.5">
+            <Trash2 className="h-3.5 w-3.5" /> Delete Selected
+          </Button>
         </div>
       )}
 
-      {/* ── Delete confirmation ── */}
+      {/* ── Card view ── */}
+      {isLoading ? (
+        <div className="flex justify-center py-20"><Spinner /></div>
+      ) : allGroups.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-20 text-zinc-400">
+          <ClipboardList className="h-12 w-12 opacity-20" />
+          <p className="text-base font-medium">No inspections found</p>
+          <p className="text-sm text-zinc-400">Try adjusting your filters or add a new inspection</p>
+        </div>
+      ) : (
+        <>
+          {/* Select-all row */}
+          <div className="flex items-center justify-between px-1">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allPageSelected}
+                ref={el => { if (el) el.indeterminate = somePageSelected && !allPageSelected; }}
+                onChange={toggleAll}
+                className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <span className="text-sm text-zinc-500">
+                {allPageSelected ? "Deselect all on page" : "Select all on page"}
+                <span className="ml-1.5 text-zinc-400">({pagedIds.length} records)</span>
+              </span>
+            </label>
+            <span className="text-sm text-zinc-400">
+              Showing <span className="font-semibold text-zinc-600">{allGroups.length}</span> elevator{allGroups.length !== 1 ? "s" : ""}
+              {" · "}<span className="font-semibold text-zinc-600">{totalInspCount}</span> inspection{totalInspCount !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Groups */}
+          {(() => {
+            const sections: JSX.Element[] = [];
+            let lastCustomerId = -1;
+            let lastBuildingId = -1;
+
+            pagedGroups.forEach((group) => {
+              /* Customer section header */
+              if (group.customerId !== lastCustomerId) {
+                lastCustomerId = group.customerId;
+                lastBuildingId = -1;
+                sections.push(
+                  <div key={`cust-${group.customerId}`}
+                    className="flex items-center gap-3 mt-4 first:mt-0 px-1 pb-1 border-b-2 border-zinc-900">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-zinc-900 text-white text-sm font-bold shrink-0">
+                      {group.customerName.substring(0, 2).toUpperCase()}
+                    </div>
+                    <span className="text-base font-bold text-zinc-900 tracking-tight">{group.customerName}</span>
+                  </div>
+                );
+              }
+
+              /* Building sub-header */
+              if (group.buildingId !== lastBuildingId) {
+                lastBuildingId = group.buildingId;
+                sections.push(
+                  <div key={`bldg-${group.buildingId}-under-${group.customerId}`}
+                    className="flex items-center gap-2 mt-3 px-1">
+                    <Building2 className="h-4 w-4 text-zinc-400 shrink-0" />
+                    <span className="text-sm font-semibold text-zinc-600">{group.buildingName}</span>
+                  </div>
+                );
+              }
+
+              /* Elevator card */
+              const hasOverdue = group.rows.some(r => r.status !== "COMPLETED" && r.nextDueDate && dayjs(r.nextDueDate).isBefore(dayjs()));
+              const hasNoNextDue = group.rows.some(r => !r.nextDueDate && r.status !== "COMPLETED");
+              const cardBorder = hasNoNextDue ? "border-red-300" : hasOverdue ? "border-red-200" : "border-zinc-200";
+
+              sections.push(
+                <div key={`elev-${group.elevatorId}`}
+                  className={`bg-white rounded-xl border ${cardBorder} shadow-sm overflow-hidden mt-2`}>
+                  {/* Card header */}
+                  <div className={`flex items-center justify-between px-4 py-3 ${hasNoNextDue ? "bg-red-50" : hasOverdue ? "bg-amber-50/60" : "bg-zinc-50"} border-b border-zinc-100`}>
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 text-blue-700 shrink-0">
+                        <Layers className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-bold text-zinc-900">{group.elevatorName}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {group.bank && <span className="text-xs text-zinc-500">Bank: <span className="font-medium text-zinc-700">{group.bank}</span></span>}
+                          {group.bank && group.elevatorType && <span className="text-zinc-300 text-xs">·</span>}
+                          {group.elevatorType && <span className="text-xs text-zinc-500 capitalize">{group.elevatorType}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-zinc-400">{group.rows.length} record{group.rows.length !== 1 ? "s" : ""}</span>
+                    </div>
+                  </div>
+
+                  {/* Inspection rows */}
+                  <div className="divide-y divide-zinc-100">
+                    {/* Column header row */}
+                    <div className="grid items-center gap-3 px-4 py-2 bg-zinc-50/80 border-b border-zinc-100"
+                      style={{ gridTemplateColumns: "28px 80px 1fr 1fr 1fr 1fr 160px 150px 72px" }}>
+                      <div />
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Type</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Last Insp.</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Next Due</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Scheduled</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Completed</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Status</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Aging</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-right">Actions</span>
+                    </div>
+
+                    {group.rows.map((insp) => {
+                      const isOverdue  = insp.status !== "COMPLETED" && !!insp.nextDueDate && dayjs(insp.nextDueDate).isBefore(dayjs());
+                      const noNextDue  = !insp.nextDueDate && insp.status !== "COMPLETED";
+                      const isSelected = selectedIds.has(insp.id);
+                      const rowBg = noNextDue ? "bg-red-50" : isOverdue ? "bg-orange-50/40" : isSelected ? "bg-blue-50/50" : "bg-white hover:bg-zinc-50/70";
+
+                      return (
+                        <div key={insp.id}
+                          className={`grid items-center gap-3 px-4 py-3 transition-colors ${rowBg}`}
+                          style={{ gridTemplateColumns: "28px 80px 1fr 1fr 1fr 1fr 160px 150px 72px" }}>
+
+                          {/* Checkbox */}
+                          <input type="checkbox" checked={isSelected} onChange={() => toggleOne(insp.id)}
+                            className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+
+                          {/* Insp type */}
+                          <span className={`inline-flex items-center justify-center text-sm font-bold px-2.5 py-0.5 rounded-full tracking-wide w-fit
+                            ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
+                            {insp.inspectionType}
+                          </span>
+
+                          {/* Last Inspection */}
+                          <span className="text-sm tabular-nums text-zinc-700">
+                            {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
+                          </span>
+
+                          {/* Next Due */}
+                          <span className={`text-sm tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
+                            {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
+                          </span>
+
+                          {/* Scheduled */}
+                          <span className="text-sm tabular-nums text-zinc-600">
+                            {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
+                          </span>
+
+                          {/* Completed */}
+                          <span className="text-sm tabular-nums text-zinc-600">
+                            {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
+                          </span>
+
+                          {/* Status */}
+                          <div><StatusBadge status={insp.status} /></div>
+
+                          {/* Aging */}
+                          <div><AgingPill due={insp.nextDueDate} status={insp.status} /></div>
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-end gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                              onClick={() => { openEdit(insp); setIsAddOpen(true); }}>
+                              <Pencil className="h-3.5 w-3.5 text-zinc-400 hover:text-zinc-700" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                              onClick={() => setDeleteId(insp.id)} disabled={deleteMutation.isPending}>
+                              <Trash2 className="h-3.5 w-3.5 text-zinc-400 hover:text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            });
+
+            return sections;
+          })()}
+
+          {/* ── Pagination ── */}
+          {totalGroupPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-sm text-zinc-400">
+                Page <span className="font-semibold text-zinc-600">{safePage}</span> of <span className="font-semibold text-zinc-600">{totalGroupPages}</span>
+                <span className="ml-2 text-zinc-300">·</span>
+                <span className="ml-2">{allGroups.length} elevators total</span>
+              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                  className="h-8 w-8 flex items-center justify-center rounded border border-zinc-200 text-zinc-500 hover:bg-zinc-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: totalGroupPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalGroupPages || Math.abs(p - safePage) <= 2)
+                  .reduce<(number | "...")[]>((acc, p, i, arr) => {
+                    if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("...");
+                    acc.push(p); return acc;
+                  }, [])
+                  .map((p, i) => p === "..."
+                    ? <span key={`e-${i}`} className="px-1 text-zinc-300 text-sm">…</span>
+                    : <button key={p} onClick={() => setCurrentPage(p as number)}
+                        className={cn("h-8 min-w-[32px] px-2 flex items-center justify-center rounded border text-sm transition-colors",
+                          safePage === p ? "bg-blue-600 border-blue-600 text-white font-semibold" : "border-zinc-200 text-zinc-600 hover:bg-zinc-50")}>
+                        {p}
+                      </button>
+                  )
+                }
+                <button onClick={() => setCurrentPage(p => Math.min(totalGroupPages, p + 1))} disabled={safePage === totalGroupPages}
+                  className="h-8 w-8 flex items-center justify-center rounded border border-zinc-200 text-zinc-500 hover:bg-zinc-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Single delete dialog ── */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Inspection</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to delete this inspection record? This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>Are you sure? This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Bulk delete dialog ── */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Inspection{selectedIds.size !== 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete all {selectedIds.size} selected inspection records. This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete {selectedIds.size} Record{selectedIds.size !== 1 ? "s" : ""}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
