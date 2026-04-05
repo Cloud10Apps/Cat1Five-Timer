@@ -333,7 +333,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-1.5 mt-2.5 text-zinc-400">
                     <span className="text-zinc-400">{icon}</span>
-                    <span className="text-xs font-semibold">{sub}</span>
+                    <span className="text-sm font-semibold">{sub}</span>
                   </div>
                 </div>
               </div>
