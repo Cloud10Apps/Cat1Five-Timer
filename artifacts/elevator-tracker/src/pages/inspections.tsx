@@ -903,7 +903,7 @@ export default function Inspections() {
                   <div className="divide-y divide-zinc-200">
                     {/* Column header row */}
                     <div className="grid items-center gap-3 px-4 py-2 bg-zinc-50/80 border-b border-zinc-200"
-                      style={{ gridTemplateColumns: "28px 36px 80px 1fr 1fr 1fr 1fr 1.1fr 1.5fr 72px" }}>
+                      style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1fr 1fr 1.1fr 1.5fr 72px" }}>
                       <div />
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">#</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Type</span>
@@ -949,7 +949,7 @@ export default function Inspections() {
                         return (
                           <div key={insp.id}
                             className={`grid items-center gap-3 px-4 py-2 transition-colors ${rowBg}`}
-                            style={{ gridTemplateColumns: "28px 36px 80px 1fr 1fr 1fr 1fr 1.1fr 1.5fr 72px" }}>
+                            style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1fr 1fr 1.1fr 1.5fr 72px" }}>
 
                             {/* Checkbox */}
                             <input type="checkbox" checked={isSelected} onChange={() => toggleOne(insp.id)}
