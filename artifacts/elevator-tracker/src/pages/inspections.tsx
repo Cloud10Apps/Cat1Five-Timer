@@ -906,7 +906,7 @@ export default function Inspections() {
                       style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1fr 1fr 1.1fr 1.5fr 72px" }}>
                       <div />
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">#</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Type</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Type</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Last Insp.</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Next Due</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Scheduled</span>
