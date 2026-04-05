@@ -127,6 +127,8 @@ type ElevGroup = {
   elevatorName: string;
   elevatorType: string;
   bank:         string;
+  unitId:       string;
+  stateId:      string;
   customerId:   number;
   customerName: string;
   buildingId:   number;
@@ -205,8 +207,8 @@ export default function Inspections() {
 
   /* ── Elevator meta map ── */
   const elevatorMeta = useMemo(() => {
-    const map = new Map<number, { bank: string; type: string; customerId: number; buildingId: number; name: string }>();
-    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId, buildingId: e.buildingId, name: e.name });
+    const map = new Map<number, { bank: string; type: string; customerId: number; buildingId: number; name: string; unitId: string; stateId: string }>();
+    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId, buildingId: e.buildingId, name: e.name, unitId: e.internalId ?? "", stateId: e.stateId ?? "" });
     return map;
   }, [elevators]);
 
@@ -282,6 +284,8 @@ export default function Inspections() {
           elevatorName: insp.elevatorName ?? `Elevator #${insp.elevatorId}`,
           elevatorType: (insp as any).elevatorType ?? meta?.type ?? "",
           bank:         meta?.bank ?? "",
+          unitId:       meta?.unitId ?? "",
+          stateId:      meta?.stateId ?? "",
           customerId:   meta?.customerId ?? 0,
           customerName: insp.customerName ?? "—",
           buildingId:   meta?.buildingId ?? 0,
@@ -803,6 +807,11 @@ export default function Inspections() {
                           {group.bank && <span className="text-zinc-500 text-[20px]">Bank: <span className="font-medium text-zinc-700">{group.bank}</span></span>}
                           {group.bank && group.elevatorType && <span className="text-zinc-300 text-[20px]">·</span>}
                           {group.elevatorType && <span className="text-zinc-500 text-[20px] capitalize">{group.elevatorType}</span>}
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          {group.unitId && <span className="text-zinc-500 text-[20px]">Unit ID: <span className="font-medium text-zinc-700">{group.unitId}</span></span>}
+                          {group.unitId && group.stateId && <span className="text-zinc-300 text-[20px]">·</span>}
+                          {group.stateId && <span className="text-zinc-500 text-[20px]">State ID: <span className="font-medium text-zinc-700">{group.stateId}</span></span>}
                         </div>
                       </div>
                     </div>
