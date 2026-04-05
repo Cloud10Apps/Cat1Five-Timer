@@ -57,7 +57,7 @@ export default function Settings() {
         <CardContent>
           {customersLoading ? (
             <div className="flex items-center gap-2 py-2 text-muted-foreground">
-              <Spinner size="sm" />
+              <Spinner className="h-4 w-4" />
               <span className="text-sm">Loading…</span>
             </div>
           ) : customers && customers.length > 0 ? (

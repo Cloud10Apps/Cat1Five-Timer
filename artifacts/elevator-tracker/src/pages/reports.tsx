@@ -26,7 +26,7 @@ export default function Reports() {
   const isLoading = loadingStatus || loadingOverdue || loadingUpcoming;
 
   if (isLoading) {
-    return <div className="flex h-[50vh] items-center justify-center"><Spinner size="lg" /></div>;
+    return <div className="flex h-[50vh] items-center justify-center"><Spinner className="h-8 w-8" /></div>;
   }
 
   return (

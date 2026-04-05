@@ -208,7 +208,7 @@ export default function Dashboard() {
   if (l1 || l2 || l3 || l4 || l5) {
     return (
       <div className="flex h-[50vh] items-center justify-center bg-zinc-50">
-        <Spinner size="lg" />
+        <Spinner className="h-8 w-8" />
       </div>
     );
   }

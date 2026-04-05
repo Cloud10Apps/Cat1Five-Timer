@@ -572,7 +572,7 @@ export default function CalendarView() {
         </div>
 
         {isLoading && !rawInspections ? (
-          <div className="flex-1 flex items-center justify-center"><Spinner size="lg" /></div>
+          <div className="flex-1 flex items-center justify-center"><Spinner className="h-8 w-8" /></div>
         ) : (
           <div
             className="flex-1 grid grid-cols-7 min-h-0"

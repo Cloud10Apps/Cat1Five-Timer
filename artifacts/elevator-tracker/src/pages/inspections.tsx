@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -828,7 +828,7 @@ export default function Inspections() {
 
           {/* Groups */}
           {(() => {
-            const sections: JSX.Element[] = [];
+            const sections: React.ReactElement[] = [];
             let lastCustomerId = -1;
             let lastBuildingId = -1;
 
