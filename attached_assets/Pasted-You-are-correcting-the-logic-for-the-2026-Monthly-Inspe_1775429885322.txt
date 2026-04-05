@@ -1,0 +1,85 @@
+You are correcting the logic for the “2026 Monthly Inspection Activity” chart.
+
+🎯 GOAL
+
+This chart must represent inspection activity events, not current status.
+
+An inspection can contribute to multiple activity counts in different months (e.g., scheduled in March, completed in April).
+
+🧠 1. DEFINE ACTIVITY TYPES (CRITICAL)
+
+Track activity based on event dates, not status:
+
+✅ Scheduled Activity
+Count when:
+👉 Scheduled Date exists
+Assign to:
+👉 Month = MONTH(Scheduled Date)
+✅ Completed Activity
+Count when:
+👉 Completion Date exists
+Assign to:
+👉 Month = MONTH(Completion Date)
+❌ 2. DO NOT USE STATUS FIELD
+Do NOT use:
+Inspection Status
+Due Status
+
+👉 This chart is NOT a snapshot—it is an event count
+
+📅 3. APPLY YEAR FILTER (IMPORTANT)
+
+Only include activities where:
+
+👉 YEAR(event_date) = 2026
+
+Where:
+
+event_date = Scheduled Date OR Completion Date
+🧮 4. COUNT LOGIC
+Each inspection can contribute:
+1 Scheduled event (if scheduled)
+1 Completed event (if completed)
+
+👉 These are counted independently
+
+Example:
+
+Scheduled in March → count in March (Scheduled)
+Completed in April → count in April (Completed)
+📊 5. CHART STRUCTURE
+X-axis: Months (Jan–Dec)
+Bars: Stacked by activity type:
+Scheduled (blue)
+Completed (green)
+🎨 6. COLOR RULES
+Scheduled → Blue
+Completed → Green
+
+Do NOT include:
+
+Gray (Not Scheduled)
+Red (Overdue)
+Orange (In Progress)
+
+👉 Only show actual activity events
+
+🧹 7. CLEAN UP EMPTY/INVALID DATA
+Ignore records where:
+Scheduled Date is NULL (for scheduled counts)
+Completion Date is NULL (for completed counts)
+Do NOT infer activity from status
+🧪 8. VALIDATION
+
+After implementation:
+
+Verify:
+Monthly totals = actual count of events in that month
+Cross-check:
+Count of scheduled events = count of records with Scheduled Date in 2026
+Count of completed events = count of records with Completion Date in 2026
+⚠️ FINAL INSTRUCTION
+
+This chart must reflect what happened in each month, not the current state of inspections.
+
+It is an activity timeline, not a status distribution.

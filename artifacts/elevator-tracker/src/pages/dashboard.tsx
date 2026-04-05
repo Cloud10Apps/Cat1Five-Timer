@@ -279,7 +279,7 @@ export default function Dashboard() {
   const agingData       = ((aging??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0) }));
   const upcomingData    = agingData.filter((b:any) => ["due-today","due-1-7","due-8-14","due-15-30","due-31-60","due-61-90"].includes(b.bucket) && b._total > 0);
   const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket) && b._total > 0);
-  const forecastData    = ((forecast??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0)+(b.completed??0) }));
+  const forecastData    = ((forecast??[]) as any[]).map(b=>({ ...b, _total:(b.scheduled??0)+(b.completed??0) }));
   const year            = dayjs().year();
   const customerList    = (customers??[]) as any[];
 
@@ -491,10 +491,8 @@ export default function Dashboard() {
                     <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} height={32} />
                     <YAxis tick={{ fill:"#71717a", fontSize:14, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip {...TT} />
-                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[5,5,0,0]} />
-                    <Bar dataKey="scheduled"  name="Scheduled"     stackId="s" fill={STATUS_COLORS.SCHEDULED}   radius={[5,5,0,0]} />
-                    <Bar dataKey="inProgress" name="In Progress"   stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[5,5,0,0]} />
-                    <Bar dataKey="completed"  name="Completed"     stackId="s" fill={STATUS_COLORS.COMPLETED}   radius={[5,5,0,0]}>
+                    <Bar dataKey="scheduled"  name="Scheduled"  stackId="s" fill={STATUS_COLORS.SCHEDULED}  radius={[0,0,0,0]} />
+                    <Bar dataKey="completed"  name="Completed"  stackId="s" fill={STATUS_COLORS.COMPLETED}  radius={[5,5,0,0]}>
                       <LabelList content={TotalLabelVertical(forecastData)} />
                     </Bar>
                   </BarChart>

@@ -288,50 +288,47 @@ router.get("/monthly-forecast", async (req, res) => {
   const yearStart = start.format("YYYY-MM-DD");
   const yearEnd   = start.endOf("year").format("YYYY-MM-DD");
 
+  // Fetch records that have a scheduled_date OR completion_date falling in the current year.
+  // An inspection can contribute to both (e.g. scheduled in March, completed in April).
   const rows = await db
     .select({
-      nextDueDate: inspectionsTable.nextDueDate,
-      scheduledDate: inspectionsTable.scheduledDate,
+      scheduledDate:  inspectionsTable.scheduledDate,
       completionDate: inspectionsTable.completionDate,
-      status: inspectionsTable.status,
     })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
     .where(and(
       eq(inspectionsTable.organizationId, orgId),
-      sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
-      sql`${inspectionsTable.nextDueDate}::date >= ${yearStart}::date`,
-      sql`${inspectionsTable.nextDueDate}::date <= ${yearEnd}::date`,
+      sql`(
+        (${inspectionsTable.scheduledDate}  IS NOT NULL
+          AND ${inspectionsTable.scheduledDate}::date  >= ${yearStart}::date
+          AND ${inspectionsTable.scheduledDate}::date  <= ${yearEnd}::date)
+        OR
+        (${inspectionsTable.completionDate} IS NOT NULL
+          AND ${inspectionsTable.completionDate}::date >= ${yearStart}::date
+          AND ${inspectionsTable.completionDate}::date <= ${yearEnd}::date)
+      )`,
       buildingCustomerFilter,
     ));
 
-  const months: { key: string; label: string; notStarted: number; scheduled: number; inProgress: number; completed: number }[] = [];
+  // Build 12 monthly buckets keyed by "YYYY-MM"
+  const months: { key: string; label: string; scheduled: number; completed: number }[] = [];
   for (let i = 0; i < 12; i++) {
     const m = start.add(i, "month");
-    months.push({ key: m.format("YYYY-MM"), label: m.format("MMM"), notStarted: 0, scheduled: 0, inProgress: 0, completed: 0 });
+    months.push({ key: m.format("YYYY-MM"), label: m.format("MMM"), scheduled: 0, completed: 0 });
   }
 
-  const todayStr = today.format("YYYY-MM-DD");
+  const findBucket = (dateStr: string | null | undefined) =>
+    dateStr ? months.find(m => m.key === dateStr.substring(0, 7)) : undefined;
 
   for (const row of rows) {
-    if (!row.nextDueDate) continue;
-    const dueBucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
-    if (!dueBucket) continue; // outside current year — skip
+    // Each event date is independent — an inspection can add to both
+    const scheduledBucket  = findBucket(row.scheduledDate);
+    if (scheduledBucket)  scheduledBucket.scheduled++;
 
-    if (row.completionDate) {
-      // Completed: inspection has been finished — bucket by the month it was due
-      dueBucket.completed++;
-    } else if (row.nextDueDate < todayStr) {
-      // Overdue (past due, no completion): count as not started for visibility
-      dueBucket.notStarted++;
-    } else if (row.status === "SCHEDULED") {
-      dueBucket.scheduled++;
-    } else if (row.status === "IN_PROGRESS") {
-      dueBucket.inProgress++;
-    } else if (row.status === "NOT_STARTED") {
-      dueBucket.notStarted++;
-    }
+    const completedBucket  = findBucket(row.completionDate);
+    if (completedBucket)  completedBucket.completed++;
   }
 
   res.json(months);
