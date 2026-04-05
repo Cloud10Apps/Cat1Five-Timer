@@ -194,7 +194,7 @@
 
 @layer base {
   html {
-    font-size: 20px; /* bump root so all rem-based sizes scale up app-wide */
+    font-size: 16px;
   }
 
   * {
