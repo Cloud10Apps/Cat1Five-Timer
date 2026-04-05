@@ -1270,7 +1270,7 @@ export default function Elevators() {
             {/* Left: label + count */}
             <div className="flex items-center gap-2 pr-3 mr-2 border-r border-zinc-200 shrink-0 self-stretch py-0.5">
               <SlidersHorizontal className="h-[15px] w-[15px] text-zinc-400" />
-              <span className="text-[11px] font-bold text-zinc-900 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
+              <span className="text-[13px] font-bold text-zinc-900 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
               {activeFilterCount > 0 && (
                 <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
                   {activeFilterCount}
