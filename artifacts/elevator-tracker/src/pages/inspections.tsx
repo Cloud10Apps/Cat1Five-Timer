@@ -975,12 +975,12 @@ export default function Inspections() {
                             </span>
 
                             {/* Scheduled */}
-                            <span className="text-sm tabular-nums text-zinc-600">
+                            <span className="text-sm tabular-nums text-zinc-600 text-center">
                               {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
                             </span>
 
                             {/* Completed */}
-                            <span className="text-sm tabular-nums text-zinc-600">
+                            <span className="text-sm tabular-nums text-zinc-600 text-center">
                               {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
                             </span>
 
