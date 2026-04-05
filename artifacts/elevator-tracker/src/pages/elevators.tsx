@@ -924,7 +924,7 @@ export default function Elevators() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Elevators</h1>
           <p className="mt-1 text-sm text-muted-foreground max-w-xl leading-relaxed italic">
-            Set up elevator units, establish initial inspection records, and keep the most recent inspection front and center&mdash;ensuring everything stays accurate and up to date.
+            This menu keeps all current open inspections front and center. Once completed, inspection records are automatically moved to the Inspection Records menu for historical tracking.
           </p>
         </div>
 
@@ -1235,7 +1235,6 @@ export default function Elevators() {
           { value: "NOT_STARTED", label: "Not Scheduled" },
           { value: "SCHEDULED",   label: "Scheduled" },
           { value: "IN_PROGRESS", label: "In Progress" },
-          { value: "COMPLETED",   label: "Completed" },
         ];
         const chipLabel = (arr: string[], opts: {value:string;label:string}[], single: string) =>
           arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
