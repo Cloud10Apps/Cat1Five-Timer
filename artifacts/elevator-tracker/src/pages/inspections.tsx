@@ -970,7 +970,7 @@ export default function Inspections() {
                             </span>
 
                             {/* Next Due */}
-                            <span className={`text-sm tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
+                            <span className={`text-sm tabular-nums font-medium text-center ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
                               {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
                             </span>
 
