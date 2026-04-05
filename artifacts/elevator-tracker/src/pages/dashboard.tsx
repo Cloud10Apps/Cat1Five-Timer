@@ -18,17 +18,17 @@ function toLabel(s: string) {
 
 /* ─── Upcoming / Overdue bucket colours ─── */
 const UPCOMING_COLORS: Record<string, string> = {
-  "due-today": "#7c3aed",
-  "due-7":     "#0ea5e9",
+  "due-today": "#1e3a8a",
+  "due-7":     "#1d4ed8",
   "due-14":    "#3b82f6",
-  "due-30":    "#64748b",
-  "due-60+":   "#a1a1aa",
+  "due-30":    "#60a5fa",
+  "due-60+":   "#93c5fd",
 };
 const OVERDUE_COLORS: Record<string, string> = {
-  "overdue-1-30":  "#f59e0b",
+  "overdue-1-30":  "#fb923c",
   "overdue-31-60": "#f97316",
-  "overdue-61-90": "#ef4444",
-  "overdue-91+":   "#991b1b",
+  "overdue-61-90": "#dc2626",
+  "overdue-91+":   "#7f1d1d",
 };
 
 /* ─── Status colours — single source of truth ─── */
@@ -274,8 +274,8 @@ export default function Dashboard() {
 
   const statusChartData = ((breakdown??[]) as any[]).map(b=>({ name:toLabel(b.status), value:b.count, color:getStatusColor(b.status) }));
   const agingData       = ((aging??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0) }));
-  const upcomingData    = agingData.filter((b:any) => ["due-today","due-7","due-14","due-30","due-60+"].includes(b.bucket));
-  const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket));
+  const upcomingData    = agingData.filter((b:any) => ["due-today","due-7","due-14","due-30","due-60+"].includes(b.bucket) && b._total > 0);
+  const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket) && b._total > 0);
   const forecastData    = ((forecast??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0)+(b.completed??0) }));
   const year            = dayjs().year();
   const customerList    = (customers??[]) as any[];
@@ -385,55 +385,69 @@ export default function Dashboard() {
 
             {/* Upcoming inspections */}
             <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <CardHeader title="Upcoming Inspections by Due Window" />
-              <div className="p-4 h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={upcomingData} layout="vertical" margin={{ top:4, right:64, left:8, bottom:4 }} barCategoryGap="18%">
-                    <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="label" type="category" tick={{ fill:"#1d4ed8", fontSize:14, fontWeight:700 }} axisLine={false} tickLine={false} width={145} />
-                    <Tooltip {...TT} />
-                    <Bar dataKey="_total" name="Count" barSize={44} radius={[0,5,5,0]}>
-                      {upcomingData.map((entry:any, i:number) => (
-                        <Cell key={i} fill={UPCOMING_COLORS[entry.bucket] ?? "#64748b"} />
-                      ))}
-                      <LabelList content={(props:any) => {
-                        const { x,y,width,height,value } = props;
-                        if (!value) return null;
-                        return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={17} fontWeight={900} textAnchor="start">{value}</text>;
-                      }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <UpcomingCardHeader title="Upcoming Inspections by Due Window" />
+              <div className="p-5 h-[300px] flex items-center">
+                {upcomingData.length === 0 ? (
+                  <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8 opacity-30"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg>
+                    <span className="text-sm font-medium">No upcoming inspections</span>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={upcomingData} layout="vertical" margin={{ top:6, right:52, left:8, bottom:6 }} barCategoryGap="20%">
+                      <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:14, fontWeight:700 }} axisLine={false} tickLine={false} width={148} />
+                      <Tooltip {...TT} />
+                      <Bar dataKey="_total" name="Count" barSize={52} radius={[0,6,6,0]}>
+                        {upcomingData.map((entry:any, i:number) => (
+                          <Cell key={i} fill={UPCOMING_COLORS[entry.bucket] ?? "#3b82f6"} />
+                        ))}
+                        <LabelList content={(props:any) => {
+                          const { x,y,width,height,value } = props;
+                          if (!value) return null;
+                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={16} fontWeight={800} textAnchor="start">{value}</text>;
+                        }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
             {/* Overdue inspections */}
             <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <CardHeader title="Overdue Inspections by Aging" />
-              <div className="p-4 h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={overdueData} layout="vertical" margin={{ top:4, right:64, left:8, bottom:4 }} barCategoryGap="18%">
-                    <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} width={130}
-                      tick={(props:any) => {
-                        const { x, y, payload } = props;
-                        const short = (payload.value as string).replace("Overdue ", "");
-                        return <text x={x} y={y} dy={5} textAnchor="end" fill="#b91c1c" fontSize={14} fontWeight={700}>{short}</text>;
-                      }}
-                    />
-                    <Tooltip {...TT} />
-                    <Bar dataKey="_total" name="Count" barSize={44} radius={[0,5,5,0]}>
-                      {overdueData.map((entry:any, i:number) => (
-                        <Cell key={i} fill={OVERDUE_COLORS[entry.bucket] ?? "#ef4444"} />
-                      ))}
-                      <LabelList content={(props:any) => {
-                        const { x,y,width,height,value } = props;
-                        if (!value) return null;
-                        return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={17} fontWeight={900} textAnchor="start">{value}</text>;
-                      }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <OverdueCardHeader title="Overdue Inspections by Aging" />
+              <div className="p-5 h-[300px] flex items-center">
+                {overdueData.length === 0 ? (
+                  <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8 opacity-30"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg>
+                    <span className="text-sm font-medium">No overdue inspections</span>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={overdueData} layout="vertical" margin={{ top:6, right:52, left:8, bottom:6 }} barCategoryGap="20%">
+                      <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} width={130}
+                        tick={(props:any) => {
+                          const { x, y, payload } = props;
+                          const short = (payload.value as string).replace("Overdue ", "");
+                          return <text x={x} y={y} dy={5} textAnchor="end" fill="#18181b" fontSize={14} fontWeight={700}>{short}</text>;
+                        }}
+                      />
+                      <Tooltip {...TT} />
+                      <Bar dataKey="_total" name="Count" barSize={52} radius={[0,6,6,0]}>
+                        {overdueData.map((entry:any, i:number) => (
+                          <Cell key={i} fill={OVERDUE_COLORS[entry.bucket] ?? "#f97316"} />
+                        ))}
+                        <LabelList content={(props:any) => {
+                          const { x,y,width,height,value } = props;
+                          if (!value) return null;
+                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={16} fontWeight={800} textAnchor="start">{value}</text>;
+                        }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
