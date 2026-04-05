@@ -720,8 +720,8 @@ export default function Inspections() {
               </span>
               {activeFilterCount > 0 && (
                 <button onClick={clearAllFilters}
-                  className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors whitespace-nowrap">
-                  <X className="h-3 w-3" /> Clear
+                  className="flex items-center gap-1.5 text-sm font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap">
+                  <X className="h-3.5 w-3.5" /> Clear
                 </button>
               )}
             </div>
@@ -730,10 +730,10 @@ export default function Inspections() {
           {/* Active chips */}
           {activeChips.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 border-t border-zinc-100">
-              <span className="text-xs font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
+              <span className="text-sm font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
               {activeChips.map(chip => (
                 <span key={chip.label}
-                  className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 leading-none whitespace-nowrap">
+                  className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-sm font-medium text-blue-700 leading-none whitespace-nowrap">
                   <span className="text-blue-400 font-normal">{chip.label}:</span>{chip.value}
                   <button onClick={chip.onRemove}
                     className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors">
@@ -756,7 +756,7 @@ export default function Inspections() {
               {hasDateFilters && (
                 <button onClick={clearDateFilters}
                   className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
-                  <X className="h-3 w-3" /> Clear dates
+                  <X className="h-3.5 w-3.5" /> Clear dates
                 </button>
               )}
             </div>
