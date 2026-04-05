@@ -933,21 +933,21 @@ export default function Inspections() {
                   <div className="divide-y divide-zinc-200">
                     {/* Column header row */}
                     <div className="grid items-center gap-3 px-4 py-2.5 bg-zinc-50/90 border-b border-zinc-200"
-                      style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 0.75fr 1fr 0.75fr 1.5fr 72px" }}>
+                      style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.5fr 1.1fr 1fr 0.75fr 1fr 0.75fr 72px" }}>
                       <div />
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">#</span>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Type</span>
                       {/* Dates group — left rule */}
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center border-l-2 border-zinc-200 pl-2">Last Insp.</span>
                       <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Next Due</span>
+                      {/* Due Status — emphasis column, moved before Insp. Status */}
+                      <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest text-center border-l-2 border-zinc-300 pl-2">Due Status</span>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Insp. Status</span>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Scheduled</span>
                       {/* Metrics group — left rule */}
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight border-l-2 border-zinc-200 pl-2">Days to<br/>Schedule</span>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Completed</span>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">Days to<br/>Complete</span>
-                      {/* Due Status — emphasis column, right rule */}
-                      <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest text-center border-l-2 border-zinc-300 pl-2">Due Status</span>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-right">Actions</span>
                     </div>
 
@@ -984,7 +984,7 @@ export default function Inspections() {
                         return (
                           <div key={insp.id}
                             className={`grid items-center gap-3 px-4 py-3 transition-colors ${rowBg}`}
-                            style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 0.75fr 1fr 0.75fr 1.5fr 72px" }}>
+                            style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.5fr 1.1fr 1fr 0.75fr 1fr 0.75fr 72px" }}>
 
                             {/* Checkbox */}
                             <input type="checkbox" checked={isSelected} onChange={() => toggleOne(insp.id)}
@@ -1008,6 +1008,11 @@ export default function Inspections() {
                               <span className={`text-xs tabular-nums font-semibold ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
                                 {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
                               </span>
+                            </div>
+
+                            {/* Due Status — priority column, moved before Insp. Status */}
+                            <div className="flex items-center justify-center border-l-2 border-zinc-300 pl-2">
+                              <AgingPill due={insp.nextDueDate} status={(insp as any).trueStatus ?? insp.status} />
                             </div>
 
                             {/* Status */}
@@ -1045,11 +1050,6 @@ export default function Inspections() {
                                     {daysToComplete > 0 ? `+${daysToComplete}` : daysToComplete}
                                   </span>
                               }
-                            </div>
-
-                            {/* Due Status — priority column */}
-                            <div className="flex items-center justify-center border-l-2 border-zinc-300 pl-2">
-                              <AgingPill due={insp.nextDueDate} status={(insp as any).trueStatus ?? insp.status} />
                             </div>
 
                             {/* Actions */}
