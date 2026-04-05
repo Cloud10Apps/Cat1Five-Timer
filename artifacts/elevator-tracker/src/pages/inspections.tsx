@@ -256,12 +256,12 @@ export default function Inspections() {
   const onSubmit = (data: InspectionFormValues) => {
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data }, {
-        onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive" }); },
+        onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive", duration: 10000 }); },
         onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the All Inspections menu first." : ""; toast({ title: "Could not update inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
       });
     } else {
       createMutation.mutate({ data }, {
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); },
+        onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive", duration: 10000 }); },
         onError:   (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the All Inspections menu first." : ""; toast({ title: "Could not add inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
       });
     }

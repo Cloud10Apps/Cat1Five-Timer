@@ -493,7 +493,7 @@ export default function Elevators() {
           onSuccess: (data: any) => {
             invalidateInspections();
             toast({ title: "Inspection saved" });
-            if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive" });
+            if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive", duration: 10000 });
             setIsAddOpen(false);
           },
           onError: (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not save inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
@@ -503,10 +503,11 @@ export default function Elevators() {
       createInspMutation.mutate(
         { data: payload },
         {
-          onSuccess: (created) => {
+          onSuccess: (created: any) => {
             invalidateInspections();
             toast({ title: "Inspection created" });
-            if (created && (created as any).id) setEditingInspection(created as Inspection);
+            if (created?._warning) toast({ title: "Follow-up not auto-created", description: created._warning, variant: "destructive", duration: 10000 });
+            if (created?.id) setEditingInspection(created as Inspection);
           },
           onError: (error: any) => { const msg = error?.data?.error; const hint = msg?.includes("already exists") ? " To resolve, delete the conflicting record from the Inspection History menu first." : ""; toast({ title: "Could not create inspection", description: msg ? msg + hint : undefined, variant: "destructive" }); },
         }
@@ -542,13 +543,15 @@ export default function Elevators() {
     const cat1Data = inspForm.getValues();
     const cat5Data = inspCat5Form.getValues();
     try {
-      await Promise.all([
+      const [cat1Result, cat5Result]: any[] = await Promise.all([
         createInspMutation.mutateAsync({ data: { ...cat1Data, elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
         createInspMutation.mutateAsync({ data: { ...cat5Data, elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
       ]);
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
       toast({ title: editingElevator ? "Both inspections created" : "Unit and inspections created" });
+      if (cat1Result?._warning) toast({ title: "CAT 1 follow-up not auto-created", description: cat1Result._warning, variant: "destructive", duration: 10000 });
+      if (cat5Result?._warning) toast({ title: "CAT 5 follow-up not auto-created", description: cat5Result._warning, variant: "destructive", duration: 10000 });
       setIsAddOpen(false);
     } catch {
       toast({ title: "Failed to create inspections", variant: "destructive" });

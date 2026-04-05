@@ -275,8 +275,11 @@ router.post("/", async (req, res) => {
 
   const row = await fetchInspection(inserted[0].id, orgId);
   const formatted = formatInspection(row);
-  await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
-  res.status(201).json(formatted);
+  const followUp = await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
+  const warning = (followUp.created === false && followUp.reason === "duplicate_year")
+    ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
+    : undefined;
+  res.status(201).json({ ...formatted, _warning: warning });
 });
 
 router.get("/:id", async (req, res) => {
@@ -316,7 +319,7 @@ router.put("/:id", async (req, res) => {
   const formatted = formatInspection(row);
   const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
   const warning = (followUp.created === false && followUp.reason === "duplicate_year")
-    ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this year, so a follow-up inspection record was not created. Please review the records in the Inspection menu, verify that all dates are accurate, and resolve any discrepancies.`
+    ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
     : undefined;
   res.json({ ...formatted, _warning: warning });
 });
