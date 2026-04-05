@@ -145,16 +145,16 @@ function AgingBucketPill({ due }: { due: string | null | undefined }) {
 }
 
 export default function Elevators() {
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
-  const [selectedBuildingId, setSelectedBuildingId] = useState<string>("all");
-  const [selectedType, setSelectedType] = useState<string>("all");
-  const [selectedBank, setSelectedBank] = useState<string>("all");
-  const [selectedElevatorId, setSelectedElevatorId] = useState<string>("all");
-  const [selectedInspType, setSelectedInspType] = useState<string>("all");
-  const [filterDueMonth,    setFilterDueMonth]    = useState<string>("all");
-  const [filterDueYear,     setFilterDueYear]     = useState<string>("all");
-  const [filterAgingBucket, setFilterAgingBucket] = useState<string>("all");
-  const [selectedStatus,    setSelectedStatus]    = useState<string>("all");
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>([]);
+  const [selectedTypes,       setSelectedTypes]       = useState<string[]>([]);
+  const [selectedBanks,       setSelectedBanks]       = useState<string[]>([]);
+  const [selectedElevatorIds, setSelectedElevatorIds] = useState<string[]>([]);
+  const [selectedInspTypes,   setSelectedInspTypes]   = useState<string[]>([]);
+  const [filterDueMonths,     setFilterDueMonths]     = useState<string[]>([]);
+  const [filterDueYears,      setFilterDueYears]      = useState<string[]>([]);
+  const [filterAgingBuckets,  setFilterAgingBuckets]  = useState<string[]>([]);
+  const [selectedStatuses,    setSelectedStatuses]    = useState<string[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
   const [formCustomerId, setFormCustomerId] = useState<string>("all");
@@ -179,64 +179,44 @@ export default function Elevators() {
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
   const [inspDeleteId, setInspDeleteId] = useState<number | null>(null);
 
-  const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
-  const buildingIdFilter = selectedBuildingId !== "all" ? Number(selectedBuildingId) : undefined;
-  const typeFilter = selectedType !== "all" ? (selectedType as "traction" | "hydraulic" | "other") : undefined;
-  const bankFilter = selectedBank !== "all" ? selectedBank : undefined;
-
-  const { data: elevators, isLoading } = useListElevators(
-    { 
-      customerId: customerIdFilter,
-      buildingId: buildingIdFilter,
-      type: typeFilter,
-      bank: bankFilter,
-    },
-    { query: { queryKey: getListElevatorsQueryKey({ 
-      customerId: customerIdFilter,
-      buildingId: buildingIdFilter,
-      type: typeFilter,
-      bank: bankFilter,
-    }) } }
-  );
-
-  const { data: elevatorsForBankOptions } = useListElevators(
-    { customerId: customerIdFilter, buildingId: buildingIdFilter, type: typeFilter },
-    { query: { queryKey: getListElevatorsQueryKey({ customerId: customerIdFilter, buildingId: buildingIdFilter, type: typeFilter }) } }
-  );
-  const bankOptions = Array.from(
-    new Set((elevatorsForBankOptions ?? []).map((e) => e.bank).filter(Boolean) as string[])
-  ).sort();
-
-  const { data: customers } = useListCustomers({}, { query: { queryKey: getListCustomersQueryKey({}) } });
-  const { data: buildings } = useListBuildings(
-    { customerId: customerIdFilter }, 
-    { query: { queryKey: getListBuildingsQueryKey({ customerId: customerIdFilter }) } }
-  );
-  // Unfiltered buildings used by the Add/Edit form so the user can pick any customer → building
+  const { data: elevators, isLoading } = useListElevators({}, { query: { queryKey: getListElevatorsQueryKey({}) } });
+  const { data: customers }  = useListCustomers({}, { query: { queryKey: getListCustomersQueryKey({}) } });
   const { data: allBuildings } = useListBuildings({}, { query: { queryKey: getListBuildingsQueryKey({}) } });
-
-  // Elevator options for the dropdown (from the API-filtered list, before client-side filters)
-  const elevatorOptions = useMemo(() => {
-    return [...(elevators ?? [])]
-      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
-  }, [elevators]);
+  // alias for form use
+  const buildings = allBuildings;
 
   // Filter combobox option arrays
   const customerOptions = useMemo(() =>
     (customers ?? []).map((c) => ({ value: c.id.toString(), label: c.name })),
     [customers]);
-  const buildingOptions = useMemo(() =>
-    (buildings ?? []).map((b) => ({ value: b.id.toString(), label: b.name })),
-    [buildings]);
-  const bankFilterOptions = useMemo(() =>
-    bankOptions.map((b) => ({ value: b, label: b })),
-    [bankOptions]);
-  const elevatorFilterOptions = useMemo(() =>
-    elevatorOptions.map((el) => ({
-      value: el.id.toString(),
-      label: el.name + (el.buildingName ? ` – ${el.buildingName}` : ""),
-    })),
-    [elevatorOptions]);
+
+  // Buildings cascade: show only buildings belonging to selected customers
+  const buildingOptions = useMemo(() => {
+    const list = selectedCustomerIds.length > 0
+      ? (allBuildings ?? []).filter(b => selectedCustomerIds.includes(String(b.customerId)))
+      : (allBuildings ?? []);
+    return list.map(b => ({ value: b.id.toString(), label: b.name }));
+  }, [allBuildings, selectedCustomerIds]);
+
+  // Banks cascade: from elevators matching selected customers + buildings
+  const bankFilterOptions = useMemo(() => {
+    let src = elevators ?? [];
+    if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
+    if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
+    const banks = Array.from(new Set(src.map(e => e.bank).filter(Boolean) as string[])).sort();
+    return banks.map(b => ({ value: b, label: b }));
+  }, [elevators, selectedCustomerIds, selectedBuildingIds]);
+
+  // Elevator filter options cascade from customer + building + bank selections
+  const elevatorFilterOptions = useMemo(() => {
+    let src = elevators ?? [];
+    if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
+    if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
+    if (selectedBanks.length > 0)       src = src.filter(e => selectedBanks.includes(e.bank ?? ""));
+    return [...src]
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+      .map(el => ({ value: el.id.toString(), label: el.name + (el.buildingName ? ` – ${el.buildingName}` : "") }));
+  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks]);
   const MONTH_OPTIONS = [
     { value: "01", label: "January" }, { value: "02", label: "February" },
     { value: "03", label: "March" },   { value: "04", label: "April" },
@@ -317,34 +297,29 @@ export default function Elevators() {
     dueYearOptions.map((y) => ({ value: y, label: y })),
     [dueYearOptions]);
 
-  // Client-side filter by elevator, due month, due year, and inspection type
+  // Client-side multi-select filtering
   const filteredElevators = useMemo(() => {
     return (elevators ?? []).filter((el) => {
-      if (selectedElevatorId !== "all" && el.id.toString() !== selectedElevatorId) return false;
-      // All date-based filters use the same source as the row display: latestInspByElevator
+      if (selectedCustomerIds.length > 0 && !selectedCustomerIds.includes(String(el.customerId))) return false;
+      if (selectedBuildingIds.length > 0 && !selectedBuildingIds.includes(String(el.buildingId))) return false;
+      if (selectedBanks.length > 0       && !selectedBanks.includes(el.bank ?? ""))               return false;
+      if (selectedElevatorIds.length > 0 && !selectedElevatorIds.includes(el.id.toString()))       return false;
+      if (selectedTypes.length > 0       && !selectedTypes.includes(el.type ?? ""))                return false;
+
       const rowInsp = latestInspByElevator.get(el.id);
       const rowDue  = rowInsp?.nextDueDate?.slice(0, 10);
-      // Year filter
-      if (filterDueYear !== "all") {
-        if (!rowDue || rowDue.slice(0, 4) !== filterDueYear) return false;
-      }
-      // Month filter
-      if (filterDueMonth !== "all") {
-        if (!rowDue || rowDue.slice(5, 7) !== filterDueMonth) return false;
-      }
-      if (selectedInspType !== "all") {
-        if (!rowInsp || rowInsp.inspectionType !== selectedInspType) return false;
-      }
-      if (filterAgingBucket !== "all") {
-        if (getAgingBucketValue(rowDue) !== filterAgingBucket) return false;
-      }
-      if (selectedStatus !== "all") {
+
+      if (filterDueYears.length > 0  && (!rowDue || !filterDueYears.includes(rowDue.slice(0, 4))))   return false;
+      if (filterDueMonths.length > 0 && (!rowDue || !filterDueMonths.includes(rowDue.slice(5, 7))))  return false;
+      if (selectedInspTypes.length > 0 && (!rowInsp || !selectedInspTypes.includes(rowInsp.inspectionType))) return false;
+      if (filterAgingBuckets.length > 0 && !filterAgingBuckets.includes(getAgingBucketValue(rowDue) ?? ""))  return false;
+      if (selectedStatuses.length > 0) {
         const trueStatus = rowInsp ? ((rowInsp as any).trueStatus ?? rowInsp.status) : "NOT_STARTED";
-        if (trueStatus !== selectedStatus) return false;
+        if (!selectedStatuses.includes(trueStatus)) return false;
       }
       return true;
     });
-  }, [elevators, selectedElevatorId, latestInspByElevator, filterDueMonth, filterDueYear, selectedInspType, filterAgingBucket, selectedStatus]);
+  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, latestInspByElevator, filterDueMonths, filterDueYears, selectedInspTypes, filterAgingBuckets, selectedStatuses]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -683,8 +658,8 @@ export default function Elevators() {
 
   const handleExport = async () => {
     const params = new URLSearchParams();
-    if (customerIdFilter) params.append("customerId", customerIdFilter.toString());
-    if (buildingIdFilter) params.append("buildingId", buildingIdFilter.toString());
+    if (selectedCustomerIds.length === 1) params.append("customerId", selectedCustomerIds[0]);
+    if (selectedBuildingIds.length === 1) params.append("buildingId", selectedBuildingIds[0]);
 
     const token = localStorage.getItem("token");
     const res = await fetch(`/api/export/elevators?${params.toString()}`, {
@@ -1242,8 +1217,8 @@ export default function Elevators() {
 
       {/* ── Filters ── */}
       {(() => {
-        const activeFilterCount = [selectedCustomerId, selectedBuildingId, selectedBank, selectedElevatorId, selectedType, selectedInspType, filterDueMonth, filterDueYear, selectedStatus, filterAgingBucket].filter(v => v !== "all").length;
-        const clearAll = () => { setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); setSelectedType("all"); setSelectedInspType("all"); setFilterDueMonth("all"); setFilterDueYear("all"); setFilterAgingBucket("all"); setSelectedStatus("all"); };
+        const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses, filterAgingBuckets].filter(v => v.length > 0).length;
+        const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setFilterAgingBuckets([]); setSelectedStatuses([]); };
         const unitTypeOpts = [
           { value: "traction",  label: "Traction" },
           { value: "hydraulic", label: "Hydraulic" },
@@ -1259,17 +1234,19 @@ export default function Elevators() {
           { value: "IN_PROGRESS", label: "In Progress" },
           { value: "COMPLETED",   label: "Completed" },
         ];
+        const chipLabel = (arr: string[], opts: {value:string;label:string}[], single: string) =>
+          arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
         const activeChips: { label: string; value: string; onRemove: () => void }[] = [];
-        if (selectedCustomerId !== "all") activeChips.push({ label: "Customer", value: customerOptions.find(o => o.value === selectedCustomerId)?.label ?? selectedCustomerId, onRemove: () => { setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); } });
-        if (selectedBuildingId !== "all") activeChips.push({ label: "Building", value: buildingOptions.find(o => o.value === selectedBuildingId)?.label ?? selectedBuildingId, onRemove: () => { setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); } });
-        if (selectedBank !== "all") activeChips.push({ label: "Bank", value: selectedBank, onRemove: () => { setSelectedBank("all"); setSelectedElevatorId("all"); } });
-        if (selectedElevatorId !== "all") activeChips.push({ label: "Elevator", value: elevatorFilterOptions.find(o => o.value === selectedElevatorId)?.label ?? selectedElevatorId, onRemove: () => setSelectedElevatorId("all") });
-        if (selectedType !== "all") activeChips.push({ label: "Unit Type", value: unitTypeOpts.find(o => o.value === selectedType)?.label ?? selectedType, onRemove: () => setSelectedType("all") });
-        if (selectedInspType !== "all") activeChips.push({ label: "Insp Type", value: inspTypeOpts.find(o => o.value === selectedInspType)?.label ?? selectedInspType, onRemove: () => setSelectedInspType("all") });
-        if (filterDueMonth !== "all") activeChips.push({ label: "Due Month", value: MONTH_OPTIONS.find(o => o.value === filterDueMonth)?.label ?? filterDueMonth, onRemove: () => setFilterDueMonth("all") });
-        if (filterDueYear !== "all") activeChips.push({ label: "Due Year", value: filterDueYear, onRemove: () => setFilterDueYear("all") });
-        if (selectedStatus !== "all") activeChips.push({ label: "Status", value: statusOpts.find(o => o.value === selectedStatus)?.label ?? selectedStatus, onRemove: () => setSelectedStatus("all") });
-        if (filterAgingBucket !== "all") activeChips.push({ label: "Aging", value: AGING_BUCKET_OPTIONS.find(o => o.value === filterAgingBucket)?.label ?? filterAgingBucket, onRemove: () => setFilterAgingBucket("all") });
+        if (selectedCustomerIds.length > 0) activeChips.push({ label: "Customer", value: chipLabel(selectedCustomerIds, customerOptions, "customers"), onRemove: () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
+        if (selectedBuildingIds.length > 0) activeChips.push({ label: "Building", value: chipLabel(selectedBuildingIds, buildingOptions, "buildings"), onRemove: () => { setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
+        if (selectedBanks.length > 0)       activeChips.push({ label: "Bank",      value: chipLabel(selectedBanks, bankFilterOptions, "banks"),   onRemove: () => { setSelectedBanks([]); setSelectedElevatorIds([]); } });
+        if (selectedElevatorIds.length > 0) activeChips.push({ label: "Elevator",  value: chipLabel(selectedElevatorIds, elevatorFilterOptions, "elevators"), onRemove: () => setSelectedElevatorIds([]) });
+        if (selectedTypes.length > 0)       activeChips.push({ label: "Unit Type", value: chipLabel(selectedTypes, unitTypeOpts, "types"),         onRemove: () => setSelectedTypes([]) });
+        if (selectedInspTypes.length > 0)   activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes, inspTypeOpts, "types"),     onRemove: () => setSelectedInspTypes([]) });
+        if (filterDueMonths.length > 0)     activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths, MONTH_OPTIONS, "months"),     onRemove: () => setFilterDueMonths([]) });
+        if (filterDueYears.length > 0)      activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears, yearFilterOptions, "years"),   onRemove: () => setFilterDueYears([]) });
+        if (selectedStatuses.length > 0)    activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses, statusOpts, "statuses"),     onRemove: () => setSelectedStatuses([]) });
+        if (filterAgingBuckets.length > 0)  activeChips.push({ label: "Aging",     value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"), onRemove: () => setFilterAgingBuckets([]) });
 
         return (
       <div className="flex flex-col gap-3">
@@ -1294,24 +1271,24 @@ export default function Elevators() {
 
               {/* Group 1 — Location */}
               <FilterCombobox
-                value={selectedCustomerId}
-                onValueChange={(val) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+                value={selectedCustomerIds}
+                onValueChange={(val) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); }}
                 options={customerOptions}
                 placeholder="All Customers"
                 searchPlaceholder="Search customers..."
                 width="w-[175px]"
               />
               <FilterCombobox
-                value={selectedBuildingId}
-                onValueChange={(val) => { setSelectedBuildingId(val); setSelectedBank("all"); setSelectedElevatorId("all"); }}
+                value={selectedBuildingIds}
+                onValueChange={(val) => { setSelectedBuildingIds(val); setSelectedBanks([]); setSelectedElevatorIds([]); }}
                 options={buildingOptions}
                 placeholder="All Buildings"
                 searchPlaceholder="Search buildings..."
                 width="w-[150px]"
               />
               <FilterCombobox
-                value={selectedBank}
-                onValueChange={(val) => { setSelectedBank(val); setSelectedElevatorId("all"); }}
+                value={selectedBanks}
+                onValueChange={(val) => { setSelectedBanks(val); setSelectedElevatorIds([]); }}
                 options={bankFilterOptions}
                 placeholder="All Banks"
                 searchPlaceholder="Search banks..."
@@ -1319,8 +1296,8 @@ export default function Elevators() {
                 width="w-[150px]"
               />
               <FilterCombobox
-                value={selectedElevatorId}
-                onValueChange={setSelectedElevatorId}
+                value={selectedElevatorIds}
+                onValueChange={setSelectedElevatorIds}
                 options={elevatorFilterOptions}
                 placeholder="All Elevators"
                 searchPlaceholder="Search elevators..."
@@ -1333,16 +1310,16 @@ export default function Elevators() {
 
               {/* Group 2 — Type */}
               <FilterCombobox
-                value={selectedType}
-                onValueChange={setSelectedType}
+                value={selectedTypes}
+                onValueChange={setSelectedTypes}
                 options={unitTypeOpts}
                 placeholder="All Unit Types"
                 searchPlaceholder="Search unit types..."
                 width="w-[185px]"
               />
               <FilterCombobox
-                value={selectedInspType}
-                onValueChange={setSelectedInspType}
+                value={selectedInspTypes}
+                onValueChange={setSelectedInspTypes}
                 options={inspTypeOpts}
                 placeholder="All Insp Types"
                 searchPlaceholder="Search insp types..."
@@ -1354,32 +1331,32 @@ export default function Elevators() {
 
               {/* Group 3 — Schedule & Status */}
               <FilterCombobox
-                value={filterDueMonth}
-                onValueChange={setFilterDueMonth}
+                value={filterDueMonths}
+                onValueChange={setFilterDueMonths}
                 options={MONTH_OPTIONS}
                 placeholder="Due Month"
                 searchPlaceholder="Search months..."
                 width="w-[150px]"
               />
               <FilterCombobox
-                value={filterDueYear}
-                onValueChange={setFilterDueYear}
+                value={filterDueYears}
+                onValueChange={setFilterDueYears}
                 options={yearFilterOptions}
                 placeholder="Due Year"
                 searchPlaceholder="Search years..."
                 width="w-[130px]"
               />
               <FilterCombobox
-                value={selectedStatus}
-                onValueChange={setSelectedStatus}
+                value={selectedStatuses}
+                onValueChange={setSelectedStatuses}
                 options={statusOpts}
                 placeholder="All Statuses"
                 searchPlaceholder="Search statuses..."
                 width="w-[160px]"
               />
               <FilterCombobox
-                value={filterAgingBucket}
-                onValueChange={setFilterAgingBucket}
+                value={filterAgingBuckets}
+                onValueChange={setFilterAgingBuckets}
                 options={AGING_BUCKET_OPTIONS}
                 placeholder="Aging Bucket"
                 searchPlaceholder="Search buckets..."

@@ -101,13 +101,13 @@ function fmt(date?: string) {
 }
 
 export default function Inspections() {
-  const [selectedStatus,   setSelectedStatus]   = useState("all");
-  const [selectedInspType, setSelectedInspType] = useState("all");
-  const [selectedUnitType, setSelectedUnitType] = useState("all");
-  const [selectedCustomerId, setSelectedCustomerId] = useState("all");
-  const [selectedBuildingId, setSelectedBuildingId] = useState("all");
-  const [selectedElevatorId, setSelectedElevatorId] = useState("all");
-  const [selectedBank, setSelectedBank] = useState("all");
+  const [selectedStatuses,    setSelectedStatuses]    = useState<string[]>([]);
+  const [selectedInspTypes,   setSelectedInspTypes]   = useState<string[]>([]);
+  const [selectedUnitTypes,   setSelectedUnitTypes]   = useState<string[]>([]);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>([]);
+  const [selectedElevatorIds, setSelectedElevatorIds] = useState<string[]>([]);
+  const [selectedBanks,       setSelectedBanks]       = useState<string[]>([]);
 
   const [showDateFilters, setShowDateFilters] = useState(false);
   const [lastInspFrom, setLastInspFrom] = useState("");
@@ -129,7 +129,7 @@ export default function Inspections() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo);
-  const hasAnyFilter = selectedCustomerId !== "all" || selectedBuildingId !== "all" || selectedElevatorId !== "all" || selectedBank !== "all" || selectedStatus !== "all" || selectedInspType !== "all" || selectedUnitType !== "all" || hasDateFilters;
+  const hasAnyFilter = selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedElevatorIds.length > 0 || selectedBanks.length > 0 || selectedStatuses.length > 0 || selectedInspTypes.length > 0 || selectedUnitTypes.length > 0 || hasDateFilters;
 
   const clearDateFilters = useCallback(() => {
     setLastInspFrom(""); setLastInspTo(""); setNextDueFrom(""); setNextDueTo("");
@@ -137,28 +137,16 @@ export default function Inspections() {
   }, []);
 
   const clearAllFilters = useCallback(() => {
-    setSelectedCustomerId("all"); setSelectedBuildingId("all"); setSelectedElevatorId("all");
-    setSelectedBank("all"); setSelectedStatus("all"); setSelectedInspType("all"); setSelectedUnitType("all");
+    setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedElevatorIds([]);
+    setSelectedBanks([]); setSelectedStatuses([]); setSelectedInspTypes([]); setSelectedUnitTypes([]);
     clearDateFilters();
   }, [clearDateFilters]);
 
-  const handleCustomerChange = (val: string) => { setSelectedCustomerId(val); setSelectedBuildingId("all"); setSelectedElevatorId("all"); setCurrentPage(1); };
-  const handleBuildingChange = (val: string) => { setSelectedBuildingId(val); setSelectedElevatorId("all"); setCurrentPage(1); };
+  const handleCustomerChange = (val: string[]) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedElevatorIds([]); setCurrentPage(1); };
+  const handleBuildingChange = (val: string[]) => { setSelectedBuildingIds(val); setSelectedElevatorIds([]); setCurrentPage(1); };
 
-  const customerIdFilter  = selectedCustomerId  !== "all" ? Number(selectedCustomerId)  : undefined;
-  const buildingIdFilter  = selectedBuildingId  !== "all" ? Number(selectedBuildingId)  : undefined;
-  const elevatorIdFilter  = selectedElevatorId  !== "all" ? Number(selectedElevatorId)  : undefined;
-  const statusFilter      = selectedStatus      !== "all" ? (selectedStatus as any)      : undefined;
-  const inspTypeFilter    = selectedInspType    !== "all" ? (selectedInspType as "CAT1" | "CAT5") : undefined;
-  const bankFilter        = selectedBank        !== "all" ? selectedBank                 : undefined;
-
-  const queryParams = {
-    status: statusFilter,
-    inspectionType: inspTypeFilter,
-    customerId: customerIdFilter,
-    buildingId: buildingIdFilter,
-    elevatorId: elevatorIdFilter,
-    bank: bankFilter,
+  // Date range filters are still sent server-side; combobox filters are client-side
+  const dateQueryParams = {
     lastInspectionDateFrom: lastInspFrom || undefined,
     lastInspectionDateTo:   lastInspTo   || undefined,
     nextDueDateFrom:  nextDueFrom  || undefined,
@@ -169,32 +157,55 @@ export default function Inspections() {
     completionDateTo:   completionTo   || undefined,
   };
 
-  const { data: inspections, isLoading } = useListInspections(queryParams, { query: { queryKey: getListInspectionsQueryKey(queryParams) } });
+  const { data: allInspections, isLoading } = useListInspections(dateQueryParams, { query: { queryKey: getListInspectionsQueryKey(dateQueryParams) } });
   const { data: elevators }  = useListElevators({},  { query: { queryKey: getListElevatorsQueryKey({}) } });
   const { data: customers }  = useListCustomers({},  { query: { queryKey: getListCustomersQueryKey({}) } });
   const { data: buildings }  = useListBuildings({},  { query: { queryKey: getListBuildingsQueryKey({}) } });
 
-  const filteredBuildings  = customerIdFilter ? (buildings ?? []).filter(b => b.customerId === customerIdFilter) : (buildings ?? []);
-  const filteredElevators  = buildingIdFilter
-    ? (elevators ?? []).filter(e => e.buildingId === buildingIdFilter)
-    : customerIdFilter
-      ? (elevators ?? []).filter(e => filteredBuildings.some(b => b.id === e.buildingId))
-      : (elevators ?? []);
-
-  // Lookup map: elevatorId → { bank, type }
+  // Lookup map: elevatorId → { bank, type, customerId, buildingId }
   const elevatorMeta = useMemo(() => {
-    const map = new Map<number, { bank: string; type: string }>();
-    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "" });
+    const map = new Map<number, { bank: string; type: string; customerId: number; buildingId: number }>();
+    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId, buildingId: e.buildingId });
     return map;
   }, [elevators]);
 
-  const allBanks = useMemo(() => Array.from(new Set((elevators ?? []).map(e => e.bank).filter(Boolean))) as string[], [elevators]);
+  // Client-side filter inspections by combobox selections
+  const inspections = useMemo(() => {
+    return (allInspections ?? []).filter(insp => {
+      const meta = elevatorMeta.get(insp.elevatorId);
+      if (selectedCustomerIds.length > 0 && (!meta || !selectedCustomerIds.includes(String(meta.customerId)))) return false;
+      if (selectedBuildingIds.length > 0 && (!meta || !selectedBuildingIds.includes(String(meta.buildingId)))) return false;
+      if (selectedBanks.length > 0       && (!meta || !selectedBanks.includes(meta.bank)))                     return false;
+      if (selectedElevatorIds.length > 0 && !selectedElevatorIds.includes(String(insp.elevatorId)))            return false;
+      if (selectedStatuses.length > 0    && !selectedStatuses.includes((insp as any).trueStatus ?? insp.status)) return false;
+      if (selectedInspTypes.length > 0   && !selectedInspTypes.includes(insp.inspectionType))                  return false;
+      if (selectedUnitTypes.length > 0   && (!meta || !selectedUnitTypes.includes(meta.type)))                 return false;
+      return true;
+    });
+  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes]);
 
-  // Filter options
+  // Cascade filter options
   const customerOptions = useMemo(() => (customers ?? []).map(c => ({ value: String(c.id), label: c.name })), [customers]);
-  const buildingOptions = useMemo(() => filteredBuildings.map(b => ({ value: String(b.id), label: b.name })), [filteredBuildings]);
-  const bankOptions     = useMemo(() => allBanks.map(b => ({ value: b, label: b })), [allBanks]);
-  const elevatorOptions = useMemo(() => filteredElevators.map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") })), [filteredElevators]);
+  const buildingOptions = useMemo(() => {
+    const list = selectedCustomerIds.length > 0
+      ? (buildings ?? []).filter(b => selectedCustomerIds.includes(String(b.customerId)))
+      : (buildings ?? []);
+    return list.map(b => ({ value: String(b.id), label: b.name }));
+  }, [buildings, selectedCustomerIds]);
+  const bankOptions = useMemo(() => {
+    let src = elevators ?? [];
+    if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
+    if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
+    const banks = Array.from(new Set(src.map(e => e.bank).filter(Boolean) as string[])).sort();
+    return banks.map(b => ({ value: b, label: b }));
+  }, [elevators, selectedCustomerIds, selectedBuildingIds]);
+  const elevatorOptions = useMemo(() => {
+    let src = elevators ?? [];
+    if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
+    if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
+    if (selectedBanks.length > 0)       src = src.filter(e => selectedBanks.includes(e.bank ?? ""));
+    return src.map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") }));
+  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks]);
 
   // Form-scoped cascading options (independent of the filter bar)
   const formBuildingList = useMemo(() =>
@@ -207,16 +218,9 @@ export default function Inspections() {
     return elevators ?? [];
   }, [elevators, formBuildingId, formCustomerId, formBuildingList]);
 
-  // Client-side unit type filter + sort
+  // Sort filtered inspections
   const processedRows = useMemo(() => {
-    const filtered = (inspections ?? []).filter(insp => {
-      if (selectedUnitType !== "all") {
-        const meta = elevatorMeta.get(insp.elevatorId);
-        if (meta?.type !== selectedUnitType) return false;
-      }
-      return true;
-    });
-    return [...filtered].sort((a, b) => {
+    return [...(inspections ?? [])].sort((a, b) => {
       const c1 = (a.customerName ?? "").localeCompare(b.customerName ?? ""); if (c1 !== 0) return c1;
       const c2 = (a.buildingName ?? "").localeCompare(b.buildingName ?? ""); if (c2 !== 0) return c2;
       const bankA = elevatorMeta.get(a.elevatorId)?.bank ?? "";
@@ -229,14 +233,14 @@ export default function Inspections() {
       const c6 = a.inspectionType.localeCompare(b.inspectionType); if (c6 !== 0) return c6;
       return (a.nextDueDate ?? "9999").localeCompare(b.nextDueDate ?? "9999");
     });
-  }, [inspections, elevatorMeta, selectedUnitType]);
+  }, [inspections, elevatorMeta]);
 
   const totalPages = Math.max(1, Math.ceil(processedRows.length / PAGE_SIZE));
   const safePage   = Math.min(currentPage, totalPages);
   const pagedRows  = processedRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Reset to page 1 on filter/data change
-  useEffect(() => { setCurrentPage(1); }, [inspections, selectedUnitType]);
+  useEffect(() => { setCurrentPage(1); }, [inspections]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -514,16 +518,16 @@ export default function Inspections() {
           <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
           <div className="h-4 w-px bg-zinc-200" />
 
-          <FilterCombobox value={selectedCustomerId} onValueChange={handleCustomerChange} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[175px]" />
-          <FilterCombobox value={selectedBuildingId} onValueChange={handleBuildingChange} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[155px]" />
-          <FilterCombobox value={selectedBank} onValueChange={(v) => { setSelectedBank(v); setCurrentPage(1); }} options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankOptions.length === 0} width="w-[130px]" />
-          <FilterCombobox value={selectedElevatorId} onValueChange={(v) => { setSelectedElevatorId(v); setCurrentPage(1); }} options={elevatorOptions} placeholder="All Elevators" searchPlaceholder="Search elevators..." disabled={elevatorOptions.length === 0} width="w-[165px]" />
+          <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[175px]" />
+          <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[155px]" />
+          <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setCurrentPage(1); }} options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankOptions.length === 0} width="w-[130px]" />
+          <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }} options={elevatorOptions} placeholder="All Elevators" searchPlaceholder="Search elevators..." disabled={elevatorOptions.length === 0} width="w-[165px]" />
 
           <div className="h-4 w-px bg-zinc-200" />
 
-          <FilterCombobox value={selectedStatus}   onValueChange={(v) => { setSelectedStatus(v);   setCurrentPage(1); }} options={STATUS_OPTIONS}     placeholder="All Statuses"    searchPlaceholder="Search statuses..."         width="w-[145px]" />
-          <FilterCombobox value={selectedInspType} onValueChange={(v) => { setSelectedInspType(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS}  placeholder="All Insp Types"  searchPlaceholder="Search inspection types..." width="w-[175px]" />
-          <FilterCombobox value={selectedUnitType} onValueChange={(v) => { setSelectedUnitType(v); setCurrentPage(1); }} options={UNIT_TYPE_OPTIONS}  placeholder="All Unit Types"  searchPlaceholder="Search unit types..."       width="w-[170px]" />
+          <FilterCombobox value={selectedStatuses}  onValueChange={(v) => { setSelectedStatuses(v);  setCurrentPage(1); }} options={STATUS_OPTIONS}     placeholder="All Statuses"    searchPlaceholder="Search statuses..."         width="w-[145px]" />
+          <FilterCombobox value={selectedInspTypes} onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS}  placeholder="All Insp Types"  searchPlaceholder="Search inspection types..." width="w-[175px]" />
+          <FilterCombobox value={selectedUnitTypes} onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }} options={UNIT_TYPE_OPTIONS}  placeholder="All Unit Types"  searchPlaceholder="Search unit types..."       width="w-[170px]" />
 
           <div className="h-4 w-px bg-zinc-200" />
 

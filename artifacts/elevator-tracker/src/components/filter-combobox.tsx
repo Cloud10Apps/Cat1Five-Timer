@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +22,8 @@ export interface FilterOption {
 }
 
 interface FilterComboboxProps {
-  value: string;
-  onValueChange: (val: string) => void;
+  value: string[];
+  onValueChange: (val: string[]) => void;
   options: FilterOption[];
   placeholder: string;
   searchPlaceholder?: string;
@@ -44,12 +44,21 @@ export function FilterCombobox({
 }: FilterComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
-  const selectedLabel =
-    value === "all"
-      ? placeholder
-      : (options.find((o) => o.value === value)?.label ?? placeholder);
+  const toggle = (val: string) => {
+    const next = value.includes(val)
+      ? value.filter((v) => v !== val)
+      : [...value, val];
+    onValueChange(next);
+  };
 
-  const isFiltered = value !== "all";
+  const isFiltered = value.length > 0;
+
+  const selectedLabel =
+    value.length === 0
+      ? placeholder
+      : value.length === 1
+        ? (options.find((o) => o.value === value[0])?.label ?? placeholder)
+        : `${value.length} selected`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -79,22 +88,29 @@ export function FilterCombobox({
               {emptyText}
             </CommandEmpty>
             <CommandGroup>
-              <CommandItem
-                value="all"
-                onSelect={() => { onValueChange("all"); setOpen(false); }}
-                className="text-xs"
-              >
-                <Check className={cn("mr-2 h-3.5 w-3.5", value === "all" ? "opacity-100" : "opacity-0")} />
-                {placeholder}
-              </CommandItem>
+              {isFiltered && (
+                <CommandItem
+                  value="__clear__"
+                  onSelect={() => onValueChange([])}
+                  className="text-xs text-zinc-500 italic"
+                >
+                  <X className="mr-2 h-3.5 w-3.5" />
+                  Clear selection
+                </CommandItem>
+              )}
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.label}
-                  onSelect={() => { onValueChange(option.value); setOpen(false); }}
+                  onSelect={() => toggle(option.value)}
                   className="text-xs"
                 >
-                  <Check className={cn("mr-2 h-3.5 w-3.5", value === option.value ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn(
+                      "mr-2 h-3.5 w-3.5",
+                      value.includes(option.value) ? "opacity-100" : "opacity-0"
+                    )}
+                  />
                   {option.label}
                 </CommandItem>
               ))}
