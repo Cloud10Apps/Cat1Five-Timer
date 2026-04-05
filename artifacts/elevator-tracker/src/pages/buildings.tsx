@@ -16,14 +16,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -45,7 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Building as BuildingIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Search, Pencil, Trash2, Building2, MapPin, Users, Info } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,13 +64,104 @@ const buildingSchema = z.object({
 
 type BuildingFormValues = z.infer<typeof buildingSchema>;
 
+const AVATAR_PALETTE = [
+  { bg: "bg-indigo-100", text: "text-indigo-700", border: "border-indigo-200" },
+  { bg: "bg-blue-100",   text: "text-blue-700",   border: "border-blue-200"   },
+  { bg: "bg-violet-100", text: "text-violet-700", border: "border-violet-200" },
+  { bg: "bg-teal-100",   text: "text-teal-700",   border: "border-teal-200"   },
+  { bg: "bg-emerald-100",text: "text-emerald-700",border: "border-emerald-200"},
+  { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-200" },
+  { bg: "bg-rose-100",   text: "text-rose-700",   border: "border-rose-200"   },
+  { bg: "bg-amber-100",  text: "text-amber-700",  border: "border-amber-200"  },
+];
+
+function getAvatarStyle(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
+function formatAddress(building: Building): string | null {
+  const parts: string[] = [];
+  if (building.address) parts.push(building.address);
+  const cityState = [building.city, building.state].filter(Boolean).join(", ");
+  if (cityState) parts.push(cityState);
+  if (building.zip) parts.push(building.zip);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+interface BuildingCardProps {
+  building: Building;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function BuildingCard({ building, onEdit, onDelete }: BuildingCardProps) {
+  const avatar = getAvatarStyle(building.name);
+  const initials = building.name.slice(0, 2).toUpperCase();
+  const address = formatAddress(building);
+  const elevatorCount = building.elevatorCount ?? 0;
+
+  return (
+    <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`flex items-center justify-center w-12 h-12 rounded-2xl border-2 text-base font-black uppercase shrink-0 ${avatar.bg} ${avatar.text} ${avatar.border}`}>
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <CardTitle className="text-base leading-snug truncate">{building.name}</CardTitle>
+              <div className="flex items-center gap-1.5 mt-1">
+                <Users className="h-3 w-3 text-zinc-400 shrink-0" />
+                <span className="text-xs text-muted-foreground truncate">{building.customerName}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onDelete}>
+              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="pb-4 pt-0 flex flex-col gap-3">
+        {address ? (
+          <div className="flex items-start gap-2">
+            <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0 mt-0.5" />
+            <span className="text-xs text-muted-foreground leading-snug">{address}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 text-zinc-300 shrink-0" />
+            <span className="text-xs text-zinc-300 italic">No address on file</span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-1 border-t">
+          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1 text-xs font-semibold">
+            <Building2 className="h-3 w-3" />
+            {elevatorCount} {elevatorCount === 1 ? "Elevator" : "Elevators"}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Buildings() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
-  
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
   const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
 
   const { data: buildings, isLoading } = useListBuildings(
@@ -107,6 +191,7 @@ export default function Buildings() {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListBuildingsQueryKey() });
             setEditingBuilding(null);
+            setIsAddOpen(false);
             form.reset();
             toast({ title: "Building updated successfully" });
           },
@@ -133,8 +218,6 @@ export default function Buildings() {
     }
   };
 
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-
   const confirmDelete = () => {
     if (deleteId === null) return;
     deleteMutation.mutate(
@@ -153,10 +236,6 @@ export default function Buildings() {
     );
   };
 
-  const handleDelete = (id: number) => {
-    setDeleteId(id);
-  };
-
   const openEdit = (building: Building) => {
     setEditingBuilding(building);
     form.reset({
@@ -167,40 +246,134 @@ export default function Buildings() {
       state: building.state || "",
       zip: building.zip || "",
     });
+    setIsAddOpen(true);
   };
+
+  const buildingForm = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="customerId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Customer</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value ? field.value.toString() : ""}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a customer" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {customers?.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Building Name</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Downtown Tower" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address</FormLabel>
+              <FormControl>
+                <Input placeholder="123 Main St" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>City</FormLabel>
+                <FormControl>
+                  <Input placeholder="New York" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="state"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>State</FormLabel>
+                <FormControl>
+                  <Input placeholder="NY" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={createMutation.isPending || updateMutation.isPending}
+        >
+          {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : "Save Building"}
+        </Button>
+      </form>
+    </Form>
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Buildings</h1>
-          <p className="text-muted-foreground italic">Manage your building locations.</p>
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2 whitespace-nowrap">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+              Manage your building locations and see elevator counts at a glance.
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          <select
-            value={selectedCustomerId}
-            onChange={e => setSelectedCustomerId(e.target.value)}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[180px]"
-          >
-            <option value="all">All Customers</option>
-            {customers?.map((c) => (
-              <option key={c.id} value={c.id.toString()}>{c.name}</option>
-            ))}
-          </select>
-
-        <Dialog open={isAddOpen} onOpenChange={(open) => {
-          setIsAddOpen(open);
-          if (!open) {
-            form.reset({ name: "", customerId: 0, address: "", city: "", state: "", zip: "" });
-            setEditingBuilding(null);
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingBuilding(null);
+        <Dialog
+          open={isAddOpen}
+          onOpenChange={(open) => {
+            setIsAddOpen(open);
+            if (!open) {
               form.reset({ name: "", customerId: 0, address: "", city: "", state: "", zip: "" });
-            }}>
+              setEditingBuilding(null);
+            }
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button
+              onClick={() => {
+                setEditingBuilding(null);
+                form.reset({ name: "", customerId: 0, address: "", city: "", state: "", zip: "" });
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Building
             </Button>
@@ -209,100 +382,12 @@ export default function Buildings() {
             <DialogHeader>
               <DialogTitle>{editingBuilding ? "Edit Building" : "Add New Building"}</DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="customerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Customer</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value ? field.value.toString() : ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a customer" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {customers?.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Building Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Downtown Tower" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem className="col-span-2">
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="123 Main St" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <Input placeholder="New York" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>State</FormLabel>
-                        <FormControl>
-                          <Input placeholder="NY" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : "Save Building"}
-                </Button>
-              </form>
-            </Form>
+            {buildingForm}
           </DialogContent>
         </Dialog>
-        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-3">
         <div className="relative flex-1 w-full sm:max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -312,78 +397,44 @@ export default function Buildings() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <select
+          value={selectedCustomerId}
+          onChange={(e) => setSelectedCustomerId(e.target.value)}
+          className="h-9 rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 min-w-[180px] w-full sm:w-auto"
+        >
+          <option value="all">All Customers</option>
+          {customers?.map((c) => (
+            <option key={c.id} value={c.id.toString()}>{c.name}</option>
+          ))}
+        </select>
+        {buildings && buildings.length > 0 && (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {buildings.length} building{buildings.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Building</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead className="text-center">Elevator Count</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
-                  <Spinner />
-                </TableCell>
-              </TableRow>
-            ) : buildings?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center">
-                    <BuildingIcon className="h-10 w-10 mb-2 opacity-20" />
-                    <p>No buildings found.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              buildings?.map((building) => {
-                const addressParts = [building.address, building.city, building.state].filter(Boolean);
-                const fullAddress = addressParts.length > 0
-                  ? `${building.address || ""}${building.address && building.city ? ", " : ""}${building.city || ""}${building.city && building.state ? ", " : ""}${building.state || ""}${building.zip ? " " + building.zip : ""}`
-                  : "—";
-                const elevatorCount = building.elevatorCount ?? 0;
-                const inspectionCount = building.inspectionCount ?? 0;
-
-                return (
-                <TableRow key={building.id}>
-                  <TableCell className="font-medium">{building.name}</TableCell>
-                  <TableCell>{building.customerName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[280px]">{fullAddress}</TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5 text-xs font-semibold" title="Elevators">
-                        {elevatorCount} Elevators
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      openEdit(building);
-                      setIsAddOpen(true);
-                    }}>
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(building.id)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );})
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Spinner />
+        </div>
+      ) : buildings?.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Building2 className="h-12 w-12 mb-3 opacity-20" />
+          <p className="text-sm">No buildings found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {buildings?.map((building) => (
+            <BuildingCard
+              key={building.id}
+              building={building}
+              onEdit={() => openEdit(building)}
+              onDelete={() => setDeleteId(building.id)}
+            />
+          ))}
+        </div>
+      )}
 
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
@@ -395,7 +446,10 @@ export default function Buildings() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
