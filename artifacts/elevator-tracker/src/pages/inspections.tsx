@@ -783,13 +783,13 @@ export default function Inspections() {
 
       {/* ── Bulk-select action bar ── */}
       {selectedIds.size > 0 && (
-        <div className="sticky top-2 z-40 flex items-center justify-between bg-zinc-900 text-white rounded-lg px-4 py-3 shadow-xl border border-zinc-700">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold">{selectedIds.size} inspection{selectedIds.size !== 1 ? "s" : ""} selected</span>
-            <button onClick={() => setSelectedIds(new Set())} className="text-zinc-400 hover:text-white text-xs underline">Deselect all</button>
+        <div className="sticky top-2 z-40 flex items-center justify-between bg-zinc-900 text-white rounded-lg px-5 py-3.5 shadow-xl border border-zinc-700">
+          <div className="flex items-center gap-4">
+            <span className="text-base font-semibold">{selectedIds.size} inspection{selectedIds.size !== 1 ? "s" : ""} selected</span>
+            <button onClick={() => setSelectedIds(new Set())} className="text-zinc-400 hover:text-white text-base underline">Deselect all</button>
           </div>
-          <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)} className="gap-1.5">
-            <Trash2 className="h-3.5 w-3.5" /> Delete Selected
+          <Button variant="destructive" onClick={() => setBulkDeleteOpen(true)} className="gap-2 text-base">
+            <Trash2 className="h-4 w-4" /> Delete Selected
           </Button>
         </div>
       )}
