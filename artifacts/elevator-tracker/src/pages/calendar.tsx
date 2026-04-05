@@ -69,17 +69,16 @@ type Inspection = NonNullable<ReturnType<typeof useListInspections>["data"]>[num
 type ActivityType = "due" | "scheduled" | "completed";
 type CalendarActivity = { insp: Inspection; activityType: ActivityType };
 
-const ACTIVITY_META: Record<ActivityType, { label: string; chipStyle: string; dotColor: string }> = {
-  due:       { label: "Due",       chipStyle: "bg-zinc-100 text-zinc-600 border-zinc-300",   dotColor: "bg-zinc-400" },
-  scheduled: { label: "Scheduled", chipStyle: "bg-blue-50 text-blue-700 border-blue-200",   dotColor: "bg-blue-500" },
-  completed: { label: "Completed", chipStyle: "bg-green-50 text-green-700 border-green-200", dotColor: "bg-green-500" },
+const ACTIVITY_CHIP: Record<ActivityType, { label: string; chip: string; pill: string }> = {
+  due:       { label: "Due",       chip: "border-l-[3px] border-amber-400  bg-amber-50  text-amber-900",  pill: "bg-amber-100  text-amber-700  border-amber-300"  },
+  scheduled: { label: "Scheduled", chip: "border-l-[3px] border-blue-400   bg-blue-50   text-blue-900",   pill: "bg-blue-100   text-blue-700   border-blue-300"   },
+  completed: { label: "Completed", chip: "border-l-[3px] border-green-400  bg-green-50  text-green-900",  pill: "bg-green-100  text-green-700  border-green-300"  },
 };
 
 function ActivityTypePill({ type }: { type: ActivityType }) {
-  const meta = ACTIVITY_META[type];
+  const meta = ACTIVITY_CHIP[type];
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide shrink-0 ${meta.chipStyle}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${meta.dotColor}`} />
+    <span className={`inline-flex items-center rounded-full border px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide shrink-0 ${meta.pill}`}>
       {meta.label}
     </span>
   );
@@ -91,7 +90,7 @@ function EventChip({ activity, onClick }: { activity: CalendarActivity; onClick:
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`w-full text-left rounded px-2 py-1 leading-tight ${statusStyle(insp.status)} hover:brightness-95 transition-all`}
+      className={`w-full text-left rounded px-2 py-1 leading-tight ${ACTIVITY_CHIP[activityType].chip} hover:brightness-95 transition-all`}
     >
       {header && (
         <p className="text-[10px] opacity-60 truncate font-normal mb-0.5">{header}</p>
@@ -115,7 +114,7 @@ function DayListRow({ activity, onClick }: { activity: CalendarActivity; onClick
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded-lg p-3 flex items-start gap-3 border group ${statusStyle(insp.status)} hover:brightness-95 transition-all`}
+      className={`w-full text-left rounded-lg p-3 flex items-start gap-3 border group ${ACTIVITY_CHIP[activityType].chip} hover:brightness-95 transition-all`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
