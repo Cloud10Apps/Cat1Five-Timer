@@ -911,8 +911,8 @@ export default function Inspections() {
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Next Due</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Scheduled</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Completed</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Status</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Aging</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Status</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Aging</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-right">Actions</span>
                     </div>
 
@@ -965,30 +965,38 @@ export default function Inspections() {
                             </span>
 
                             {/* Last Inspection */}
-                            <span className="text-sm tabular-nums text-zinc-700 text-center">
-                              {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
-                            </span>
+                            <div className="flex justify-center">
+                              <span className="text-sm tabular-nums text-zinc-700">
+                                {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
+                              </span>
+                            </div>
 
                             {/* Next Due */}
-                            <span className={`text-sm tabular-nums font-medium text-center ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
-                              {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
-                            </span>
+                            <div className="flex justify-center">
+                              <span className={`text-sm tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
+                                {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
+                              </span>
+                            </div>
 
                             {/* Scheduled */}
-                            <span className="text-sm tabular-nums text-zinc-600 text-center">
-                              {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
-                            </span>
+                            <div className="flex justify-center">
+                              <span className="text-sm tabular-nums text-zinc-600">
+                                {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
+                              </span>
+                            </div>
 
                             {/* Completed */}
-                            <span className="text-sm tabular-nums text-zinc-600 text-center">
-                              {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
-                            </span>
+                            <div className="flex justify-center">
+                              <span className="text-sm tabular-nums text-zinc-600">
+                                {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
+                              </span>
+                            </div>
 
                             {/* Status */}
-                            <div className="text-center"><StatusBadge status={insp.status} /></div>
+                            <div className="flex justify-center"><StatusBadge status={insp.status} /></div>
 
                             {/* Aging: pill + days */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
                               <AgingPill due={insp.nextDueDate} status={insp.status} />
                               {agingDaysLabel && (
                                 <span className={`text-xs tabular-nums font-medium whitespace-nowrap text-center ${isOverdue ? "text-red-500" : "text-zinc-400"}`}>
