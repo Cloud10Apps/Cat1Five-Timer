@@ -942,8 +942,8 @@ export default function Inspections() {
                       <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Next Due</span>
                       {/* Due Status — emphasis column, moved before Insp. Status */}
                       <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest text-center border-l-2 border-zinc-300 pl-2">Due Status</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Insp. Status</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Scheduled</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Inspection Status</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Scheduled Date</span>
                       {/* Metrics group — left rule */}
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight border-l-2 border-zinc-200 pl-2">Days to<br/>Schedule</span>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Completed</span>
