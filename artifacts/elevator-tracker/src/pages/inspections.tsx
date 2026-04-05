@@ -985,7 +985,7 @@ export default function Inspections() {
                             </span>
 
                             {/* Status */}
-                            <div><StatusBadge status={insp.status} /></div>
+                            <div className="text-center"><StatusBadge status={insp.status} /></div>
 
                             {/* Aging: pill + days */}
                             <div className="flex items-center gap-1.5 flex-wrap">
