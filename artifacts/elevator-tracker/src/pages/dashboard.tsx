@@ -373,13 +373,13 @@ export default function Dashboard() {
                     <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
                     <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} width={200} />
                     <Tooltip {...TT} />
-                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} barSize={62}>
+                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[0,5,5,0]} barSize={62}>
                       <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                     </Bar>
-                    <Bar dataKey="scheduled" name="Scheduled" stackId="s" fill={STATUS_COLORS.SCHEDULED} barSize={62}>
+                    <Bar dataKey="scheduled" name="Scheduled" stackId="s" fill={STATUS_COLORS.SCHEDULED} radius={[0,5,5,0]} barSize={62}>
                       <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                     </Bar>
-                    <Bar dataKey="inProgress" name="In Progress" stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,4,4,0]} barSize={62}>
+                    <Bar dataKey="inProgress" name="In Progress" stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,5,5,0]} barSize={62}>
                       <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                       <LabelList content={TotalLabel(agingData)} />
                     </Bar>
@@ -420,10 +420,10 @@ export default function Dashboard() {
                     <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} height={32} />
                     <YAxis tick={{ fill:"#71717a", fontSize:14, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip {...TT} />
-                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[0,0,0,0]} />
-                    <Bar dataKey="scheduled"  name="Scheduled"     stackId="s" fill={STATUS_COLORS.SCHEDULED}   radius={[0,0,0,0]} />
-                    <Bar dataKey="inProgress" name="In Progress"   stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,0,0,0]} />
-                    <Bar dataKey="completed"  name="Completed"     stackId="s" fill={STATUS_COLORS.COMPLETED}   radius={[4,4,0,0]}>
+                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[5,5,0,0]} />
+                    <Bar dataKey="scheduled"  name="Scheduled"     stackId="s" fill={STATUS_COLORS.SCHEDULED}   radius={[5,5,0,0]} />
+                    <Bar dataKey="inProgress" name="In Progress"   stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[5,5,0,0]} />
+                    <Bar dataKey="completed"  name="Completed"     stackId="s" fill={STATUS_COLORS.COMPLETED}   radius={[5,5,0,0]}>
                       <LabelList content={TotalLabelVertical(forecastData)} />
                     </Bar>
                   </BarChart>
