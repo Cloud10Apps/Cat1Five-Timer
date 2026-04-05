@@ -286,24 +286,17 @@ export default function Elevators() {
     return openMap;
   }, [allInspections]);
 
-  // Map: elevatorId → most recent physical inspection date.
-  // For COMPLETED inspections: use completionDate (the actual date the work was done).
-  // For open inspections: use lastInspectionDate (the prior-cycle baseline).
-  // Takes the MAX across all inspection records so the column always shows
-  // the most recent inspection event, even when no follow-up record exists yet.
+  // Map: elevatorId → lastInspectionDate from the same top-one record in latestInspByElevator.
+  // Uses identical selection logic so the filter and the column always agree.
   const lastCompletedByElevator = useMemo(() => {
     const map = new Map<number, string>();
-    for (const insp of allInspections ?? []) {
-      if (!insp.elevatorId) continue;
-      const dateToUse = insp.completionDate || insp.lastInspectionDate;
-      if (!dateToUse) continue;
-      const current = map.get(insp.elevatorId);
-      if (!current || dateToUse.slice(0, 10) > current) {
-        map.set(insp.elevatorId, dateToUse.slice(0, 10));
+    for (const [elevatorId, insp] of latestInspByElevator.entries()) {
+      if (insp.lastInspectionDate) {
+        map.set(elevatorId, insp.lastInspectionDate.slice(0, 10));
       }
     }
     return map;
-  }, [allInspections]);
+  }, [latestInspByElevator]);
 
   // Derive available years from the displayed next-due date per elevator (matches what the column and filters show)
   const dueYearOptions = useMemo(() => {
