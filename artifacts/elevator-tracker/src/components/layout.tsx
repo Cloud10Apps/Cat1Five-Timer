@@ -143,7 +143,7 @@ export function Layout({ children }: LayoutProps) {
             <SidebarTrigger />
             <div className="w-full flex-1" />
           </header>
-          <main className="flex-1 overflow-y-auto p-4 bg-background">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 bg-background">
             {children}
           </main>
         </div>

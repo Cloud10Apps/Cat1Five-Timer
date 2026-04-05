@@ -264,7 +264,7 @@ export default function Dashboard() {
   const customerList    = (customers??[]) as any[];
 
   return (
-    <div className="flex flex-col min-h-full -m-6 lg:-m-8 bg-zinc-100 text-zinc-900 font-sans">
+    <div className="flex flex-col min-h-full -m-4 bg-zinc-100 text-zinc-900 font-sans">
       <div className="flex-1 p-6 md:p-8 space-y-9">
 
         {/* ── Header ── */}
