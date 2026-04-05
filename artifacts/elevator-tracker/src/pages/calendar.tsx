@@ -66,8 +66,27 @@ function statusStyle(status: string): string {
 }
 
 type Inspection = NonNullable<ReturnType<typeof useListInspections>["data"]>[number];
+type ActivityType = "due" | "scheduled" | "completed";
+type CalendarActivity = { insp: Inspection; activityType: ActivityType };
 
-function EventChip({ insp, onClick }: { insp: Inspection; onClick: () => void }) {
+const ACTIVITY_META: Record<ActivityType, { label: string; chipStyle: string; dotColor: string }> = {
+  due:       { label: "Due",       chipStyle: "bg-zinc-100 text-zinc-600 border-zinc-300",   dotColor: "bg-zinc-400" },
+  scheduled: { label: "Scheduled", chipStyle: "bg-blue-50 text-blue-700 border-blue-200",   dotColor: "bg-blue-500" },
+  completed: { label: "Completed", chipStyle: "bg-green-50 text-green-700 border-green-200", dotColor: "bg-green-500" },
+};
+
+function ActivityTypePill({ type }: { type: ActivityType }) {
+  const meta = ACTIVITY_META[type];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide shrink-0 ${meta.chipStyle}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${meta.dotColor}`} />
+      {meta.label}
+    </span>
+  );
+}
+
+function EventChip({ activity, onClick }: { activity: CalendarActivity; onClick: () => void }) {
+  const { insp, activityType } = activity;
   const header = [insp.customerName, insp.buildingName].filter(Boolean).join(" · ");
   return (
     <button
@@ -79,13 +98,20 @@ function EventChip({ insp, onClick }: { insp: Inspection; onClick: () => void })
       )}
       <div className="flex items-center gap-1 min-w-0">
         <span className="truncate flex-1 min-w-0 text-xs font-semibold">{insp.elevatorName ?? "Elevator"}</span>
-        <span className="shrink-0 text-[10px] font-bold opacity-70">{insp.inspectionType}</span>
+        <ActivityTypePill type={activityType} />
       </div>
     </button>
   );
 }
 
-function DayListRow({ insp, onClick }: { insp: Inspection; onClick: () => void }) {
+function DayListRow({ activity, onClick }: { activity: CalendarActivity; onClick: () => void }) {
+  const { insp, activityType } = activity;
+  const dateLabel = activityType === "due"
+    ? insp.nextDueDate ? `Due ${dayjs(insp.nextDueDate).format("MMM D, YYYY")}` : null
+    : activityType === "scheduled"
+    ? insp.scheduledDate ? `Scheduled ${dayjs(insp.scheduledDate).format("MMM D, YYYY")}` : null
+    : insp.completionDate ? `Completed ${dayjs(insp.completionDate).format("MMM D, YYYY")}` : null;
+
   return (
     <button
       onClick={onClick}
@@ -95,11 +121,10 @@ function DayListRow({ insp, onClick }: { insp: Inspection; onClick: () => void }
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm truncate">{insp.elevatorName}</span>
           <InspectionTypeBadge type={insp.inspectionType} />
+          <ActivityTypePill type={activityType} />
         </div>
         <p className="text-xs opacity-75 mt-0.5">{insp.buildingName} · {insp.customerName}</p>
-        {insp.nextDueDate && (
-          <p className="text-xs opacity-60 mt-0.5">Due {dayjs(insp.nextDueDate).format("MMM D, YYYY")}</p>
-        )}
+        {dateLabel && <p className="text-xs opacity-60 mt-0.5">{dateLabel}</p>}
       </div>
       <Pencil className="h-3.5 w-3.5 opacity-40 group-hover:opacity-80 shrink-0 mt-0.5 transition-opacity" />
     </button>
@@ -203,17 +228,21 @@ export default function CalendarView() {
   for (let i = 1; i <= daysInMonth; i++) calendarDays.push(currentDate.date(i));
   const weeks = Math.ceil(calendarDays.length / 7);
 
-  const getDayInspections = (date: dayjs.Dayjs): Inspection[] => {
+  const getDayActivities = (date: dayjs.Dayjs): CalendarActivity[] => {
     if (!inspections) return [];
-    return inspections.filter(insp => {
-      const ref = insp.status === "COMPLETED" && insp.completionDate
-        ? insp.completionDate
-        : insp.scheduledDate ?? insp.nextDueDate;
-      return ref ? dayjs(ref).isSame(date, "day") : false;
-    });
+    const activities: CalendarActivity[] = [];
+    for (const insp of inspections) {
+      if (insp.nextDueDate && dayjs(insp.nextDueDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "due" });
+      if (insp.scheduledDate && dayjs(insp.scheduledDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "scheduled" });
+      if (insp.completionDate && dayjs(insp.completionDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "completed" });
+    }
+    return activities;
   };
 
-  const selectedDayInspections = selectedDate ? getDayInspections(selectedDate) : [];
+  const selectedDayActivities = selectedDate ? getDayActivities(selectedDate) : [];
 
   return (
     <div className="flex flex-col animate-in fade-in duration-500" style={{ height: "calc(100vh - 96px)" }}>
@@ -259,9 +288,9 @@ export default function CalendarView() {
                 return <div key={`blank-${idx}`} className="border-r border-b last:border-r-0 bg-muted/20 p-1.5" />;
               }
               const isToday = today.isSame(date, "day");
-              const dayInsps = getDayInspections(date);
-              const visible = dayInsps.slice(0, MAX_VISIBLE);
-              const overflow = dayInsps.length - MAX_VISIBLE;
+              const dayActivities = getDayActivities(date);
+              const visible = dayActivities.slice(0, MAX_VISIBLE);
+              const overflow = dayActivities.length - MAX_VISIBLE;
 
               return (
                 <div
@@ -275,13 +304,13 @@ export default function CalendarView() {
                       ${isToday ? "bg-primary text-primary-foreground" : "text-foreground"}`}>
                       {date.date()}
                     </span>
-                    {dayInsps.length > 0 && (
-                      <span className="text-[10px] text-muted-foreground">{dayInsps.length}</span>
+                    {dayActivities.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground">{dayActivities.length}</span>
                     )}
                   </div>
                   <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-hidden">
-                    {visible.map(insp => (
-                      <EventChip key={insp.id} insp={insp} onClick={() => openEdit(insp)} />
+                    {visible.map((activity, i) => (
+                      <EventChip key={`${activity.insp.id}-${activity.activityType}-${i}`} activity={activity} onClick={() => openEdit(activity.insp)} />
                     ))}
                     {overflow > 0 && (
                       <button
@@ -306,12 +335,12 @@ export default function CalendarView() {
             <DialogTitle>{selectedDate?.format("dddd, MMMM D, YYYY")}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {selectedDayInspections.length === 0 ? (
+            {selectedDayActivities.length === 0 ? (
               <p className="py-8 text-center text-muted-foreground text-sm">No inspections on this date.</p>
             ) : (
               <div className="space-y-2 pr-2 py-1">
-                {selectedDayInspections.map(insp => (
-                  <DayListRow key={insp.id} insp={insp} onClick={() => openEdit(insp)} />
+                {selectedDayActivities.map((activity, i) => (
+                  <DayListRow key={`${activity.insp.id}-${activity.activityType}-${i}`} activity={activity} onClick={() => openEdit(activity.insp)} />
                 ))}
               </div>
             )}
