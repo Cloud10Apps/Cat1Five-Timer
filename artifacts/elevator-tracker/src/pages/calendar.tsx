@@ -97,7 +97,7 @@ function EventChip({ activity, onClick }: { activity: CalendarActivity; onClick:
       )}
       <div className="flex items-center gap-1 min-w-0">
         <span className="truncate flex-1 min-w-0 text-xs font-semibold">{insp.elevatorName ?? "Elevator"}</span>
-        <span className="shrink-0 text-[10px] font-bold opacity-70">{insp.inspectionType}</span>
+        <span className="shrink-0 text-xs font-bold opacity-80">{insp.inspectionType}</span>
         <ActivityTypePill type={activityType} />
       </div>
     </button>
