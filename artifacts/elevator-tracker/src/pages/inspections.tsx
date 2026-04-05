@@ -291,8 +291,13 @@ export default function Inspections() {
       }
       map.get(insp.elevatorId)!.rows.push(insp);
     }
-    // Preserve sort order (Map preserves insertion order)
-    return Array.from(map.values());
+    // Sort groups explicitly: customer → building → bank → elevator
+    return Array.from(map.values()).sort((a, b) => {
+      const c1 = a.customerName.localeCompare(b.customerName); if (c1 !== 0) return c1;
+      const c2 = a.buildingName.localeCompare(b.buildingName); if (c2 !== 0) return c2;
+      const c3 = a.bank.localeCompare(b.bank);                 if (c3 !== 0) return c3;
+      return a.elevatorName.localeCompare(b.elevatorName);
+    });
   }, [inspections, elevatorMeta]);
 
   /* ── Pagination over groups ── */
