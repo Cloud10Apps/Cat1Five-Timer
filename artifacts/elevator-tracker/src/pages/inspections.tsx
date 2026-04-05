@@ -807,11 +807,12 @@ export default function Inspections() {
                   </div>
 
                   {/* Inspection rows */}
-                  <div className="divide-y divide-zinc-100">
+                  <div className="divide-y divide-zinc-200">
                     {/* Column header row */}
-                    <div className="grid items-center gap-3 px-4 py-2 bg-zinc-50/80 border-b border-zinc-100"
-                      style={{ gridTemplateColumns: "28px 80px 1fr 1fr 1fr 1fr 160px 150px 72px" }}>
+                    <div className="grid items-center gap-3 px-4 py-2 bg-zinc-50/80 border-b border-zinc-200"
+                      style={{ gridTemplateColumns: "28px 36px 80px 1fr 1fr 1fr 1fr 160px 210px 72px" }}>
                       <div />
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">#</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Type</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Last Insp.</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Next Due</span>
@@ -822,67 +823,103 @@ export default function Inspections() {
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-right">Actions</span>
                     </div>
 
-                    {group.rows.map((insp) => {
-                      const isOverdue  = insp.status !== "COMPLETED" && !!insp.nextDueDate && dayjs(insp.nextDueDate).isBefore(dayjs());
-                      const noNextDue  = !insp.nextDueDate && insp.status !== "COMPLETED";
-                      const isSelected = selectedIds.has(insp.id);
-                      const rowBg = noNextDue ? "bg-red-50" : isOverdue ? "bg-orange-50/40" : isSelected ? "bg-blue-50/50" : "bg-white hover:bg-zinc-50/70";
+                    {(() => {
+                      // Compute row numbers: PARTITION BY inspectionType ORDER BY nextDueDate
+                      const rowNumMap = new Map<number, number>();
+                      const byType = new Map<string, Inspection[]>();
+                      for (const row of group.rows) {
+                        if (!byType.has(row.inspectionType)) byType.set(row.inspectionType, []);
+                        byType.get(row.inspectionType)!.push(row);
+                      }
+                      for (const [, rows] of byType) {
+                        [...rows]
+                          .sort((a, b) => (a.nextDueDate ?? "9999").localeCompare(b.nextDueDate ?? "9999"))
+                          .forEach((r, i) => rowNumMap.set(r.id, i + 1));
+                      }
 
-                      return (
-                        <div key={insp.id}
-                          className={`grid items-center gap-3 px-4 py-3 transition-colors ${rowBg}`}
-                          style={{ gridTemplateColumns: "28px 80px 1fr 1fr 1fr 1fr 160px 150px 72px" }}>
+                      return group.rows.map((insp) => {
+                        const isOverdue  = insp.status !== "COMPLETED" && !!insp.nextDueDate && dayjs(insp.nextDueDate).isBefore(dayjs());
+                        const noNextDue  = !insp.nextDueDate && insp.status !== "COMPLETED";
+                        const isSelected = selectedIds.has(insp.id);
+                        const rowBg = noNextDue ? "bg-red-50" : isOverdue ? "bg-orange-50/40" : isSelected ? "bg-blue-50/50" : "bg-white hover:bg-zinc-50/70";
+                        const inspNum = rowNumMap.get(insp.id);
 
-                          {/* Checkbox */}
-                          <input type="checkbox" checked={isSelected} onChange={() => toggleOne(insp.id)}
-                            className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                        // Aging days label
+                        let agingDaysLabel: string | null = null;
+                        if (insp.status !== "COMPLETED" && insp.nextDueDate) {
+                          const days = dayjs().diff(dayjs(insp.nextDueDate), "day");
+                          if (days === 0)       agingDaysLabel = "Today";
+                          else if (days < 0)    agingDaysLabel = `${Math.abs(days)}d left`;
+                          else                  agingDaysLabel = `${days}d overdue`;
+                        }
 
-                          {/* Insp type */}
-                          <span className={`inline-flex items-center justify-center text-sm font-bold px-2.5 py-0.5 rounded-full tracking-wide w-fit
-                            ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
-                            {insp.inspectionType}
-                          </span>
+                        return (
+                          <div key={insp.id}
+                            className={`grid items-center gap-3 px-4 py-2 transition-colors ${rowBg}`}
+                            style={{ gridTemplateColumns: "28px 36px 80px 1fr 1fr 1fr 1fr 160px 210px 72px" }}>
 
-                          {/* Last Inspection */}
-                          <span className="text-sm tabular-nums text-zinc-700">
-                            {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
-                          </span>
+                            {/* Checkbox */}
+                            <input type="checkbox" checked={isSelected} onChange={() => toggleOne(insp.id)}
+                              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
 
-                          {/* Next Due */}
-                          <span className={`text-sm tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
-                            {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
-                          </span>
+                            {/* Row number */}
+                            <span className="text-xs tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
 
-                          {/* Scheduled */}
-                          <span className="text-sm tabular-nums text-zinc-600">
-                            {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
-                          </span>
+                            {/* Insp type */}
+                            <span className={`inline-flex items-center justify-center text-sm font-bold px-2.5 py-0.5 rounded-full tracking-wide w-fit
+                              ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
+                              {insp.inspectionType}
+                            </span>
 
-                          {/* Completed */}
-                          <span className="text-sm tabular-nums text-zinc-600">
-                            {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
-                          </span>
+                            {/* Last Inspection */}
+                            <span className="text-sm tabular-nums text-zinc-700">
+                              {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
+                            </span>
 
-                          {/* Status */}
-                          <div><StatusBadge status={insp.status} /></div>
+                            {/* Next Due */}
+                            <span className={`text-sm tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
+                              {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
+                            </span>
 
-                          {/* Aging */}
-                          <div><AgingPill due={insp.nextDueDate} status={insp.status} /></div>
+                            {/* Scheduled */}
+                            <span className="text-sm tabular-nums text-zinc-600">
+                              {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
+                            </span>
 
-                          {/* Actions */}
-                          <div className="flex items-center justify-end gap-0.5">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
-                              onClick={() => { openEdit(insp); setIsAddOpen(true); }}>
-                              <Pencil className="h-3.5 w-3.5 text-zinc-400 hover:text-zinc-700" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
-                              onClick={() => setDeleteId(insp.id)} disabled={deleteMutation.isPending}>
-                              <Trash2 className="h-3.5 w-3.5 text-zinc-400 hover:text-red-600" />
-                            </Button>
+                            {/* Completed */}
+                            <span className="text-sm tabular-nums text-zinc-600">
+                              {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
+                            </span>
+
+                            {/* Status */}
+                            <div><StatusBadge status={insp.status} /></div>
+
+                            {/* Aging: pill + days */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <AgingPill due={insp.nextDueDate} status={insp.status} />
+                              {agingDaysLabel && (
+                                <span className={`text-xs tabular-nums font-medium whitespace-nowrap
+                                  ${isOverdue ? "text-red-500" : "text-zinc-400"}`}>
+                                  ({agingDaysLabel})
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-0.5">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                                onClick={() => { openEdit(insp); setIsAddOpen(true); }}>
+                                <Pencil className="h-3.5 w-3.5 text-zinc-400 hover:text-zinc-700" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                                onClick={() => setDeleteId(insp.id)} disabled={deleteMutation.isPending}>
+                                <Trash2 className="h-3.5 w-3.5 text-zinc-400 hover:text-red-600" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               );
