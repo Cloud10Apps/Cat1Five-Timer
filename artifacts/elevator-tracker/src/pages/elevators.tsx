@@ -991,7 +991,7 @@ export default function Elevators() {
                 )}
               </DialogHeader>
 
-              <Tabs defaultValue="unit" className="pt-2">
+              <Tabs key={editingElevator ? `edit-${editingElevator.id}` : "add"} defaultValue={editingElevator ? "inspection" : "unit"} className="pt-2">
                   <TabsList className="w-full mb-4">
                     <TabsTrigger value="unit" className="flex-1">Unit Details</TabsTrigger>
                     <TabsTrigger value="inspection" className="flex-1">
