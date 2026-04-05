@@ -1,0 +1,123 @@
+You are refining the Current Inspections by Unit page to improve usability, clarity, and visual priority.
+
+Do NOT redesign the layout.
+Do NOT change data logic.
+Focus only on UI clarity, emphasis, and usability.
+
+🎯 GOAL
+
+This screen should clearly answer:
+
+👉 “What needs my attention right now?”
+
+🔴 1. HIGHLIGHT OVERDUE INSPECTIONS (CRITICAL)
+
+Make overdue rows visually stand out.
+
+Apply one of the following:
+Add subtle red background to entire row (very light)
+OR add a red left border indicator
+
+Only apply when:
+👉 Due Status = Overdue
+
+🚦 2. EMPHASIZE DUE STATUS (PRIMARY SIGNAL)
+
+Make Due Status the most visually dominant field.
+
+Update styling:
+Slightly increase pill size
+Increase font weight
+Increase contrast
+Keep color system:
+Red = overdue
+Blue = upcoming
+Green = current
+
+👉 This should be the FIRST thing the user notices in each row
+
+🟡 3. DE-EMPHASIZE NON-CRITICAL FIELDS
+
+Reduce visual weight of:
+
+Unit ID
+State ID
+Apply:
+Smaller font
+Lighter text color
+
+👉 These are reference fields, not decision drivers
+
+🧭 4. RENAME “SCHEDULED” COLUMN
+
+Rename column:
+
+👉 From:
+“Scheduled”
+
+👉 To:
+“Scheduled Date”
+
+👉 This removes ambiguity with “Inspection Status”
+
+📏 5. IMPROVE ROW SPACING
+Increase row padding slightly (4–6px)
+Add spacing between:
+Units
+Customer groups
+
+👉 Goal: reduce visual compression
+
+🧼 6. HANDLE EMPTY / INACTIVE ROWS
+
+For rows with no meaningful inspection data:
+
+Display muted styling (lighter text)
+OR collapse empty sections by default
+
+👉 Prevent clutter from inactive units
+
+🧩 7. IMPROVE HIERARCHY (SUBTLE BUT IMPORTANT)
+
+Enhance grouping clarity:
+
+Customer → bold + spacing
+Building → medium emphasis
+Unit → slightly indented or subtle background
+
+👉 Make scanning easier without reading everything
+
+🏷️ 8. STANDARDIZE TAGS
+
+Ensure consistent styling for:
+
+Inspection Status
+Due Status
+Inspection Type (CAT1, CAT5)
+
+Rules:
+
+Same padding
+Same border radius
+Same font size
+⚠️ DO NOT CHANGE
+Do NOT change layout structure
+Do NOT remove columns
+Do NOT change grouping logic
+Do NOT modify calculations
+🧪 VALIDATION
+
+After updates:
+
+Overdue inspections should stand out immediately
+Users should quickly identify:
+what is overdue
+what is due soon
+what is already scheduled
+🏁 FINAL RESULT
+
+The page should feel like:
+
+👉 A prioritized action dashboard
+NOT
+👉 A neutral data table
