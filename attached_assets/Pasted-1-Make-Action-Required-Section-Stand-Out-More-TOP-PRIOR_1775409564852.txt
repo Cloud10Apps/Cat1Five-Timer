@@ -1,0 +1,60 @@
+1. 🎯 Make “Action Required” Section Stand Out More (TOP PRIORITY)
+Instruction:
+
+Redesign the “Overdue Inspections Requiring Action” section to feel like a high-priority alert area. Add a subtle red-tinted background, a warning icon, and stronger visual emphasis. This section should visually stand out more than the rest of the dashboard.
+
+2. 📊 Improve Aging Chart Readability
+Instruction:
+Update the “Open Inspections by Aging and Status” chart to improve readability:
+
+Increase bar thickness
+Add data labels (counts) at the end of each bar
+Use stronger contrast between status colors
+Ensure stacked segments are clearly distinguishable
+Align color usage exactly with status colors used elsewhere in the dashboard]
+
+
+3. 🎨 Fix Visual Hierarchy (Everything Feels Same Weight)
+Instruction:
+Improve visual hierarchy across the dashboard:
+Increase spacing between major sections (Volume, Performance Metrics, Charts, Tables)
+Add subtle section dividers or headings
+Slightly reduce card border opacity to avoid visual clutter
+Make section titles (e.g., “Performance Metrics”) more prominent with slightly larger font and darker color
+
+
+4. 🚨 Add Context to Performance Metrics (CRITICAL UX FIX)
+
+Right now:
+👉 239.3 days = looks BAD but unclear why
+
+Instruction:
+Enhance the “Avg Days to Schedule” and “Avg Days to Complete” metrics:
+Add a subtitle explaining the metric (e.g., “Days from Due Date”)
+Add a tooltip explaining how the metric is calculated
+Avoid using red unless the value exceeds a defined threshold ---Since we don't have a threshold, just go with Black
+
+5. 🧾 Upgrade Bottom Tables (Make Them Feel Premium)
+Instruction:
+Improve the styling of the bottom tables (“Overdue Inspections” and “Upcoming — Next 14 Days”):
+Add hover effects on rows
+Make status badges slightly larger and more prominent
+Add subtle row separators instead of heavy borders
+
+
+7. ⚡ Make “Upcoming — Next 14 Days” More Useful
+Instruction:
+Enhance the “Upcoming — Next 14 Days” section:
+Add a count badge in the title (e.g., “Upcoming — Next 14 Days (1)”)
+Highlight items due today more prominently
+Add subtle urgency styling for items due within 3 days
+
+8. 🧩 Tighten KPI Cards (Polish)
+Instruction:
+Improve KPI card styling:
+
+Slightly increase number font size
+Reduce label opacity slightly
+Ensure consistent spacing between cards
+Align all numbers vertically for a cleaner look
+ 
