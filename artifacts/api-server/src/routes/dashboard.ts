@@ -183,32 +183,36 @@ router.get("/status-breakdown", async (req, res) => {
 
   const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
-  // Single-pass query replacing 5 separate round-trips
+  // Single-pass query — all counts scoped strictly to YEAR(next_due_date) = currentYear
   const result = await db.execute(sql`
     SELECT
       COUNT(*) FILTER (
         WHERE i.status = 'NOT_STARTED'
           AND i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
-          AND i.next_due_date::date >= ${todayBd}::date
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
       ) AS not_started,
       COUNT(*) FILTER (
         WHERE i.status = 'SCHEDULED'
           AND i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
-          AND i.next_due_date::date >= ${todayBd}::date
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
       ) AS scheduled,
       COUNT(*) FILTER (
         WHERE i.status = 'IN_PROGRESS'
           AND i.completion_date IS NULL
+          AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
       ) AS in_progress,
       COUNT(*) FILTER (
         WHERE i.completion_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}
+          AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
       ) AS completed,
       COUNT(*) FILTER (
         WHERE i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
           AND i.next_due_date::date < ${todayBd}::date
       ) AS overdue
     FROM inspections i
@@ -281,6 +285,9 @@ router.get("/monthly-forecast", async (req, res) => {
   const buildingCustomerFilter =
     effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
 
+  const yearStart = start.format("YYYY-MM-DD");
+  const yearEnd   = start.endOf("year").format("YYYY-MM-DD");
+
   const rows = await db
     .select({
       nextDueDate: inspectionsTable.nextDueDate,
@@ -291,7 +298,13 @@ router.get("/monthly-forecast", async (req, res) => {
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
     .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter));
+    .where(and(
+      eq(inspectionsTable.organizationId, orgId),
+      sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+      sql`${inspectionsTable.nextDueDate}::date >= ${yearStart}::date`,
+      sql`${inspectionsTable.nextDueDate}::date <= ${yearEnd}::date`,
+      buildingCustomerFilter,
+    ));
 
   const months: { key: string; label: string; notStarted: number; scheduled: number; inProgress: number; completed: number }[] = [];
   for (let i = 0; i < 12; i++) {
