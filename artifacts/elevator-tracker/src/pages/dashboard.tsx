@@ -12,7 +12,7 @@ import dayjs from "dayjs";
 
 /* ─── label helper ─── */
 function toLabel(s: string) {
-  if (s === "NOT_STARTED" || s === "NOT STARTED") return "Not scheduled";
+  if (s === "NOT_STARTED" || s === "NOT STARTED") return "Not Scheduled";
   return s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
@@ -273,7 +273,9 @@ export default function Dashboard() {
     i=>i.status!=="OVERDUE"&&i.nextDueDate&&i.nextDueDate>=todayStr&&i.nextDueDate<=in14Days
   ).sort((a,b)=>a.nextDueDate.localeCompare(b.nextDueDate));
 
-  const statusChartData = ((breakdown??[]) as any[]).map(b=>({ name:toLabel(b.status), value:b.count, color:getStatusColor(b.status) }));
+  const statusChartData = ((breakdown??[]) as any[])
+    .filter(b => b.status !== "OVERDUE")
+    .map(b=>({ name:toLabel(b.status), value:b.count, color:getStatusColor(b.status) }));
   const agingData       = ((aging??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0) }));
   const upcomingData    = agingData.filter((b:any) => ["due-today","due-1-7","due-8-14","due-15-30","due-31-60","due-61-90"].includes(b.bucket) && b._total > 0);
   const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket) && b._total > 0);
@@ -459,7 +461,7 @@ export default function Dashboard() {
 
             {/* Status distribution */}
             <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <CardHeader title={`${year} Inspections by Status`} />
+              <CardHeader title={`${year} Inspections by Current Status`} />
               <div className="p-4 h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:64, left:8, bottom:5 }} barCategoryGap="18%">
