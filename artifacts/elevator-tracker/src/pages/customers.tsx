@@ -14,14 +14,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -36,7 +28,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, Search, Pencil, Trash2, Building, ChevronDown, ChevronRight, Users, Info } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Plus, Search, Pencil, Trash2, Building2, ChevronDown, ChevronRight, Users, Info, CalendarDays } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,53 +68,196 @@ async function fetchCustomerUsers(customerId: number): Promise<CustomerUser[]> {
   return res.json();
 }
 
-function CustomerUsersRow({ customerId, colSpan }: { customerId: number; colSpan: number }) {
+const AVATAR_PALETTE = [
+  { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-200" },
+  { bg: "bg-violet-100", text: "text-violet-700", border: "border-violet-200" },
+  { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-200" },
+  { bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-200" },
+  { bg: "bg-rose-100", text: "text-rose-700", border: "border-rose-200" },
+  { bg: "bg-cyan-100", text: "text-cyan-700", border: "border-cyan-200" },
+  { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-200" },
+  { bg: "bg-teal-100", text: "text-teal-700", border: "border-teal-200" },
+];
+
+function getAvatarStyle(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
+function CustomerUsersPanel({ customerId }: { customerId: number }) {
   const { data: users, isLoading } = useQuery({
     queryKey: ["customer-users", customerId],
     queryFn: () => fetchCustomerUsers(customerId),
   });
 
   return (
-    <TableRow className="bg-zinc-50/50 hover:bg-zinc-50/50">
-      <TableCell colSpan={colSpan} className="py-3 px-8">
-        <div className="flex items-center gap-2 mb-3">
-          <Users className="h-4 w-4 text-zinc-500" />
-          <span className="text-sm font-semibold text-zinc-700">Associated Users</span>
+    <div className="border-t bg-zinc-50/60 rounded-b-xl px-5 py-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Users className="h-4 w-4 text-zinc-500" />
+        <span className="text-sm font-semibold text-zinc-700">Associated Users</span>
+      </div>
+      <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2">
+        <Info className="h-3.5 w-3.5 shrink-0 text-blue-500 mt-0.5" />
+        <p className="text-xs text-blue-800 font-medium leading-snug">
+          To add or remove user access for this customer, contact your system administrator.
+        </p>
+      </div>
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-zinc-500">
+          <Spinner /> Loading users...
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-md px-4 py-3 mb-4 flex items-start gap-3">
-          <span className="text-blue-500 text-lg leading-none mt-0.5">i</span>
-          <p className="text-sm text-blue-800 font-medium">To add or remove user access for this customer, contact your system administrator.</p>
-        </div>
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-sm text-zinc-500">
-            <Spinner /> Loading users...
-          </div>
-        ) : !users || users.length === 0 ? (
-          <p className="text-sm text-zinc-400">No users assigned to this customer.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {users.map((u) => (
-              <div key={u.id} className="flex items-center gap-3 bg-white border border-zinc-200 rounded-md px-3 py-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-100 text-zinc-600 text-xs font-bold uppercase shrink-0">
-                  {u.email.charAt(0)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-zinc-900 truncate">{u.email}</div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${u.role === "ADMIN" ? "text-violet-600" : "text-zinc-500"}`}>
-                      {u.role}
-                    </span>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${u.isActive ? "text-green-600" : "text-red-500"}`}>
-                      {u.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
+      ) : !users || users.length === 0 ? (
+        <p className="text-sm text-zinc-400">No users assigned to this customer.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-2">
+          {users.map((u) => (
+            <div key={u.id} className="flex items-center gap-3 bg-white border border-zinc-200 rounded-md px-3 py-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-zinc-100 text-zinc-600 text-xs font-bold uppercase shrink-0">
+                {u.email.charAt(0)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-zinc-900 truncate">{u.email}</div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${u.role === "ADMIN" ? "text-violet-600" : "text-zinc-500"}`}>
+                    {u.role}
+                  </span>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${u.isActive ? "text-green-600" : "text-red-500"}`}>
+                    {u.isActive ? "Active" : "Inactive"}
+                  </span>
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CustomerCardProps {
+  customer: Customer;
+  isAdmin: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  editingCustomer: Customer | null;
+  form: ReturnType<typeof useForm<CustomerFormValues>>;
+  onSubmit: (data: CustomerFormValues) => void;
+  updateIsPending: boolean;
+  setEditingCustomer: (c: Customer | null) => void;
+}
+
+function CustomerCard({
+  customer,
+  isAdmin,
+  isExpanded,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  editingCustomer,
+  form,
+  onSubmit,
+  updateIsPending,
+  setEditingCustomer,
+}: CustomerCardProps) {
+  const avatar = getAvatarStyle(customer.name);
+  const initials = customer.name.slice(0, 2).toUpperCase();
+
+  return (
+    <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`flex items-center justify-center w-14 h-14 rounded-2xl border-2 text-xl font-black uppercase shrink-0 ${avatar.bg} ${avatar.text} ${avatar.border}`}>
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <CardTitle className="text-base leading-snug truncate">{customer.name}</CardTitle>
+              <div className="flex items-center gap-1.5 mt-1">
+                <CalendarDays className="h-3.5 w-3.5 text-zinc-400" />
+                <CardDescription className="text-xs">
+                  Since {dayjs(customer.createdAt).format("MMM D, YYYY")}
+                </CardDescription>
+              </div>
+            </div>
           </div>
-        )}
-      </TableCell>
-    </TableRow>
+
+          {isAdmin && (
+            <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1">
+              <Dialog
+                open={editingCustomer?.id === customer.id}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setEditingCustomer(null);
+                    form.reset({ name: "" });
+                  }
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Customer</DialogTitle>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button type="submit" className="w-full" disabled={updateIsPending}>
+                        {updateIsPending ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-0 pb-0 mt-auto">
+        <button
+          className="w-full flex items-center justify-between border-t px-0 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
+          onClick={onToggleExpand}
+        >
+          <span className="flex items-center gap-2 font-medium">
+            <Users className="h-4 w-4 group-hover:text-foreground" />
+            View Users
+          </span>
+          {isExpanded
+            ? <ChevronDown className="h-4 w-4 transition-transform" />
+            : <ChevronRight className="h-4 w-4 transition-transform" />
+          }
+        </button>
+      </CardContent>
+
+      {isExpanded && <CustomerUsersPanel customerId={customer.id} />}
+    </Card>
   );
 }
 
@@ -131,6 +267,7 @@ export default function Customers() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
@@ -186,8 +323,6 @@ export default function Customers() {
     }
   };
 
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-
   const confirmDelete = () => {
     if (deleteId === null) return;
     deleteMutation.mutate(
@@ -206,38 +341,34 @@ export default function Customers() {
     );
   };
 
-  const handleDelete = (id: number) => {
-    setDeleteId(id);
-  };
-
-  const openEdit = (customer: Customer) => {
-    setEditingCustomer(customer);
-    form.reset({ name: customer.name });
-  };
-
-  const totalCols = isAdmin ? 4 : 3;
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
-          <p className="text-muted-foreground italic">This menu lists the customers you have access to. For any changes, please contact your system administrator.</p>
+          <p className="text-muted-foreground italic">
+            This menu lists the customers you have access to. For any changes, please contact your system administrator.
+          </p>
         </div>
 
         {isAdmin && (
-          <Dialog open={isAddOpen} onOpenChange={(open) => {
-            setIsAddOpen(open);
-            if (!open) {
-              form.reset({ name: "" });
-              setEditingCustomer(null);
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingCustomer(null);
+          <Dialog
+            open={isAddOpen}
+            onOpenChange={(open) => {
+              setIsAddOpen(open);
+              if (!open) {
                 form.reset({ name: "" });
-              }}>
+                setEditingCustomer(null);
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                onClick={() => {
+                  setEditingCustomer(null);
+                  form.reset({ name: "" });
+                }}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Customer
               </Button>
@@ -290,109 +421,45 @@ export default function Customers() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        {customers && customers.length > 0 && (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {customers.length} customer{customers.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10"></TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Created At</TableHead>
-              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={totalCols} className="text-center py-8">
-                  <Spinner />
-                </TableCell>
-              </TableRow>
-            ) : customers?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={totalCols} className="text-center py-8 text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center">
-                    <Building className="h-10 w-10 mb-2 opacity-20" />
-                    <p>No customers found.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              customers?.map((customer) => (
-                <Fragment key={customer.id}>
-                  <TableRow className="cursor-pointer" onClick={() => setExpandedId(expandedId === customer.id ? null : customer.id)}>
-                    <TableCell className="w-10 px-3">
-                      {expandedId === customer.id ? (
-                        <ChevronDown className="h-4 w-4 text-zinc-500" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-zinc-400" />
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{dayjs(customer.createdAt).format("MMM D, YYYY")}</TableCell>
-                    {isAdmin && (
-                      <TableCell className="text-right space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Dialog
-                          open={editingCustomer?.id === customer.id}
-                          onOpenChange={(open) => {
-                            if (!open) {
-                              setEditingCustomer(null);
-                              form.reset({ name: "" });
-                            }
-                          }}
-                        >
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(customer)}>
-                              <Pencil className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Edit Customer</DialogTitle>
-                            </DialogHeader>
-                            <Form {...form}>
-                              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <FormField
-                                  control={form.control}
-                                  name="name"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Name</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
-                                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                                </Button>
-                              </form>
-                            </Form>
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(customer.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                  {expandedId === customer.id && (
-                    <CustomerUsersRow customerId={customer.id} colSpan={totalCols} />
-                  )}
-                </Fragment>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Spinner />
+        </div>
+      ) : customers?.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Building2 className="h-12 w-12 mb-3 opacity-20" />
+          <p className="text-sm">No customers found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {customers?.map((customer) => (
+            <CustomerCard
+              key={customer.id}
+              customer={customer}
+              isAdmin={isAdmin}
+              isExpanded={expandedId === customer.id}
+              onToggleExpand={() => setExpandedId(expandedId === customer.id ? null : customer.id)}
+              onEdit={() => {
+                setEditingCustomer(customer);
+                form.reset({ name: customer.name });
+              }}
+              onDelete={() => setDeleteId(customer.id)}
+              editingCustomer={editingCustomer}
+              form={form}
+              onSubmit={onSubmit}
+              updateIsPending={updateMutation.isPending}
+              setEditingCustomer={setEditingCustomer}
+            />
+          ))}
+        </div>
+      )}
 
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
@@ -404,7 +471,10 @@ export default function Customers() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
