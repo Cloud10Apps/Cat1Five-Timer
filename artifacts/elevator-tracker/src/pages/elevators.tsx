@@ -1549,7 +1549,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-x-auto shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid min-w-[1640px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_150px_150px_125px_160px_130px_150px_145px_90px_155px_145px_85px]"
+                  className="w-full grid min-w-[1640px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_150px_150px_125px_130px_150px_145px_90px_155px_160px_145px_85px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1572,9 +1572,6 @@ export default function Elevators() {
                     <span className="text-sm font-semibold text-white text-center">Unit Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-sm font-semibold text-white text-center">Status</span>
-                  </div>
-                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Insp Type</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
@@ -1588,6 +1585,9 @@ export default function Elevators() {
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Aging Bucket</span>
+                  </div>
+                  <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
+                    <span className="text-sm font-semibold text-white text-center">Status</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Scheduled</span>
@@ -1650,7 +1650,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid min-w-[1640px] grid-cols-[1fr_150px_150px_125px_160px_130px_150px_145px_90px_155px_145px_85px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid min-w-[1640px] grid-cols-[1fr_150px_150px_125px_130px_150px_145px_90px_155px_160px_145px_85px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
@@ -1669,12 +1669,6 @@ export default function Elevators() {
                                           {/* Unit Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
                                             <span className="text-sm font-medium text-zinc-700 capitalize truncate">{elevator.type}</span>
-                                          </div>
-                                          {/* Status */}
-                                          <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
-                                            {latestInsp
-                                              ? <StatusBadge status={(latestInsp as any).trueStatus ?? latestInsp.status ?? "NOT_STARTED"} />
-                                              : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Insp Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
@@ -1712,6 +1706,12 @@ export default function Elevators() {
                                           {/* Aging Bucket */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
                                             <AgingBucketPill due={due} />
+                                          </div>
+                                          {/* Status */}
+                                          <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
+                                            {latestInsp
+                                              ? <StatusBadge status={(latestInsp as any).trueStatus ?? latestInsp.status ?? "NOT_STARTED"} />
+                                              : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Scheduled */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
