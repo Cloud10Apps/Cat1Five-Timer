@@ -932,7 +932,7 @@ export default function Inspections() {
                   <div className="divide-y divide-zinc-200">
                     {/* Column header row */}
                     <div className="grid items-center gap-3 px-4 py-2 bg-zinc-50/80 border-b border-zinc-200"
-                      style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 1fr 1.5fr 72px" }}>
+                      style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 0.75fr 1fr 0.75fr 1.5fr 72px" }}>
                       <div />
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">#</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Type</span>
@@ -940,7 +940,9 @@ export default function Inspections() {
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Next Due</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Inspection Status</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Scheduled</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center leading-tight">Days to<br/>Schedule</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Completed</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center leading-tight">Days to<br/>Complete</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Due Status</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-right">Actions</span>
                     </div>
@@ -968,10 +970,17 @@ export default function Inspections() {
 
 
 
+                        const daysToSchedule = (insp.scheduledDate && insp.nextDueDate)
+                          ? dayjs(insp.scheduledDate).startOf("day").diff(dayjs(insp.nextDueDate).startOf("day"), "day")
+                          : null;
+                        const daysToComplete = (insp.completionDate && insp.nextDueDate)
+                          ? dayjs(insp.completionDate).startOf("day").diff(dayjs(insp.nextDueDate).startOf("day"), "day")
+                          : null;
+
                         return (
                           <div key={insp.id}
                             className={`grid items-center gap-3 px-4 py-2 transition-colors ${rowBg}`}
-                            style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 1fr 1.5fr 72px" }}>
+                            style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 0.75fr 1fr 0.75fr 1.5fr 72px" }}>
 
                             {/* Checkbox */}
                             <input type="checkbox" checked={isSelected} onChange={() => toggleOne(insp.id)}
@@ -1010,11 +1019,31 @@ export default function Inspections() {
                               </span>
                             </div>
 
+                            {/* Days to Schedule */}
+                            <div className="flex justify-center">
+                              {daysToSchedule === null
+                                ? <span className="text-zinc-300 text-sm">—</span>
+                                : <span className={`text-sm tabular-nums font-medium ${daysToSchedule < 0 ? "text-green-600" : daysToSchedule === 0 ? "text-zinc-600" : "text-orange-600"}`}>
+                                    {daysToSchedule > 0 ? `+${daysToSchedule}` : daysToSchedule}
+                                  </span>
+                              }
+                            </div>
+
                             {/* Completed */}
                             <div className="flex justify-center">
                               <span className="text-sm tabular-nums text-zinc-600">
                                 {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
                               </span>
+                            </div>
+
+                            {/* Days to Complete */}
+                            <div className="flex justify-center">
+                              {daysToComplete === null
+                                ? <span className="text-zinc-300 text-sm">—</span>
+                                : <span className={`text-sm tabular-nums font-medium ${daysToComplete < 0 ? "text-green-600" : daysToComplete === 0 ? "text-zinc-600" : "text-orange-600"}`}>
+                                    {daysToComplete > 0 ? `+${daysToComplete}` : daysToComplete}
+                                  </span>
+                              }
                             </div>
 
                             {/* Due Status */}
