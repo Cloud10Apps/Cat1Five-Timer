@@ -806,37 +806,32 @@ export default function Inspections() {
                       {/* Name + metadata */}
                       <div>
                         <span className="font-bold text-zinc-900 text-[25px] leading-tight">{group.elevatorName}</span>
-                        {/* Row 1: bank + type badges */}
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {/* Single metadata row */}
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           {group.bank && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2.5 py-1 text-[17px] font-medium text-zinc-600 ring-1 ring-zinc-200">
                               <span className="text-zinc-400 font-normal">Bank</span>
                               {group.bank}
                             </span>
                           )}
                           {group.elevatorType && (
-                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[13px] font-medium text-blue-700 ring-1 ring-blue-200 capitalize">
+                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-[17px] font-medium text-blue-700 ring-1 ring-blue-200 capitalize">
                               {group.elevatorType}
                             </span>
                           )}
+                          {group.unitId && (
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2.5 py-1 text-[17px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                              <span className="text-zinc-400 font-normal">Unit</span>
+                              {group.unitId}
+                            </span>
+                          )}
+                          {group.stateId && (
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2.5 py-1 text-[17px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                              <span className="text-zinc-400 font-normal">State</span>
+                              {group.stateId}
+                            </span>
+                          )}
                         </div>
-                        {/* Row 2: unit ID + state ID */}
-                        {(group.unitId || group.stateId) && (
-                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                            {group.unitId && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-200">
-                                <span className="text-zinc-400 font-normal">Unit</span>
-                                {group.unitId}
-                              </span>
-                            )}
-                            {group.stateId && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-200">
-                                <span className="text-zinc-400 font-normal">State</span>
-                                {group.stateId}
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                     {/* Record count badge */}
