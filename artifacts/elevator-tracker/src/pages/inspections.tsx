@@ -43,6 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/status-badge";
 import { FilterCombobox } from "@/components/filter-combobox";
+import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import dayjs from "dayjs";
 
 /* ─── Constants ─────────────────────────────────────────────── */
@@ -992,13 +993,8 @@ export default function Inspections() {
                             {/* Row number */}
                             <span className="text-xs tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
 
-                            {/* Insp type — standardized tag */}
-                            <span className={`inline-flex items-center justify-center text-xs font-bold px-2.5 py-1 rounded-md border tracking-wide w-fit
-                              ${insp.inspectionType === "CAT5"
-                                ? "bg-yellow-50 text-yellow-800 border-yellow-300"
-                                : "bg-zinc-800 text-white border-zinc-700"}`}>
-                              {insp.inspectionType}
-                            </span>
+                            {/* Insp type */}
+                            <InspectionTypeBadge type={insp.inspectionType} />
 
                             {/* Last Inspection — dates group start */}
                             <div className="flex justify-center border-l-2 border-zinc-200 pl-2">

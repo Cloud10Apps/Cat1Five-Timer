@@ -1134,7 +1134,7 @@ export default function Elevators() {
                         {/* CAT1 section */}
                         <div className="rounded-lg border border-zinc-200 p-4 space-y-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-white tracking-wide">CAT1</span>
+                            <InspectionTypeBadge type="CAT1" />
                             <span className="text-sm font-medium text-zinc-700">Annual Inspection</span>
                           </div>
                           <Form {...inspForm}>
@@ -1193,7 +1193,7 @@ export default function Elevators() {
                         {/* CAT5 section */}
                         <div className="rounded-lg border border-yellow-300 p-4 space-y-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-zinc-900 tracking-wide">CAT5</span>
+                            <InspectionTypeBadge type="CAT5" />
                             <span className="text-sm font-medium text-zinc-700">5-Year Inspection</span>
                           </div>
                           <Form {...inspCat5Form}>
@@ -1682,9 +1682,7 @@ export default function Elevators() {
                                           {/* Insp Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-1.5 border-l border-zinc-200">
                                             {latestInsp ? (
-                                              <span className={`text-sm font-bold px-2 py-0.5 rounded-full tracking-wide ${latestInsp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
-                                                {latestInsp.inspectionType}
-                                              </span>
+                                              <InspectionTypeBadge type={latestInsp.inspectionType} />
                                             ) : <span className="text-zinc-400 text-sm">—</span>}
                                           </div>
                                           {/* Last Completed */}
