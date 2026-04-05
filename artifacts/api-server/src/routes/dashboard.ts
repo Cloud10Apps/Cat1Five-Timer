@@ -42,8 +42,9 @@ router.get("/summary", async (req, res) => {
     SELECT
       COUNT(*) FILTER (
         WHERE i.status = 'NOT_STARTED'
+          AND i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND i.next_due_date::date >= ${todayStr}::date
       ) AS not_started,
       COUNT(*) FILTER (
         WHERE i.status = 'SCHEDULED'
@@ -187,8 +188,9 @@ router.get("/status-breakdown", async (req, res) => {
     SELECT
       COUNT(*) FILTER (
         WHERE i.status = 'NOT_STARTED'
+          AND i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND i.next_due_date::date >= ${todayBd}::date
       ) AS not_started,
       COUNT(*) FILTER (
         WHERE i.status = 'SCHEDULED'
@@ -297,27 +299,25 @@ router.get("/monthly-forecast", async (req, res) => {
     months.push({ key: m.format("YYYY-MM"), label: m.format("MMM"), notStarted: 0, scheduled: 0, inProgress: 0, completed: 0 });
   }
 
+  const todayStr = today.format("YYYY-MM-DD");
+
   for (const row of rows) {
-    // Not Started: status = NOT_STARTED, bucket by nextDueDate
-    if (row.status === "NOT_STARTED" && row.nextDueDate) {
-      const bucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
-      if (bucket) bucket.notStarted++;
-    }
-    // Scheduled: any inspection with a scheduledDate — bucket by scheduledDate month
-    // (months array is current-year only, so out-of-year dates find no bucket)
-    if (row.scheduledDate) {
-      const bucket = months.find((m) => m.key === row.scheduledDate!.substring(0, 7));
-      if (bucket) bucket.scheduled++;
-    }
-    // In Progress: status = IN_PROGRESS, bucket by nextDueDate
-    if (row.status === "IN_PROGRESS" && row.nextDueDate) {
-      const bucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
-      if (bucket) bucket.inProgress++;
-    }
-    // Completed: has a completionDate, bucket by completionDate
+    if (!row.nextDueDate) continue;
+    const dueBucket = months.find((m) => m.key === row.nextDueDate!.substring(0, 7));
+    if (!dueBucket) continue; // outside current year — skip
+
     if (row.completionDate) {
-      const bucket = months.find((m) => m.key === row.completionDate!.substring(0, 7));
-      if (bucket) bucket.completed++;
+      // Completed: inspection has been finished — bucket by the month it was due
+      dueBucket.completed++;
+    } else if (row.nextDueDate < todayStr) {
+      // Overdue (past due, no completion): count as not started for visibility
+      dueBucket.notStarted++;
+    } else if (row.status === "SCHEDULED") {
+      dueBucket.scheduled++;
+    } else if (row.status === "IN_PROGRESS") {
+      dueBucket.inProgress++;
+    } else if (row.status === "NOT_STARTED") {
+      dueBucket.notStarted++;
     }
   }
 
