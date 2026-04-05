@@ -117,11 +117,11 @@ function OverdueCardHeader({ title, badge, action }: { title: string; badge?: Re
 /* ─── Upcoming card header ─── */
 function UpcomingCardHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="px-5 py-3 border-b border-zinc-200 bg-zinc-50 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-zinc-500 shrink-0">
+    <div className="px-5 py-3 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-indigo-500 shrink-0">
         <path fillRule="evenodd" d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8Zm7.75-4.25a.75.75 0 0 0-1.5 0V8c0 .414.336.75.75.75h3.25a.75.75 0 0 0 0-1.5h-2.5V3.75Z" clipRule="evenodd" />
       </svg>
-      <h3 className="text-xs font-black text-zinc-700 uppercase tracking-[0.09em] flex-1 text-center">{title}</h3>
+      <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1 text-center">{title}</h3>
       {badge}
       <div className="flex justify-end">{action}</div>
     </div>
@@ -166,7 +166,7 @@ function TotalLabel(data: any[]) {
     const { x, y, width, height, index } = props;
     const d = data[index];
     if (!d || d._total === 0) return null;
-    return <text x={Number(x)+Number(width)+8} y={Number(y)+Number(height)/2+5} fill="#3f3f46" fontSize={12} fontWeight={800} textAnchor="start">{d._total}</text>;
+    return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={14} fontWeight={900} textAnchor="start">{d._total}</text>;
   };
 }
 
@@ -289,8 +289,8 @@ export default function Dashboard() {
             ].map(({ label, value, numCls, topCls }) => (
               <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
                 <CardHeader title={label} />
-                <div className="flex-1 flex items-center justify-center py-7">
-                  <div className={`text-[3.6rem] leading-none font-black tabular-nums ${numCls}`}>{value}</div>
+                <div className="flex-1 flex items-center justify-center py-6">
+                  <div className={`text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
                 </div>
               </div>
             ))}
@@ -327,14 +327,14 @@ export default function Dashboard() {
             ].map(({ label, sub, val, tip, icon }) => (
               <div key={label} className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                 <CardHeader title={label} />
-                <div className="flex-1 flex flex-col items-center justify-center py-7 text-center">
-                  <div className="flex items-end gap-2 mb-1">
-                    <div className="text-[3.6rem] leading-none font-black tabular-nums text-zinc-900 cursor-help" title={tip}>
-                      {val===null?"—":val.toFixed(1)}
-                    </div>
-                    <span className="text-zinc-400 mb-2">{icon}</span>
+                <div className="flex flex-col items-center justify-center py-5 text-center">
+                  <div className="text-[4.5rem] leading-none font-black tabular-nums tracking-tight text-zinc-900 cursor-help" title={tip}>
+                    {val===null?"—":val.toFixed(1)}
                   </div>
-                  <div className="text-xs text-zinc-400 mt-2 font-medium">{sub}</div>
+                  <div className="flex items-center gap-1.5 mt-2.5 text-zinc-400">
+                    <span className="text-zinc-400">{icon}</span>
+                    <span className="text-xs font-semibold">{sub}</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -351,18 +351,18 @@ export default function Dashboard() {
               <CardHeader title="Open Inspections — Aging by Status" />
               <div className="p-4 h-[330px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={agingData} layout="vertical" margin={{ top:4, right:52, left:8, bottom:4 }} barCategoryGap="32%">
-                    <XAxis type="number" allowDecimals={false} tickCount={5} tick={tickStyle} axisLine={{ stroke:"#e4e4e7" }} tickLine={false} />
-                    <YAxis dataKey="label" type="category" tick={{ fill:"#27272a", fontSize:12, fontWeight:700 }} axisLine={false} tickLine={false} width={200} />
+                  <BarChart data={agingData} layout="vertical" margin={{ top:4, right:56, left:8, bottom:4 }} barCategoryGap="28%">
+                    <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={200} />
                     <Tooltip {...TT} />
-                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} barSize={38}>
-                      <LabelList content={BarValueLabel} />
+                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} barSize={46}>
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<26)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={13} fontWeight={800} textAnchor="middle">{value}</text>;}} />
                     </Bar>
-                    <Bar dataKey="scheduled" name="Scheduled" stackId="s" fill={STATUS_COLORS.SCHEDULED} barSize={38}>
-                      <LabelList content={BarValueLabel} />
+                    <Bar dataKey="scheduled" name="Scheduled" stackId="s" fill={STATUS_COLORS.SCHEDULED} barSize={46}>
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<26)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={13} fontWeight={800} textAnchor="middle">{value}</text>;}} />
                     </Bar>
-                    <Bar dataKey="inProgress" name="In Progress" stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,4,4,0]} barSize={38}>
-                      <LabelList content={BarValueLabel} />
+                    <Bar dataKey="inProgress" name="In Progress" stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,4,4,0]} barSize={46}>
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<26)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={13} fontWeight={800} textAnchor="middle">{value}</text>;}} />
                       <LabelList content={TotalLabel(agingData)} />
                     </Bar>
                   </BarChart>
@@ -375,16 +375,16 @@ export default function Dashboard() {
               <CardHeader title={`${year} Inspections by Status`} />
               <div className="p-4 h-[330px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:50, left:8, bottom:5 }} barCategoryGap="32%">
-                    <XAxis type="number" allowDecimals={false} tickCount={5} tick={tickStyle} axisLine={{ stroke:"#e4e4e7" }} tickLine={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fill:"#27272a", fontSize:12, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
+                  <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:54, left:8, bottom:5 }} barCategoryGap="28%">
+                    <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
                     <Tooltip {...TT} />
-                    <Bar dataKey="value" barSize={36} radius={[0,4,4,0]}>
+                    <Bar dataKey="value" barSize={46} radius={[0,5,5,0]}>
                       {statusChartData.map((e,i)=><Cell key={i} fill={e.color} />)}
                       <LabelList content={(props:any) => {
                         const { x,y,width,height,value } = props;
                         if (!value) return null;
-                        return <text x={Number(x)+Number(width)+8} y={Number(y)+Number(height)/2+5} fill="#3f3f46" fontSize={12} fontWeight={800} textAnchor="start">{value}</text>;
+                        return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={14} fontWeight={900} textAnchor="start">{value}</text>;
                       }} />
                     </Bar>
                   </BarChart>
@@ -397,14 +397,14 @@ export default function Dashboard() {
               <CardHeader title={`${year} Monthly Inspection Activity`} />
               <div className="p-4" style={{ height:330 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={forecast} margin={{ top:5, right:8, left:-24, bottom:0 }} barCategoryGap="22%">
-                    <XAxis dataKey="label" tick={tickStyle} axisLine={{ stroke:"#e4e4e7" }} tickLine={false} height={28} />
-                    <YAxis tick={tickStyle} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <BarChart data={forecast} margin={{ top:5, right:8, left:-20, bottom:0 }} barCategoryGap="28%">
+                    <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} height={28} />
+                    <YAxis tick={{ fill:"#71717a", fontSize:12, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip {...TT} />
                     <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[0,0,0,0]} />
                     <Bar dataKey="scheduled"  name="Scheduled"     stackId="s" fill={STATUS_COLORS.SCHEDULED}   radius={[0,0,0,0]} />
                     <Bar dataKey="inProgress" name="In Progress"   stackId="s" fill={STATUS_COLORS.IN_PROGRESS}  radius={[0,0,0,0]} />
-                    <Bar dataKey="completed"  name="Completed"     stackId="s" fill={STATUS_COLORS.COMPLETED}    radius={[3,3,0,0]} />
+                    <Bar dataKey="completed"  name="Completed"     stackId="s" fill={STATUS_COLORS.COMPLETED}    radius={[4,4,0,0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -474,8 +474,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Upcoming — neutral, equal weight */}
-            <div className="bg-white border border-zinc-200 border-l-4 border-l-zinc-400 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            {/* Upcoming — indigo presence */}
+            <div className="bg-indigo-50/30 border border-indigo-200 border-l-4 border-l-indigo-500 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <UpcomingCardHeader
                 title="Upcoming — Next 14 Days"
                 badge={<CountBadge n={upcoming.length} />}
