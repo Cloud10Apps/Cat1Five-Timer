@@ -1,0 +1,108 @@
+🎯 GOAL
+
+Reorganize the dashboard to follow this structure:
+
+Summary (KPIs)
+Performance Metrics
+Analytics (Charts)
+Action Lists (Overdue + Upcoming)
+
+The dashboard should feel clean, balanced, and easy to scan, with detailed lists at the bottom.
+
+🧱 1. REMOVE ALERT BANNER
+Completely remove the red banner:
+“1 overdue inspection requires immediate attention”
+Do not replace it with another banner
+
+👉 Alerts should be handled within the “Overdue” section only
+
+🔄 2. REORDER SECTIONS (CRITICAL)
+
+Reorder the dashboard to this exact layout:
+
+TOP
+Header (title + filters)
+SECTION 1 — VOLUME
+Not Scheduled
+Scheduled
+In Progress
+Completed
+SECTION 2 — PERFORMANCE METRICS
+Avg Days to Schedule
+Avg Days to Complete
+SECTION 3 — ANALYTICS
+Open Inspections by Aging and Status
+2026 Inspections by Status
+2026 Monthly Inspection Activity
+SECTION 4 — ACTION LISTS (MOVE TO BOTTOM)
+Overdue Inspections
+Upcoming — Next 14 Days
+🎨 3. REDUCE VISUAL AGGRESSION OF OVERDUE
+Change overdue card background to very light red tint (5–8%)
+Keep strong red ONLY for:
+overdue badges
+icons
+Remove heavy red fills
+
+👉 This should feel important, not overwhelming
+
+⚖️ 4. BALANCE OVERDUE AND UPCOMING CARDS
+Make both cards equal in:
+width
+height
+padding
+Upcoming should use:
+light neutral background (light gray or very soft yellow tint)
+Overdue should still feel slightly more important, but not dominant
+📊 5. IMPROVE CHART QUALITY
+Increase bar thickness by ~25%
+Remove unnecessary gridlines
+Add value labels at end of bars
+Ensure color consistency:
+blue = scheduled
+green = completed
+orange = in progress
+red = overdue
+Improve spacing between categories
+🔢 6. POLISH KPI CARDS
+Add subtle colored top border:
+Scheduled → blue
+Completed → green
+In Progress → orange
+Slightly increase number size
+Reduce label prominence (lighter gray)
+📈 7. IMPROVE PERFORMANCE METRICS
+Move labels closer to numbers
+Reduce empty space
+Add helper text:
+“Average time from due date”
+Add subtle icon (clock)
+🧱 8. IMPROVE SPACING AND SECTION SEPARATION
+Increase vertical spacing between sections (32–40px)
+Add subtle section headers:
+Volume
+Performance Metrics
+Analytics
+Action Lists
+Ensure sections don’t visually blend together
+🧾 9. IMPROVE TABLE DESIGN (BOTTOM SECTION)
+Add row hover effects
+Slightly increase row height
+Reduce heavy borders
+Align columns cleanly
+Improve badge styling:
+larger
+more readable
+⚠️ 10. CLEAN UP AGING TEXT
+Replace:
+“361d overdue”
+
+With:
+“361 days overdue”
+OR
+“1+ year overdue” (preferred for large values)
+
+🎨 11. ADD SUBTLE VISUAL DEPTH
+Slightly increase card shadows
+Ensure cards feel layered
+Avoid flat appearance
