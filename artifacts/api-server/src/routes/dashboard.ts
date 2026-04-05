@@ -46,10 +46,12 @@ router.get("/summary", async (req, res) => {
           AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
       ) AS not_started,
       COUNT(*) FILTER (
-        WHERE i.scheduled_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.scheduled_date::date) = ${currentYear}
+        WHERE i.status = 'SCHEDULED'
+          AND i.completion_date IS NULL
+          AND i.next_due_date IS NOT NULL
+          AND i.next_due_date::date >= ${todayStr}::date
       ) AS scheduled,
-      COUNT(*) FILTER (WHERE i.status = 'IN_PROGRESS') AS in_progress,
+      COUNT(*) FILTER (WHERE i.status = 'IN_PROGRESS' AND i.completion_date IS NULL) AS in_progress,
       COUNT(*) FILTER (
         WHERE i.completion_date IS NOT NULL
           AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}
@@ -189,13 +191,14 @@ router.get("/status-breakdown", async (req, res) => {
           AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
       ) AS not_started,
       COUNT(*) FILTER (
-        WHERE i.scheduled_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.scheduled_date::date) = ${currentYear}
+        WHERE i.status = 'SCHEDULED'
+          AND i.completion_date IS NULL
+          AND i.next_due_date IS NOT NULL
+          AND i.next_due_date::date >= ${todayBd}::date
       ) AS scheduled,
       COUNT(*) FILTER (
         WHERE i.status = 'IN_PROGRESS'
-          AND i.next_due_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND i.completion_date IS NULL
       ) AS in_progress,
       COUNT(*) FILTER (
         WHERE i.completion_date IS NOT NULL
