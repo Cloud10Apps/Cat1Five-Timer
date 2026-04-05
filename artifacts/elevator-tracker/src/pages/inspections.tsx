@@ -752,11 +752,11 @@ export default function Inspections() {
                 { label: "Completion Date", from: completionFrom, to: completionTo,  setFrom: setCompletionFrom, setTo: setCompletionTo },
               ].map(({ label, from, to, setFrom, setTo }) => (
                 <div key={label} className="space-y-1.5">
-                  <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-[0.1em]">{label}</p>
+                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-[0.1em]">{label}</p>
                   <div className="flex gap-1.5 items-center">
-                    <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
-                    <span className="text-zinc-300 text-xs shrink-0">–</span>
-                    <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to}   onChange={e => setTo(e.target.value)} />
+                    <input type="date" className="h-9 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
+                    <span className="text-zinc-300 text-sm shrink-0">–</span>
+                    <input type="date" className="h-9 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to}   onChange={e => setTo(e.target.value)} />
                   </div>
                 </div>
               ))}
