@@ -1,0 +1,119 @@
+You are refining the Inspection History page to improve clarity, readability, and visual hierarchy.
+
+Do NOT change layout structure or data logic.
+Focus only on UI polish, readability, and emphasis.
+
+🎯 GOAL
+
+Make the page feel:
+
+Clean
+Easy to scan
+Professionally designed
+Less like a spreadsheet, more like a product
+
+🧠 1. IMPROVE VISUAL HIERARCHY
+Apply clear hierarchy to grouping levels:
+Customer name
+Bold
+Slightly larger font
+Add spacing above (margin-top)
+Building name
+Medium emphasis (semi-bold)
+Unit name
+Slightly indented
+Subtle background or card-style highlight
+
+👉 Goal: make it easy to visually scan groupings without reading everything
+
+📏 2. ADD SPACING (HIGH IMPACT)
+Add vertical spacing between:
+Units (8–12px)
+Customer groups (16–20px)
+Slightly increase row height
+
+👉 Reduce “compressed table” feeling
+
+
+Keep stronger emphasis on:
+
+Next Due
+Inspection Status
+Due Status
+🚦 5. PRIORITIZE DUE STATUS (IMPORTANT)
+
+Make Due Status the most visually prominent:
+
+Keep color-coded tags:
+Red → overdue
+Blue → upcoming
+Green → current
+Slightly increase font weight or contrast
+
+👉 This is the “what needs attention” signal
+
+🏷️ 6. STANDARDIZE TAG STYLING
+
+Ensure consistent styling across:
+
+Inspection Status
+Due Status
+Type (CAT1 / CAT5)
+
+Rules:
+
+Same border radius
+Same padding
+Consistent font size
+Consistent color system
+🧩 7. ALIGN COLUMN GROUPING VISUALLY
+
+Create subtle grouping:
+
+Dates group:
+Last Insp
+Next Due
+Scheduled
+Completed
+Metrics group:
+Days to Schedule
+Days to Complete
+
+👉 Use spacing or subtle divider to separate groups
+
+🧼 8. CLEAN UP EMPTY VALUES
+
+Replace:
+
+—
+blank cells
+
+With:
+👉 consistent placeholder (e.g., “—” in muted gray)
+
+📌 9. KEEP TABLE READABLE
+Ensure column alignment is consistent
+Prevent text wrapping where unnecessary
+Keep rows visually clean
+⚠️ DO NOT CHANGE
+Do NOT change layout structure
+Do NOT change grouping logic
+Do NOT change calculations
+Do NOT rename fields
+🧪 VALIDATION
+
+After updates:
+
+Page should feel less dense
+Important data should stand out immediately
+User should be able to scan:
+overdue issues
+upcoming inspections
+completion performance
+🏁 FINAL RESULT
+
+The page should feel like:
+
+👉 A clean operational dashboard
+NOT
+👉 A raw data table

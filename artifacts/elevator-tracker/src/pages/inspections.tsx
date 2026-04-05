@@ -102,7 +102,7 @@ function getAgingBucketValue(due: string | null | undefined, status?: string): s
 
 function AgingPill({ due, status }: { due?: string | null; status?: string }) {
   const bucket = getAgingBucketValue(due, status);
-  if (!bucket) return <span className="text-zinc-300 text-sm">—</span>;
+  if (!bucket) return <span className="text-zinc-300 text-xs">—</span>;
   const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
     bucket === "due-today"     ? "bg-blue-900   text-white      border-blue-900"   :
@@ -116,7 +116,7 @@ function AgingPill({ due, status }: { due?: string | null; status?: string }) {
     bucket === "overdue-61-90" ? "bg-red-100    text-red-700    border-red-200"    :
                                  "bg-red-200    text-red-800    border-red-300";
   return (
-    <span className={`inline-flex items-center text-sm font-semibold px-2 py-0.5 rounded border whitespace-nowrap ${cls}`}>
+    <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-md border whitespace-nowrap tracking-wide ${cls}`}>
       {label}
     </span>
   );
@@ -852,11 +852,11 @@ export default function Inspections() {
                 lastBuildingId = -1;
                 sections.push(
                   <div key={`cust-${group.customerId}`}
-                    className="flex items-center gap-3 mt-4 first:mt-0 px-1 pb-1 border-b-2 border-zinc-900">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-zinc-900 text-white text-sm font-bold shrink-0">
+                    className="flex items-center gap-3 mt-10 first:mt-0 px-1 pb-2 border-b-2 border-zinc-900">
+                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-zinc-900 text-white text-sm font-bold shrink-0">
                       {group.customerName.substring(0, 2).toUpperCase()}
                     </div>
-                    <span className="font-bold text-zinc-900 tracking-tight text-[25px]">{group.customerName}</span>
+                    <span className="font-bold text-zinc-900 tracking-tight text-2xl">{group.customerName}</span>
                   </div>
                 );
               }
@@ -866,9 +866,9 @@ export default function Inspections() {
                 lastBuildingId = group.buildingId;
                 sections.push(
                   <div key={`bldg-${group.buildingId}-under-${group.customerId}`}
-                    className="flex items-center gap-2 mt-3 px-1">
-                    <Building2 className="h-4 w-4 text-zinc-400 shrink-0" />
-                    <span className="font-semibold text-zinc-600 text-[25px]">{group.buildingName}</span>
+                    className="flex items-center gap-2 mt-6 px-1">
+                    <Building2 className="h-4 w-4 text-zinc-500 shrink-0" />
+                    <span className="font-semibold text-zinc-700 text-lg">{group.buildingName}</span>
                   </div>
                 );
               }
@@ -880,39 +880,39 @@ export default function Inspections() {
 
               sections.push(
                 <div key={`elev-${group.elevatorId}`}
-                  className={`bg-white rounded-xl border ${cardBorder} shadow-sm overflow-hidden mt-2`}>
+                  className={`bg-white rounded-xl border ${cardBorder} shadow-sm overflow-hidden mt-3`}>
                   {/* Card header */}
-                  <div className={`flex items-center justify-between px-4 py-3.5 ${hasNoNextDue ? "bg-red-50" : hasOverdue ? "bg-amber-50/60" : "bg-gradient-to-r from-slate-50 to-white"} border-b border-zinc-100`}>
+                  <div className={`flex items-center justify-between px-4 py-3 ${hasNoNextDue ? "bg-red-50" : hasOverdue ? "bg-amber-50/60" : "bg-gradient-to-r from-slate-50 to-white"} border-b border-zinc-100`}>
                     <div className="flex items-center gap-3">
                       {/* Icon */}
-                      <div className={`flex items-center justify-center h-10 w-10 rounded-xl shrink-0 shadow-sm
+                      <div className={`flex items-center justify-center h-9 w-9 rounded-lg shrink-0 shadow-sm
                         ${hasNoNextDue ? "bg-red-100 text-red-600" : hasOverdue ? "bg-amber-100 text-amber-600" : "bg-blue-600 text-white"}`}>
-                        <Layers className="h-5 w-5" />
+                        <Layers className="h-4 w-4" />
                       </div>
                       {/* Name + metadata */}
                       <div>
-                        <span className="font-bold text-zinc-900 text-[25px] leading-tight">{group.elevatorName}</span>
+                        <span className="font-bold text-zinc-900 text-base leading-tight">{group.elevatorName}</span>
                         {/* Single metadata row */}
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           {group.bank && (
-                            <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2.5 py-1 text-[17px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
                               <span className="text-zinc-400 font-normal">Bank</span>
                               {group.bank}
                             </span>
                           )}
                           {group.elevatorType && (
-                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-[17px] font-medium text-blue-700 ring-1 ring-blue-200 capitalize">
+                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-blue-200 capitalize">
                               {group.elevatorType}
                             </span>
                           )}
                           {group.unitId && (
-                            <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2.5 py-1 text-[17px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
                               <span className="text-zinc-400 font-normal">Unit</span>
                               {group.unitId}
                             </span>
                           )}
                           {group.stateId && (
-                            <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2.5 py-1 text-[17px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
                               <span className="text-zinc-400 font-normal">State</span>
                               {group.stateId}
                             </span>
@@ -922,7 +922,7 @@ export default function Inspections() {
                     </div>
                     {/* Record count badge */}
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-500 ring-1 ring-zinc-200">
+                      <span className="inline-flex items-center rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-500 ring-1 ring-zinc-200">
                         {group.rows.length} record{group.rows.length !== 1 ? "s" : ""}
                       </span>
                     </div>
@@ -931,20 +931,23 @@ export default function Inspections() {
                   {/* Inspection rows */}
                   <div className="divide-y divide-zinc-200">
                     {/* Column header row */}
-                    <div className="grid items-center gap-3 px-4 py-2 bg-zinc-50/80 border-b border-zinc-200"
+                    <div className="grid items-center gap-3 px-4 py-2.5 bg-zinc-50/90 border-b border-zinc-200"
                       style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 0.75fr 1fr 0.75fr 1.5fr 72px" }}>
                       <div />
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">#</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Type</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Last Insp.</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Next Due</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Inspection Status</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Scheduled</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center leading-tight">Days to<br/>Schedule</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Completed</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center leading-tight">Days to<br/>Complete</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Due Status</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-right">Actions</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">#</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Type</span>
+                      {/* Dates group — left rule */}
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center border-l-2 border-zinc-200 pl-2">Last Insp.</span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Next Due</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Insp. Status</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Scheduled</span>
+                      {/* Metrics group — left rule */}
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight border-l-2 border-zinc-200 pl-2">Days to<br/>Schedule</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Completed</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">Days to<br/>Complete</span>
+                      {/* Due Status — emphasis column, right rule */}
+                      <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest text-center border-l-2 border-zinc-300 pl-2">Due Status</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-right">Actions</span>
                     </div>
 
                     {(() => {
@@ -979,7 +982,7 @@ export default function Inspections() {
 
                         return (
                           <div key={insp.id}
-                            className={`grid items-center gap-3 px-4 py-2 transition-colors ${rowBg}`}
+                            className={`grid items-center gap-3 px-4 py-3 transition-colors ${rowBg}`}
                             style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 0.75fr 1fr 0.75fr 1.5fr 72px" }}>
 
                             {/* Checkbox */}
@@ -987,24 +990,26 @@ export default function Inspections() {
                               className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
 
                             {/* Row number */}
-                            <span className="text-sm tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
+                            <span className="text-xs tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
 
-                            {/* Insp type */}
-                            <span className={`inline-flex items-center justify-center text-sm font-bold px-2.5 py-0.5 rounded-full tracking-wide w-fit
-                              ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
+                            {/* Insp type — standardized tag */}
+                            <span className={`inline-flex items-center justify-center text-xs font-bold px-2.5 py-1 rounded-md border tracking-wide w-fit
+                              ${insp.inspectionType === "CAT5"
+                                ? "bg-yellow-50 text-yellow-800 border-yellow-300"
+                                : "bg-zinc-800 text-white border-zinc-700"}`}>
                               {insp.inspectionType}
                             </span>
 
-                            {/* Last Inspection */}
-                            <div className="flex justify-center">
-                              <span className="text-sm tabular-nums text-zinc-700">
+                            {/* Last Inspection — dates group start */}
+                            <div className="flex justify-center border-l-2 border-zinc-200 pl-2">
+                              <span className="text-xs tabular-nums text-zinc-500">
                                 {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
                               </span>
                             </div>
 
-                            {/* Next Due */}
+                            {/* Next Due — emphasis */}
                             <div className="flex justify-center">
-                              <span className={`text-sm tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
+                              <span className={`text-xs tabular-nums font-semibold ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
                                 {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
                               </span>
                             </div>
@@ -1014,16 +1019,16 @@ export default function Inspections() {
 
                             {/* Scheduled */}
                             <div className="flex justify-center">
-                              <span className="text-sm tabular-nums text-zinc-600">
+                              <span className="text-xs tabular-nums text-zinc-500">
                                 {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
                               </span>
                             </div>
 
-                            {/* Days to Schedule */}
-                            <div className="flex justify-center">
+                            {/* Days to Schedule — metrics group start */}
+                            <div className="flex justify-center border-l-2 border-zinc-200 pl-2">
                               {daysToSchedule === null
-                                ? <span className="text-zinc-300 text-sm">—</span>
-                                : <span className={`text-sm tabular-nums font-medium ${daysToSchedule < 0 ? "text-green-600" : daysToSchedule === 0 ? "text-zinc-600" : "text-orange-600"}`}>
+                                ? <span className="text-zinc-300 text-xs">—</span>
+                                : <span className={`text-xs tabular-nums font-semibold ${daysToSchedule < 0 ? "text-green-600" : daysToSchedule === 0 ? "text-zinc-500" : "text-orange-600"}`}>
                                     {daysToSchedule > 0 ? `+${daysToSchedule}` : daysToSchedule}
                                   </span>
                               }
@@ -1031,7 +1036,7 @@ export default function Inspections() {
 
                             {/* Completed */}
                             <div className="flex justify-center">
-                              <span className="text-sm tabular-nums text-zinc-600">
+                              <span className="text-xs tabular-nums text-zinc-500">
                                 {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
                               </span>
                             </div>
@@ -1039,15 +1044,15 @@ export default function Inspections() {
                             {/* Days to Complete */}
                             <div className="flex justify-center">
                               {daysToComplete === null
-                                ? <span className="text-zinc-300 text-sm">—</span>
-                                : <span className={`text-sm tabular-nums font-medium ${daysToComplete < 0 ? "text-green-600" : daysToComplete === 0 ? "text-zinc-600" : "text-orange-600"}`}>
+                                ? <span className="text-zinc-300 text-xs">—</span>
+                                : <span className={`text-xs tabular-nums font-semibold ${daysToComplete < 0 ? "text-green-600" : daysToComplete === 0 ? "text-zinc-500" : "text-orange-600"}`}>
                                     {daysToComplete > 0 ? `+${daysToComplete}` : daysToComplete}
                                   </span>
                               }
                             </div>
 
-                            {/* Due Status */}
-                            <div className="flex items-center justify-center">
+                            {/* Due Status — priority column */}
+                            <div className="flex items-center justify-center border-l-2 border-zinc-300 pl-2">
                               <AgingPill due={insp.nextDueDate} status={(insp as any).trueStatus ?? insp.status} />
                             </div>
 
