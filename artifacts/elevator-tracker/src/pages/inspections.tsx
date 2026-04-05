@@ -793,7 +793,7 @@ export default function Inspections() {
                         <Layers className="h-4 w-4" />
                       </div>
                       <div>
-                        <span className="text-sm font-bold text-zinc-900">{group.elevatorName}</span>
+                        <span className="font-bold text-zinc-900 text-[25px]">{group.elevatorName}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                           {group.bank && <span className="text-zinc-500 text-[20px]">Bank: <span className="font-medium text-zinc-700">{group.bank}</span></span>}
                           {group.bank && group.elevatorType && <span className="text-zinc-300 text-[20px]">·</span>}
