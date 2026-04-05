@@ -64,12 +64,15 @@ const MONTH_OPTIONS = [
   { value: "11", label: "November" }, { value: "12", label: "December" },
 ];
 const AGING_BUCKET_OPTIONS = [
-  { value: "current",  label: "Not Yet Due" },
-  { value: "1-30",     label: "1–30 Days"   },
-  { value: "31-60",    label: "31–60 Days"  },
-  { value: "61-90",    label: "61–90 Days"  },
-  { value: "91-120",   label: "91–120 Days" },
-  { value: "120plus",  label: "121+ Days"   },
+  { value: "due-today",     label: "Due Today"          },
+  { value: "due-7",         label: "Due in 7 Days"      },
+  { value: "due-14",        label: "Due in 14 Days"     },
+  { value: "due-30",        label: "Due in 30 Days"     },
+  { value: "due-60+",       label: "Due in 60+ Days"    },
+  { value: "overdue-1-30",  label: "Overdue 1–30 Days"  },
+  { value: "overdue-31-60", label: "Overdue 31–60 Days" },
+  { value: "overdue-61-90", label: "Overdue 61–90 Days" },
+  { value: "overdue-91+",   label: "Overdue 91+ Days"   },
 ];
 const STATUS_OPTIONS = [
   { value: "NOT_STARTED", label: "Not Scheduled" },
@@ -84,12 +87,15 @@ function getAgingBucketValue(due: string | null | undefined, status?: string): s
   if (status === "COMPLETED") return null;
   if (!due) return null;
   const days = dayjs().diff(dayjs(due), "day");
-  if (days <= 0)   return "current";
-  if (days <= 30)  return "1-30";
-  if (days <= 60)  return "31-60";
-  if (days <= 90)  return "61-90";
-  if (days <= 120) return "91-120";
-  return "120plus";
+  if (days === 0)  return "due-today";
+  if (days >= -7)  return "due-7";
+  if (days >= -14) return "due-14";
+  if (days >= -30) return "due-30";
+  if (days < 0)    return "due-60+";
+  if (days <= 30)  return "overdue-1-30";
+  if (days <= 60)  return "overdue-31-60";
+  if (days <= 90)  return "overdue-61-90";
+  return "overdue-91+";
 }
 
 /* ── Edit form schema ────────────────────────────────────────────── */

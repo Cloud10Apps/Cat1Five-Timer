@@ -37,23 +37,29 @@ const STATUS_LABEL_MAP: Record<string, string> = {
 function getAgingBucketKey(nextDueDate: string | null | undefined, computedStatus: string): string | null {
   if (computedStatus === "COMPLETED" || !nextDueDate) return null;
   const days = dayjs().diff(dayjs(nextDueDate), "day");
-  if (days <= 0)   return "current";
-  if (days <= 30)  return "1-30";
-  if (days <= 60)  return "31-60";
-  if (days <= 90)  return "61-90";
-  if (days <= 120) return "91-120";
-  return "120plus";
+  if (days === 0)  return "due-today";
+  if (days >= -7)  return "due-7";
+  if (days >= -14) return "due-14";
+  if (days >= -30) return "due-30";
+  if (days < 0)    return "due-60+";
+  if (days <= 30)  return "overdue-1-30";
+  if (days <= 60)  return "overdue-31-60";
+  if (days <= 90)  return "overdue-61-90";
+  return "overdue-91+";
 }
 
 function getAgingBucketDisplay(key: string | null): string {
   if (!key) return "";
   const map: Record<string, string> = {
-    "current":  "Not Yet Due",
-    "1-30":     "1–30 Days",
-    "31-60":    "31–60 Days",
-    "61-90":    "61–90 Days",
-    "91-120":   "91–120 Days",
-    "120plus":  "121+ Days",
+    "due-today":     "Due Today",
+    "due-7":         "Due in 7 Days",
+    "due-14":        "Due in 14 Days",
+    "due-30":        "Due in 30 Days",
+    "due-60+":       "Due in 60+ Days",
+    "overdue-1-30":  "Overdue 1–30 Days",
+    "overdue-31-60": "Overdue 31–60 Days",
+    "overdue-61-90": "Overdue 61–90 Days",
+    "overdue-91+":   "Overdue 91+ Days",
   };
   return map[key] ?? "";
 }
@@ -245,12 +251,15 @@ function statusLabel(status: string, nextDueDate: string | null | undefined): st
 function agingBucketLabel(nextDueDate: string | null | undefined): string {
   if (!nextDueDate) return "";
   const days = dayjs().diff(dayjs(nextDueDate), "day");
-  if (days <= 0)   return "Not Yet Due";
-  if (days <= 30)  return "1–30 Days";
-  if (days <= 60)  return "31–60 Days";
-  if (days <= 90)  return "61–90 Days";
-  if (days <= 120) return "91–120 Days";
-  return "121+ Days";
+  if (days === 0)  return "Due Today";
+  if (days >= -7)  return "Due in 7 Days";
+  if (days >= -14) return "Due in 14 Days";
+  if (days >= -30) return "Due in 30 Days";
+  if (days < 0)    return "Due in 60+ Days";
+  if (days <= 30)  return "Overdue 1–30 Days";
+  if (days <= 60)  return "Overdue 31–60 Days";
+  if (days <= 90)  return "Overdue 61–90 Days";
+  return "Overdue 91+ Days";
 }
 
 router.get("/elevators", async (req, res) => {

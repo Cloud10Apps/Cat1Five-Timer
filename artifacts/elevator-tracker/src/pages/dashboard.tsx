@@ -367,19 +367,28 @@ export default function Dashboard() {
             {/* Aging stacked bar */}
             <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <CardHeader title="Open Inspections — Aging by Status" />
-              <div className="p-4 h-[340px]">
+              <div className="p-4 h-[500px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={agingData} layout="vertical" margin={{ top:4, right:68, left:8, bottom:4 }} barCategoryGap="18%">
+                  <BarChart data={agingData} layout="vertical" margin={{ top:4, right:68, left:8, bottom:4 }} barCategoryGap="16%">
                     <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} width={200} />
+                    <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} width={170}
+                      tick={(props: any) => {
+                        const { x, y, payload } = props;
+                        const lbl: string = payload.value ?? "";
+                        const isOverdue  = lbl.startsWith("Overdue");
+                        const isDueToday = lbl === "Due Today";
+                        const fill = isDueToday ? "#7c3aed" : isOverdue ? "#b91c1c" : "#1d4ed8";
+                        return <text x={x} y={y} dy={5} textAnchor="end" fill={fill} fontSize={14} fontWeight={700}>{lbl}</text>;
+                      }}
+                    />
                     <Tooltip {...TT} />
-                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[0,5,5,0]} barSize={62}>
-                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
+                    <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[0,5,5,0]} barSize={40}>
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={14} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                     </Bar>
-                    <Bar dataKey="scheduled" name="Scheduled" stackId="s" fill={STATUS_COLORS.SCHEDULED} radius={[0,5,5,0]} barSize={62}>
-                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
+                    <Bar dataKey="scheduled" name="Scheduled" stackId="s" fill={STATUS_COLORS.SCHEDULED} radius={[0,5,5,0]} barSize={40}>
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={14} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                     </Bar>
-                    <Bar dataKey="inProgress" name="In Progress" stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,5,5,0]} barSize={62}>
+                    <Bar dataKey="inProgress" name="In Progress" stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,5,5,0]} barSize={40}>
                       <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                       <LabelList content={TotalLabel(agingData)} />
                     </Bar>
