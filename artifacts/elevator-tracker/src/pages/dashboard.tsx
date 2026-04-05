@@ -156,7 +156,7 @@ function BarValueLabel(props: any) {
   if (!value || Number(value) === 0 || Number(width) < 22) return null;
   return (
     <text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5}
-      fill="#fff" fontSize={12} fontWeight={700} textAnchor="middle">{value}</text>
+      fill="#fff" fontSize={15} fontWeight={700} textAnchor="middle">{value}</text>
   );
 }
 
@@ -169,7 +169,7 @@ function TotalLabel(data: any[]) {
     if (!d) return null;
     const total = (Number(d.notStarted)||0) + (Number(d.scheduled)||0) + (Number(d.inProgress)||0);
     if (!total) return null;
-    return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={15} fontWeight={900} textAnchor="start">{total}</text>;
+    return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={17} fontWeight={900} textAnchor="start">{total}</text>;
   };
 }
 
@@ -179,7 +179,7 @@ function TotalLabelVertical(data: any[]) {
     const { x, y, width, index } = props;
     const d = data[index];
     if (!d || d._total === 0) return null;
-    return <text x={Number(x)+Number(width)/2} y={Number(y)-7} fill="#18181b" fontSize={13} fontWeight={900} textAnchor="middle">{d._total}</text>;
+    return <text x={Number(x)+Number(width)/2} y={Number(y)-7} fill="#18181b" fontSize={15} fontWeight={900} textAnchor="middle">{d._total}</text>;
   };
 }
 
@@ -371,16 +371,16 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={agingData} layout="vertical" margin={{ top:4, right:68, left:8, bottom:4 }} barCategoryGap="18%">
                     <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={200} />
+                    <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} width={200} />
                     <Tooltip {...TT} />
                     <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} barSize={62}>
-                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={14} fontWeight={900} textAnchor="middle">{value}</text>;}} />
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                     </Bar>
                     <Bar dataKey="scheduled" name="Scheduled" stackId="s" fill={STATUS_COLORS.SCHEDULED} barSize={62}>
-                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={14} fontWeight={900} textAnchor="middle">{value}</text>;}} />
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                     </Bar>
                     <Bar dataKey="inProgress" name="In Progress" stackId="s" fill={STATUS_COLORS.IN_PROGRESS} radius={[0,4,4,0]} barSize={62}>
-                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={14} fontWeight={900} textAnchor="middle">{value}</text>;}} />
+                      <LabelList content={(p:any)=>{const{x,y,width,height,value}=p;if(!value||Number(value)===0||Number(width)<22)return null;return<text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5} fill="#fff" fontSize={16} fontWeight={900} textAnchor="middle">{value}</text>;}} />
                       <LabelList content={TotalLabel(agingData)} />
                     </Bar>
                   </BarChart>
@@ -395,14 +395,14 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:64, left:8, bottom:5 }} barCategoryGap="18%">
                     <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
+                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
                     <Tooltip {...TT} />
                     <Bar dataKey="value" barSize={62} radius={[0,5,5,0]}>
                       {statusChartData.map((e,i)=><Cell key={i} fill={e.color} />)}
                       <LabelList content={(props:any) => {
                         const { x,y,width,height,value } = props;
                         if (!value) return null;
-                        return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={15} fontWeight={900} textAnchor="start">{value}</text>;
+                        return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={17} fontWeight={900} textAnchor="start">{value}</text>;
                       }} />
                     </Bar>
                   </BarChart>
@@ -417,8 +417,8 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={forecastData} margin={{ top:26, right:8, left:-16, bottom:0 }} barCategoryGap="20%">
                     <CartesianGrid strokeDasharray="0" vertical={false} stroke="#e4e4e7" strokeWidth={1} />
-                    <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} height={28} />
-                    <YAxis tick={{ fill:"#71717a", fontSize:12, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} height={32} />
+                    <YAxis tick={{ fill:"#71717a", fontSize:14, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip {...TT} />
                     <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill={STATUS_COLORS.NOT_STARTED} radius={[0,0,0,0]} />
                     <Bar dataKey="scheduled"  name="Scheduled"     stackId="s" fill={STATUS_COLORS.SCHEDULED}   radius={[0,0,0,0]} />
