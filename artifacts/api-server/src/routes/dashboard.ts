@@ -335,12 +335,12 @@ router.get("/aging", async (req, res) => {
 
   if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([
-      EMPTY("due-today",     "Due Today",             0),
-      EMPTY("due-1-7",       "Due in 1–7 Days",      -1),
-      EMPTY("due-8-14",      "Due in 8–14 Days",     -8),
-      EMPTY("due-15-30",     "Due in 15–30 Days",   -15),
-      EMPTY("due-31-60",     "Due in 31–60 Days",   -31),
-      EMPTY("due-61-90",     "Due in 61–90 Days",   -61),
+      EMPTY("due-today",     "Due Today",              0),
+      EMPTY("due-1-7",       "Next 7 Days",           -1),
+      EMPTY("due-8-14",      "Next 14 Days",          -8),
+      EMPTY("due-15-30",     "Next 30 Days",         -15),
+      EMPTY("due-31-60",     "Next 60 Days",         -31),
+      EMPTY("due-61-90",     "Next 90 Days",         -61),
       EMPTY("overdue-1-30",  "Overdue 1–30 Days",     1),
       EMPTY("overdue-31-60", "Overdue 31–60 Days",   31),
       EMPTY("overdue-61-90", "Overdue 61–90 Days",   61),
@@ -381,11 +381,11 @@ router.get("/aging", async (req, res) => {
   const ORDER = ["due-today", "due-1-7", "due-8-14", "due-15-30", "due-31-60", "due-61-90", "overdue-1-30", "overdue-31-60", "overdue-61-90", "overdue-91+"];
   const LABELS: Record<string, string> = {
     "due-today":     "Due Today",
-    "due-1-7":       "Due in 1–7 Days",
-    "due-8-14":      "Due in 8–14 Days",
-    "due-15-30":     "Due in 15–30 Days",
-    "due-31-60":     "Due in 31–60 Days",
-    "due-61-90":     "Due in 61–90 Days",
+    "due-1-7":       "Next 7 Days",
+    "due-8-14":      "Next 14 Days",
+    "due-15-30":     "Next 30 Days",
+    "due-31-60":     "Next 60 Days",
+    "due-61-90":     "Next 90 Days",
     "overdue-1-30":  "Overdue 1–30 Days",
     "overdue-31-60": "Overdue 31–60 Days",
     "overdue-61-90": "Overdue 61–90 Days",

@@ -54,11 +54,11 @@ function getAgingBucketDisplay(key: string | null): string {
   if (!key) return "";
   const map: Record<string, string> = {
     "due-today":     "Due Today",
-    "due-1-7":       "Due in 1–7 Days",
-    "due-8-14":      "Due in 8–14 Days",
-    "due-15-30":     "Due in 15–30 Days",
-    "due-31-60":     "Due in 31–60 Days",
-    "due-61-90":     "Due in 61–90 Days",
+    "due-1-7":       "Next 7 Days",
+    "due-8-14":      "Next 14 Days",
+    "due-15-30":     "Next 30 Days",
+    "due-31-60":     "Next 60 Days",
+    "due-61-90":     "Next 90 Days",
     "overdue-1-30":  "Overdue 1–30 Days",
     "overdue-31-60": "Overdue 31–60 Days",
     "overdue-61-90": "Overdue 61–90 Days",

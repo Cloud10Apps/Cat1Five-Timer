@@ -58,12 +58,12 @@ const MONTH_OPTIONS = [
 ];
 
 const AGING_BUCKET_OPTIONS = [
-  { value: "due-today",     label: "Due Today"           },
-  { value: "due-1-7",       label: "Due in 1–7 Days"     },
-  { value: "due-8-14",      label: "Due in 8–14 Days"    },
-  { value: "due-15-30",     label: "Due in 15–30 Days"   },
-  { value: "due-31-60",     label: "Due in 31–60 Days"   },
-  { value: "due-61-90",     label: "Due in 61–90 Days"   },
+  { value: "due-today",     label: "Due Today"   },
+  { value: "due-1-7",       label: "Next 7 Days"  },
+  { value: "due-8-14",      label: "Next 14 Days" },
+  { value: "due-15-30",     label: "Next 30 Days" },
+  { value: "due-31-60",     label: "Next 60 Days" },
+  { value: "due-61-90",     label: "Next 90 Days" },
   { value: "overdue-1-30",  label: "Overdue 1–30 Days"   },
   { value: "overdue-31-60", label: "Overdue 31–60 Days"  },
   { value: "overdue-61-90", label: "Overdue 61–90 Days"  },
