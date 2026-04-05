@@ -287,9 +287,11 @@ export default function Dashboard() {
               { label:"In Progress",   value:summary?.inProgressCount??0, numCls:"text-amber-600", topCls:"border-t-amber-500" },
               { label:"Completed",     value:summary?.completedCount??0,  numCls:"text-green-700", topCls:"border-t-green-500" },
             ].map(({ label, value, numCls, topCls }) => (
-              <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col items-center justify-center text-center`}>
-                <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.13em] mb-2.5">{label}</div>
-                <div className={`text-[3.6rem] leading-none font-black tabular-nums ${numCls}`}>{value}</div>
+              <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
+                <CardHeader title={label} />
+                <div className="flex-1 flex items-center justify-center py-7">
+                  <div className={`text-[3.6rem] leading-none font-black tabular-nums ${numCls}`}>{value}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -323,18 +325,14 @@ export default function Dashboard() {
                 ),
               },
             ].map(({ label, sub, val, tip, icon }) => (
-              <div key={label} className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.13em]">{label}</div>
-                    <div className="text-xs text-zinc-400 mt-0.5">{sub}</div>
+              <div key={label} className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                <CardHeader title={label} action={<span className="text-zinc-400">{icon}</span>} />
+                <div className="flex-1 flex flex-col items-center justify-center py-7 text-center">
+                  <div className="text-[3.6rem] leading-none font-black tabular-nums text-zinc-900 cursor-help" title={tip}>
+                    {val===null?"—":val.toFixed(1)}
                   </div>
-                  {icon}
+                  <div className="text-xs text-zinc-400 mt-3 font-medium">{sub}</div>
                 </div>
-                <div className="text-[3.6rem] leading-none font-black tabular-nums text-zinc-900 cursor-help mt-1" title={tip}>
-                  {val===null?"—":val.toFixed(1)}
-                </div>
-                {val!==null&&<div className="text-xs text-zinc-400 mt-2 font-medium">days · from due date</div>}
               </div>
             ))}
           </div>
