@@ -286,14 +286,20 @@ export default function Elevators() {
     return openMap;
   }, [allInspections]);
 
-  // Map: elevatorId → most recent lastInspectionDate across all inspections
+  // Map: elevatorId → most recent physical inspection date.
+  // For COMPLETED inspections: use completionDate (the actual date the work was done).
+  // For open inspections: use lastInspectionDate (the prior-cycle baseline).
+  // Takes the MAX across all inspection records so the column always shows
+  // the most recent inspection event, even when no follow-up record exists yet.
   const lastCompletedByElevator = useMemo(() => {
     const map = new Map<number, string>();
     for (const insp of allInspections ?? []) {
-      if (!insp.elevatorId || !insp.lastInspectionDate) continue;
+      if (!insp.elevatorId) continue;
+      const dateToUse = insp.completionDate || insp.lastInspectionDate;
+      if (!dateToUse) continue;
       const current = map.get(insp.elevatorId);
-      if (!current || insp.lastInspectionDate > current) {
-        map.set(insp.elevatorId, insp.lastInspectionDate.slice(0, 10));
+      if (!current || dateToUse.slice(0, 10) > current) {
+        map.set(insp.elevatorId, dateToUse.slice(0, 10));
       }
     }
     return map;
