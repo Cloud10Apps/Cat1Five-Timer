@@ -682,7 +682,7 @@ export default function Inspections() {
               {/* Date Ranges toggle */}
               <button onClick={() => setShowDateFilters(v => !v)}
                 className={cn("h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap",
-                  showDateFilters || hasDateFilters ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700")}>
+                  showDateFilters || hasDateFilters ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-zinc-200 hover:border-zinc-300 hover:text-zinc-700 text-[#09090b]")}>
                 <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                 Date Ranges
                 {hasDateFilters && (
