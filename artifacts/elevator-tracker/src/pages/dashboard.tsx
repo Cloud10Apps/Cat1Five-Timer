@@ -19,6 +19,7 @@ import {
   ResponsiveContainer,
   Cell,
   CartesianGrid,
+  LabelList,
 } from "recharts";
 import dayjs from "dayjs";
 
@@ -48,9 +49,13 @@ function AgingBadge({ days, mode }: { days: number; mode: "overdue" | "upcoming"
     else if (days > 90) cls = "bg-red-700 text-white";
     else if (days > 60) cls = "bg-red-500 text-white";
     else if (days > 30) cls = "bg-orange-500 text-white";
+    let label: string;
+    if (days >= 365 * 9) label = "9+ yrs overdue";
+    else if (days >= 365) { const yrs = Math.floor(days / 365); label = `${yrs} yr${yrs > 1 ? "s" : ""} overdue`; }
+    else label = `${days}d overdue`;
     return (
       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${cls}`}>
-        {days}d overdue
+        {label}
       </span>
     );
   }
@@ -272,101 +277,131 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── KPI Strip ── */}
-        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
-          {/* NOT STARTED */}
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">NOT SCHEDULED</div>
-            <div className="text-5xl font-black text-zinc-900">{summary?.notStartedCount ?? 0}</div>
-          </div>
-          {/* SCHEDULED */}
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">SCHEDULED</div>
-            <div className="text-5xl font-black text-blue-600">{summary?.scheduledCount ?? 0}</div>
-          </div>
-          {/* IN PROGRESS */}
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">IN PROGRESS</div>
-            <div className="text-5xl font-black text-amber-500">{summary?.inProgressCount ?? 0}</div>
-          </div>
-          {/* COMPLETED */}
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">COMPLETED</div>
-            <div className="text-5xl font-black text-green-600">{summary?.completedCount ?? 0}</div>
-          </div>
-          {/* AVG DAYS TO SCHEDULE */}
-          {(() => {
-            const val = summary?.avgDaysToSchedule ?? null;
-            return (
+        {/* ── KPI Strips ── */}
+        <section className="space-y-4">
+
+          {/* Volume */}
+          <div>
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-2 pl-0.5">Volume</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-y md:divide-y-0 md:divide-x divide-zinc-200">
               <div className="p-6 flex flex-col items-center justify-center text-center">
-                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO SCHEDULE</div>
-                <div className={`text-5xl font-black ${val === null ? "text-zinc-400" : val > 0 ? "text-red-600" : "text-green-600"}`}>
-                  {val === null ? "—" : val.toFixed(1)}
-                </div>
-                {val !== null && <div className="text-xs text-zinc-400 mt-1">Days</div>}
+                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">NOT SCHEDULED</div>
+                <div className="text-5xl font-black text-zinc-900">{summary?.notStartedCount ?? 0}</div>
               </div>
-            );
-          })()}
-          {/* AVG DAYS TO COMPLETE */}
-          {(() => {
-            const val = summary?.avgDaysToComplete ?? null;
-            const isGood = val !== null && val <= 0;
-            const isBad  = val !== null && val > 0;
-            return (
               <div className="p-6 flex flex-col items-center justify-center text-center">
-                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO COMPLETE</div>
-                <div className={`text-5xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
-                  {val === null ? "—" : val.toFixed(1)}
-                </div>
-                {val !== null && <div className="text-xs text-zinc-400 mt-1">Days</div>}
+                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">SCHEDULED</div>
+                <div className="text-5xl font-black text-blue-600">{summary?.scheduledCount ?? 0}</div>
               </div>
-            );
-          })()}
+              <div className="p-6 flex flex-col items-center justify-center text-center">
+                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">IN PROGRESS</div>
+                <div className="text-5xl font-black text-amber-500">{summary?.inProgressCount ?? 0}</div>
+              </div>
+              <div className="p-6 flex flex-col items-center justify-center text-center">
+                <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">COMPLETED</div>
+                <div className="text-5xl font-black text-green-600">{summary?.completedCount ?? 0}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Metrics */}
+          <div>
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-2 pl-0.5">Performance Metrics</p>
+            <div className="grid grid-cols-2 bg-white border border-zinc-200 rounded-sm shadow-sm overflow-hidden divide-x divide-zinc-200">
+              {(() => {
+                const val = summary?.avgDaysToSchedule ?? null;
+                return (
+                  <div className="p-6 flex flex-col items-center justify-center text-center">
+                    <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO SCHEDULE</div>
+                    <div className={`text-5xl font-black ${val === null ? "text-zinc-400" : val > 0 ? "text-red-600" : "text-green-600"}`}>
+                      {val === null ? "—" : val.toFixed(1)}
+                    </div>
+                    <div className="text-xs text-zinc-400 mt-1">{val !== null ? "Days" : ""} <span className="text-zinc-300">· from Due Date</span></div>
+                  </div>
+                );
+              })()}
+              {(() => {
+                const val = summary?.avgDaysToComplete ?? null;
+                const isGood = val !== null && val <= 0;
+                const isBad  = val !== null && val > 0;
+                return (
+                  <div className="p-6 flex flex-col items-center justify-center text-center">
+                    <div className="text-zinc-400 text-sm uppercase tracking-widest font-semibold mb-2">AVG DAYS TO COMPLETE</div>
+                    <div className={`text-5xl font-black ${isBad ? "text-red-600" : isGood ? "text-green-600" : "text-zinc-400"}`}>
+                      {val === null ? "—" : val.toFixed(1)}
+                    </div>
+                    <div className="text-xs text-zinc-400 mt-1">{val !== null ? "Days" : ""} <span className="text-zinc-300">· from Due Date</span></div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
         </section>
 
         {/* ── Charts Row ── */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Inspection Aging — horizontal stacked bar by status */}
-          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title="All Open Inspections by Aging and Status" />
-            <div className="p-4 h-[360px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={aging ?? []}
-                  layout="vertical"
-                  margin={{ top: 4, right: 24, left: 10, bottom: 4 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    tickCount={6}
-                    tick={{ fill: "#3f3f46", fontSize: 15 }}
-                    axisLine={{ stroke: "#e4e4e7" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    dataKey="label"
-                    type="category"
-                    tick={{ fill: "#3f3f46", fontSize: 15, fontWeight: 600 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={230}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "#f4f4f5" }}
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "8px", boxShadow: "0 4px 12px 0 rgb(0 0 0 / 0.12)", fontSize: "15px", padding: "10px 16px", minWidth: "180px" }}
-                    itemStyle={{ fontSize: "15px", fontWeight: 600, paddingTop: "3px", paddingBottom: "3px" }}
-                    labelStyle={{ fontSize: "15px", fontWeight: 700, color: "#18181b", marginBottom: "6px" }}
-                  />
-                  <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill="#d4d4d8" radius={[0, 0, 0, 0]} barSize={20} />
-                  <Bar dataKey="scheduled"  name="Scheduled"   stackId="s" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={20} />
-                  <Bar dataKey="inProgress" name="In Progress" stackId="s" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          {(() => {
+            const agingData = (aging ?? []).map((b: any) => ({
+              ...b,
+              _total: (b.notStarted ?? 0) + (b.scheduled ?? 0) + (b.inProgress ?? 0),
+            }));
+            return (
+              <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+                <SectionHeader title="Open Inspections by Aging and Status" />
+                <div className="p-4 h-[360px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={agingData}
+                      layout="vertical"
+                      margin={{ top: 4, right: 52, left: 10, bottom: 4 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
+                      <XAxis
+                        type="number"
+                        allowDecimals={false}
+                        tickCount={6}
+                        tick={{ fill: "#3f3f46", fontSize: 15 }}
+                        axisLine={{ stroke: "#e4e4e7" }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        dataKey="label"
+                        type="category"
+                        tick={{ fill: "#3f3f46", fontSize: 15, fontWeight: 600 }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={210}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "#f4f4f5" }}
+                        contentStyle={{ backgroundColor: "#fff", borderColor: "#e4e4e7", borderRadius: "8px", boxShadow: "0 4px 12px 0 rgb(0 0 0 / 0.12)", fontSize: "15px", padding: "10px 16px", minWidth: "180px" }}
+                        itemStyle={{ fontSize: "15px", fontWeight: 600, paddingTop: "3px", paddingBottom: "3px" }}
+                        labelStyle={{ fontSize: "15px", fontWeight: 700, color: "#18181b", marginBottom: "6px" }}
+                      />
+                      <Bar dataKey="notStarted" name="Not Scheduled" stackId="s" fill="#a1a1aa" radius={[0, 0, 0, 0]} barSize={36} />
+                      <Bar dataKey="scheduled"  name="Scheduled"     stackId="s" fill="#2563eb" radius={[0, 0, 0, 0]} barSize={36} />
+                      <Bar dataKey="inProgress" name="In Progress"   stackId="s" fill="#d97706" radius={[0, 4, 4, 0]} barSize={36}>
+                        <LabelList
+                          content={(props: any) => {
+                            const { x, y, width, height, index } = props;
+                            const d = agingData[index];
+                            if (!d || d._total === 0) return null;
+                            return (
+                              <text x={Number(x) + Number(width) + 7} y={Number(y) + Number(height) / 2 + 5} fill="#3f3f46" fontSize={13} fontWeight={700} textAnchor="start">
+                                {d._total}
+                              </text>
+                            );
+                          }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Status Distribution — horizontal bar */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
@@ -413,7 +448,7 @@ export default function Dashboard() {
 
           {/* 12-Month Forecast — fits container, no scroll */}
           <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <SectionHeader title={`${currentYear} Inspections by Month`} />
+            <SectionHeader title={`${currentYear} Monthly Inspection Activity`} />
             <div className="p-4" style={{ height: 360 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -457,7 +492,7 @@ export default function Dashboard() {
           {/* Overdue Inspections */}
           <div className="bg-white border border-zinc-200 border-t-4 border-t-red-500 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <SectionHeader
-              title="All Overdue Inspections"
+              title="Overdue Inspections Requiring Action"
               action={
                 <button
                   onClick={() => downloadXlsx("overdue", `overdue_inspections_${new Date().toISOString().slice(0, 10)}.xlsx`)}

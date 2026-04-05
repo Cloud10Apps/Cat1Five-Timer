@@ -332,7 +332,7 @@ router.get("/aging", async (req, res) => {
 
   if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([
-      EMPTY("Current", "Current",              0),
+      EMPTY("Current", "Not Yet Due",          0),
       EMPTY("1-30",    "Overdue 1-30 Days",    1),
       EMPTY("31-60",   "Overdue 31-60 Days",  31),
       EMPTY("61-90",   "Overdue 61-90 Days",  61),
@@ -369,7 +369,7 @@ router.get("/aging", async (req, res) => {
 
   const ORDER = ["Current", "1-30", "31-60", "61-90", "91-120", "121+"];
   const LABELS: Record<string, string> = {
-    "Current": "Current",
+    "Current": "Not Yet Due",
     "1-30":    "Overdue 1-30 Days",
     "31-60":   "Overdue 31-60 Days",
     "61-90":   "Overdue 61-90 Days",
