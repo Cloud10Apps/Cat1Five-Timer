@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -94,9 +94,10 @@ interface BuildingCardProps {
   building: Building;
   onEdit: () => void;
   onDelete: () => void;
+  hideCustomer?: boolean;
 }
 
-function BuildingCard({ building, onEdit, onDelete }: BuildingCardProps) {
+function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCardProps) {
   const avatar = getAvatarStyle(building.name);
   const initials = building.name.slice(0, 2).toUpperCase();
   const address = formatAddress(building);
@@ -112,10 +113,12 @@ function BuildingCard({ building, onEdit, onDelete }: BuildingCardProps) {
             </div>
             <div className="min-w-0">
               <CardTitle className="text-base leading-snug truncate">{building.name}</CardTitle>
-              <div className="flex items-center gap-1.5 mt-1">
-                <Users className="h-3 w-3 text-zinc-400 shrink-0" />
-                <span className="text-xs text-muted-foreground truncate">{building.customerName}</span>
-              </div>
+              {!hideCustomer && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Users className="h-3 w-3 text-zinc-400 shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate">{building.customerName}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -170,6 +173,18 @@ export default function Buildings() {
   );
 
   const { data: customers } = useListCustomers({}, { query: { queryKey: getListCustomersQueryKey({}) } });
+
+  // Group buildings by customer, sorted alphabetically
+  const grouped = useMemo(() => {
+    const map = new Map<number, { customerId: number; customerName: string; buildings: typeof buildings }>();
+    for (const b of buildings ?? []) {
+      if (!map.has(b.customerId)) {
+        map.set(b.customerId, { customerId: b.customerId, customerName: b.customerName ?? "Unknown Customer", buildings: [] });
+      }
+      map.get(b.customerId)!.buildings!.push(b);
+    }
+    return Array.from(map.values()).sort((a, b) => a.customerName.localeCompare(b.customerName));
+  }, [buildings]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -418,20 +433,39 @@ export default function Buildings() {
         <div className="flex items-center justify-center py-16">
           <Spinner />
         </div>
-      ) : buildings?.length === 0 ? (
+      ) : grouped.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Building2 className="h-12 w-12 mb-3 opacity-20" />
           <p className="text-sm">No buildings found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {buildings?.map((building) => (
-            <BuildingCard
-              key={building.id}
-              building={building}
-              onEdit={() => openEdit(building)}
-              onDelete={() => setDeleteId(building.id)}
-            />
+        <div className="space-y-8">
+          {grouped.map((group) => (
+            <div key={group.customerId}>
+              {/* Customer section header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-zinc-400 shrink-0" />
+                  <h2 className="text-base font-semibold text-zinc-800">{group.customerName}</h2>
+                </div>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-500 border border-zinc-200">
+                  {group.buildings?.length ?? 0} {(group.buildings?.length ?? 0) === 1 ? "building" : "buildings"}
+                </span>
+                <div className="flex-1 h-px bg-zinc-100" />
+              </div>
+              {/* Building cards grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {group.buildings?.map((building) => (
+                  <BuildingCard
+                    key={building.id}
+                    building={building}
+                    onEdit={() => openEdit(building)}
+                    onDelete={() => setDeleteId(building.id)}
+                    hideCustomer
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
