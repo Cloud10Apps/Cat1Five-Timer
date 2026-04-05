@@ -147,10 +147,11 @@ async function maybeCreateFollowUp(
 
   if (existing.length > 0) return { created: false, reason: "already_exists" };
 
-  // Block if any OTHER record already occupies the same due year for this elevator + type
-  // Exclude the current inspection itself to avoid a false positive when its own nextDueDate
-  // falls in the same year as the computed follow-up nextDueDate.
-  const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId, completedInspection.id);
+  // Block if ANY record (including the completed inspection itself) already occupies the
+  // same due year as the computed follow-up. We intentionally do NOT pass excludeId here:
+  // if the completed record's own nextDueDate lands in the same year as newNextDue (e.g.
+  // recurrenceYears=0), that is a real conflict and the follow-up must be suppressed.
+  const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId);
   if (dupCheck) return { created: false, reason: "duplicate_year", dueYear: dupCheck.dueYear };
 
   await db.insert(inspectionsTable).values({
@@ -306,6 +307,20 @@ router.put("/:id", async (req, res) => {
   const orgId = req.user!.organizationId;
   const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = body.data;
   const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
+  const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
+
+  // BLOCK before writing: if the new nextDueDate would land in a year already occupied by
+  // another record for the same unit + type, refuse the save entirely so we never end up
+  // with two records in the same due-year.
+  if (nextDueDate) {
+    const ownYearConflict = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId, params.data.id);
+    if (ownYearConflict) {
+      res.status(409).json({
+        error: `Saving these dates would set the Next Due date to ${ownYearConflict.dueYear}, but another ${typeLabel} inspection for this unit already has a ${ownYearConflict.dueYear} due date. Please go to the Inspections menu and delete or correct the duplicate record before saving.`,
+      });
+      return;
+    }
+  }
 
   await db.update(inspectionsTable)
     .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspectionDate ?? null, nextDueDate, scheduledDate: scheduledDate ?? null, completionDate: (status === "COMPLETED" ? completionDate : null) ?? null, status: status ?? "NOT_STARTED", notes: notes ?? null })
@@ -319,20 +334,9 @@ router.put("/:id", async (req, res) => {
   const formatted = formatInspection(row);
   const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
 
-  // Also check: does this record's own nextDueDate now conflict with another record?
-  // This catches the case where the user edits lastInspectionDate and the recomputed
-  // nextDueDate lands in a year already occupied by the existing auto-created follow-up.
-  const ownYearConflict = nextDueDate
-    ? await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId, params.data.id)
-    : null;
-
-  const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
-  let warning: string | undefined;
-  if (followUp.created === false && followUp.reason === "duplicate_year") {
-    warning = `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`;
-  } else if (ownYearConflict) {
-    warning = `This record's Next Due date (${ownYearConflict.dueYear}) conflicts with another ${typeLabel} inspection already on file for this unit in ${ownYearConflict.dueYear}. A follow-up record was not created. Go to the Inspections menu, verify all dates are correct, and resolve the duplicate year before continuing.`;
-  }
+  const warning = (followUp.created === false && followUp.reason === "duplicate_year")
+    ? `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
+    : undefined;
   res.json({ ...formatted, _warning: warning });
 });
 
