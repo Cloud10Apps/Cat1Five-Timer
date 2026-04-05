@@ -104,6 +104,29 @@ router.get("/inspections", async (req, res) => {
   res.end();
 });
 
+/* ── Elevator export helpers ── */
+function statusLabel(status: string, nextDueDate: string | null | undefined): string {
+  if (status === "NOT_STARTED" && nextDueDate && dayjs(nextDueDate).isBefore(dayjs(), "day")) return "Overdue";
+  const map: Record<string, string> = {
+    NOT_STARTED: "Not Scheduled",
+    SCHEDULED:   "Scheduled",
+    IN_PROGRESS: "In Progress",
+    COMPLETED:   "Completed",
+  };
+  return map[status] ?? status;
+}
+
+function agingBucketLabel(nextDueDate: string | null | undefined): string {
+  if (!nextDueDate) return "";
+  const days = dayjs().diff(dayjs(nextDueDate), "day");
+  if (days <= 0)   return "Current";
+  if (days <= 30)  return "1–30 Days";
+  if (days <= 60)  return "31–60 Days";
+  if (days <= 90)  return "61–90 Days";
+  if (days <= 120) return "91–120 Days";
+  return "121+ Days";
+}
+
 router.get("/elevators", async (req, res) => {
   const params = ExportElevatorsQueryParams.safeParse(req.query);
   const orgId = req.user!.organizationId;
@@ -145,17 +168,14 @@ router.get("/elevators", async (req, res) => {
     .orderBy(customersTable.name, buildingsTable.name, elevatorsTable.name);
 
   // Most urgent open inspection per elevator using DISTINCT ON (PostgreSQL)
-  // Picks the earliest next_due_date among non-COMPLETED inspections.
-  // Falls back to the most recent completed inspection if no open ones exist.
   const elevatorIds = rows.map(r => r.elevatorId);
-  type LatestInsp = { elevator_id: number; status: string; inspection_type: string; next_due_date: string | null; scheduled_date: string | null };
+  type LatestInsp = { elevator_id: number; status: string; inspection_type: string; next_due_date: string | null; scheduled_date: string | null; last_inspection_date: string | null };
   let latestInspMap = new Map<number, LatestInsp>();
   if (elevatorIds.length > 0) {
     const idArray = sql.raw(`ARRAY[${elevatorIds.join(",")}]`);
-    // Open inspections: earliest due year → CAT5 before CAT1 → earliest due date
     const openRows = await db.execute<LatestInsp>(sql`
       SELECT DISTINCT ON (elevator_id)
-        elevator_id, status, inspection_type, next_due_date, scheduled_date
+        elevator_id, status, inspection_type, next_due_date, scheduled_date, last_inspection_date
       FROM inspections
       WHERE organization_id = ${orgId}
         AND elevator_id = ANY(${idArray})
@@ -169,12 +189,11 @@ router.get("/elevators", async (req, res) => {
     for (const r of openRows.rows) {
       latestInspMap.set(r.elevator_id, r);
     }
-    // Fallback: for elevators with no open inspections, use most recent completed
     const missingIds = elevatorIds.filter(id => !latestInspMap.has(id));
     if (missingIds.length > 0) {
       const fallbackRows = await db.execute<LatestInsp>(sql`
         SELECT DISTINCT ON (elevator_id)
-          elevator_id, status, inspection_type, next_due_date, scheduled_date
+          elevator_id, status, inspection_type, next_due_date, scheduled_date, last_inspection_date
         FROM inspections
         WHERE organization_id = ${orgId}
           AND elevator_id = ANY(${sql.raw(`ARRAY[${missingIds.join(",")}]`)})
@@ -190,34 +209,44 @@ router.get("/elevators", async (req, res) => {
   const sheet = workbook.addWorksheet("Elevators");
 
   sheet.columns = [
-    { header: "Customer",        key: "customerName",    width: 25 },
-    { header: "Building",        key: "buildingName",    width: 30 },
-    { header: "Elevator Name",   key: "elevatorName",    width: 25 },
-    { header: "Elevator Type",   key: "elevatorType",    width: 15 },
-    { header: "Bank",            key: "bank",            width: 15 },
-    { header: "Unit ID",         key: "internalId",      width: 14 },
-    { header: "State ID",        key: "stateId",         width: 14 },
-    { header: "Insp Status",     key: "inspStatus",      width: 18 },
-    { header: "Insp Type",       key: "inspType",        width: 12 },
-    { header: "Next Due Date",   key: "nextDueDate",     width: 18, style: DATE_STYLE },
-    { header: "Scheduled Date",  key: "scheduledDate",   width: 18, style: DATE_STYLE },
+    { header: "Customer",           key: "customerName",       width: 25 },
+    { header: "Building",           key: "buildingName",       width: 30 },
+    { header: "Elevator Name",      key: "elevatorName",       width: 25 },
+    { header: "Elevator Type",      key: "elevatorType",       width: 15 },
+    { header: "Bank",               key: "bank",               width: 15 },
+    { header: "Unit ID",            key: "internalId",         width: 14 },
+    { header: "State ID",           key: "stateId",            width: 14 },
+    { header: "Insp Type",          key: "inspType",           width: 12 },
+    { header: "Status",             key: "inspStatus",         width: 18 },
+    { header: "Last Insp Date",     key: "lastInspDate",       width: 18, style: DATE_STYLE },
+    { header: "Next Due Date",      key: "nextDueDate",        width: 18, style: DATE_STYLE },
+    { header: "Days",               key: "days",               width: 10 },
+    { header: "Aging Bucket",       key: "agingBucket",        width: 16 },
+    { header: "Scheduled Date",     key: "scheduledDate",      width: 18, style: DATE_STYLE },
   ];
 
   sheet.getRow(1).font = { bold: true };
 
+  const today = dayjs();
   rows.forEach(r => {
     const insp = latestInspMap.get(r.elevatorId);
+    const daysVal = insp?.next_due_date
+      ? today.diff(dayjs(insp.next_due_date), "day")
+      : null;
     sheet.addRow({
       customerName:  r.customerName ?? "",
       buildingName:  r.buildingName ?? "",
       elevatorName:  r.elevatorName ?? "",
-      elevatorType:  r.elevatorType,
+      elevatorType:  r.elevatorType ?? "",
       bank:          r.bank ?? "",
       internalId:    r.internalId ?? "",
       stateId:       r.stateId ?? "",
-      inspStatus:    insp?.status ?? "",
       inspType:      insp?.inspection_type ?? "",
+      inspStatus:    insp ? statusLabel(insp.status, insp.next_due_date) : "",
+      lastInspDate:  toDate(insp?.last_inspection_date),
       nextDueDate:   toDate(insp?.next_due_date),
+      days:          daysVal ?? "",
+      agingBucket:   agingBucketLabel(insp?.next_due_date),
       scheduledDate: toDate(insp?.scheduled_date),
     });
   });
