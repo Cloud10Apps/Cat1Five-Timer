@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -436,6 +436,11 @@ export default function Elevators() {
   const nextDuePreview = watchLastDate && watchRecurrence
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
     : null;
+
+  const completionYearMismatch = !!(
+    watchCompletionDate && nextDuePreview &&
+    dayjs(watchCompletionDate).year() !== dayjs(nextDuePreview).year()
+  );
 
   const watchLastDateCat5 = inspCat5Form.watch("lastInspectionDate");
   const watchRecurrenceCat5 = inspCat5Form.watch("recurrenceYears");
@@ -1074,6 +1079,17 @@ export default function Elevators() {
                               )} />
                             </div>
                           </div>
+
+                          {/* Year mismatch warning */}
+                          {completionYearMismatch && (
+                            <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 text-amber-900">
+                              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
+                              <div className="text-sm leading-snug">
+                                <span className="font-semibold">Are you sure?</span>{" "}
+                                The completion year ({dayjs(watchCompletionDate).year()}) doesn't match the expected next due year ({dayjs(nextDuePreview!).year()}). Double-check the dates before saving.
+                              </div>
+                            </div>
+                          )}
 
                           {/* Notes */}
                           <FormField control={inspForm.control} name="notes" render={({ field }) => (
