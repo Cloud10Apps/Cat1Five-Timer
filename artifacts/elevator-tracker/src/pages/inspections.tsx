@@ -26,7 +26,7 @@ import {
 import {
   Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays,
   X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  ChevronsUpDown, Check, SlidersHorizontal, Building2, Layers, AlertTriangle,
+  ChevronsUpDown, Check, SlidersHorizontal, Building2, Layers, AlertTriangle, Info,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -453,7 +453,12 @@ export default function Inspections() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">All Inspections</h1>
-          <p className="text-sm text-muted-foreground mt-0.5 italic">Complete compliance record across all elevators, buildings, and customers.</p>
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+              A complete list of inspections across all customers, buildings, and elevators.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" onClick={handleExport} className="gap-2">
