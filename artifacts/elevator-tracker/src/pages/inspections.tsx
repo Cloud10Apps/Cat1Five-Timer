@@ -965,7 +965,7 @@ export default function Inspections() {
                             </span>
 
                             {/* Last Inspection */}
-                            <span className="text-sm tabular-nums text-zinc-700">
+                            <span className="text-sm tabular-nums text-zinc-700 text-center">
                               {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
                             </span>
 
