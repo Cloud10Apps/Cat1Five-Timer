@@ -326,12 +326,15 @@ export default function Dashboard() {
               },
             ].map(({ label, sub, val, tip, icon }) => (
               <div key={label} className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                <CardHeader title={label} action={<span className="text-zinc-400">{icon}</span>} />
+                <CardHeader title={label} />
                 <div className="flex-1 flex flex-col items-center justify-center py-7 text-center">
-                  <div className="text-[3.6rem] leading-none font-black tabular-nums text-zinc-900 cursor-help" title={tip}>
-                    {val===null?"—":val.toFixed(1)}
+                  <div className="flex items-end gap-2 mb-1">
+                    <div className="text-[3.6rem] leading-none font-black tabular-nums text-zinc-900 cursor-help" title={tip}>
+                      {val===null?"—":val.toFixed(1)}
+                    </div>
+                    <span className="text-zinc-400 mb-2">{icon}</span>
                   </div>
-                  <div className="text-xs text-zinc-400 mt-3 font-medium">{sub}</div>
+                  <div className="text-xs text-zinc-400 mt-2 font-medium">{sub}</div>
                 </div>
               </div>
             ))}
