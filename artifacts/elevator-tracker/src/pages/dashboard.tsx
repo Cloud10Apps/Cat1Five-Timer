@@ -164,9 +164,12 @@ function BarValueLabel(props: any) {
 function TotalLabel(data: any[]) {
   return function Inner(props: any) {
     const { x, y, width, height, index } = props;
+    if (index == null) return null;
     const d = data[index];
-    if (!d || d._total === 0) return null;
-    return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={15} fontWeight={900} textAnchor="start">{d._total}</text>;
+    if (!d) return null;
+    const total = (Number(d.notStarted)||0) + (Number(d.scheduled)||0) + (Number(d.inProgress)||0);
+    if (!total) return null;
+    return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={15} fontWeight={900} textAnchor="start">{total}</text>;
   };
 }
 
