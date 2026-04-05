@@ -36,8 +36,8 @@ export function Layout({ children }: LayoutProps) {
     { name: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
     { name: "Customers",   href: "/customers",   icon: Users },
     { name: "Buildings",   href: "/buildings",   icon: Building },
-    { name: "Elevators",   href: "/elevators",   icon: ArrowUpSquare },
-    { name: "Inspections", href: "/inspections", icon: ClipboardCheck },
+    { name: "Current Inspections",  href: "/elevators",   icon: ArrowUpSquare },
+    { name: "Inspection History",   href: "/inspections", icon: ClipboardCheck },
     { name: "Calendar",    href: "/calendar",    icon: Calendar },
   ];
 

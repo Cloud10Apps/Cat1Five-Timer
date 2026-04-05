@@ -481,7 +481,7 @@ export default function Inspections() {
       {/* ── Page header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">All Inspections</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Inspection History</h1>
           <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
             <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
