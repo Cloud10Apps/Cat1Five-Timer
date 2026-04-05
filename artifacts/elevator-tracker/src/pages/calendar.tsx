@@ -70,9 +70,9 @@ type ActivityType = "due" | "scheduled" | "completed";
 type CalendarActivity = { insp: Inspection; activityType: ActivityType };
 
 const ACTIVITY_CHIP: Record<ActivityType, { label: string; chip: string; pill: string }> = {
-  due:       { label: "Due",       chip: "border-l-[3px] border-amber-400  bg-amber-50  text-amber-900",  pill: "bg-amber-100  text-amber-700  border-amber-300"  },
-  scheduled: { label: "Scheduled", chip: "border-l-[3px] border-blue-400   bg-blue-50   text-blue-900",   pill: "bg-blue-100   text-blue-700   border-blue-300"   },
-  completed: { label: "Completed", chip: "border-l-[3px] border-green-400  bg-green-50  text-green-900",  pill: "bg-green-100  text-green-700  border-green-300"  },
+  due:       { label: "Due",       chip: "border-l-[3px] border-amber-400 bg-amber-50  text-amber-900",  pill: "bg-amber-500  text-white border-amber-500"  },
+  scheduled: { label: "Scheduled", chip: "border-l-[3px] border-blue-400  bg-blue-50   text-blue-900",   pill: "bg-blue-500   text-white border-blue-500"   },
+  completed: { label: "Completed", chip: "border-l-[3px] border-green-500 bg-green-50  text-green-900",  pill: "bg-green-500  text-white border-green-500"  },
 };
 
 function ActivityTypePill({ type }: { type: ActivityType }) {
