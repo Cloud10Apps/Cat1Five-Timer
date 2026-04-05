@@ -941,7 +941,7 @@ export default function Inspections() {
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Status</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Scheduled</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Completed</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Aging</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Due Status</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-right">Actions</span>
                     </div>
 
@@ -966,14 +966,7 @@ export default function Inspections() {
                         const rowBg = noNextDue ? "bg-red-50" : isOverdue ? "bg-orange-50/40" : isSelected ? "bg-blue-50/50" : "bg-white hover:bg-zinc-50/70";
                         const inspNum = rowNumMap.get(insp.id);
 
-                        // Aging days label
-                        let agingDaysLabel: string | null = null;
-                        if (insp.status !== "COMPLETED" && insp.nextDueDate) {
-                          const days = dayjs().diff(dayjs(insp.nextDueDate), "day");
-                          if (days === 0)       agingDaysLabel = "Today";
-                          else if (days < 0)    agingDaysLabel = `${Math.abs(days)}d left`;
-                          else                  agingDaysLabel = `${days}d overdue`;
-                        }
+
 
                         return (
                           <div key={insp.id}
@@ -1024,14 +1017,9 @@ export default function Inspections() {
                               </span>
                             </div>
 
-                            {/* Aging: pill + days */}
-                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            {/* Due Status */}
+                            <div className="flex items-center justify-center">
                               <AgingPill due={insp.nextDueDate} status={(insp as any).trueStatus ?? insp.status} />
-                              {agingDaysLabel && (
-                                <span className={`text-xs tabular-nums font-medium whitespace-nowrap text-center ${isOverdue ? "text-red-500" : "text-zinc-400"}`}>
-                                  ({agingDaysLabel})
-                                </span>
-                              )}
                             </div>
 
                             {/* Actions */}
