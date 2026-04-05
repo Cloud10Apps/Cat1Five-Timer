@@ -41,7 +41,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsUpDown, Check } from "lucide-react";
+import {
+  Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays,
+  X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
+  ChevronsUpDown, Check, SlidersHorizontal,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -64,18 +68,14 @@ import dayjs from "dayjs";
 
 const PAGE_SIZE = 50;
 
-const inspectionSchema = z.object({
-  elevatorId: z.coerce.number().min(1, "Elevator is required"),
-  inspectionType: z.enum(["CAT1", "CAT5"] as const),
-  recurrenceYears: z.coerce.number().min(1, "Recurrence is required"),
-  lastInspectionDate: z.string().optional(),
-  scheduledDate: z.string().optional(),
-  completionDate: z.string().optional(),
-  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const).optional(),
-  notes: z.string().optional(),
-});
-
-type InspectionFormValues = z.infer<typeof inspectionSchema>;
+const MONTH_OPTIONS = [
+  { value: "01", label: "January" },  { value: "02", label: "February" },
+  { value: "03", label: "March" },    { value: "04", label: "April" },
+  { value: "05", label: "May" },      { value: "06", label: "June" },
+  { value: "07", label: "July" },     { value: "08", label: "August" },
+  { value: "09", label: "September" },{ value: "10", label: "October" },
+  { value: "11", label: "November" }, { value: "12", label: "December" },
+];
 
 const STATUS_OPTIONS = [
   { value: "NOT_STARTED", label: "Not Scheduled" },
@@ -95,12 +95,26 @@ const UNIT_TYPE_OPTIONS = [
   { value: "other",     label: "Other" },
 ];
 
-function fmt(date?: string) {
+const inspectionSchema = z.object({
+  elevatorId: z.coerce.number().min(1, "Elevator is required"),
+  inspectionType: z.enum(["CAT1", "CAT5"] as const),
+  recurrenceYears: z.coerce.number().min(1, "Recurrence is required"),
+  lastInspectionDate: z.string().optional(),
+  scheduledDate: z.string().optional(),
+  completionDate: z.string().optional(),
+  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const).optional(),
+  notes: z.string().optional(),
+});
+
+type InspectionFormValues = z.infer<typeof inspectionSchema>;
+
+function fmt(date?: string | null) {
   if (!date) return null;
   return dayjs(date).format("MM/DD/YYYY");
 }
 
 export default function Inspections() {
+  /* ── Filter state ── */
   const [selectedStatuses,    setSelectedStatuses]    = useState<string[]>([]);
   const [selectedInspTypes,   setSelectedInspTypes]   = useState<string[]>([]);
   const [selectedUnitTypes,   setSelectedUnitTypes]   = useState<string[]>([]);
@@ -108,29 +122,34 @@ export default function Inspections() {
   const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>([]);
   const [selectedElevatorIds, setSelectedElevatorIds] = useState<string[]>([]);
   const [selectedBanks,       setSelectedBanks]       = useState<string[]>([]);
+  const [filterDueMonths,     setFilterDueMonths]     = useState<string[]>([]);
+  const [filterDueYears,      setFilterDueYears]      = useState<string[]>([]);
 
+  /* ── Date range panel ── */
   const [showDateFilters, setShowDateFilters] = useState(false);
-  const [lastInspFrom, setLastInspFrom] = useState("");
-  const [lastInspTo,   setLastInspTo]   = useState("");
-  const [nextDueFrom,  setNextDueFrom]  = useState("");
-  const [nextDueTo,    setNextDueTo]    = useState("");
-  const [scheduledFrom, setScheduledFrom] = useState("");
-  const [scheduledTo,   setScheduledTo]   = useState("");
+  const [lastInspFrom,   setLastInspFrom]   = useState("");
+  const [lastInspTo,     setLastInspTo]     = useState("");
+  const [nextDueFrom,    setNextDueFrom]    = useState("");
+  const [nextDueTo,      setNextDueTo]      = useState("");
+  const [scheduledFrom,  setScheduledFrom]  = useState("");
+  const [scheduledTo,    setScheduledTo]    = useState("");
   const [completionFrom, setCompletionFrom] = useState("");
   const [completionTo,   setCompletionTo]   = useState("");
 
+  /* ── Dialog / delete state ── */
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Cascading form selectors (not part of schema, just filter the elevator list)
+  /* ── Cascading form selectors ── */
   const [formCustomerId, setFormCustomerId] = useState("");
   const [formBuildingId, setFormBuildingId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  /* ── Derived booleans ── */
   const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo);
-  const hasAnyFilter = selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedElevatorIds.length > 0 || selectedBanks.length > 0 || selectedStatuses.length > 0 || selectedInspTypes.length > 0 || selectedUnitTypes.length > 0 || hasDateFilters;
 
+  /* ── Clear helpers ── */
   const clearDateFilters = useCallback(() => {
     setLastInspFrom(""); setLastInspTo(""); setNextDueFrom(""); setNextDueTo("");
     setScheduledFrom(""); setScheduledTo(""); setCompletionFrom(""); setCompletionTo("");
@@ -138,14 +157,20 @@ export default function Inspections() {
 
   const clearAllFilters = useCallback(() => {
     setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedElevatorIds([]);
-    setSelectedBanks([]); setSelectedStatuses([]); setSelectedInspTypes([]); setSelectedUnitTypes([]);
+    setSelectedBanks([]); setSelectedStatuses([]); setSelectedInspTypes([]);
+    setSelectedUnitTypes([]); setFilterDueMonths([]); setFilterDueYears([]);
     clearDateFilters();
   }, [clearDateFilters]);
 
-  const handleCustomerChange = (val: string[]) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedElevatorIds([]); setCurrentPage(1); };
-  const handleBuildingChange = (val: string[]) => { setSelectedBuildingIds(val); setSelectedElevatorIds([]); setCurrentPage(1); };
+  /* ── Cascade change handlers ── */
+  const handleCustomerChange = (val: string[]) => {
+    setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedElevatorIds([]); setCurrentPage(1);
+  };
+  const handleBuildingChange = (val: string[]) => {
+    setSelectedBuildingIds(val); setSelectedElevatorIds([]); setCurrentPage(1);
+  };
 
-  // Date range filters are still sent server-side; combobox filters are client-side
+  /* ── Data fetching ── */
   const dateQueryParams = {
     lastInspectionDateFrom: lastInspFrom || undefined,
     lastInspectionDateTo:   lastInspTo   || undefined,
@@ -162,14 +187,14 @@ export default function Inspections() {
   const { data: customers }  = useListCustomers({},  { query: { queryKey: getListCustomersQueryKey({}) } });
   const { data: buildings }  = useListBuildings({},  { query: { queryKey: getListBuildingsQueryKey({}) } });
 
-  // Lookup map: elevatorId → { bank, type, customerId, buildingId }
+  /* ── Elevator meta map ── */
   const elevatorMeta = useMemo(() => {
     const map = new Map<number, { bank: string; type: string; customerId: number; buildingId: number }>();
     for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId, buildingId: e.buildingId });
     return map;
   }, [elevators]);
 
-  // Client-side filter inspections by combobox selections
+  /* ── Client-side filtering ── */
   const inspections = useMemo(() => {
     return (allInspections ?? []).filter(insp => {
       const meta = elevatorMeta.get(insp.elevatorId);
@@ -180,45 +205,63 @@ export default function Inspections() {
       if (selectedStatuses.length > 0    && !selectedStatuses.includes((insp as any).trueStatus ?? insp.status)) return false;
       if (selectedInspTypes.length > 0   && !selectedInspTypes.includes(insp.inspectionType))                  return false;
       if (selectedUnitTypes.length > 0   && (!meta || !selectedUnitTypes.includes(meta.type)))                 return false;
+      if (filterDueMonths.length > 0) {
+        const month = insp.nextDueDate ? dayjs(insp.nextDueDate).format("MM") : null;
+        if (!month || !filterDueMonths.includes(month)) return false;
+      }
+      if (filterDueYears.length > 0) {
+        const year = insp.nextDueDate ? dayjs(insp.nextDueDate).format("YYYY") : null;
+        if (!year || !filterDueYears.includes(year)) return false;
+      }
       return true;
     });
-  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes]);
+  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears]);
 
-  // Cascade filter options
+  /* ── Cascade filter options ── */
   const customerOptions = useMemo(() => (customers ?? []).map(c => ({ value: String(c.id), label: c.name })), [customers]);
+
   const buildingOptions = useMemo(() => {
     const list = selectedCustomerIds.length > 0
       ? (buildings ?? []).filter(b => selectedCustomerIds.includes(String(b.customerId)))
       : (buildings ?? []);
     return list.map(b => ({ value: String(b.id), label: b.name }));
   }, [buildings, selectedCustomerIds]);
+
   const bankOptions = useMemo(() => {
     let src = elevators ?? [];
     if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
     if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
-    const banks = Array.from(new Set(src.map(e => e.bank).filter(Boolean) as string[])).sort();
-    return banks.map(b => ({ value: b, label: b }));
+    return Array.from(new Set(src.map(e => e.bank).filter(Boolean) as string[])).sort().map(b => ({ value: b, label: b }));
   }, [elevators, selectedCustomerIds, selectedBuildingIds]);
+
   const elevatorOptions = useMemo(() => {
     let src = elevators ?? [];
     if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
     if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
     if (selectedBanks.length > 0)       src = src.filter(e => selectedBanks.includes(e.bank ?? ""));
-    return src.map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") }));
+    return [...src].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")).map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") }));
   }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks]);
 
-  // Form-scoped cascading options (independent of the filter bar)
+  const yearFilterOptions = useMemo(() => {
+    const years = new Set<string>();
+    for (const insp of allInspections ?? []) {
+      if (insp.nextDueDate) years.add(dayjs(insp.nextDueDate).format("YYYY"));
+    }
+    return Array.from(years).sort().map(y => ({ value: y, label: y }));
+  }, [allInspections]);
+
+  /* ── Form cascade options ── */
   const formBuildingList = useMemo(() =>
     formCustomerId ? (buildings ?? []).filter(b => String(b.customerId) === formCustomerId) : (buildings ?? []),
-    [buildings, formCustomerId]
-  );
+    [buildings, formCustomerId]);
+
   const formElevatorList = useMemo(() => {
     if (formBuildingId) return (elevators ?? []).filter(e => String(e.buildingId) === formBuildingId);
     if (formCustomerId) return (elevators ?? []).filter(e => formBuildingList.some(b => b.id === e.buildingId));
     return elevators ?? [];
   }, [elevators, formBuildingId, formCustomerId, formBuildingList]);
 
-  // Sort filtered inspections
+  /* ── Sort + paginate ── */
   const processedRows = useMemo(() => {
     return [...(inspections ?? [])].sort((a, b) => {
       const c1 = (a.customerName ?? "").localeCompare(b.customerName ?? ""); if (c1 !== 0) return c1;
@@ -227,9 +270,6 @@ export default function Inspections() {
       const bankB = elevatorMeta.get(b.elevatorId)?.bank ?? "";
       const c3 = bankA.localeCompare(bankB); if (c3 !== 0) return c3;
       const c4 = (a.elevatorName ?? "").localeCompare(b.elevatorName ?? ""); if (c4 !== 0) return c4;
-      const typeA = elevatorMeta.get(a.elevatorId)?.type ?? "";
-      const typeB = elevatorMeta.get(b.elevatorId)?.type ?? "";
-      const c5 = typeA.localeCompare(typeB); if (c5 !== 0) return c5;
       const c6 = a.inspectionType.localeCompare(b.inspectionType); if (c6 !== 0) return c6;
       return (a.nextDueDate ?? "9999").localeCompare(b.nextDueDate ?? "9999");
     });
@@ -239,9 +279,9 @@ export default function Inspections() {
   const safePage   = Math.min(currentPage, totalPages);
   const pagedRows  = processedRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  // Reset to page 1 on filter/data change
   useEffect(() => { setCurrentPage(1); }, [inspections]);
 
+  /* ── Mutations ── */
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const createMutation = useCreateInspection();
@@ -277,7 +317,6 @@ export default function Inspections() {
 
   const openEdit = (inspection: Inspection) => {
     setEditingInspection(inspection);
-    // Pre-populate cascading selectors from the elevator's building/customer
     const elev = elevators?.find(e => e.id === inspection.elevatorId);
     const bldg = buildings?.find(b => b.id === elev?.buildingId);
     setFormCustomerId(bldg?.customerId ? String(bldg.customerId) : "");
@@ -296,8 +335,8 @@ export default function Inspections() {
 
   const handleExport = async () => {
     const params = new URLSearchParams();
-    if (statusFilter) params.append("status", statusFilter);
-    if (inspTypeFilter) params.append("inspectionType", inspTypeFilter);
+    selectedStatuses.forEach(s => params.append("status", s));
+    selectedInspTypes.forEach(t => params.append("inspectionType", t));
     const token = localStorage.getItem("token");
     const res = await fetch(`/api/export/inspections?${params.toString()}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) return;
@@ -323,18 +362,26 @@ export default function Inspections() {
   }, [watchStatus]);
   useEffect(() => { if (watchScheduledDate && form.getValues("status") === "NOT_STARTED") form.setValue("status", "SCHEDULED"); }, [watchScheduledDate]);
 
-  // Shared TH class builder
-  const thBase = "px-3 py-2.5 text-left text-[11px] font-semibold text-white uppercase tracking-wider whitespace-nowrap border-b-2 border-zinc-800 bg-zinc-950 select-none";
-  const stickyTh = (left: string) => `${thBase} sticky ${left} z-30`;
+  /* ── Filter bar derived values ── */
+  const activeFilterCount = [
+    selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds,
+    selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses,
+  ].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
 
-  // Shared TD class builder
-  const tdBase = "px-3 py-2 text-xs text-zinc-700 border-b border-zinc-200 whitespace-nowrap align-middle";
-  const stickyTd = (left: string, bg: string) => `${tdBase} sticky ${left} z-10 ${bg}`;
+  const chipLabel = (arr: string[], opts: { value: string; label: string }[], single: string) =>
+    arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
 
-  const rowBg = (idx: number, overdue: boolean, noNextDue: boolean) =>
-    noNextDue ? "bg-red-200/60" : overdue ? "bg-red-50" : idx % 2 === 0 ? "bg-white" : "bg-zinc-50/60";
-  const rowBgHover = (idx: number, overdue: boolean, noNextDue: boolean) =>
-    noNextDue ? "hover:bg-red-200/80" : overdue ? "hover:bg-red-100/60" : idx % 2 === 0 ? "hover:bg-blue-50/30" : "hover:bg-blue-50/40";
+  const activeChips: { label: string; value: string; onRemove: () => void }[] = [];
+  if (selectedCustomerIds.length > 0) activeChips.push({ label: "Customer",  value: chipLabel(selectedCustomerIds, customerOptions,    "customers"), onRemove: () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
+  if (selectedBuildingIds.length > 0) activeChips.push({ label: "Building",  value: chipLabel(selectedBuildingIds, buildingOptions,    "buildings"), onRemove: () => { setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
+  if (selectedBanks.length > 0)       activeChips.push({ label: "Bank",      value: chipLabel(selectedBanks,       bankOptions,        "banks"),     onRemove: () => { setSelectedBanks([]); setSelectedElevatorIds([]); } });
+  if (selectedElevatorIds.length > 0) activeChips.push({ label: "Elevator",  value: chipLabel(selectedElevatorIds, elevatorOptions,    "elevators"), onRemove: () => setSelectedElevatorIds([]) });
+  if (selectedUnitTypes.length > 0)   activeChips.push({ label: "Unit Type", value: chipLabel(selectedUnitTypes,   UNIT_TYPE_OPTIONS,  "types"),     onRemove: () => setSelectedUnitTypes([]) });
+  if (selectedInspTypes.length > 0)   activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes,   INSP_TYPE_OPTIONS,  "types"),     onRemove: () => setSelectedInspTypes([]) });
+  if (filterDueMonths.length > 0)     activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths,     MONTH_OPTIONS,      "months"),    onRemove: () => setFilterDueMonths([]) });
+  if (filterDueYears.length > 0)      activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears,      yearFilterOptions,  "years"),     onRemove: () => setFilterDueYears([]) });
+  if (selectedStatuses.length > 0)    activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses,    STATUS_OPTIONS,     "statuses"),  onRemove: () => setSelectedStatuses([]) });
+  if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                       onRemove: () => clearDateFilters() });
 
   return (
     <div className="flex flex-col gap-5 animate-in fade-in duration-500 h-full">
@@ -360,45 +407,22 @@ export default function Inspections() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-
-                    {/* ── Cascading selectors: Customer → Building → Elevator ── */}
                     <div className="col-span-2 grid grid-cols-2 gap-4">
-                      {/* Customer */}
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium leading-none">Customer</label>
-                        <Select
-                          value={formCustomerId}
-                          onValueChange={(v) => { setFormCustomerId(v); setFormBuildingId(""); form.setValue("elevatorId", 0); }}
-                          disabled={!!editingInspection}
-                        >
+                        <Select value={formCustomerId} onValueChange={(v) => { setFormCustomerId(v); setFormBuildingId(""); form.setValue("elevatorId", 0); }} disabled={!!editingInspection}>
                           <SelectTrigger><SelectValue placeholder="Select a customer" /></SelectTrigger>
-                          <SelectContent>
-                            {(customers ?? []).map(c => (
-                              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                            ))}
-                          </SelectContent>
+                          <SelectContent>{(customers ?? []).map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                      {/* Building */}
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium leading-none">Building</label>
-                        <Select
-                          value={formBuildingId}
-                          onValueChange={(v) => { setFormBuildingId(v); form.setValue("elevatorId", 0); }}
-                          disabled={!!editingInspection || !formCustomerId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={!formCustomerId ? "Select a customer first" : "Select a building"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {formBuildingList.map(b => (
-                              <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
-                            ))}
-                          </SelectContent>
+                        <Select value={formBuildingId} onValueChange={(v) => { setFormBuildingId(v); form.setValue("elevatorId", 0); }} disabled={!!editingInspection || !formCustomerId}>
+                          <SelectTrigger><SelectValue placeholder={!formCustomerId ? "Select a customer first" : "Select a building"} /></SelectTrigger>
+                          <SelectContent>{formBuildingList.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                     </div>
-
                     <FormField control={form.control} name="elevatorId" render={({ field }) => (
                       <FormItem className="col-span-2 md:col-span-1">
                         <FormLabel>Elevator</FormLabel>
@@ -421,10 +445,9 @@ export default function Inspections() {
                                 <CommandEmpty>No elevator found.</CommandEmpty>
                                 <CommandGroup>
                                   {formElevatorList.map(e => (
-                                    <CommandItem key={e.id} value={`${e.name} ${e.buildingName}`}
-                                      onSelect={() => field.onChange(e.id.toString())}>
+                                    <CommandItem key={e.id} value={`${e.name} ${e.buildingName}`} onSelect={() => field.onChange(e.id.toString())}>
                                       <Check className={cn("mr-2 h-4 w-4", Number(field.value) === e.id ? "opacity-100" : "opacity-0")} />
-                                      <span>{e.name}</span>
+                                      {e.name}{e.buildingName ? <span className="ml-1.5 text-muted-foreground text-xs">{e.buildingName}</span> : null}
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -512,96 +535,199 @@ export default function Inspections() {
         </div>
       </div>
 
-      {/* ── Filters ── */}
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider select-none">Filters</span>
-          <div className="h-4 w-px bg-zinc-200" />
+      {/* ── Filter bar (Elevators-style) ── */}
+      <div className="flex flex-col gap-3">
+        <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
 
-          <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[175px]" />
-          <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[155px]" />
-          <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setCurrentPage(1); }} options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankOptions.length === 0} width="w-[130px]" />
-          <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }} options={elevatorOptions} placeholder="All Elevators" searchPlaceholder="Search elevators..." disabled={elevatorOptions.length === 0} width="w-[165px]" />
+          {/* Single unified filter row */}
+          <div className="flex items-center gap-0 px-3 py-2.5 min-h-[52px]">
 
-          <div className="h-4 w-px bg-zinc-200" />
+            {/* Left: label + count */}
+            <div className="flex items-center gap-2 pr-3 mr-2 border-r border-zinc-200 shrink-0 self-stretch py-0.5">
+              <SlidersHorizontal className="h-[15px] w-[15px] text-zinc-400" />
+              <span className="text-[13px] font-bold text-zinc-900 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
 
-          <FilterCombobox value={selectedStatuses}  onValueChange={(v) => { setSelectedStatuses(v);  setCurrentPage(1); }} options={STATUS_OPTIONS}     placeholder="All Statuses"    searchPlaceholder="Search statuses..."         width="w-[145px]" />
-          <FilterCombobox value={selectedInspTypes} onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS}  placeholder="All Insp Types"  searchPlaceholder="Search inspection types..." width="w-[175px]" />
-          <FilterCombobox value={selectedUnitTypes} onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }} options={UNIT_TYPE_OPTIONS}  placeholder="All Unit Types"  searchPlaceholder="Search unit types..."       width="w-[170px]" />
+            {/* Middle: grouped comboboxes */}
+            <div className="flex flex-wrap items-center gap-1.5 flex-1">
 
-          <div className="h-4 w-px bg-zinc-200" />
+              {/* Group 1 — Location */}
+              <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange}
+                options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[175px]" />
+              <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange}
+                options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[150px]" />
+              <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setSelectedElevatorIds([]); setCurrentPage(1); }}
+                options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..."
+                disabled={bankOptions.length === 0} width="w-[150px]" />
+              <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }}
+                options={elevatorOptions} placeholder="All Elevators" searchPlaceholder="Search elevators..."
+                disabled={elevatorOptions.length === 0} width="w-[160px]" />
 
-          {/* Date range toggle */}
-          <button onClick={() => setShowDateFilters(v => !v)} className={`h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors ${showDateFilters || hasDateFilters ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"}`}>
-            <CalendarDays className="h-3.5 w-3.5" />
-            Date Ranges
-            {hasDateFilters ? (
-              <span
-                role="button"
-                aria-label="Clear date filters"
-                onClick={e => { e.stopPropagation(); clearDateFilters(); }}
-                className="h-3.5 w-3.5 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer shrink-0"
+              {/* Divider */}
+              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
+
+              {/* Group 2 — Type */}
+              <FilterCombobox value={selectedUnitTypes} onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }}
+                options={UNIT_TYPE_OPTIONS} placeholder="All Unit Types" searchPlaceholder="Search unit types..." width="w-[175px]" />
+              <FilterCombobox value={selectedInspTypes} onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }}
+                options={INSP_TYPE_OPTIONS} placeholder="All Insp Types" searchPlaceholder="Search insp types..." width="w-[170px]" />
+
+              {/* Divider */}
+              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
+
+              {/* Group 3 — Schedule & Status */}
+              <FilterCombobox value={filterDueMonths} onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }}
+                options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[150px]" />
+              <FilterCombobox value={filterDueYears} onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }}
+                options={yearFilterOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[130px]" />
+              <FilterCombobox value={selectedStatuses} onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}
+                options={STATUS_OPTIONS} placeholder="All Statuses" searchPlaceholder="Search statuses..." width="w-[160px]" />
+
+              {/* Divider */}
+              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
+
+              {/* Date Ranges toggle */}
+              <button
+                onClick={() => setShowDateFilters(v => !v)}
+                className={cn(
+                  "h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap",
+                  showDateFilters || hasDateFilters
+                    ? "bg-blue-50 border-blue-300 text-blue-700"
+                    : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
+                )}
               >
-                <X className="h-2 w-2 text-white" />
-              </span>
-            ) : null}
-            {showDateFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </button>
+                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                Date Ranges
+                {hasDateFilters && (
+                  <span
+                    role="button"
+                    aria-label="Clear date filters"
+                    onClick={e => { e.stopPropagation(); clearDateFilters(); }}
+                    className="h-[14px] w-[14px] rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer shrink-0"
+                  >
+                    <X className="h-2 w-2 text-white" />
+                  </span>
+                )}
+                {showDateFilters ? <ChevronUp className="h-3 w-3 shrink-0" /> : <ChevronDown className="h-3 w-3 shrink-0" />}
+              </button>
+            </div>
 
-          {hasAnyFilter && (
-            <button onClick={clearAllFilters} className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 hover:text-red-700 transition-colors">
-              <X className="h-3.5 w-3.5" /> Clear filters
-            </button>
+            {/* Right: result count + clear */}
+            <div className="flex items-center gap-2 pl-3 ml-2 border-l border-zinc-200 shrink-0">
+              <span className="text-xs tabular-nums whitespace-nowrap">
+                <span className="font-bold text-zinc-700">{processedRows.length}</span>
+                <span className="text-zinc-400 ml-1">{processedRows.length === 1 ? "inspection" : "inspections"}</span>
+              </span>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearAllFilters}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors whitespace-nowrap"
+                >
+                  <X className="h-[11px] w-[11px]" /> Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Active filter chips */}
+          {activeChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 border-t border-zinc-100">
+              <span className="text-[11px] font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
+              {activeChips.map((chip) => (
+                <span key={chip.label}
+                  className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[11px] font-medium text-blue-700 leading-none whitespace-nowrap">
+                  <span className="text-blue-400 font-normal">{chip.label}:</span>
+                  {chip.value}
+                  <button onClick={chip.onRemove}
+                    className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors"
+                    aria-label={`Remove ${chip.label} filter`}>
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
           )}
         </div>
 
         {/* Date range panel */}
         {showDateFilters && (
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { label: "Last Inspection", from: lastInspFrom,  to: lastInspTo,   setFrom: setLastInspFrom,  setTo: setLastInspTo },
-              { label: "Next Due",        from: nextDueFrom,   to: nextDueTo,    setFrom: setNextDueFrom,   setTo: setNextDueTo },
-              { label: "Scheduled Date",  from: scheduledFrom, to: scheduledTo,  setFrom: setScheduledFrom, setTo: setScheduledTo },
-              { label: "Completion Date", from: completionFrom,to: completionTo, setFrom: setCompletionFrom,setTo: setCompletionTo },
-            ].map(({ label, from, to, setFrom, setTo }) => (
-              <div key={label} className="space-y-1.5">
-                <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">{label}</p>
-                <div className="flex gap-1.5 items-center">
-                  <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400" value={from} onChange={e => setFrom(e.target.value)} />
-                  <span className="text-zinc-300 text-xs">–</span>
-                  <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400" value={to} onChange={e => setTo(e.target.value)} />
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm px-4 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-zinc-400" />
+                <span className="text-[13px] font-bold text-zinc-900 uppercase tracking-[0.12em]">Date Ranges</span>
+              </div>
+              {hasDateFilters && (
+                <button onClick={clearDateFilters}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
+                  <X className="h-[11px] w-[11px]" /> Clear dates
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                { label: "Last Inspection", from: lastInspFrom,   to: lastInspTo,    setFrom: setLastInspFrom,   setTo: setLastInspTo },
+                { label: "Next Due",        from: nextDueFrom,    to: nextDueTo,     setFrom: setNextDueFrom,    setTo: setNextDueTo },
+                { label: "Scheduled Date",  from: scheduledFrom,  to: scheduledTo,   setFrom: setScheduledFrom,  setTo: setScheduledTo },
+                { label: "Completion Date", from: completionFrom, to: completionTo,  setFrom: setCompletionFrom, setTo: setCompletionTo },
+              ].map(({ label, from, to, setFrom, setTo }) => (
+                <div key={label} className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-[0.1em]">{label}</p>
+                  <div className="flex gap-1.5 items-center">
+                    <input type="date"
+                      className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0"
+                      value={from} onChange={e => setFrom(e.target.value)} />
+                    <span className="text-zinc-300 text-xs shrink-0">–</span>
+                    <input type="date"
+                      className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0"
+                      value={to} onChange={e => setTo(e.target.value)} />
+                  </div>
                 </div>
-              </div>
-            ))}
-            {hasDateFilters && (
-              <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
-                <button onClick={clearDateFilters} className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1"><X className="h-3 w-3" /> Clear date filters</button>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── Table ── */}
-      <div className="relative overflow-auto rounded-xl border border-zinc-200 shadow-sm bg-white" style={{ maxHeight: "calc(100vh - 290px)" }}>
-        <table className="min-w-full border-separate border-spacing-0 text-sm">
+      {/* ── Report table ── */}
+      <div className="relative overflow-auto rounded-xl border border-zinc-200 shadow-sm bg-white" style={{ maxHeight: "calc(100vh - 310px)" }}>
+        <table className="min-w-full border-separate border-spacing-0">
 
-          {/* Sticky header */}
           <thead>
             <tr>
-              <th className={stickyTh("top-0 left-0")}       style={{ minWidth: 150 }}>Customer</th>
-              <th className={stickyTh("top-0 left-[150px]")} style={{ minWidth: 130 }}>Building</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 105 }}>Bank</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 200 }}>Elevator</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 100 }}>Unit Type</th>
-              <th className={`${thBase} sticky top-0 z-20 text-center`} style={{ minWidth: 76 }}>Type</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Last Insp.</th>
-              <th className={`${thBase} sticky top-0 z-20 text-center`} style={{ minWidth: 68 }}>Recur.</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Next Due</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Scheduled</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 112 }}>Completed</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 148 }}>Status</th>
-              <th className={`${thBase} sticky top-0 z-20`}  style={{ minWidth: 60  }}>Actions</th>
+              {/* Sticky double-column header */}
+              <th className="sticky top-0 left-0 z-30 px-4 py-3 text-left bg-zinc-900 border-b-2 border-zinc-700"
+                style={{ minWidth: 152 }}>
+                <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider whitespace-nowrap">Customer</span>
+              </th>
+              <th className="sticky top-0 left-[152px] z-30 px-4 py-3 text-left bg-zinc-900 border-b-2 border-zinc-700"
+                style={{ minWidth: 132, borderRight: "1px solid #3f3f46" }}>
+                <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider whitespace-nowrap">Building</span>
+              </th>
+              {[
+                { label: "Bank",       width: 105 },
+                { label: "Elevator",   width: 200 },
+                { label: "Unit Type",  width: 105 },
+                { label: "Type",       width: 78, center: true },
+                { label: "Last Insp.", width: 114 },
+                { label: "Recur.",     width: 68, center: true },
+                { label: "Next Due",   width: 114 },
+                { label: "Scheduled",  width: 114 },
+                { label: "Completed",  width: 114 },
+                { label: "Status",     width: 150 },
+                { label: "Actions",    width: 64 },
+              ].map(({ label, width, center }) => (
+                <th key={label}
+                  className={`sticky top-0 z-20 px-4 py-3 bg-zinc-900 border-b-2 border-zinc-700 whitespace-nowrap ${center ? "text-center" : "text-left"}`}
+                  style={{ minWidth: width }}>
+                  <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">{label}</span>
+                </th>
+              ))}
             </tr>
           </thead>
 
@@ -614,7 +740,7 @@ export default function Inspections() {
                   <div className="flex flex-col items-center gap-2 text-zinc-400">
                     <ClipboardList className="h-10 w-10 opacity-20" />
                     <p className="text-sm font-medium">No inspections found</p>
-                    <p className="text-xs text-zinc-300">Try adjusting your filters</p>
+                    <p className="text-xs text-zinc-400">Try adjusting your filters</p>
                   </div>
                 </td>
               </tr>
@@ -622,74 +748,86 @@ export default function Inspections() {
               const today = dayjs();
               const isOverdue = insp.status !== "COMPLETED" && !!insp.nextDueDate && dayjs(insp.nextDueDate).isBefore(today);
               const noNextDue = !insp.nextDueDate && insp.status !== "COMPLETED";
-              const bg = rowBg(rowIdx, isOverdue, noNextDue);
-              const hoverCls = rowBgHover(rowIdx, isOverdue, noNextDue);
               const meta = elevatorMeta.get(insp.elevatorId);
-              // Group separator: bold top border whenever the elevator changes
               const prevInsp = rowIdx > 0 ? pagedRows[rowIdx - 1] : null;
               const isNewGroup = rowIdx === 0 || prevInsp?.elevatorId !== insp.elevatorId;
-              const sep = isNewGroup && rowIdx > 0 ? "border-t-[3px] border-t-zinc-400" : "";
-              // Apply bg + separator directly to every cell
-              const tc = (...extras: string[]) => [tdBase, bg, sep, ...extras].filter(Boolean).join(" ");
-              const stickyCls = (pos: string) => `${stickyTd(pos, bg)} ${sep}`.trim();
+
+              const rowBase =
+                noNextDue  ? "bg-red-100/70"  :
+                isOverdue  ? "bg-red-50/80"    :
+                rowIdx % 2 === 0 ? "bg-white" : "bg-zinc-50/70";
+              const rowHover =
+                noNextDue  ? "hover:bg-red-100"   :
+                isOverdue  ? "hover:bg-red-100/60" :
+                "hover:bg-blue-50/40";
+              const groupBorder = isNewGroup && rowIdx > 0 ? "border-t-2 border-t-zinc-300" : "";
+              const cellBase = `px-4 py-2.5 text-xs text-zinc-700 border-b border-zinc-100 whitespace-nowrap align-middle ${rowBase} ${groupBorder}`;
+              const stickyCell = (left: string, extra = "") =>
+                `${cellBase} sticky ${left} z-10 ${extra}`;
 
               return (
-                <tr key={insp.id} className={`group transition-colors ${hoverCls}`}>
+                <tr key={insp.id} className={`group transition-colors ${rowHover}`}>
                   {/* Sticky: Customer */}
-                  <td className={stickyCls("left-0")} style={{ minWidth: 150 }}>
-                    <span title={insp.customerName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[138px]">{insp.customerName ?? "—"}</span>
+                  <td className={stickyCell("left-0")} style={{ minWidth: 152 }}>
+                    <span title={insp.customerName ?? undefined} className="font-semibold text-zinc-800 truncate block max-w-[136px]">
+                      {insp.customerName ?? "—"}
+                    </span>
                   </td>
                   {/* Sticky: Building */}
-                  <td className={stickyCls("left-[150px]")} style={{ minWidth: 130, borderRight: "1px solid #e4e4e7" }}>
-                    <span title={insp.buildingName ?? undefined} className="text-zinc-700 truncate block max-w-[118px]">{insp.buildingName ?? "—"}</span>
+                  <td className={stickyCell("left-[152px]")} style={{ minWidth: 132, borderRight: "1px solid #e4e4e7" }}>
+                    <span title={insp.buildingName ?? undefined} className="text-zinc-600 truncate block max-w-[116px]">
+                      {insp.buildingName ?? "—"}
+                    </span>
                   </td>
                   {/* Bank */}
-                  <td className={tc()}>
-                    <span className="text-zinc-800">{meta?.bank || <span className="text-zinc-300 italic">—</span>}</span>
+                  <td className={cellBase}>
+                    {meta?.bank ? <span className="text-zinc-700">{meta.bank}</span> : <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Elevator */}
-                  <td className={tc()}>
-                    <span title={insp.elevatorName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[188px]">{insp.elevatorName ?? "—"}</span>
+                  <td className={cellBase}>
+                    <span title={insp.elevatorName ?? undefined} className="font-medium text-zinc-800 truncate block max-w-[188px]">
+                      {insp.elevatorName ?? "—"}
+                    </span>
                   </td>
                   {/* Unit Type */}
-                  <td className={tc()}>
+                  <td className={cellBase}>
                     {(insp as any).elevatorType
                       ? <span className="capitalize text-zinc-600">{(insp as any).elevatorType === "hydraulic" ? "Hydraulic" : (insp as any).elevatorType === "traction" ? "Traction" : "Other"}</span>
                       : <span className="text-zinc-300">—</span>}
                   </td>
-                  {/* Inspection Type */}
-                  <td className={tc("text-center")}>
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
+                  {/* Insp Type */}
+                  <td className={`${cellBase} text-center`}>
+                    <span className={`inline-flex items-center justify-center text-[11px] font-bold px-2 py-0.5 rounded-full tracking-wide ${insp.inspectionType === "CAT5" ? "bg-yellow-400 text-zinc-900" : "bg-zinc-800 text-white"}`}>
                       {insp.inspectionType}
                     </span>
                   </td>
                   {/* Last Inspection */}
-                  <td className={tc("tabular-nums")}>
+                  <td className={`${cellBase} tabular-nums`}>
                     {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Recurrence */}
-                  <td className={tc("tabular-nums text-zinc-400 text-center")}>
+                  <td className={`${cellBase} tabular-nums text-zinc-400 text-center`}>
                     {insp.recurrenceYears === 1 ? "1 yr" : `${insp.recurrenceYears} yrs`}
                   </td>
                   {/* Next Due */}
-                  <td className={tc(`tabular-nums font-medium ${isOverdue ? "text-red-600" : "text-zinc-700"}`)}>
-                    {fmt(insp.nextDueDate) ?? <span className="text-zinc-300 font-normal">—</span>}
+                  <td className={`${cellBase} tabular-nums font-medium ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-700"}`}>
+                    {fmt(insp.nextDueDate) ?? <span className="text-red-400 font-normal">Not set</span>}
                   </td>
                   {/* Scheduled */}
-                  <td className={tc("tabular-nums")}>
+                  <td className={`${cellBase} tabular-nums`}>
                     {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Completed */}
-                  <td className={tc("tabular-nums")}>
+                  <td className={`${cellBase} tabular-nums`}>
                     {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
                   </td>
                   {/* Status */}
-                  <td className={tc()}>
+                  <td className={cellBase}>
                     <StatusBadge status={insp.status} />
                   </td>
                   {/* Actions */}
-                  <td className={tc("text-right")}>
-                    <div className="flex items-center justify-end gap-0.5">
+                  <td className={`${cellBase} text-right`}>
+                    <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEdit(insp); setIsAddOpen(true); }}>
                         <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>
@@ -707,9 +845,13 @@ export default function Inspections() {
 
       {/* ── Footer: count + pagination ── */}
       {!isLoading && processedRows.length > 0 && (
-        <div className="flex items-center justify-between text-xs text-zinc-400">
-          <span>
-            Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, processedRows.length)} of <strong className="text-zinc-600">{processedRows.length}</strong> inspection{processedRows.length !== 1 ? "s" : ""}
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-zinc-400">
+            Showing{" "}
+            <span className="font-semibold text-zinc-600">{(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, processedRows.length)}</span>
+            {" "}of{" "}
+            <span className="font-semibold text-zinc-600">{processedRows.length}</span>
+            {" "}{processedRows.length === 1 ? "inspection" : "inspections"}
           </span>
           {totalPages > 1 && (
             <div className="flex items-center gap-1">
@@ -724,10 +866,16 @@ export default function Inspections() {
                   acc.push(p); return acc;
                 }, [])
                 .map((p, i) =>
-                  p === "..." ? <span key={`ellipsis-${i}`} className="px-1 text-zinc-300">…</span> : (
+                  p === "..." ? (
+                    <span key={`ellipsis-${i}`} className="px-1 text-zinc-300 text-xs">…</span>
+                  ) : (
                     <button key={p} onClick={() => setCurrentPage(p as number)}
-                      className={`h-7 min-w-[28px] px-1.5 flex items-center justify-center rounded border text-xs transition-colors
-                        ${safePage === p ? "bg-blue-600 border-blue-600 text-white font-semibold" : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"}`}>
+                      className={cn(
+                        "h-7 min-w-[28px] px-1.5 flex items-center justify-center rounded border text-xs transition-colors",
+                        safePage === p
+                          ? "bg-blue-600 border-blue-600 text-white font-semibold"
+                          : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+                      )}>
                       {p}
                     </button>
                   )
@@ -742,7 +890,7 @@ export default function Inspections() {
         </div>
       )}
 
-      {/* ── Delete dialog ── */}
+      {/* ── Delete confirmation ── */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
