@@ -796,27 +796,54 @@ export default function Inspections() {
                 <div key={`elev-${group.elevatorId}`}
                   className={`bg-white rounded-xl border ${cardBorder} shadow-sm overflow-hidden mt-2`}>
                   {/* Card header */}
-                  <div className={`flex items-center justify-between px-4 py-3 ${hasNoNextDue ? "bg-red-50" : hasOverdue ? "bg-amber-50/60" : "bg-zinc-50"} border-b border-zinc-100`}>
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 text-blue-700 shrink-0">
-                        <Layers className="h-4 w-4" />
+                  <div className={`flex items-center justify-between px-4 py-3.5 ${hasNoNextDue ? "bg-red-50" : hasOverdue ? "bg-amber-50/60" : "bg-gradient-to-r from-slate-50 to-white"} border-b border-zinc-100`}>
+                    <div className="flex items-center gap-3">
+                      {/* Icon */}
+                      <div className={`flex items-center justify-center h-10 w-10 rounded-xl shrink-0 shadow-sm
+                        ${hasNoNextDue ? "bg-red-100 text-red-600" : hasOverdue ? "bg-amber-100 text-amber-600" : "bg-blue-600 text-white"}`}>
+                        <Layers className="h-5 w-5" />
                       </div>
+                      {/* Name + metadata */}
                       <div>
-                        <span className="font-bold text-zinc-900 text-[25px]">{group.elevatorName}</span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {group.bank && <span className="text-zinc-500 text-[20px]">Bank: <span className="font-medium text-zinc-700">{group.bank}</span></span>}
-                          {group.bank && group.elevatorType && <span className="text-zinc-300 text-[20px]">·</span>}
-                          {group.elevatorType && <span className="text-zinc-500 text-[20px] capitalize">{group.elevatorType}</span>}
+                        <span className="font-bold text-zinc-900 text-[25px] leading-tight">{group.elevatorName}</span>
+                        {/* Row 1: bank + type badges */}
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          {group.bank && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                              <span className="text-zinc-400 font-normal">Bank</span>
+                              {group.bank}
+                            </span>
+                          )}
+                          {group.elevatorType && (
+                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[13px] font-medium text-blue-700 ring-1 ring-blue-200 capitalize">
+                              {group.elevatorType}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          {group.unitId && <span className="text-zinc-500 text-[20px]">Unit ID: <span className="font-medium text-zinc-700">{group.unitId}</span></span>}
-                          {group.unitId && group.stateId && <span className="text-zinc-300 text-[20px]">·</span>}
-                          {group.stateId && <span className="text-zinc-500 text-[20px]">State ID: <span className="font-medium text-zinc-700">{group.stateId}</span></span>}
-                        </div>
+                        {/* Row 2: unit ID + state ID */}
+                        {(group.unitId || group.stateId) && (
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            {group.unitId && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                                <span className="text-zinc-400 font-normal">Unit</span>
+                                {group.unitId}
+                              </span>
+                            )}
+                            {group.stateId && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-200">
+                                <span className="text-zinc-400 font-normal">State</span>
+                                {group.stateId}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-zinc-400">{group.rows.length} record{group.rows.length !== 1 ? "s" : ""}</span>
+                    {/* Record count badge */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-500 ring-1 ring-zinc-200">
+                        {group.rows.length} record{group.rows.length !== 1 ? "s" : ""}
+                      </span>
                     </div>
                   </div>
 
