@@ -318,9 +318,21 @@ router.put("/:id", async (req, res) => {
   }
   const formatted = formatInspection(row);
   const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
-  const warning = (followUp.created === false && followUp.reason === "duplicate_year")
-    ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
-    : undefined;
+
+  // Also check: does this record's own nextDueDate now conflict with another record?
+  // This catches the case where the user edits lastInspectionDate and the recomputed
+  // nextDueDate lands in a year already occupied by the existing auto-created follow-up.
+  const ownYearConflict = nextDueDate
+    ? await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId, params.data.id)
+    : null;
+
+  const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
+  let warning: string | undefined;
+  if (followUp.created === false && followUp.reason === "duplicate_year") {
+    warning = `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`;
+  } else if (ownYearConflict) {
+    warning = `This record's Next Due date (${ownYearConflict.dueYear}) conflicts with another ${typeLabel} inspection already on file for this unit in ${ownYearConflict.dueYear}. A follow-up record was not created. Go to the Inspections menu, verify all dates are correct, and resolve the duplicate year before continuing.`;
+  }
   res.json({ ...formatted, _warning: warning });
 });
 
