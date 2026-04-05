@@ -294,7 +294,7 @@ export default function Dashboard() {
               <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
                 <CardHeader title={label} />
                 <div className="relative flex-1 flex items-center justify-center py-6 overflow-hidden">
-                  <div className={`absolute -bottom-3 -right-3 w-28 h-28 opacity-[0.09] pointer-events-none select-none ${iconCls} [&>svg]:w-full [&>svg]:h-full`}>{icon}</div>
+                  <div className={`absolute top-3 right-3 w-8 h-8 opacity-30 pointer-events-none select-none ${iconCls} [&>svg]:w-full [&>svg]:h-full`}>{icon}</div>
                   <div className={`relative text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
                 </div>
               </div>
