@@ -33,114 +33,61 @@ router.get("/summary", async (req, res) => {
 
   const currentYear = dayjs().year();
   const todayStr = dayjs().format("YYYY-MM-DD");
+  // Pass IDs as a comma-separated string; empty string means "no filter".
+  // This avoids Drizzle expanding arrays into ($2,$3,...) which breaks ::int[] casts.
+  const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
-  const buildingCustomerFilter = effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
-  const baseCondition = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
+  // Single-pass query using COUNT(*) FILTER to replace 7 separate round-trips
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*) FILTER (
+        WHERE i.status = 'NOT_STARTED'
+          AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+      ) AS not_started,
+      COUNT(*) FILTER (
+        WHERE i.scheduled_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.scheduled_date::date) = ${currentYear}
+      ) AS scheduled,
+      COUNT(*) FILTER (WHERE i.status = 'IN_PROGRESS') AS in_progress,
+      COUNT(*) FILTER (
+        WHERE i.completion_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}
+      ) AS completed,
+      COUNT(*) FILTER (
+        WHERE i.completion_date IS NULL
+          AND i.next_due_date IS NOT NULL
+          AND i.next_due_date::date < ${todayStr}::date
+      ) AS overdue,
+      AVG(i.scheduled_date::date - i.next_due_date::date) FILTER (
+        WHERE i.scheduled_date IS NOT NULL
+          AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.scheduled_date::date) = ${currentYear}
+      ) AS avg_schedule,
+      AVG(i.completion_date::date - i.next_due_date::date) FILTER (
+        WHERE i.completion_date IS NOT NULL
+          AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}
+      ) AS avg_complete
+    FROM inspections i
+    JOIN elevators e ON e.id = i.elevator_id
+    JOIN buildings b ON b.id = e.building_id
+    WHERE i.organization_id = ${orgId}
+      AND (${customerParam} = '' OR b.customer_id = ANY(string_to_array(${customerParam}, ',')::int[]))
+  `) as unknown as { rows: any[] };
 
-  // NOT STARTED: status = NOT_STARTED AND nextDueDate in current year
-  const notStartedQuery = db.select({ count: count() })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      baseCondition,
-      eq(inspectionsTable.status, "NOT_STARTED"),
-      sql`${inspectionsTable.nextDueDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`,
-    ));
-
-  // SCHEDULED: any inspection with a scheduledDate in current year, regardless of status
-  const scheduledQuery = db.select({ count: count() })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      baseCondition,
-      sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
-    ));
-
-  // IN PROGRESS: status = IN_PROGRESS only (no date filter)
-  const inProgressQuery = db.select({ count: count() })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(baseCondition, eq(inspectionsTable.status, "IN_PROGRESS")));
-
-  // COMPLETED: any inspection with a completionDate in current year (any status)
-  const completedQuery = db.select({ count: count() })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      baseCondition,
-      sql`${inspectionsTable.completionDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`,
-    ));
-
-  // OVERDUE: no completionDate AND nextDueDate is in the past
-  const overdueQuery = db.select({ count: count() })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      baseCondition,
-      sql`${inspectionsTable.completionDate} IS NULL`,
-      sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayStr}::date`,
-    ));
-
-  // Avg Days to Schedule: AVG(scheduledDate - nextDueDate) for inspections with scheduledDate this year
-  const avgScheduleQuery = db.select({
-    avg: sql<string>`AVG(${inspectionsTable.scheduledDate}::date - ${inspectionsTable.nextDueDate}::date)`,
-  })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      baseCondition,
-      sql`${inspectionsTable.scheduledDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`,
-      sql`EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
-    ));
-
-  // Avg Days to Complete: AVG(completionDate - nextDueDate) for inspections with completionDate this year
-  const avgCompleteQuery = db.select({
-    avg: sql<string>`AVG(${inspectionsTable.completionDate}::date - ${inspectionsTable.nextDueDate}::date)`,
-  })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      baseCondition,
-      sql`${inspectionsTable.completionDate} IS NOT NULL AND ${inspectionsTable.nextDueDate} IS NOT NULL`,
-      sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`,
-    ));
-
-  const [
-    [notStartedRow],
-    [scheduledRow],
-    [inProgressRow],
-    [completedRow],
-    [overdueRow],
-    [avgScheduleRow],
-    [avgCompleteRow],
-  ] = await Promise.all([
-    notStartedQuery,
-    scheduledQuery,
-    inProgressQuery,
-    completedQuery,
-    overdueQuery,
-    avgScheduleQuery,
-    avgCompleteQuery,
-  ]);
-
+  const row = result.rows[0] ?? {};
   const parseAvg = (val: string | null): number | null =>
     val == null ? null : parseFloat(parseFloat(val).toFixed(1));
 
   res.json({
-    notStartedCount:    Number(notStartedRow.count),
-    scheduledCount:     Number(scheduledRow.count),
-    inProgressCount:    Number(inProgressRow.count),
-    completedCount:     Number(completedRow.count),
-    overdueCount:       Number(overdueRow.count),
-    avgDaysToSchedule:  parseAvg(avgScheduleRow?.avg ?? null),
-    avgDaysToComplete:  parseAvg(avgCompleteRow?.avg ?? null),
+    notStartedCount:   Number(row.not_started   ?? 0),
+    scheduledCount:    Number(row.scheduled      ?? 0),
+    inProgressCount:   Number(row.in_progress    ?? 0),
+    completedCount:    Number(row.completed      ?? 0),
+    overdueCount:      Number(row.overdue        ?? 0),
+    avgDaysToSchedule: parseAvg(row.avg_schedule ?? null),
+    avgDaysToComplete: parseAvg(row.avg_complete ?? null),
   });
 });
 
@@ -231,51 +178,49 @@ router.get("/status-breakdown", async (req, res) => {
     return;
   }
 
-  const buildingCustomerFilter = effectiveIds !== null ? inArray(buildingsTable.customerId, effectiveIds) : undefined;
-  const baseC = and(eq(inspectionsTable.organizationId, orgId), buildingCustomerFilter);
+  const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
-  const dueDateYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}`;
-  const completionYearFilter = sql`EXTRACT(YEAR FROM ${inspectionsTable.completionDate}::date) = ${currentYear}`;
+  // Single-pass query replacing 5 separate round-trips
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*) FILTER (
+        WHERE i.status = 'NOT_STARTED'
+          AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+      ) AS not_started,
+      COUNT(*) FILTER (
+        WHERE i.scheduled_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.scheduled_date::date) = ${currentYear}
+      ) AS scheduled,
+      COUNT(*) FILTER (
+        WHERE i.status = 'IN_PROGRESS'
+          AND i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+      ) AS in_progress,
+      COUNT(*) FILTER (
+        WHERE i.completion_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}
+      ) AS completed,
+      COUNT(*) FILTER (
+        WHERE i.completion_date IS NULL
+          AND i.next_due_date IS NOT NULL
+          AND i.next_due_date::date < ${todayBd}::date
+      ) AS overdue
+    FROM inspections i
+    JOIN elevators e ON e.id = i.elevator_id
+    JOIN buildings b ON b.id = e.building_id
+    WHERE i.organization_id = ${orgId}
+      AND (${customerParam} = '' OR b.customer_id = ANY(string_to_array(${customerParam}, ',')::int[]))
+  `) as unknown as { rows: any[] };
 
-  const makeStatusQuery = (status: string) => {
-    if (status === "SCHEDULED") {
-      // Scheduled = any inspection with a scheduledDate in current year, regardless of status
-      return db.select({ count: count() })
-        .from(inspectionsTable)
-        .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-        .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-        .where(and(
-          baseC,
-          sql`${inspectionsTable.scheduledDate} IS NOT NULL AND EXTRACT(YEAR FROM ${inspectionsTable.scheduledDate}::date) = ${currentYear}`,
-        ));
-    }
-    const dateFilter = status === "COMPLETED" ? completionYearFilter : dueDateYearFilter;
-    return db.select({ count: count() })
-      .from(inspectionsTable)
-      .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-      .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-      .where(and(baseC, eq(inspectionsTable.status, status), dateFilter));
-  };
-
-  const storedResults = await Promise.all(
-    ["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"].map(async (status) => {
-      const [row] = await makeStatusQuery(status);
-      return { status, count: Number(row.count) };
-    })
-  );
-
-  // Overdue = all past-due open (no completion date), regardless of year
-  const [overdueRow] = await db.select({ count: count() })
-    .from(inspectionsTable)
-    .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
-    .leftJoin(buildingsTable, eq(elevatorsTable.buildingId, buildingsTable.id))
-    .where(and(
-      baseC,
-      sql`${inspectionsTable.completionDate} IS NULL`,
-      sql`${inspectionsTable.nextDueDate} IS NOT NULL AND ${inspectionsTable.nextDueDate}::date < ${todayBd}::date`,
-    ));
-
-  res.json([...storedResults, { status: "OVERDUE", count: Number(overdueRow.count) }]);
+  const row = result.rows[0] ?? {};
+  res.json([
+    { status: "NOT_STARTED", count: Number(row.not_started ?? 0) },
+    { status: "SCHEDULED",   count: Number(row.scheduled   ?? 0) },
+    { status: "IN_PROGRESS", count: Number(row.in_progress ?? 0) },
+    { status: "COMPLETED",   count: Number(row.completed   ?? 0) },
+    { status: "OVERDUE",     count: Number(row.overdue     ?? 0) },
+  ]);
 });
 
 router.get("/overdue-by-building", async (req, res) => {
@@ -387,30 +332,27 @@ router.get("/aging", async (req, res) => {
 
   if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([
-      EMPTY("Current", "Current",             0),
-      EMPTY("1–30",    "Overdue 1–30 Days",   1),
-      EMPTY("31–60",   "Overdue 31–60 Days",  31),
-      EMPTY("61–90",   "Overdue 61–90 Days",  61),
-      EMPTY("91–120",  "Overdue 91–120 Days", 91),
-      EMPTY("121+",    "Overdue 121+ Days",   121),
+      EMPTY("Current", "Current",              0),
+      EMPTY("1-30",    "Overdue 1-30 Days",    1),
+      EMPTY("31-60",   "Overdue 31-60 Days",  31),
+      EMPTY("61-90",   "Overdue 61-90 Days",  61),
+      EMPTY("91-120",  "Overdue 91-120 Days", 91),
+      EMPTY("121+",    "Overdue 121+ Days",  121),
     ]);
     return;
   }
 
-  // Count every open inspection record (no per-elevator deduplication) so totals
-  // align with the Overdue Inspections table on the same dashboard.
-  const customerClause = effectiveIds !== null && effectiveIds.length > 0
-    ? sql`AND b.customer_id = ANY(ARRAY[${sql.join(effectiveIds.map(id => sql`${id}`), sql`, `)}])`
-    : sql``;
+  // Pass IDs as a comma-separated string to avoid Drizzle expanding arrays into ($2,$3,...)
+  const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
   const rows = await db.execute(sql`
     SELECT
       CASE
         WHEN i.next_due_date::date >= CURRENT_DATE                           THEN 'Current'
-        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 1  AND 30         THEN '1–30'
-        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 31 AND 60         THEN '31–60'
-        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 61 AND 90         THEN '61–90'
-        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 91 AND 120        THEN '91–120'
+        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 1  AND 30         THEN '1-30'
+        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 31 AND 60         THEN '31-60'
+        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 61 AND 90         THEN '61-90'
+        WHEN CURRENT_DATE - i.next_due_date::date BETWEEN 91 AND 120        THEN '91-120'
         ELSE '121+'
       END AS bucket,
       i.status,
@@ -421,20 +363,20 @@ router.get("/aging", async (req, res) => {
     WHERE i.organization_id = ${orgId}
       AND i.completion_date IS NULL
       AND i.next_due_date   IS NOT NULL
-      ${customerClause}
+      AND (${customerParam} = '' OR b.customer_id = ANY(string_to_array(${customerParam}, ',')::int[]))
     GROUP BY 1, i.status
   `) as unknown as { rows: { bucket: string; status: string; count: string }[] };
 
-  const ORDER = ["Current", "1–30", "31–60", "61–90", "91–120", "121+"];
+  const ORDER = ["Current", "1-30", "31-60", "61-90", "91-120", "121+"];
   const LABELS: Record<string, string> = {
     "Current": "Current",
-    "1–30":    "Overdue 1–30 Days",
-    "31–60":   "Overdue 31–60 Days",
-    "61–90":   "Overdue 61–90 Days",
-    "91–120":  "Overdue 91–120 Days",
+    "1-30":    "Overdue 1-30 Days",
+    "31-60":   "Overdue 31-60 Days",
+    "61-90":   "Overdue 61-90 Days",
+    "91-120":  "Overdue 91-120 Days",
     "121+":    "Overdue 121+ Days",
   };
-  const DAYS: Record<string, number> = { "Current": 0, "1–30": 1, "31–60": 31, "61–90": 61, "91–120": 91, "121+": 121 };
+  const DAYS: Record<string, number> = { "Current": 0, "1-30": 1, "31-60": 31, "61-90": 61, "91-120": 91, "121+": 121 };
 
   type BucketData = { bucket: string; label: string; days: number; notStarted: number; scheduled: number; inProgress: number };
   const bucketMap = new Map<string, BucketData>(
