@@ -346,9 +346,12 @@ export default function Customers() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
-          <p className="text-muted-foreground italic">
-            This menu lists the customers you have access to. For any changes, please contact your system administrator.
-          </p>
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2 whitespace-nowrap">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+              This menu lists the customers you have access to. For any changes, please contact your system administrator.
+            </p>
+          </div>
         </div>
 
         {isAdmin && (
