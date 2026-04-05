@@ -795,9 +795,9 @@ export default function Inspections() {
                       <div>
                         <span className="text-sm font-bold text-zinc-900">{group.elevatorName}</span>
                         <div className="flex items-center gap-2 mt-0.5">
-                          {group.bank && <span className="text-xs text-zinc-500">Bank: <span className="font-medium text-zinc-700">{group.bank}</span></span>}
-                          {group.bank && group.elevatorType && <span className="text-zinc-300 text-xs">·</span>}
-                          {group.elevatorType && <span className="text-xs text-zinc-500 capitalize">{group.elevatorType}</span>}
+                          {group.bank && <span className="text-zinc-500 text-[20px]">Bank: <span className="font-medium text-zinc-700">{group.bank}</span></span>}
+                          {group.bank && group.elevatorType && <span className="text-zinc-300 text-[20px]">·</span>}
+                          {group.elevatorType && <span className="text-zinc-500 text-[20px] capitalize">{group.elevatorType}</span>}
                         </div>
                       </div>
                     </div>
