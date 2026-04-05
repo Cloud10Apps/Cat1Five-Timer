@@ -919,15 +919,15 @@ export default function Inspections() {
                   <div className="divide-y divide-zinc-200">
                     {/* Column header row */}
                     <div className="grid items-center gap-3 px-4 py-2 bg-zinc-50/80 border-b border-zinc-200"
-                      style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1fr 1fr 1.1fr 1.5fr 72px" }}>
+                      style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 1fr 1.5fr 72px" }}>
                       <div />
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">#</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Type</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Last Insp.</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Next Due</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Status</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Scheduled</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Completed</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Status</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Aging</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-right">Actions</span>
                     </div>
@@ -965,7 +965,7 @@ export default function Inspections() {
                         return (
                           <div key={insp.id}
                             className={`grid items-center gap-3 px-4 py-2 transition-colors ${rowBg}`}
-                            style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1fr 1fr 1.1fr 1.5fr 72px" }}>
+                            style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.1fr 1fr 1fr 1.5fr 72px" }}>
 
                             {/* Checkbox */}
                             <input type="checkbox" checked={isSelected} onChange={() => toggleOne(insp.id)}
@@ -994,6 +994,9 @@ export default function Inspections() {
                               </span>
                             </div>
 
+                            {/* Status */}
+                            <div className="flex justify-center"><StatusBadge status={(insp as any).trueStatus ?? insp.status} /></div>
+
                             {/* Scheduled */}
                             <div className="flex justify-center">
                               <span className="text-sm tabular-nums text-zinc-600">
@@ -1007,9 +1010,6 @@ export default function Inspections() {
                                 {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
                               </span>
                             </div>
-
-                            {/* Status */}
-                            <div className="flex justify-center"><StatusBadge status={(insp as any).trueStatus ?? insp.status} /></div>
 
                             {/* Aging: pill + days */}
                             <div className="flex items-center justify-center gap-1.5 flex-wrap">
