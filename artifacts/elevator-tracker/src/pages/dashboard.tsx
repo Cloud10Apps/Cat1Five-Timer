@@ -522,14 +522,13 @@ export default function Dashboard() {
                       <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 pl-4">Unit / Building</TableHead>
                       <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Type</TableHead>
                       <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Status</TableHead>
-                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Was Due</TableHead>
-                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">How Overdue</TableHead>
+                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">Was Due</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {overdueItems.length===0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10 text-sm text-zinc-500 font-medium">
+                        <TableCell colSpan={4} className="text-center py-10 text-sm text-zinc-500 font-medium">
                           <div className="flex flex-col items-center gap-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-green-500">
                               <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
@@ -539,7 +538,6 @@ export default function Dashboard() {
                         </TableCell>
                       </TableRow>
                     ) : overdueItems.map((insp:any) => {
-                      const daysOver = insp.nextDueDate ? dayjs().diff(dayjs(insp.nextDueDate),"day") : null;
                       return (
                         <TableRow key={insp.id} className="hover:bg-red-100/40 border-b border-red-100/60 transition-colors duration-150">
                           <TableCell className="py-3 pl-4">
@@ -548,13 +546,10 @@ export default function Dashboard() {
                           </TableCell>
                           <TableCell className="py-3 text-center"><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
                           <TableCell className="py-3 text-center"><StatusBadge status={insp.rawStatus} /></TableCell>
-                          <TableCell className="py-3 text-center">
+                          <TableCell className="py-3 text-center pr-4">
                             <span className="text-sm font-semibold text-zinc-800">
                               {insp.nextDueDate?dayjs(insp.nextDueDate).format("MMM D, YYYY"):"N/A"}
                             </span>
-                          </TableCell>
-                          <TableCell className="py-3 text-center pr-4">
-                            {daysOver!==null&&<OverdueBadge days={daysOver} />}
                           </TableCell>
                         </TableRow>
                       );
