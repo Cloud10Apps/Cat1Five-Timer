@@ -923,7 +923,7 @@ export default function Elevators() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Elevators</h1>
-          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2 max-w-2xl">
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2 whitespace-nowrap">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
             <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
               This menu keeps all current open inspections front and center. Once completed, inspection records are automatically moved to the <span className="font-semibold">Inspection Records</span> menu for historical tracking.
