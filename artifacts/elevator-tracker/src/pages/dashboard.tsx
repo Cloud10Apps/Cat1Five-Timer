@@ -281,16 +281,21 @@ export default function Dashboard() {
         <section>
           <SectionLabel>Volume</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label:"Not Scheduled", value:summary?.notStartedCount??0, numCls:"text-zinc-800",  topCls:"border-t-zinc-400" },
-              { label:"Scheduled",     value:summary?.scheduledCount??0,  numCls:"text-blue-700",  topCls:"border-t-blue-500" },
-              { label:"In Progress",   value:summary?.inProgressCount??0, numCls:"text-amber-600", topCls:"border-t-amber-500" },
-              { label:"Completed",     value:summary?.completedCount??0,  numCls:"text-green-700", topCls:"border-t-green-500" },
-            ].map(({ label, value, numCls, topCls }) => (
+            {([
+              { label:"Not Scheduled", value:summary?.notStartedCount??0, numCls:"text-zinc-800",  topCls:"border-t-zinc-400", iconCls:"text-zinc-400",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8Zm7.75-4.25a.75.75 0 0 0-1.5 0V8c0 .414.336.75.75.75h3.25a.75.75 0 0 0 0-1.5h-2.5V3.75Z" clipRule="evenodd" /></svg> },
+              { label:"Scheduled",     value:summary?.scheduledCount??0,  numCls:"text-blue-700",  topCls:"border-t-blue-500", iconCls:"text-blue-400",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clipRule="evenodd" /></svg> },
+              { label:"In Progress",   value:summary?.inProgressCount??0, numCls:"text-amber-600", topCls:"border-t-amber-500", iconCls:"text-amber-400",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08 1.01.75.75 0 1 1-1.3-.75 6 6 0 0 1 9.44-1.345l.842.841V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.345l-.842-.841v1.273a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.84.841a4.5 4.5 0 0 0 7.08-1.01.75.75 0 0 1 1.025-.295Z" clipRule="evenodd" /></svg> },
+              { label:"Completed",     value:summary?.completedCount??0,  numCls:"text-green-700", topCls:"border-t-green-500", iconCls:"text-green-500",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg> },
+            ] as { label:string; value:number; numCls:string; topCls:string; iconCls:string; icon:React.ReactNode }[]).map(({ label, value, numCls, topCls, iconCls, icon }) => (
               <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
                 <CardHeader title={label} />
-                <div className="flex-1 flex items-center justify-center py-6">
-                  <div className={`text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
+                <div className="relative flex-1 flex items-center justify-center py-6 overflow-hidden">
+                  <div className={`absolute -bottom-3 -right-3 w-28 h-28 opacity-[0.09] pointer-events-none select-none ${iconCls} [&>svg]:w-full [&>svg]:h-full`}>{icon}</div>
+                  <div className={`relative text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
                 </div>
               </div>
             ))}
