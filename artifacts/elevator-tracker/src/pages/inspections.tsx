@@ -468,7 +468,7 @@ export default function Inspections() {
   if (selectedInspTypes.length    > 0) activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes,   INSP_TYPE_OPTIONS,    "types"),     onRemove: () => setSelectedInspTypes([]) });
   if (filterDueMonths.length      > 0) activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths,     MONTH_OPTIONS,        "months"),    onRemove: () => setFilterDueMonths([]) });
   if (filterDueYears.length       > 0) activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears,      yearFilterOptions,    "years"),     onRemove: () => setFilterDueYears([]) });
-  if (selectedStatuses.length     > 0) activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses,    STATUS_OPTIONS,       "statuses"),  onRemove: () => setSelectedStatuses([]) });
+  if (selectedStatuses.length     > 0) activeChips.push({ label: "Inspection Status", value: chipLabel(selectedStatuses, STATUS_OPTIONS, "statuses"), onRemove: () => setSelectedStatuses([]) });
   if (filterAgingBuckets.length   > 0) activeChips.push({ label: "Due Status", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"),   onRemove: () => setFilterAgingBuckets([]) });
   if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
@@ -620,7 +620,7 @@ export default function Inspections() {
                     <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Schedule</p>
                     <div className="grid grid-cols-3 gap-4">
                       <FormField control={form.control} name="status" render={({ field }) => (
-                        <FormItem><FormLabel>Status</FormLabel>
+                        <FormItem><FormLabel>Inspection Status</FormLabel>
                           <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { form.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); form.setValue("completionDate", ""); } else if (val === "COMPLETED") { form.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { form.setValue("completionDate", ""); } }}>
                             <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
@@ -705,7 +705,7 @@ export default function Inspections() {
               {/* Group 3 — Schedule & Status */}
               <FilterCombobox value={filterDueMonths}     onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }}       options={MONTH_OPTIONS}      placeholder="Due Month"     searchPlaceholder="Search months..."     width="w-[150px]" />
               <FilterCombobox value={filterDueYears}      onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }}        options={yearFilterOptions}  placeholder="Due Year"      searchPlaceholder="Search years..."      width="w-[130px]" />
-              <FilterCombobox value={selectedStatuses}    onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}      options={STATUS_OPTIONS}     placeholder="All Statuses"  searchPlaceholder="Search statuses..."   width="w-[160px]" />
+              <FilterCombobox value={selectedStatuses}    onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}      options={STATUS_OPTIONS}     placeholder="Insp. Status"  searchPlaceholder="Search statuses..."   width="w-[150px]" />
               <FilterCombobox value={filterAgingBuckets}  onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }}    options={AGING_BUCKET_OPTIONS} placeholder="Due Status"   searchPlaceholder="Search buckets..."   width="w-[165px]" />
               <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
               {/* Date Ranges toggle */}
@@ -938,7 +938,7 @@ export default function Inspections() {
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Type</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Last Insp.</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Next Due</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Status</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Inspection Status</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Scheduled</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Completed</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Due Status</span>

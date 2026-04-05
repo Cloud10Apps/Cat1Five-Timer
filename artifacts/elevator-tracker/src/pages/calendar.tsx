@@ -327,7 +327,7 @@ export default function CalendarView() {
   if (selectedInspTypes.length   > 0) activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes,   INSP_TYPE_OPTIONS,    "types"),     onRemove: () => setSelectedInspTypes([]) });
   if (filterDueMonths.length     > 0) activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths,     MONTH_OPTIONS,        "months"),    onRemove: () => setFilterDueMonths([]) });
   if (filterDueYears.length      > 0) activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears,      yearFilterOptions,    "years"),     onRemove: () => setFilterDueYears([]) });
-  if (selectedStatuses.length    > 0) activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses,    STATUS_OPTIONS,       "statuses"),  onRemove: () => setSelectedStatuses([]) });
+  if (selectedStatuses.length    > 0) activeChips.push({ label: "Inspection Status", value: chipLabel(selectedStatuses, STATUS_OPTIONS, "statuses"), onRemove: () => setSelectedStatuses([]) });
   if (filterAgingBuckets.length  > 0) activeChips.push({ label: "Due Status", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"),   onRemove: () => setFilterAgingBuckets([]) });
   if (hasDateFilters)                 activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
@@ -481,7 +481,7 @@ export default function CalendarView() {
               {/* Group 3 — Schedule & Status */}
               <FilterCombobox value={filterDueMonths}     onValueChange={(v) => setFilterDueMonths(v)}                                               options={MONTH_OPTIONS}         placeholder="Due Month"      searchPlaceholder="Search months..."     width="w-[150px]" />
               <FilterCombobox value={filterDueYears}      onValueChange={(v) => setFilterDueYears(v)}                                                options={yearFilterOptions}     placeholder="Due Year"       searchPlaceholder="Search years..."      width="w-[130px]" />
-              <FilterCombobox value={selectedStatuses}    onValueChange={(v) => setSelectedStatuses(v)}                                              options={STATUS_OPTIONS}        placeholder="All Statuses"   searchPlaceholder="Search statuses..."   width="w-[160px]" />
+              <FilterCombobox value={selectedStatuses}    onValueChange={(v) => setSelectedStatuses(v)}                                              options={STATUS_OPTIONS}        placeholder="Insp. Status"   searchPlaceholder="Search statuses..."   width="w-[150px]" />
               <FilterCombobox value={filterAgingBuckets}  onValueChange={(v) => setFilterAgingBuckets(v)}                                            options={AGING_BUCKET_OPTIONS}  placeholder="Due Status"      searchPlaceholder="Search buckets..."    width="w-[165px]" />
               <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
               {/* Date Ranges toggle */}
@@ -721,7 +721,7 @@ export default function CalendarView() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Schedule</p>
                   <div className="grid grid-cols-3 gap-4">
                     <FormField control={form.control} name="status" render={({ field }) => (
-                      <FormItem><FormLabel>Status</FormLabel>
+                      <FormItem><FormLabel>Inspection Status</FormLabel>
                         <Select value={field.value} onValueChange={(val) => {
                           field.onChange(val);
                           if (val === "SCHEDULED") { form.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); form.setValue("completionDate", ""); }

@@ -1082,7 +1082,7 @@ export default function Elevators() {
                             {/* Row 3: Status | Scheduled Date | Completion Date */}
                             <div className="grid grid-cols-3 gap-4">
                               <FormField control={inspForm.control} name="status" render={({ field }) => (
-                                <FormItem><FormLabel>Status</FormLabel>
+                                <FormItem><FormLabel>Inspection Status</FormLabel>
                                   <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else if (val === "COMPLETED") { inspForm.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { inspForm.setValue("completionDate", ""); } }}>
                                     <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
@@ -1164,7 +1164,7 @@ export default function Elevators() {
                               {/* Row 2: Status + Scheduled Date */}
                               <div className="grid grid-cols-2 gap-4">
                                 <FormField control={inspForm.control} name="status" render={({ field }) => (
-                                  <FormItem><FormLabel>Status</FormLabel>
+                                  <FormItem><FormLabel>Inspection Status</FormLabel>
                                     <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else { inspForm.setValue("completionDate", ""); } }}>
                                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                       <SelectContent>
@@ -1223,7 +1223,7 @@ export default function Elevators() {
                               {/* Row 2: Status + Scheduled Date */}
                               <div className="grid grid-cols-2 gap-4">
                                 <FormField control={inspCat5Form.control} name="status" render={({ field }) => (
-                                  <FormItem><FormLabel>Status</FormLabel>
+                                  <FormItem><FormLabel>Inspection Status</FormLabel>
                                     <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspCat5Form.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspCat5Form.setValue("completionDate", ""); } else { inspCat5Form.setValue("completionDate", ""); } }}>
                                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                       <SelectContent>
@@ -1296,7 +1296,7 @@ export default function Elevators() {
         if (selectedInspTypes.length > 0)   activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes, inspTypeOpts, "types"),     onRemove: () => setSelectedInspTypes([]) });
         if (filterDueMonths.length > 0)     activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths, MONTH_OPTIONS, "months"),     onRemove: () => setFilterDueMonths([]) });
         if (filterDueYears.length > 0)      activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears, yearFilterOptions, "years"),   onRemove: () => setFilterDueYears([]) });
-        if (selectedStatuses.length > 0)    activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses, statusOpts, "statuses"),     onRemove: () => setSelectedStatuses([]) });
+        if (selectedStatuses.length > 0)    activeChips.push({ label: "Inspection Status", value: chipLabel(selectedStatuses, statusOpts, "statuses"), onRemove: () => setSelectedStatuses([]) });
         if (filterAgingBuckets.length > 0)  activeChips.push({ label: "Due Status", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"), onRemove: () => setFilterAgingBuckets([]) });
         if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
@@ -1402,7 +1402,7 @@ export default function Elevators() {
                 value={selectedStatuses}
                 onValueChange={setSelectedStatuses}
                 options={statusOpts}
-                placeholder="All Statuses"
+                placeholder="Insp. Status"
                 searchPlaceholder="Search statuses..."
                 width="w-[160px]"
               />
@@ -1596,7 +1596,7 @@ export default function Elevators() {
                     <span className="text-sm font-semibold text-white text-center">Due Status</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
-                    <span className="text-sm font-semibold text-white text-center">Status</span>
+                    <span className="text-sm font-semibold text-white text-center">Inspection Status</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Scheduled</span>

@@ -521,7 +521,7 @@ export default function Dashboard() {
                     <TableRow className="hover:bg-transparent border-b border-red-200 bg-red-50/70">
                       <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 pl-4">Unit / Building</TableHead>
                       <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Type</TableHead>
-                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Status</TableHead>
+                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Inspection Status</TableHead>
                       <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">Was Due</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -572,7 +572,7 @@ export default function Dashboard() {
                     <TableRow className="hover:bg-transparent border-b border-zinc-200 bg-zinc-50">
                       <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 pl-4">Unit / Building</TableHead>
                       <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Type</TableHead>
-                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Status</TableHead>
+                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Inspection Status</TableHead>
                       <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Due Date</TableHead>
                       <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">Due Status</TableHead>
                     </TableRow>

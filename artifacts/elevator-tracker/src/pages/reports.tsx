@@ -120,7 +120,7 @@ export default function Reports() {
                 <TableHead>Building</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Due Date</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Inspection Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
