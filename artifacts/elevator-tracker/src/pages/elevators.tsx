@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle, Info } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle, Info, CalendarDays } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -155,6 +155,21 @@ export default function Elevators() {
   const [filterDueYears,      setFilterDueYears]      = useState<string[]>([]);
   const [filterAgingBuckets,  setFilterAgingBuckets]  = useState<string[]>([]);
   const [selectedStatuses,    setSelectedStatuses]    = useState<string[]>([]);
+
+  const [showDateFilters, setShowDateFilters] = useState(false);
+  const [lastInspFrom,    setLastInspFrom]    = useState("");
+  const [lastInspTo,      setLastInspTo]      = useState("");
+  const [nextDueFrom,     setNextDueFrom]     = useState("");
+  const [nextDueTo,       setNextDueTo]       = useState("");
+  const [scheduledFrom,   setScheduledFrom]   = useState("");
+  const [scheduledTo,     setScheduledTo]     = useState("");
+
+  const clearDateFilters = useCallback(() => {
+    setLastInspFrom(""); setLastInspTo("");
+    setNextDueFrom(""); setNextDueTo("");
+    setScheduledFrom(""); setScheduledTo("");
+  }, []);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
   const [formCustomerId, setFormCustomerId] = useState<string>("all");
@@ -317,9 +332,20 @@ export default function Elevators() {
         const trueStatus = rowInsp ? ((rowInsp as any).trueStatus ?? rowInsp.status) : "NOT_STARTED";
         if (!selectedStatuses.includes(trueStatus)) return false;
       }
+
+      // Date range filters
+      const lastInsp = lastCompletedByElevator.get(el.id) ?? null;
+      const rowSched = rowInsp?.scheduledDate?.slice(0, 10) ?? null;
+      if (lastInspFrom && (!lastInsp || lastInsp < lastInspFrom)) return false;
+      if (lastInspTo   && (!lastInsp || lastInsp > lastInspTo))   return false;
+      if (nextDueFrom  && (!rowDue   || rowDue   < nextDueFrom))  return false;
+      if (nextDueTo    && (!rowDue   || rowDue   > nextDueTo))    return false;
+      if (scheduledFrom && (!rowSched || rowSched < scheduledFrom)) return false;
+      if (scheduledTo   && (!rowSched || rowSched > scheduledTo))   return false;
+
       return true;
     });
-  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, latestInspByElevator, filterDueMonths, filterDueYears, selectedInspTypes, filterAgingBuckets, selectedStatuses]);
+  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, latestInspByElevator, lastCompletedByElevator, filterDueMonths, filterDueYears, selectedInspTypes, filterAgingBuckets, selectedStatuses, lastInspFrom, lastInspTo, nextDueFrom, nextDueTo, scheduledFrom, scheduledTo]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -1230,8 +1256,9 @@ export default function Elevators() {
 
       {/* ── Filters ── */}
       {(() => {
-        const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses, filterAgingBuckets].filter(v => v.length > 0).length;
-        const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setFilterAgingBuckets([]); setSelectedStatuses([]); };
+        const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo);
+        const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses, filterAgingBuckets].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
+        const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setFilterAgingBuckets([]); setSelectedStatuses([]); clearDateFilters(); };
         const unitTypeOpts = [
           { value: "traction",  label: "Traction" },
           { value: "hydraulic", label: "Hydraulic" },
@@ -1259,6 +1286,7 @@ export default function Elevators() {
         if (filterDueYears.length > 0)      activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears, yearFilterOptions, "years"),   onRemove: () => setFilterDueYears([]) });
         if (selectedStatuses.length > 0)    activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses, statusOpts, "statuses"),     onRemove: () => setSelectedStatuses([]) });
         if (filterAgingBuckets.length > 0)  activeChips.push({ label: "Aging",     value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"), onRemove: () => setFilterAgingBuckets([]) });
+        if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
         return (
       <div className="flex flex-col gap-3">
@@ -1374,6 +1402,22 @@ export default function Elevators() {
                 searchPlaceholder="Search buckets..."
                 width="w-[170px]"
               />
+              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
+              {/* Date Ranges toggle */}
+              <button onClick={() => setShowDateFilters(v => !v)}
+                className={cn("h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap",
+                  showDateFilters || hasDateFilters ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-zinc-200 hover:border-zinc-300 hover:text-zinc-700 text-[#09090b]")}>
+                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                Date Ranges
+                {hasDateFilters && (
+                  <span role="button" aria-label="Clear date filters"
+                    onClick={e => { e.stopPropagation(); clearDateFilters(); }}
+                    className="h-[14px] w-[14px] rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer shrink-0">
+                    <X className="h-2 w-2 text-white" />
+                  </span>
+                )}
+                {showDateFilters ? <ChevronUp className="h-3 w-3 shrink-0" /> : <ChevronDown className="h-3 w-3 shrink-0" />}
+              </button>
             </div>
 
             {/* Right: result count + clear */}
@@ -1416,6 +1460,40 @@ export default function Elevators() {
             </div>
           )}
         </div>
+
+        {/* Date range panel */}
+        {showDateFilters && (
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm px-4 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-zinc-400" />
+                <span className="text-[13px] font-bold text-zinc-900 uppercase tracking-[0.12em]">Date Ranges</span>
+              </div>
+              {hasDateFilters && (
+                <button onClick={clearDateFilters}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
+                  <X className="h-[11px] w-[11px]" /> Clear dates
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {[
+                { label: "Last Inspection", from: lastInspFrom,  to: lastInspTo,   setFrom: setLastInspFrom,  setTo: setLastInspTo },
+                { label: "Next Due",        from: nextDueFrom,   to: nextDueTo,    setFrom: setNextDueFrom,   setTo: setNextDueTo },
+                { label: "Scheduled Date",  from: scheduledFrom, to: scheduledTo,  setFrom: setScheduledFrom, setTo: setScheduledTo },
+              ].map(({ label, from, to, setFrom, setTo }) => (
+                <div key={label} className="space-y-1.5">
+                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-[0.1em]">{label}</p>
+                  <div className="flex gap-1.5 items-center">
+                    <input type="date" className="h-9 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
+                    <span className="text-zinc-300 text-sm shrink-0">–</span>
+                    <input type="date" className="h-9 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to} onChange={e => setTo(e.target.value)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Row 2: expand/collapse depth selector */}
         {!isLoading && grouped.length > 0 && (
