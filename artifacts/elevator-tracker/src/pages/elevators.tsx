@@ -557,12 +557,14 @@ export default function Elevators() {
       }
     }
 
+    const [cat1Valid, cat5Valid] = await Promise.all([inspForm.trigger(), inspCat5Form.trigger()]);
+    if (!cat1Valid || !cat5Valid) return;
     const cat1Data = inspForm.getValues();
     const cat5Data = inspCat5Form.getValues();
     try {
       await Promise.all([
-        createInspMutation.mutateAsync({ data: { ...cat1Data, elevatorId, lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
-        createInspMutation.mutateAsync({ data: { ...cat5Data, elevatorId, lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat1Data, elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat5Data, elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
       ]);
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
