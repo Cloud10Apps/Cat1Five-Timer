@@ -363,6 +363,10 @@ router.get("/aging", async (req, res) => {
     WHERE i.organization_id = ${orgId}
       AND i.completion_date IS NULL
       AND i.next_due_date   IS NOT NULL
+      AND (
+        i.next_due_date::date < CURRENT_DATE
+        OR EXTRACT(YEAR FROM i.next_due_date::date) = EXTRACT(YEAR FROM CURRENT_DATE)
+      )
       AND (${customerParam} = '' OR b.customer_id = ANY(string_to_array(${customerParam}, ',')::int[]))
     GROUP BY 1, i.status
   `) as unknown as { rows: { bucket: string; status: string; count: string }[] };
