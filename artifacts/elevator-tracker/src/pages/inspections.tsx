@@ -378,7 +378,7 @@ export default function Inspections() {
     form.reset({
       elevatorId: insp.elevatorId, inspectionType: insp.inspectionType,
       recurrenceYears: insp.recurrenceYears,
-      status: insp.status === "OVERDUE" ? "NOT_STARTED" : insp.status,
+      status: (insp as any).trueStatus ?? insp.status,
       lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
       scheduledDate:  insp.scheduledDate  ? dayjs(insp.scheduledDate).format("YYYY-MM-DD")  : "",
       completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",
@@ -1009,11 +1009,11 @@ export default function Inspections() {
                             </div>
 
                             {/* Status */}
-                            <div className="flex justify-center"><StatusBadge status={insp.status} /></div>
+                            <div className="flex justify-center"><StatusBadge status={(insp as any).trueStatus ?? insp.status} /></div>
 
                             {/* Aging: pill + days */}
                             <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                              <AgingPill due={insp.nextDueDate} status={insp.status} />
+                              <AgingPill due={insp.nextDueDate} status={(insp as any).trueStatus ?? insp.status} />
                               {agingDaysLabel && (
                                 <span className={`text-xs tabular-nums font-medium whitespace-nowrap text-center ${isOverdue ? "text-red-500" : "text-zinc-400"}`}>
                                   ({agingDaysLabel})
