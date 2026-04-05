@@ -292,7 +292,7 @@ export default function Dashboard() {
                 icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg> },
             ] as { label:string; value:number; numCls:string; topCls:string; iconCls:string; icon:React.ReactNode }[]).map(({ label, value, numCls, topCls, iconCls, icon }) => (
               <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
-                <CardHeader title={label} action={<span className={`w-4 h-4 opacity-50 ${iconCls} [&>svg]:w-full [&>svg]:h-full`}>{icon}</span>} />
+                <CardHeader title={label} action={<span className={`w-6 h-6 opacity-50 ${iconCls} [&>svg]:w-full [&>svg]:h-full`}>{icon}</span>} />
                 <div className="flex-1 flex items-center justify-center py-6">
                   <div className={`text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
                 </div>
