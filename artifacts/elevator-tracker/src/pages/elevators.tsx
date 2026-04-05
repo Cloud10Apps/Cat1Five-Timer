@@ -1557,7 +1557,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-x-auto shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid min-w-[1640px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_150px_150px_125px_130px_150px_145px_90px_155px_160px_145px_85px]"
+                  className="w-full grid min-w-[1550px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_150px_150px_125px_130px_150px_145px_155px_160px_145px_85px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1587,9 +1587,6 @@ export default function Elevators() {
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Next Due</span>
-                  </div>
-                  <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-sm font-semibold text-white text-center">Days</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Aging Bucket</span>
@@ -1658,7 +1655,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className="grid min-w-[1640px] grid-cols-[1fr_150px_150px_125px_130px_150px_145px_90px_155px_160px_145px_85px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
+                                          className="grid min-w-[1550px] grid-cols-[1fr_150px_150px_125px_130px_150px_145px_155px_160px_145px_85px] group relative hover:bg-amber-50/60 transition-colors border-b border-zinc-300"
                                         >
                                           {/* Amber accent bar — absolute left edge */}
                                           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
@@ -1701,15 +1698,6 @@ export default function Elevators() {
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
-                                          </div>
-                                          {/* Aging Days */}
-                                          <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
-                                            {(() => {
-                                              const days = getAgingDays(due);
-                                              if (days === null) return <span className="text-zinc-300 text-sm">—</span>;
-                                              const color = days > 90 ? "text-red-700 font-bold" : days > 60 ? "text-red-600 font-semibold" : days > 30 ? "text-orange-600 font-semibold" : days > 0 ? "text-amber-600 font-semibold" : "text-emerald-600";
-                                              return <span className={`text-sm tabular-nums ${color}`}>{days > 0 ? `+${days}` : days}</span>;
-                                            })()}
                                           </div>
                                           {/* Aging Bucket */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
