@@ -1,0 +1,101 @@
+🔴 1. REDUCE RED OVERLOAD (CRITICAL)
+
+Reduce the visual intensity of the red alert areas:
+
+Keep the top alert banner red
+Change the Overdue table background to a very light red tint (5–10%), not solid
+Keep strong red only for:
+Icons
+Aging badges
+Banner
+
+👉 Right now it feels like an error screen, not a dashboard
+
+⚖️ 2. BALANCE “OVERDUE” vs “UPCOMING”
+
+Make the “Upcoming — Next 14 Days” card visually equal in weight to the overdue card:
+
+Increase its contrast slightly (light gray background or subtle border)
+Match height and padding with overdue card
+Ensure both cards feel like equal importance sections
+
+👉 Right now:
+Overdue = 🔥
+Upcoming = 😐
+
+You want:
+Overdue = 🔥
+Upcoming = ⚠️
+
+🧠 3. FIX THE TOP ALERT BANNER (MAKE IT SMARTER)
+
+Improve the alert banner:
+
+Reduce height slightly
+Add subtle icon (⚠️)
+Add optional action link:
+“View overdue inspections”
+Add dismiss capability (optional)
+📊 4. UPGRADE CHART VISUAL QUALITY
+
+Improve all charts:
+
+Increase bar thickness
+Remove unnecessary gridlines
+Increase label font size slightly
+Ensure colors match KPI/status colors exactly
+Add subtle hover interaction
+
+👉 Still looks like default chart.js right now
+
+🧱 5. ADD SECTION DIVIDERS (VISUAL FLOW)
+
+Improve section separation:
+
+Add subtle divider or spacing block between:
+Action Required
+Volume
+Performance
+Analytics
+Slightly increase spacing (32px+)
+
+👉 Right now sections blend together
+
+🔢 6. FIX KPI CARD VISUAL POLISH
+
+Improve KPI cards:
+
+Add subtle top border color per status:
+Blue (Scheduled)
+Green (Completed)
+Orange (In Progress)
+Slightly increase number size
+Reduce label opacity
+
+👉 This adds personality without clutter
+
+📈 7. MAKE PERFORMANCE METRICS FEEL LESS EMPTY
+
+Improve performance metric cards:
+
+Move label ABOVE the number (not tiny above)
+Add small icon (clock)
+Reduce empty space
+Slightly tighten layout
+🧾 8. CLEAN UP TEXT + LABELS
+
+Standardize casing and labels:
+
+“Not Scheduled” (not all caps)
+“In Progress” (not IN PROGRESS)
+Make everything sentence case
+
+👉 Small change = big polish
+
+⚡ 9. ADD MICRO-INTERACTIONS
+
+Add subtle interactions:
+
+Hover highlight rows
+Slight elevation on hover for cards
+Smooth transitions on load
