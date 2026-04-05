@@ -991,8 +991,7 @@ export default function Inspections() {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <AgingPill due={insp.nextDueDate} status={insp.status} />
                               {agingDaysLabel && (
-                                <span className={`text-xs tabular-nums font-medium whitespace-nowrap
-                                  ${isOverdue ? "text-red-500" : "text-zinc-400"}`}>
+                                <span className={`text-xs tabular-nums font-medium whitespace-nowrap text-center ${isOverdue ? "text-red-500" : "text-zinc-400"}`}>
                                   ({agingDaysLabel})
                                 </span>
                               )}
