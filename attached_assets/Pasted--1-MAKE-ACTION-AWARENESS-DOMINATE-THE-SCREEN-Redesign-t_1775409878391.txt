@@ -1,0 +1,114 @@
+🔴 1. MAKE “ACTION & AWARENESS” DOMINATE THE SCREEN
+
+Redesign the “Action & Awareness” section to be the most visually prominent part of the dashboard. Increase its size, padding, and contrast. This section should immediately draw the user’s attention before any charts.
+
+Specific changes:
+Increase card height by 20–30%
+Use stronger background contrast (very light red tint)
+Add bold left border (4px red)
+Increase title font size
+Add icon: ⚠️
+🔥 2. FIX OVERDUE ROW VISUAL (BIG PROBLEM)
+
+Right now:
+👉 “361d overdue” looks small and weak
+
+Instruction:
+
+Redesign the “Aging” badge in overdue rows:
+
+Increase badge size
+Use stronger red background
+Bold text
+Add icon (⚠️ or clock)
+Format large values as:
+“361 days overdue”
+OR “1+ year overdue” (preferred)
+⚡ 3. STOP USING LOW-CONTRAST GRAY EVERYWHERE
+
+Increase contrast across the dashboard:
+
+Darken titles and labels
+Reduce use of light gray text
+Make section headers more prominent
+Ensure primary text is clearly readable
+
+👉 Right now everything feels “washed out”
+
+📊 4. FIX CHARTS (THEY STILL LOOK DEFAULT)
+Instruction:
+
+Improve all charts to feel more custom and product-grade:
+
+Increase bar thickness by ~30%
+Add value labels to bars
+Remove unnecessary gridlines
+Increase spacing between categories
+Ensure consistent color mapping across all charts
+🧠 5. ADD A CLEAR “WHAT SHOULD I DO” SIGNAL
+
+Add a summary message above the “Action & Awareness” section:
+
+Example:
+“1 overdue inspection requires immediate attention”
+Style as bold text with subtle background
+
+👉 This turns the dashboard from passive → actionable
+
+🧱 6. FIX KPI SECTION (STILL TOO FLAT)
+Instruction:
+
+Improve KPI cards:
+
+Add subtle elevation (shadow increase)
+Increase number size slightly
+Reduce spacing between label and number
+Add subtle hover effect
+🎯 7. MAKE PERFORMANCE METRICS LESS DEAD
+
+Right now:
+👉 Big numbers sitting in empty space
+
+Instruction:
+
+Improve performance metric cards:
+
+Add small context text:
+“Average time from due date to scheduling”
+Add subtle visual indicator (icon or trend placeholder)
+Reduce empty space by tightening layout
+🧩 8. IMPROVE SECTION SEPARATION
+
+Increase vertical spacing between sections to clearly separate:
+
+Volume
+Performance
+Analytics
+Action & Awareness
+
+👉 Add subtle divider lines or spacing blocks
+
+🎨 9. ADD VISUAL DEPTH (RIGHT NOW IT’S TOO FLAT)
+
+Improve visual depth:
+
+Slightly increase shadows on cards
+Add subtle gradient or background variation
+Avoid everything looking like one flat layer
+⚠️ 10. CRITICAL: PRIORITIZE ACTION OVER ANALYTICS
+
+Reorder visual emphasis so that:
+
+Action & Awareness (top priority visually)
+KPIs
+Charts
+
+👉 Users should see problems first, not charts
+
+💡 WHAT YOU’RE AIMING FOR
+
+Right now:
+👉 “Here’s some data”
+
+You want:
+👉 “Here’s what needs your attention RIGHT NOW”
