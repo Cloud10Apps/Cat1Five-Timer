@@ -451,7 +451,7 @@ export default function CalendarView() {
             {/* Left label */}
             <div className="flex items-center gap-2 pr-3 mr-2 border-r border-zinc-200 shrink-0 self-stretch py-0.5">
               <SlidersHorizontal className="h-[15px] w-[15px] text-zinc-400" />
-              <span className="text-[13px] font-bold text-zinc-900 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
+              <span className="text-sm font-bold text-zinc-900 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
               {activeFilterCount > 0 && (
                 <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">{activeFilterCount}</span>
               )}
@@ -500,8 +500,8 @@ export default function CalendarView() {
               </span>
               {activeFilterCount > 0 && (
                 <button onClick={clearAllFilters}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors whitespace-nowrap">
-                  <X className="h-[11px] w-[11px]" /> Clear
+                  className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors whitespace-nowrap">
+                  <X className="h-3 w-3" /> Clear
                 </button>
               )}
             </div>
@@ -510,10 +510,10 @@ export default function CalendarView() {
           {/* Active chips */}
           {activeChips.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 border-t border-zinc-100">
-              <span className="text-[11px] font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
+              <span className="text-xs font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
               {activeChips.map(chip => (
                 <span key={chip.label}
-                  className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[11px] font-medium text-blue-700 leading-none whitespace-nowrap">
+                  className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 leading-none whitespace-nowrap">
                   <span className="text-blue-400 font-normal">{chip.label}:</span>{chip.value}
                   <button onClick={chip.onRemove}
                     className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors">
@@ -531,12 +531,12 @@ export default function CalendarView() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-zinc-400" />
-                <span className="text-[13px] font-bold text-zinc-900 uppercase tracking-[0.12em]">Date Ranges</span>
+                <span className="text-sm font-bold text-zinc-900 uppercase tracking-[0.12em]">Date Ranges</span>
               </div>
               {hasDateFilters && (
                 <button onClick={clearDateFilters}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
-                  <X className="h-[11px] w-[11px]" /> Clear dates
+                  className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
+                  <X className="h-3 w-3" /> Clear dates
                 </button>
               )}
             </div>
@@ -610,7 +610,7 @@ export default function CalendarView() {
                     {overflow > 0 && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingInsp(null); setSelectedDate(date); }}
-                        className="text-[11px] text-primary font-medium px-1 text-left hover:underline"
+                        className="text-xs text-primary font-medium px-1 text-left hover:underline"
                       >
                         +{overflow} more
                       </button>
@@ -668,7 +668,7 @@ export default function CalendarView() {
 
                 {/* ── Section: Inspection Definition ── */}
                 <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-4 space-y-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Inspection Definition</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Inspection Definition</p>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="inspectionType" render={({ field }) => (
                       <FormItem><FormLabel>Type</FormLabel>
@@ -700,16 +700,16 @@ export default function CalendarView() {
                       <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
                         {nextDuePreview
                           ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                          : <span className="italic font-normal text-[13px]">Auto-calculated</span>}
+                          : <span className="italic font-normal text-sm">Auto-calculated</span>}
                       </div>
-                      <p className="text-[11px] text-zinc-400 leading-none">From last date + recurrence</p>
+                      <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
                     </div>
                   </div>
                 </div>
 
                 {/* ── Section: Schedule ── */}
                 <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-4 space-y-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Schedule</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Schedule</p>
                   <div className="grid grid-cols-3 gap-4">
                     <FormField control={form.control} name="status" render={({ field }) => (
                       <FormItem><FormLabel>Status</FormLabel>
