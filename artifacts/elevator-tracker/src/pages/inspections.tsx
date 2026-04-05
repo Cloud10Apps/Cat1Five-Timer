@@ -908,7 +908,7 @@ export default function Inspections() {
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">#</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Type</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Last Insp.</span>
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Next Due</span>
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider text-center">Next Due</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Scheduled</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Completed</span>
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Status</span>
