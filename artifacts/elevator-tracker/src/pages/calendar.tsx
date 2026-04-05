@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { ChevronLeft, ChevronRight, Pencil, Layers, AlertTriangle } from "lucide-react";
 import dayjs from "dayjs";
 import { Spinner } from "@/components/ui/spinner";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
@@ -44,7 +46,7 @@ const MAX_VISIBLE = 3;
 const editSchema = z.object({
   inspectionType: z.enum(["CAT1", "CAT5"] as const),
   recurrenceYears: z.coerce.number().min(1),
-  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"] as const),
+  status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const),
   lastInspectionDate: z.string().optional(),
   scheduledDate: z.string().optional(),
   completionDate: z.string().optional(),
@@ -128,19 +130,32 @@ export default function CalendarView() {
     defaultValues: { inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" },
   });
 
-  const watchLastDate = form.watch("lastInspectionDate");
-  const watchRecurrence = form.watch("recurrenceYears");
-  const watchCompletionDate = form.watch("completionDate");
-  const nextDuePreview = watchLastDate && watchRecurrence
-    ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("MMM D, YYYY")
-    : "—";
+  const watchLastDate    = form.watch("lastInspectionDate");
+  const watchRecurrence  = form.watch("recurrenceYears");
+  const watchStatus      = form.watch("status");
+  const watchScheduled   = form.watch("scheduledDate");
+  const watchCompletion  = form.watch("completionDate");
 
-  // Auto-promote to COMPLETED when a completion date is entered
+  const nextDuePreview = watchLastDate && watchRecurrence
+    ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
+    : null;
+
+  const completionYearMismatch =
+    watchCompletion && nextDuePreview &&
+    dayjs(watchCompletion).year() !== dayjs(nextDuePreview).year();
+
+  // Auto-set status based on date entry
   useEffect(() => {
-    if (watchCompletionDate) {
+    if (watchStatus === "NOT_STARTED" && watchScheduled) {
+      form.setValue("status", "SCHEDULED");
+    }
+  }, [watchScheduled]);
+
+  useEffect(() => {
+    if (watchCompletion) {
       form.setValue("status", "COMPLETED");
     }
-  }, [watchCompletionDate]);
+  }, [watchCompletion]);
 
   const openEdit = (insp: Inspection) => {
     setSelectedDate(null);
@@ -148,7 +163,7 @@ export default function CalendarView() {
     form.reset({
       inspectionType: insp.inspectionType,
       recurrenceYears: insp.recurrenceYears,
-      status: insp.status === "OVERDUE" ? "NOT_STARTED" : insp.status,
+      status: (insp as any).trueStatus ?? insp.status,
       lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
       scheduledDate: insp.scheduledDate ? dayjs(insp.scheduledDate).format("YYYY-MM-DD") : "",
       completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",
@@ -306,172 +321,133 @@ export default function CalendarView() {
 
       {/* Edit dialog */}
       <Dialog open={!!editingInsp} onOpenChange={(open) => { if (!open) { setEditingInsp(null); form.reset(); } }}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Pencil className="h-4 w-4 text-primary" />
-              Edit Inspection
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+
+          {/* ── Header ── */}
+          <DialogHeader className="pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2.5 text-xl">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 shrink-0">
+                <Layers className="h-4 w-4" />
+              </span>
+              {editingInsp?.elevatorName ?? "Edit Inspection"}
             </DialogTitle>
+            {editingInsp && (
+              <p className="text-sm text-muted-foreground pl-10">
+                {editingInsp.buildingName} · {editingInsp.customerName}
+              </p>
+            )}
           </DialogHeader>
 
           {editingInsp && (
-            <>
-              {/* Context bar */}
-              <div className={`rounded-lg px-3 py-2 text-sm ${statusStyle(editingInsp.status)}`}>
-                <p className="text-[11px] opacity-60 mb-0.5">{editingInsp.customerName} · {editingInsp.buildingName}</p>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">{editingInsp.elevatorName}</span>
-                  <InspectionTypeBadge type={editingInsp.inspectionType} />
-                </div>
-              </div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-1">
 
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-1">
+                {/* ── Section: Inspection Definition ── */}
+                <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-4 space-y-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Inspection Definition</p>
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Status */}
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={(val) => {
-                              field.onChange(val);
-                              if (val !== "COMPLETED") form.setValue("completionDate", "");
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
-                              <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                              <SelectItem value="COMPLETED">Completed</SelectItem>
-                              <SelectItem value="OVERDUE">Overdue</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Type */}
-                    <FormField
-                      control={form.control}
-                      name="inspectionType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
-                              <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Recurrence */}
-                    <FormField
-                      control={form.control}
-                      name="recurrenceYears"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Recurrence (Years)</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="1" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Next due preview */}
-                    <div className="flex flex-col justify-end pb-1">
-                      <p className="text-xs text-muted-foreground mb-1">Calculated Next Due</p>
-                      <p className="text-sm font-semibold">{nextDuePreview}</p>
-                    </div>
-
-                    {/* Last inspection */}
-                    <FormField
-                      control={form.control}
-                      name="lastInspectionDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Inspection Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Scheduled */}
-                    <FormField
-                      control={form.control}
-                      name="scheduledDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Scheduled Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Completion */}
-                    <FormField
-                      control={form.control}
-                      name="completionDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Completion Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Notes */}
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Inspector notes, compliance details…" {...field} />
-                        </FormControl>
+                    <FormField control={form.control} name="inspectionType" render={({ field }) => (
+                      <FormItem><FormLabel>Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
+                            <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
+                          </SelectContent>
+                        </Select><FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="recurrenceYears" render={({ field }) => (
+                      <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                        <FormControl><Input type="number" min="1" className="bg-white" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
-
-                  <div className="flex gap-2 pt-1">
-                    <Button variant="outline" type="button" className="flex-1" onClick={() => { setEditingInsp(null); form.reset(); }}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="flex-1" disabled={updateMutation.isPending}>
-                      {updateMutation.isPending ? "Saving…" : "Save Changes"}
-                    </Button>
+                    )} />
                   </div>
-                </form>
-              </Form>
-            </>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="lastInspectionDate" render={({ field }) => (
+                      <FormItem><FormLabel>Last Inspection Date</FormLabel>
+                        <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium leading-none">Next Due Date</label>
+                      <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
+                        {nextDuePreview
+                          ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                          : <span className="italic font-normal text-[13px]">Auto-calculated</span>}
+                      </div>
+                      <p className="text-[11px] text-zinc-400 leading-none">From last date + recurrence</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Section: Schedule ── */}
+                <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-4 space-y-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Schedule</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField control={form.control} name="status" render={({ field }) => (
+                      <FormItem><FormLabel>Status</FormLabel>
+                        <Select value={field.value} onValueChange={(val) => {
+                          field.onChange(val);
+                          if (val === "SCHEDULED") { form.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); form.setValue("completionDate", ""); }
+                          else if (val === "COMPLETED") { form.setValue("completionDate", dayjs().format("YYYY-MM-DD")); }
+                          else { form.setValue("completionDate", ""); }
+                        }}>
+                          <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
+                            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                            <SelectItem value="COMPLETED">Completed</SelectItem>
+                          </SelectContent>
+                        </Select><FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="scheduledDate" render={({ field }) => (
+                      <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground text-xs">(Optional)</span></FormLabel>
+                        <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="completionDate" render={({ field }) => (
+                      <FormItem><FormLabel>Completion Date <span className="font-normal text-muted-foreground text-xs">(Optional)</span></FormLabel>
+                        <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+
+                {/* ── Year mismatch warning ── */}
+                {completionYearMismatch && (
+                  <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 text-amber-900">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
+                    <div className="text-sm leading-snug">
+                      <span className="font-semibold">Are you sure?</span>{" "}
+                      The completion year ({dayjs(watchCompletion).year()}) doesn't match the expected next due year ({dayjs(nextDuePreview!).year()}). Double-check the dates before saving.
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Notes ── */}
+                <FormField control={form.control} name="notes" render={({ field }) => (
+                  <FormItem><FormLabel>Notes</FormLabel>
+                    <FormControl><Textarea placeholder="Inspector notes, compliance details..." className="resize-none h-20" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <Button
+                  type="submit"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? "Saving..." : "Save Inspection"}
+                </Button>
+              </form>
+            </Form>
           )}
         </DialogContent>
       </Dialog>
