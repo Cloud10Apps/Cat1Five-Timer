@@ -36,7 +36,7 @@ const STATUS_LABEL_MAP: Record<string, string> = {
 
 function getAgingBucketKey(nextDueDate: string | null | undefined, computedStatus: string): string | null {
   if (computedStatus === "COMPLETED" || !nextDueDate) return null;
-  const days = dayjs().diff(dayjs(nextDueDate), "day");
+  const days = dayjs().startOf("day").diff(dayjs(nextDueDate).startOf("day"), "day");
   if (days === 0)   return "due-today";
   if (days > 90)    return "overdue-91+";
   if (days > 60)    return "overdue-61-90";
@@ -166,7 +166,7 @@ router.get("/inspections", async (req, res) => {
     const computedStatus   = computeInspStatus(r.status, r.nextDueDate, r.completionDate);
     const agingBucketKey   = getAgingBucketKey(r.nextDueDate, computedStatus);
     const agingDays        = (computedStatus !== "COMPLETED" && r.nextDueDate)
-      ? dayjs().diff(dayjs(r.nextDueDate), "day")
+      ? dayjs().startOf("day").diff(dayjs(r.nextDueDate).startOf("day"), "day")
       : null;
     return { ...r, computedStatus, agingBucketKey, agingDays };
   });
@@ -253,7 +253,7 @@ function statusLabel(status: string, nextDueDate: string | null | undefined): st
 
 function agingBucketLabel(nextDueDate: string | null | undefined): string {
   if (!nextDueDate) return "";
-  const days = dayjs().diff(dayjs(nextDueDate), "day");
+  const days = dayjs().startOf("day").diff(dayjs(nextDueDate).startOf("day"), "day");
   if (days === 0)  return "Due Today";
   if (days >= -7)  return "Due in 7 Days";
   if (days >= -14) return "Due in 14 Days";
@@ -450,7 +450,7 @@ router.get("/overdue", async (req, res) => {
   sheet.getRow(1).font = { bold: true };
 
   rows.forEach(r => {
-    const daysOverdue = r.nextDueDate ? dayjs().diff(dayjs(r.nextDueDate), "day") : null;
+    const daysOverdue = r.nextDueDate ? dayjs().startOf("day").diff(dayjs(r.nextDueDate).startOf("day"), "day") : null;
     sheet.addRow({
       customerName:   r.customerName ?? "",
       buildingName:   r.buildingName ?? "",

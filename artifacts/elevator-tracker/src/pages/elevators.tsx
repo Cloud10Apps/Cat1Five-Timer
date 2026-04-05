@@ -116,7 +116,7 @@ const AGING_BUCKET_OPTIONS = [
 
 function getAgingDays(due: string | null | undefined): number | null {
   if (!due) return null;
-  return dayjs().diff(dayjs(due), "day");
+  return dayjs().startOf("day").diff(dayjs(due).startOf("day"), "day");
 }
 
 function getAgingBucketValue(due: string | null | undefined): string | null {

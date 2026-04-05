@@ -87,7 +87,7 @@ const UNIT_TYPE_OPTIONS = [{ value: "traction", label: "Traction" }, { value: "h
 function getAgingBucketValue(due: string | null | undefined, status?: string): string | null {
   if (status === "COMPLETED") return null;
   if (!due) return null;
-  const days = dayjs().diff(dayjs(due), "day");
+  const days = dayjs().startOf("day").diff(dayjs(due).startOf("day"), "day");
   if (days === 0)   return "due-today";
   if (days > 90)    return "overdue-91+";
   if (days > 60)    return "overdue-61-90";
