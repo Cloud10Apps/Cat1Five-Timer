@@ -469,7 +469,7 @@ export default function Inspections() {
   if (filterDueMonths.length      > 0) activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths,     MONTH_OPTIONS,        "months"),    onRemove: () => setFilterDueMonths([]) });
   if (filterDueYears.length       > 0) activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears,      yearFilterOptions,    "years"),     onRemove: () => setFilterDueYears([]) });
   if (selectedStatuses.length     > 0) activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses,    STATUS_OPTIONS,       "statuses"),  onRemove: () => setSelectedStatuses([]) });
-  if (filterAgingBuckets.length   > 0) activeChips.push({ label: "Aging",     value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"),   onRemove: () => setFilterAgingBuckets([]) });
+  if (filterAgingBuckets.length   > 0) activeChips.push({ label: "Due Status", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"),   onRemove: () => setFilterAgingBuckets([]) });
   if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
   /* ── Section header helpers ── */
@@ -706,7 +706,7 @@ export default function Inspections() {
               <FilterCombobox value={filterDueMonths}     onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }}       options={MONTH_OPTIONS}      placeholder="Due Month"     searchPlaceholder="Search months..."     width="w-[150px]" />
               <FilterCombobox value={filterDueYears}      onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }}        options={yearFilterOptions}  placeholder="Due Year"      searchPlaceholder="Search years..."      width="w-[130px]" />
               <FilterCombobox value={selectedStatuses}    onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}      options={STATUS_OPTIONS}     placeholder="All Statuses"  searchPlaceholder="Search statuses..."   width="w-[160px]" />
-              <FilterCombobox value={filterAgingBuckets}  onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }}    options={AGING_BUCKET_OPTIONS} placeholder="Aging Bucket" searchPlaceholder="Search buckets..."   width="w-[165px]" />
+              <FilterCombobox value={filterAgingBuckets}  onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }}    options={AGING_BUCKET_OPTIONS} placeholder="Due Status"   searchPlaceholder="Search buckets..."   width="w-[165px]" />
               <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
               {/* Date Ranges toggle */}
               <button onClick={() => setShowDateFilters(v => !v)}

@@ -100,7 +100,7 @@ const inspectionSchema = z.object({
 
 type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
-/* ── Aging bucket helpers ── */
+/* ── Due status helpers ── */
 const AGING_BUCKET_OPTIONS = [
   { value: "due-today",     label: "Due Today"   },
   { value: "due-1-7",       label: "Next 7 Days"  },
@@ -1297,7 +1297,7 @@ export default function Elevators() {
         if (filterDueMonths.length > 0)     activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths, MONTH_OPTIONS, "months"),     onRemove: () => setFilterDueMonths([]) });
         if (filterDueYears.length > 0)      activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears, yearFilterOptions, "years"),   onRemove: () => setFilterDueYears([]) });
         if (selectedStatuses.length > 0)    activeChips.push({ label: "Status",    value: chipLabel(selectedStatuses, statusOpts, "statuses"),     onRemove: () => setSelectedStatuses([]) });
-        if (filterAgingBuckets.length > 0)  activeChips.push({ label: "Aging",     value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"), onRemove: () => setFilterAgingBuckets([]) });
+        if (filterAgingBuckets.length > 0)  activeChips.push({ label: "Due Status", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"), onRemove: () => setFilterAgingBuckets([]) });
         if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
         return (
@@ -1410,7 +1410,7 @@ export default function Elevators() {
                 value={filterAgingBuckets}
                 onValueChange={setFilterAgingBuckets}
                 options={AGING_BUCKET_OPTIONS}
-                placeholder="Aging Bucket"
+                placeholder="Due Status"
                 searchPlaceholder="Search buckets..."
                 width="w-[170px]"
               />
@@ -1593,7 +1593,7 @@ export default function Elevators() {
                     <span className="text-sm font-semibold text-white text-center">Next Due</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-sm font-semibold text-white text-center">Aging Bucket</span>
+                    <span className="text-sm font-semibold text-white text-center">Due Status</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Status</span>
@@ -1703,7 +1703,7 @@ export default function Elevators() {
                                               </span>
                                             ) : <span className="text-sm text-zinc-400">—</span>}
                                           </div>
-                                          {/* Aging Bucket */}
+                                          {/* Due Status */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-1.5 border-l border-zinc-200">
                                             <AgingBucketPill due={due} />
                                           </div>

@@ -204,7 +204,7 @@ router.get("/inspections", async (req, res) => {
     { header: "Completion Date",      key: "completionDate",     width: 18, style: DATE_STYLE },
     { header: "Status",               key: "status",             width: 16 },
     { header: "Aging Days",           key: "agingDays",          width: 12 },
-    { header: "Aging Bucket",         key: "agingBucket",        width: 16 },
+    { header: "Due Status",            key: "agingBucket",        width: 16 },
     { header: "Notes",                key: "notes",              width: 45 },
   ];
 
@@ -359,7 +359,7 @@ router.get("/elevators", async (req, res) => {
     { header: "Last Insp Date",     key: "lastInspDate",       width: 18, style: DATE_STYLE },
     { header: "Next Due Date",      key: "nextDueDate",        width: 18, style: DATE_STYLE },
     { header: "Days",               key: "days",               width: 10 },
-    { header: "Aging Bucket",       key: "agingBucket",        width: 16 },
+    { header: "Due Status",         key: "agingBucket",        width: 16 },
     { header: "Scheduled Date",     key: "scheduledDate",      width: 18, style: DATE_STYLE },
   ];
 
