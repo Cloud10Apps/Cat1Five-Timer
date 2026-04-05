@@ -778,7 +778,7 @@ export default function Inspections() {
                   <div key={`bldg-${group.buildingId}-under-${group.customerId}`}
                     className="flex items-center gap-2 mt-3 px-1">
                     <Building2 className="h-4 w-4 text-zinc-400 shrink-0" />
-                    <span className="text-sm font-semibold text-zinc-600">{group.buildingName}</span>
+                    <span className="font-semibold text-zinc-600 text-[25px]">{group.buildingName}</span>
                   </div>
                 );
               }
