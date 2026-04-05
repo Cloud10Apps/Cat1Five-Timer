@@ -973,7 +973,7 @@ export default function Inspections() {
                               className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
 
                             {/* Row number */}
-                            <span className="text-xs tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
+                            <span className="text-sm tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
 
                             {/* Insp type */}
                             <span className={`inline-flex items-center justify-center text-sm font-bold px-2.5 py-0.5 rounded-full tracking-wide w-fit
