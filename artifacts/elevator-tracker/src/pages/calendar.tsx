@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { ChevronLeft, ChevronRight, Pencil, Layers, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Layers, AlertTriangle, Info } from "lucide-react";
 import dayjs from "dayjs";
 import { Spinner } from "@/components/ui/spinner";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
@@ -250,7 +250,10 @@ export default function CalendarView() {
       <div className="flex justify-between items-center mb-4 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground">Inspection schedule and due dates.</p>
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">Inspection schedule and due dates.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setCurrentDate(dayjs())}>Today</Button>
