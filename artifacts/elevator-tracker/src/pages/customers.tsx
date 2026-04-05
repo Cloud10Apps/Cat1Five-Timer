@@ -405,15 +405,6 @@ export default function Customers() {
         )}
       </div>
 
-      {!isAdmin && (
-        <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-          <span>
-            The following customers have been assigned to you by your system administrator. Expand each customer to view associated users.
-          </span>
-        </div>
-      )}
-
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
