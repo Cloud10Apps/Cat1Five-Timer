@@ -1004,68 +1004,78 @@ export default function Elevators() {
                     {editingInspection ? (
                       /* ── EDIT MODE: single form ── */
                       <Form {...inspForm}>
-                        <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-4">
-                          {/* Row 1: Recurrence → Last Inspection Date → Calculated Next Due */}
-                          <div className="grid grid-cols-3 gap-4">
-                            <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
-                              <FormItem><FormLabel>Recurrence (Years)</FormLabel>
-                                <FormControl><Input type="number" min="1" {...field} /></FormControl>
-                                <FormMessage /></FormItem>
-                            )} />
-                            <FormField control={inspForm.control} name="lastInspectionDate" render={({ field }) => (
-                              <FormItem><FormLabel>Last Inspection Date</FormLabel>
-                                <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
-                                <FormMessage /></FormItem>
-                            )} />
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-medium leading-none">Next Due Date</label>
-                              <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}>
-                                {nextDuePreview
-                                  ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                                  : <span className="italic font-normal text-[13px]">Auto-calculated</span>}
+                        <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-5">
+                          {/* Section: Inspection Definition */}
+                          <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-4 space-y-4">
+                            <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Inspection Definition</p>
+                            {/* Row 1: Type | Recurrence */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField control={inspForm.control} name="inspectionType" render={({ field }) => (
+                                <FormItem><FormLabel>Type</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
+                                      <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
+                                    </SelectContent>
+                                  </Select><FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
+                                <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                  <FormControl><Input type="number" min="1" className="bg-white" {...field} /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                            </div>
+                            {/* Row 2: Last Inspection Date | Next Due Date */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField control={inspForm.control} name="lastInspectionDate" render={({ field }) => (
+                                <FormItem><FormLabel>Last Inspection Date</FormLabel>
+                                  <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium leading-none">Next Due Date</label>
+                                <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
+                                  {nextDuePreview
+                                    ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                                    : <span className="italic font-normal text-[13px]">Auto-calculated</span>}
+                                </div>
+                                <p className="text-[11px] text-zinc-400 leading-none">From last date + recurrence</p>
                               </div>
-                              <p className="text-[11px] text-zinc-400 leading-none">From last date + recurrence</p>
                             </div>
                           </div>
-                          {/* Row 2: Type + Status */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField control={inspForm.control} name="inspectionType" render={({ field }) => (
-                              <FormItem><FormLabel>Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="CAT1">CAT1 (Annual)</SelectItem>
-                                    <SelectItem value="CAT5">CAT5 (5-Year)</SelectItem>
-                                  </SelectContent>
-                                </Select><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={inspForm.control} name="status" render={({ field }) => (
-                              <FormItem><FormLabel>Status</FormLabel>
-                                <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else if (val === "COMPLETED") { inspForm.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { inspForm.setValue("completionDate", ""); } }}>
-                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
-                                    <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                                  </SelectContent>
-                                </Select><FormMessage /></FormItem>
-                            )} />
+
+                          {/* Section: Schedule */}
+                          <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-4 space-y-4">
+                            <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Schedule</p>
+                            {/* Row 3: Status | Scheduled Date | Completion Date */}
+                            <div className="grid grid-cols-3 gap-4">
+                              <FormField control={inspForm.control} name="status" render={({ field }) => (
+                                <FormItem><FormLabel>Status</FormLabel>
+                                  <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else if (val === "COMPLETED") { inspForm.setValue("completionDate", dayjs().format("YYYY-MM-DD")); } else { inspForm.setValue("completionDate", ""); } }}>
+                                    <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
+                                      <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                                    </SelectContent>
+                                  </Select><FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
+                                <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground text-xs">(Optional)</span></FormLabel>
+                                  <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                              <FormField control={inspForm.control} name="completionDate" render={({ field }) => (
+                                <FormItem><FormLabel>Completion Date <span className="font-normal text-muted-foreground text-xs">(Optional)</span></FormLabel>
+                                  <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                            </div>
                           </div>
-                          {/* Row 3: Scheduled Date + Completion Date */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
-                              <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
-                                <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
-                                <FormMessage /></FormItem>
-                            )} />
-                            <FormField control={inspForm.control} name="completionDate" render={({ field }) => (
-                              <FormItem><FormLabel>Completion Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
-                                <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
-                                <FormMessage /></FormItem>
-                            )} />
-                          </div>
-                          {/* Row 4: Notes */}
+
+                          {/* Notes */}
                           <FormField control={inspForm.control} name="notes" render={({ field }) => (
                             <FormItem><FormLabel>Notes</FormLabel>
                               <FormControl><Textarea placeholder="Inspector notes, compliance details..." className="resize-none h-16" {...field} /></FormControl>
