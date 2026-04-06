@@ -627,7 +627,7 @@ export default function Elevators() {
             setEditingElevator(null);
             setIsAddOpen(false);
             form.reset();
-            toast({ title: "Elevator updated successfully" });
+            toast({ title: "Unit updated successfully" });
           },
           onError: () => {
             toast({ title: "Failed to update elevator", variant: "destructive" });
@@ -642,7 +642,7 @@ export default function Elevators() {
             queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
             setIsAddOpen(false);
             form.reset();
-            toast({ title: "Elevator added successfully" });
+            toast({ title: "Unit added successfully" });
           },
           onError: () => {
             toast({ title: "Failed to add elevator", variant: "destructive" });
@@ -661,7 +661,7 @@ export default function Elevators() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
-          toast({ title: "Elevator deleted successfully" });
+          toast({ title: "Unit deleted successfully" });
           setDeleteId(null);
         },
         onError: () => {
@@ -847,7 +847,7 @@ export default function Elevators() {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Elevator Name</FormLabel>
+                <FormLabel>Unit Name</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g. Main Lobby Elevator" {...field} />
                 </FormControl>
@@ -1701,7 +1701,7 @@ export default function Elevators() {
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Elevator</AlertDialogTitle>
+            <AlertDialogTitle>Delete Unit</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this elevator? This action cannot be undone and will also remove all associated inspection records.
             </AlertDialogDescription>

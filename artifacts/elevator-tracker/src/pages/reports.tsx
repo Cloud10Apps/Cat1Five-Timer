@@ -116,7 +116,7 @@ export default function Reports() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Elevator</TableHead>
+                <TableHead>Unit</TableHead>
                 <TableHead>Building</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Due Date</TableHead>
