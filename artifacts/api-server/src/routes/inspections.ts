@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, or, ilike, gte, lte, inArray, ne } from "drizzle-orm";
+import { eq, and, or, ilike, gte, lte, inArray, ne, isNotNull } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams } from "@workspace/api-zod";
@@ -194,21 +194,21 @@ router.get("/", asyncHandler(async (req, res) => {
       conditions.push(
         or(
           and(
-            sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+            isNotNull(inspectionsTable.nextDueDate),
             gte(inspectionsTable.nextDueDate, startDate),
             lte(inspectionsTable.nextDueDate, endDate)
           ),
           and(
-            sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
+            isNotNull(inspectionsTable.scheduledDate),
             gte(inspectionsTable.scheduledDate, startDate),
             lte(inspectionsTable.scheduledDate, endDate)
           ),
           and(
-            sql`${inspectionsTable.completionDate} IS NOT NULL`,
+            isNotNull(inspectionsTable.completionDate),
             gte(inspectionsTable.completionDate, startDate),
             lte(inspectionsTable.completionDate, endDate)
           )
-        )
+        )!
       );
     }
     if (params.data.lastInspectionDateFrom) conditions.push(gte(inspectionsTable.lastInspectionDate, params.data.lastInspectionDateFrom));

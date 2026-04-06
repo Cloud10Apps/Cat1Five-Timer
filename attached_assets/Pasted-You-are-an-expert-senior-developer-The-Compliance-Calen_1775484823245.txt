@@ -1,0 +1,112 @@
+You are an expert senior developer. The Compliance Calendar is still 
+showing 0 inspections. The backend fix that was applied has a subtle 
+Drizzle ORM type conflict — the sql template literal IS NOT NULL checks 
+mixed with typed Drizzle helpers inside and() can cause TypeScript 
+compilation issues or generate malformed SQL.
+
+FILE: artifacts/api-server/src/routes/inspections.ts
+
+THE PROBLEM — Find this block (~line 183):
+
+    if (params.data.month && params.data.year) {
+      const startDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .startOf("month")
+        .format("YYYY-MM-DD");
+      const endDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .endOf("month")
+        .format("YYYY-MM-DD");
+      conditions.push(
+        or(
+          and(
+            sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+            gte(inspectionsTable.nextDueDate, startDate),
+            lte(inspectionsTable.nextDueDate, endDate)
+          ),
+          and(
+            sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
+            gte(inspectionsTable.scheduledDate, startDate),
+            lte(inspectionsTable.scheduledDate, endDate)
+          ),
+          and(
+            sql`${inspectionsTable.completionDate} IS NOT NULL`,
+            gte(inspectionsTable.completionDate, startDate),
+            lte(inspectionsTable.completionDate, endDate)
+          )
+        )
+      );
+    }
+
+THE FIX — Replace it entirely with this cleaner version.
+The sql IS NOT NULL template tags are removed entirely. PostgreSQL's 
+gte/lte operators already exclude NULL values implicitly — any comparison 
+with NULL returns NULL (falsy) in PostgreSQL, so the NULL checks are 
+redundant and cause type conflicts with Drizzle.
+
+Also add isNotNull to the drizzle-orm import.
+
+STEP 1 — Update the import at the top of the file.
+Find:
+  import { eq, and, or, ilike, gte, lte, inArray, ne } from "drizzle-orm";
+
+Replace with:
+  import { eq, and, or, ilike, gte, lte, inArray, ne, isNotNull } from "drizzle-orm";
+
+STEP 2 — Replace the entire month/year block with:
+
+    if (params.data.month && params.data.year) {
+      const startDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .startOf("month")
+        .format("YYYY-MM-DD");
+      const endDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .endOf("month")
+        .format("YYYY-MM-DD");
+      conditions.push(
+        or(
+          and(
+            isNotNull(inspectionsTable.nextDueDate),
+            gte(inspectionsTable.nextDueDate, startDate),
+            lte(inspectionsTable.nextDueDate, endDate)
+          ),
+          and(
+            isNotNull(inspectionsTable.scheduledDate),
+            gte(inspectionsTable.scheduledDate, startDate),
+            lte(inspectionsTable.scheduledDate, endDate)
+          ),
+          and(
+            isNotNull(inspectionsTable.completionDate),
+            gte(inspectionsTable.completionDate, startDate),
+            lte(inspectionsTable.completionDate, endDate)
+          )
+        )!
+      );
+    }
+
+Note the ! after the closing ) of or() — this tells TypeScript the result 
+is definitely not undefined, which is true since we always pass arguments.
+
+STEP 3 — After making this change, restart the API server and verify:
+1. The app builds without TypeScript errors
+2. Navigate to the Calendar page
+3. Open the browser developer tools (F12) → Network tab
+4. Look for the API call to /api/inspections?month=4&year=2026
+5. Click on it and check:
+   - The Response tab: does it return an array with inspection records?
+   - The Status: is it 200?
+6. Report back exactly what the API response contains
+
+If the API returns records but the calendar still shows empty, the 
+problem is in the frontend filtering — report that and we will fix the 
+frontend next.
+
+If the API returns an empty array [], report the exact SQL error or 
+any console errors you see.
+
+Do not change any other files. Only modify artifacts/api-server/src/routes/inspections.ts.
