@@ -20,7 +20,7 @@ import {
   LogOut,
   ShieldAlert,
   CreditCard,
-  Bell,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
@@ -160,11 +160,11 @@ export function Layout({ children }: LayoutProps) {
             {overdueCount > 0 && (
               <Link
                 href="/elevators"
-                className="relative flex items-center justify-center w-9 h-9 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm shrink-0"
               >
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
-                  {overdueCount > 99 ? "99+" : overdueCount}
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span className="text-xs font-bold whitespace-nowrap">
+                  {overdueCount} Overdue
                 </span>
               </Link>
             )}
