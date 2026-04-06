@@ -1,5 +1,6 @@
 import * as React from "react";
 import ReactDatePicker from "react-datepicker";
+import { createPortal } from "react-dom";
 import { parse, isValid, format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,17 @@ function toDate(value: string | undefined): Date | null {
   const d = parse(value, "yyyy-MM-dd", new Date());
   return isValid(d) ? d : null;
 }
+
+/**
+ * Portals the calendar to document.body, escaping the dialog's overflow /
+ * stacking context without strategy:"fixed".  This prevents a Popper.js
+ * async-cleanup race that throws a non-Error rejection when a dialog closes
+ * while the calendar is still mounted.
+ */
+const DatePickerPortal: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  if (typeof document === "undefined") return null;
+  return createPortal(children ?? null, document.body);
+};
 
 interface DatePickerFieldProps {
   value?: string;
@@ -55,8 +67,9 @@ export function DatePickerField({
         dropdownMode="select"
         yearDropdownItemNumber={20}
         scrollableYearDropdown
-        popperProps={{ strategy: "fixed" }}
+        popperContainer={DatePickerPortal}
         popperPlacement="bottom-start"
+        popperClassName="z-[9999]"
         isClearable
         autoComplete="off"
         customInput={<CustomInput disabled={disabled} onClear={() => handleChange(null)} hasValue={!!selected} />}

@@ -1005,7 +1005,7 @@ export default function Elevators() {
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
               <DialogHeader className="pb-2 border-b">
                 <DialogTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">

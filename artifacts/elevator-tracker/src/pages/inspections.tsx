@@ -531,7 +531,7 @@ export default function Inspections() {
                 <Plus className="h-4 w-4" /> Add Inspection
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
               {/* ── Header ── */}
               <DialogHeader className="pb-3 border-b">
                 <DialogTitle className="flex items-center gap-2.5 text-xl">

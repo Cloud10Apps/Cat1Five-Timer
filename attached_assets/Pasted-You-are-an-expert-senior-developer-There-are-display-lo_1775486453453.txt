@@ -1,0 +1,98 @@
+You are an expert senior developer. There are display logic bugs in the 
+Inspection History page (inspections.tsx) related to the "Days to 
+Schedule" and "Days to Complete" columns.
+
+FILE: artifacts/elevator-tracker/src/pages/inspections.tsx
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## THE PROBLEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The current calculation for daysToSchedule and daysToComplete is:
+
+  const daysToSchedule = (insp.scheduledDate && insp.nextDueDate)
+    ? dayjs(insp.scheduledDate).startOf("day")
+        .diff(dayjs(insp.nextDueDate).startOf("day"), "day")
+    : null;
+
+  const daysToComplete = (insp.completionDate && insp.nextDueDate)
+    ? dayjs(insp.completionDate).startOf("day")
+        .diff(dayjs(insp.nextDueDate).startOf("day"), "day")
+    : null;
+
+BUG 1: For COMPLETED inspections, the scheduledDate shown may belong 
+to a future follow-up cycle, not the inspection that was completed. 
+This makes "Days to Schedule" show a misleading large number like 
+"365d late" when the inspection was actually completed on time.
+
+FIX: Only show "Days to Schedule" and "Days to Complete" when the 
+inspection status is COMPLETED and both dates exist. For non-completed 
+inspections, suppress both columns with a dash.
+
+Also add a guard: if the inspection is COMPLETED but the scheduledDate 
+is AFTER the completionDate, that scheduledDate belongs to a future 
+cycle — suppress daysToSchedule in that case too.
+
+Replace the daysToSchedule and daysToComplete calculations with:
+
+  const isCompleted = insp.status === "COMPLETED" || !!insp.completionDate;
+
+  // Only show daysToSchedule if:
+  // 1. Inspection is completed
+  // 2. Both scheduledDate and nextDueDate exist
+  // 3. scheduledDate is NOT after completionDate 
+  //    (which would mean it belongs to a future cycle)
+  const scheduledBeforeOrAtCompletion = insp.scheduledDate && 
+    insp.completionDate && 
+    dayjs(insp.scheduledDate).isBefore(
+      dayjs(insp.completionDate).add(1, "day")
+    );
+
+  const daysToSchedule = (
+    isCompleted &&
+    scheduledBeforeOrAtCompletion &&
+    insp.scheduledDate && 
+    insp.nextDueDate
+  )
+    ? dayjs(insp.scheduledDate).startOf("day")
+        .diff(dayjs(insp.nextDueDate).startOf("day"), "day")
+    : null;
+
+  const daysToComplete = (
+    isCompleted &&
+    insp.completionDate && 
+    insp.nextDueDate
+  )
+    ? dayjs(insp.completionDate).startOf("day")
+        .diff(dayjs(insp.nextDueDate).startOf("day"), "day")
+    : null;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## BUG 2 — The question mark icon
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Search inspections.tsx for any "?" character or question mark icon 
+rendered near the daysToSchedule or daysToComplete columns. 
+
+If found, check if it is a tooltip trigger. If the tooltip says 
+something confusing or incorrect, update it to say:
+
+  For "Days to Schedule": 
+  "Number of days between the inspection due date and when it was 
+   scheduled. Negative = scheduled early. Positive = scheduled late."
+
+  For "Days to Complete":
+  "Number of days between the inspection due date and when it was 
+   completed. Negative = completed early. Positive = completed late."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## AFTER ALL CHANGES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Confirm the app builds without TypeScript errors
+2. Verify that completed inspections where the scheduledDate 
+   belongs to a future cycle now show "—" for Days to Schedule
+   instead of an inflated "365d late" value
+3. Verify that completed inspections with a valid scheduledDate 
+   prior to or at completion still show the correct Days to Schedule
+4. Only modify inspections.tsx — no other files
