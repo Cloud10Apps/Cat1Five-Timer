@@ -1,0 +1,139 @@
+You are an expert senior developer. The Compliance Calendar is broken — it 
+shows 0 inspections. The cause is in the backend route that the calendar 
+calls. Please fix it carefully.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## THE PROBLEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/api-server/src/routes/inspections.ts
+
+The calendar queries the GET /api/inspections endpoint with month and year 
+parameters. The current code filters ONLY by nextDueDate falling in that 
+month. This means inspections whose nextDueDate is in a different month 
+are completely invisible on the calendar even if their scheduledDate or 
+completionDate falls in the requested month.
+
+Additionally if the seed data or real data has inspections with nextDueDate 
+outside the current month (April 2026), the calendar will show 0 results.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## THE FIX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/api-server/src/routes/inspections.ts
+
+STEP 1 — Make sure { or } is imported from "drizzle-orm".
+Find the existing import line at the top of the file that looks like:
+  import { eq, and, ilike, gte, lte, inArray, ne } from "drizzle-orm";
+
+Add "or" to it if not already there:
+  import { eq, and, ilike, gte, lte, inArray, ne, or } from "drizzle-orm";
+
+STEP 2 — Find the month/year filter block. It currently looks exactly 
+like this:
+
+    if (params.data.month && params.data.year) {
+      const startDate = dayjs().year(params.data.year).month(params.data.month - 1).startOf("month").format("YYYY-MM-DD");
+      const endDate = dayjs().year(params.data.year).month(params.data.month - 1).endOf("month").format("YYYY-MM-DD");
+      conditions.push(gte(inspectionsTable.nextDueDate, startDate));
+      conditions.push(lte(inspectionsTable.nextDueDate, endDate));
+    }
+
+Replace it ENTIRELY with this new version that matches ANY of the three 
+date fields falling in the requested month:
+
+    if (params.data.month && params.data.year) {
+      const startDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .startOf("month")
+        .format("YYYY-MM-DD");
+      const endDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .endOf("month")
+        .format("YYYY-MM-DD");
+      conditions.push(
+        or(
+          and(
+            gte(inspectionsTable.nextDueDate, startDate),
+            lte(inspectionsTable.nextDueDate, endDate)
+          ),
+          and(
+            gte(inspectionsTable.scheduledDate, startDate),
+            lte(inspectionsTable.scheduledDate, endDate)
+          ),
+          and(
+            gte(inspectionsTable.completionDate, startDate),
+            lte(inspectionsTable.completionDate, endDate)
+          )
+        )!
+      );
+    }
+
+Note the ! after the closing ) of or() — this is needed because Drizzle's 
+or() can return undefined when given no args, but here we always pass args 
+so it is safe. This satisfies TypeScript.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## ALSO FIX — Completed inspections showing duplicate chips
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/elevator-tracker/src/pages/calendar.tsx
+
+Find the getDayActivities function which currently looks like this:
+
+  const getDayActivities = (date: dayjs.Dayjs): CalendarActivity[] => {
+    if (!inspections) return [];
+    const activities: CalendarActivity[] = [];
+    for (const insp of inspections) {
+      if (insp.nextDueDate && dayjs(insp.nextDueDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "due" });
+      if (insp.scheduledDate && dayjs(insp.scheduledDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "scheduled" });
+      if (insp.completionDate && dayjs(insp.completionDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "completed" });
+    }
+    return activities;
+  };
+
+Replace it with this version that prevents duplicate chips for completed 
+inspections:
+
+  const getDayActivities = (date: dayjs.Dayjs): CalendarActivity[] => {
+    if (!inspections) return [];
+    const activities: CalendarActivity[] = [];
+    for (const insp of inspections) {
+      const isCompleted = insp.status === "COMPLETED" || !!insp.completionDate;
+
+      // Only show "due" chip if the inspection has NOT been completed
+      if (!isCompleted && insp.nextDueDate && dayjs(insp.nextDueDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "due" });
+
+      // Only show "scheduled" chip if the inspection has NOT been completed
+      if (!isCompleted && insp.scheduledDate && dayjs(insp.scheduledDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "scheduled" });
+
+      // Always show "completed" chip on the completion date
+      if (insp.completionDate && dayjs(insp.completionDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "completed" });
+    }
+    return activities;
+  };
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## VERIFY THE FIX WORKED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After making both changes:
+
+1. Restart the API server
+2. Confirm the app builds without TypeScript errors
+3. Navigate to the Calendar page
+4. Confirm inspections now appear on the calendar for April 2026
+5. If they still don't appear, check the browser console for any API 
+   errors on the /api/inspections?month=4&year=2026 request and report 
+   what error you see
+6. Only modify these two files — do not change any other routes, 
+   components, or logic
