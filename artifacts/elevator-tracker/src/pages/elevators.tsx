@@ -77,9 +77,16 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@/lib/utils";
 
 function isValidDateStr(value: string | undefined): boolean {
-  if (!value || value.length < 10) return false;
-  const d = dayjs(value);
-  return d.isValid();
+  if (!value) return false;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const year  = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const day   = parseInt(match[3], 10);
+  if (year < 1900 || year > 2200) return false;
+  if (month < 1   || month > 12)  return false;
+  if (day < 1     || day > 31)    return false;
+  return dayjs(value, "YYYY-MM-DD", true).isValid();
 }
 
 const elevatorSchema = z.object({
@@ -458,7 +465,7 @@ export default function Elevators() {
 
   const completionYearMismatch = !!(
     isValidDateStr(watchCompletionDate) && nextDuePreview &&
-    dayjs(watchCompletionDate).year() !== dayjs(nextDuePreview).year()
+    dayjs(watchCompletionDate, "YYYY-MM-DD", true).year() !== dayjs(nextDuePreview).year()
   );
 
   const watchLastDateCat5 = inspCat5Form.watch("lastInspectionDate");
@@ -1113,7 +1120,7 @@ export default function Elevators() {
                               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
                               <div className="text-sm leading-snug">
                                 <span className="font-semibold">Are you sure?</span>{" "}
-                                The completion year ({dayjs(watchCompletionDate).year()}) doesn't match the expected next due year ({nextDuePreview ? dayjs(nextDuePreview).year() : "unknown"}). Double-check the dates before saving.
+                                The completion year ({dayjs(watchCompletionDate, "YYYY-MM-DD", true).year()}) doesn't match the expected next due year ({nextDuePreview ? dayjs(nextDuePreview).year() : "unknown"}). Double-check the dates before saving.
                               </div>
                             </div>
                           )}
