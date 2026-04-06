@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, ilike, gte, lte, inArray, ne } from "drizzle-orm";
+import { eq, and, or, ilike, gte, lte, inArray, ne } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams } from "@workspace/api-zod";
@@ -181,10 +181,35 @@ router.get("/", asyncHandler(async (req, res) => {
     if (params.data.bank) conditions.push(eq(elevatorsTable.bank, params.data.bank));
     if (params.data.search) conditions.push(ilike(elevatorsTable.name, `%${params.data.search}%`));
     if (params.data.month && params.data.year) {
-      const startDate = dayjs().year(params.data.year).month(params.data.month - 1).startOf("month").format("YYYY-MM-DD");
-      const endDate = dayjs().year(params.data.year).month(params.data.month - 1).endOf("month").format("YYYY-MM-DD");
-      conditions.push(gte(inspectionsTable.nextDueDate, startDate));
-      conditions.push(lte(inspectionsTable.nextDueDate, endDate));
+      const startDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .startOf("month")
+        .format("YYYY-MM-DD");
+      const endDate = dayjs()
+        .year(params.data.year)
+        .month(params.data.month - 1)
+        .endOf("month")
+        .format("YYYY-MM-DD");
+      conditions.push(
+        or(
+          and(
+            sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+            gte(inspectionsTable.nextDueDate, startDate),
+            lte(inspectionsTable.nextDueDate, endDate)
+          ),
+          and(
+            sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
+            gte(inspectionsTable.scheduledDate, startDate),
+            lte(inspectionsTable.scheduledDate, endDate)
+          ),
+          and(
+            sql`${inspectionsTable.completionDate} IS NOT NULL`,
+            gte(inspectionsTable.completionDate, startDate),
+            lte(inspectionsTable.completionDate, endDate)
+          )
+        )
+      );
     }
     if (params.data.lastInspectionDateFrom) conditions.push(gte(inspectionsTable.lastInspectionDate, params.data.lastInspectionDateFrom));
     if (params.data.lastInspectionDateTo) conditions.push(lte(inspectionsTable.lastInspectionDate, params.data.lastInspectionDateTo));

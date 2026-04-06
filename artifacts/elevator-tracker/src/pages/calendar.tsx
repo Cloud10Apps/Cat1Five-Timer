@@ -415,10 +415,14 @@ export default function CalendarView() {
     if (!inspections) return [];
     const activities: CalendarActivity[] = [];
     for (const insp of inspections) {
-      if (insp.nextDueDate && dayjs(insp.nextDueDate).isSame(date, "day"))
+      const isCompleted = insp.status === "COMPLETED" || !!insp.completionDate;
+
+      if (!isCompleted && insp.nextDueDate && dayjs(insp.nextDueDate).isSame(date, "day"))
         activities.push({ insp, activityType: "due" });
-      if (insp.scheduledDate && dayjs(insp.scheduledDate).isSame(date, "day"))
+
+      if (!isCompleted && insp.scheduledDate && dayjs(insp.scheduledDate).isSame(date, "day"))
         activities.push({ insp, activityType: "scheduled" });
+
       if (insp.completionDate && dayjs(insp.completionDate).isSame(date, "day"))
         activities.push({ insp, activityType: "completed" });
     }
@@ -435,7 +439,7 @@ export default function CalendarView() {
       <div className="flex justify-between items-start shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Compliance Calendar</h1>
-          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">All inspection activity by date — due, scheduled, and completed.</p>
+          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Each unit appears on its Due Date, Scheduled Date, and Completion Date — so a single unit may appear multiple times across the calendar.</p>
         </div>
         <div className="flex items-center gap-2 mt-1">
           <Button variant="outline" size="sm" onClick={() => setCurrentDate(dayjs())}>Today</Button>
