@@ -1,0 +1,131 @@
+🎯 GOAL
+
+Make the table:
+
+Easier to scan
+Visually aligned
+Less cluttered
+
+More professional
+🔴 1. REMOVE UNUSED / EMPTY COLUMN (CRITICAL)
+
+There is an empty column (highlighted in screenshot) between:
+
+👉 Next Due and Due Status
+
+Action:
+Remove this column entirely
+Remove any placeholder dividers or empty cells
+
+👉 This is currently creating visual noise and misalignment
+
+🧭 2. GROUP RELATED COLUMNS (VERY IMPORTANT)
+
+Reorder and group columns logically:
+
+FINAL ORDER:
+Type
+Last Insp
+Next Due
+Due Status (move directly next to Next Due)
+Inspection Status
+Scheduled Date
+Completed
+Days to Schedule
+Days to Complete
+Actions
+
+👉 Key rule:
+
+Date + meaning must sit together
+Metrics (days) should come AFTER dates
+📏 3. FIX COLUMN ALIGNMENT
+
+Ensure:
+
+All columns are vertically aligned across all rows
+No floating dividers or inconsistent spacing
+Header alignment matches row alignment exactly
+🧼 4. REMOVE VISUAL DIVIDER LINES INSIDE CELLS
+
+There are vertical divider marks inside rows.
+
+Action:
+Remove or significantly reduce these
+Keep only subtle column separation
+
+👉 Goal: cleaner, less “grid-like” appearance
+
+🎨 5. REDUCE TABLE NOISE
+
+Apply lighter styling to:
+
+Type (CAT1, CAT5)
+Last Insp
+Scheduled Date
+
+Keep stronger emphasis on:
+
+Next Due
+Due Status
+Inspection Status
+🚦 6. EMPHASIZE DUE STATUS
+
+Ensure:
+
+Due Status tags are visually prominent
+Maintain color coding:
+Red → overdue
+Blue → upcoming
+Neutral → none
+
+👉 This is the primary “scan signal”
+
+🔢 7. IMPROVE DAYS COLUMNS READABILITY
+
+Replace raw values:
+
+-5 → “5 days early” (green)
++301 → “301 days late” (red)
+
+If NULL:
+
+Display “—” (muted)
+📦 8. ADD SLIGHT ROW SPACING
+Add subtle vertical spacing between unit sections
+Slightly increase row height
+
+👉 Reduce visual compression
+
+🧩 9. KEEP GROUP HIERARCHY CLEAR
+
+Maintain visual distinction between:
+
+Customer
+Building
+Unit
+
+Use:
+
+font weight
+spacing
+subtle background
+⚠️ DO NOT CHANGE
+Do NOT modify calculations
+Do NOT remove columns (except the empty one)
+Do NOT change grouping logic
+🧪 VALIDATION
+
+After updates:
+
+No empty column exists
+Columns are aligned cleanly
+Due Status is immediately visible next to Next Due
+Table feels less cluttered and easier to scan
+🏁 FINAL RESULT
+
+The table should feel like:
+
+👉 A clean audit interface
+NOT
+👉 A spreadsheet
