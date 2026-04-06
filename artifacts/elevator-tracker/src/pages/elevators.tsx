@@ -634,7 +634,10 @@ export default function Elevators() {
     );
   };
 
-  const onSubmit = (data: ElevatorFormValues) => {
+  const hasInspData = (values: InspectionFormValues) =>
+    !!(values.lastInspectionDate || values.scheduledDate || values.completionDate || (values.notes && values.notes.trim()) || (values.status && values.status !== "NOT_STARTED"));
+
+  const onSubmit = async (data: ElevatorFormValues) => {
     if (editingElevator) {
       updateMutation.mutate(
         { id: editingElevator.id, data },
@@ -652,20 +655,55 @@ export default function Elevators() {
         }
       );
     } else {
-      createMutation.mutate(
-        { data },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
-            setIsAddOpen(false);
-            form.reset();
-            toast({ title: "Unit added successfully" });
-          },
-          onError: () => {
-            toast({ title: "Failed to add elevator", variant: "destructive" });
-          },
-        }
-      );
+      let elevatorId: number;
+      try {
+        const created = await createMutation.mutateAsync({ data });
+        queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
+        elevatorId = (created as any).id;
+      } catch {
+        toast({ title: "Failed to add elevator", variant: "destructive" });
+        return;
+      }
+
+      const cat1Values = inspForm.getValues();
+      const cat5Values = inspCat5Form.getValues();
+      const wantCat1 = hasInspData(cat1Values);
+      const wantCat5 = hasInspData(cat5Values);
+
+      if (!wantCat1 && !wantCat5) {
+        setIsAddOpen(false);
+        form.reset();
+        toast({ title: "Unit added successfully" });
+        return;
+      }
+
+      const validations: Promise<boolean>[] = [];
+      if (wantCat1) validations.push(inspForm.trigger());
+      if (wantCat5) validations.push(inspCat5Form.trigger());
+      const valid = await Promise.all(validations);
+      if (valid.some(v => !v)) return;
+
+      const inspPromises: Promise<any>[] = [];
+      if (wantCat1) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat1Values, elevatorId, recurrenceYears: Number(cat1Values.recurrenceYears), lastInspectionDate: cat1Values.lastInspectionDate || undefined, scheduledDate: cat1Values.scheduledDate || undefined, completionDate: cat1Values.completionDate || undefined } }));
+      if (wantCat5) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat5Values, elevatorId, recurrenceYears: Number(cat5Values.recurrenceYears), lastInspectionDate: cat5Values.lastInspectionDate || undefined, scheduledDate: cat5Values.scheduledDate || undefined, completionDate: cat5Values.completionDate || undefined } }));
+
+      try {
+        const inspResults = await Promise.all(inspPromises);
+        queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
+        const count = (wantCat1 ? 1 : 0) + (wantCat5 ? 1 : 0);
+        toast({ title: count === 2 ? "Unit and both inspections created" : "Unit and inspection created" });
+        inspResults.forEach((r, i) => {
+          if (r?._warning) {
+            const label = i === 0 ? (wantCat1 ? "CAT 1" : "CAT 5") : "CAT 5";
+            toast({ title: `${label} follow-up not auto-created`, description: r._warning, variant: "destructive", duration: 10000 });
+          }
+        });
+      } catch {
+        toast({ title: "Unit was created but inspections partially failed", variant: "destructive" });
+      }
+
+      setIsAddOpen(false);
+      form.reset();
     }
   };
 
@@ -1023,7 +1061,7 @@ export default function Elevators() {
                   <div className="mt-1 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
                     <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-                      Complete the unit details on the <span className="font-semibold">Unit Details</span> tab, then switch to the <span className="font-semibold">New Inspection</span> tab to seed the system with the initial CAT 1 and CAT 5 inspection records for this unit.
+                      Fill in the <span className="font-semibold">Unit Details</span> tab. Optionally switch to the <span className="font-semibold">New Inspection</span> tab to seed CAT 1 and/or CAT 5 records — then click <span className="font-semibold">Add Unit</span> to save everything at once.
                     </p>
                   </div>
                 )}
