@@ -1,5 +1,6 @@
 import * as React from "react";
 import ReactDatePicker from "react-datepicker";
+import { createPortal } from "react-dom";
 import { parse, isValid, format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,26 @@ function toDate(value: string | undefined): Date | null {
   const d = parse(value, "yyyy-MM-dd", new Date());
   return isValid(d) ? d : null;
 }
+
+/**
+ * Renders the react-datepicker calendar directly into document.body.
+ *
+ * Why: Using strategy:"fixed" on the Popper causes a race between Popper's
+ * async ResizeObserver/rAF position updates and React's dialog unmount sequence.
+ * That race throws a non-Error value that Vite surfaces as an overlay crash.
+ *
+ * With popperContainer the calendar lives outside the Dialog DOM tree, so
+ * Popper uses the default strategy:"absolute" relative to the document — no
+ * async fixed-position tracking, no crash.
+ *
+ * The Dialog's onPointerDownOutside / onInteractOutside guards (in dialog.tsx)
+ * detect clicks on ".react-datepicker*" elements and call e.preventDefault()
+ * so the dialog stays open while the user selects a date.
+ */
+const DatePickerPortal: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  if (typeof document === "undefined") return null;
+  return createPortal(children ?? null, document.body);
+};
 
 interface DatePickerFieldProps {
   value?: string;
@@ -55,7 +76,7 @@ export function DatePickerField({
         dropdownMode="select"
         yearDropdownItemNumber={20}
         scrollableYearDropdown
-        popperProps={{ strategy: "fixed" }}
+        popperContainer={DatePickerPortal}
         popperPlacement="bottom-start"
         popperClassName="z-[9999]"
         isClearable
