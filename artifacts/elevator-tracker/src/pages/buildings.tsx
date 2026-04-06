@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Pencil, Trash2, Building2, MapPin, Users, Info } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Building2, MapPin, Users } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -364,12 +364,7 @@ export default function Buildings() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Buildings</h1>
-          <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2 whitespace-nowrap">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
-            <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-              Manage your building locations and see elevator counts at a glance.
-            </p>
-          </div>
+          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Manage your building locations and see unit counts at a glance.</p>
         </div>
 
         <Dialog
