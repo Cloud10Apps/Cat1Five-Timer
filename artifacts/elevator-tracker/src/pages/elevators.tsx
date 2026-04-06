@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle, Info, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle, Info, CalendarDays, ClipboardList } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -1467,9 +1467,21 @@ export default function Elevators() {
           <Spinner />
         </div>
       ) : grouped.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border rounded-lg">
-          <ArrowUpSquare className="h-10 w-10 mb-2 opacity-20" />
-          <p>No elevators found.</p>
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center border rounded-lg bg-white">
+          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center">
+            <ClipboardList className="h-6 w-6 text-zinc-400" />
+          </div>
+          <p className="text-sm font-semibold text-zinc-600">No units found</p>
+          {(selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedBanks.length > 0 || selectedTypes.length > 0 || selectedElevatorIds.length > 0 || selectedInspTypes.length > 0 || filterDueMonths.length > 0 || filterDueYears.length > 0 || filterAgingBuckets.length > 0 || selectedStatuses.length > 0 || lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo) ? (
+            <button
+              onClick={() => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedTypes([]); setSelectedElevatorIds([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setFilterAgingBuckets([]); setSelectedStatuses([]); setLastInspFrom(""); setLastInspTo(""); setNextDueFrom(""); setNextDueTo(""); setScheduledFrom(""); setScheduledTo(""); }}
+              className="text-sm text-amber-600 hover:text-amber-700 font-semibold underline-offset-2 hover:underline"
+            >
+              Clear all filters
+            </button>
+          ) : (
+            <p className="text-xs text-zinc-400">Add your first unit to get started</p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

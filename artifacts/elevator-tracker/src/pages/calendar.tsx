@@ -434,7 +434,7 @@ export default function CalendarView() {
       {/* ── Header ── */}
       <div className="flex justify-between items-start shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Compliance Calendar</h1>
           <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
             <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">All inspection activity by date — due, scheduled, and completed.</p>

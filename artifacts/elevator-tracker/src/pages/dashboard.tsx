@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
-import { Spinner } from "@/components/ui/spinner";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid,
 } from "recharts";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RefreshCw } from "lucide-react";
 import dayjs from "dayjs";
 
 /* ─── label helper ─── */
@@ -89,6 +90,50 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap ${styles[status] ?? styles.NOT_STARTED}`}>
       {toLabel(status)}
     </span>
+  );
+}
+
+/* ─── Skeleton loaders ─── */
+function StatSkeleton() {
+  return (
+    <div className="bg-white border border-t-4 border-zinc-200 border-t-zinc-300 rounded-lg shadow-sm overflow-hidden animate-pulse">
+      <div className="p-4 h-6 bg-zinc-100 rounded w-2/3 mb-4" />
+      <div className="flex items-center justify-center py-6">
+        <div className="h-16 w-20 bg-zinc-100 rounded" />
+      </div>
+    </div>
+  );
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden animate-pulse" style={{ height: 360 }}>
+      <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50">
+        <div className="h-4 bg-zinc-200 rounded w-1/3" />
+      </div>
+      <div className="p-6 flex items-end gap-3 h-[300px]">
+        {[40,70,30,90,55,75,45].map((h,i) => (
+          <div key={i} className="flex-1 bg-zinc-100 rounded" style={{ height: `${h}%` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden animate-pulse">
+      <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50">
+        <div className="h-4 bg-zinc-200 rounded w-1/4" />
+      </div>
+      {[1,2,3].map(i => (
+        <div key={i} className="flex gap-4 px-4 py-3 border-b border-zinc-100">
+          <div className="flex-1 h-4 bg-zinc-100 rounded" />
+          <div className="w-16 h-4 bg-zinc-100 rounded" />
+          <div className="w-24 h-4 bg-zinc-100 rounded" />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -258,10 +303,6 @@ export default function Dashboard() {
 
   useEffect(() => { if (t1) { setLastUpdated(new Date(t1)); setSecsAgo(0); } }, [t1]);
 
-  if (l1||l2||l3||l4||l5) return (
-    <div className="flex h-[50vh] items-center justify-center bg-zinc-50"><Spinner className="h-8 w-8" /></div>
-  );
-
   const todayStr = dayjs().format("YYYY-MM-DD");
   const in14Days = dayjs().add(14,"day").format("YYYY-MM-DD");
   const in3Days  = dayjs().add(3, "day").format("YYYY-MM-DD");
@@ -292,9 +333,7 @@ export default function Dashboard() {
           <div className="flex-1 flex items-center gap-2">
             <button onClick={refreshAll} title="Refresh"
               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-zinc-300 bg-white text-xs text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 hover:border-zinc-400 shadow-sm transition-all font-medium">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                <path fillRule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08 1.01.75.75 0 1 1-1.3-.75 6 6 0 0 1 9.44-1.345l.842.841V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.345l-.842-.841v1.273a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.84.841a4.5 4.5 0 0 0 7.08-1.01.75.75 0 0 1 1.025-.295Z" clipRule="evenodd" />
-              </svg>
+              <RefreshCw className="w-3.5 h-3.5" />
               Refresh
             </button>
             <span className="text-xs text-zinc-400 font-medium">
@@ -315,7 +354,7 @@ export default function Dashboard() {
         <section>
           <SectionLabel>Volume</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {([
+            {l1 ? [1,2,3,4].map(i => <StatSkeleton key={i} />) : ([
               { label:"Not Scheduled", value:summary?.notStartedCount??0, numCls:"text-zinc-800",  topCls:"border-t-zinc-400", iconCls:"text-zinc-400",
                 icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8Zm7.75-4.25a.75.75 0 0 0-1.5 0V8c0 .414.336.75.75.75h3.25a.75.75 0 0 0 0-1.5h-2.5V3.75Z" clipRule="evenodd" /></svg> },
               { label:"Scheduled",     value:summary?.scheduledCount??0,  numCls:"text-blue-700",  topCls:"border-t-blue-500", iconCls:"text-blue-400",
@@ -339,7 +378,7 @@ export default function Dashboard() {
         <section>
           <SectionLabel>Performance Metrics</SectionLabel>
           <div className="grid grid-cols-2 gap-4">
-            {[
+            {l1 ? [1,2].map(i => <StatSkeleton key={i} />) : [
               {
                 label:"Avg Days To Schedule",
                 sub:  "Average time from due date to scheduling",
@@ -366,9 +405,18 @@ export default function Dashboard() {
               <div key={label} className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                 <CardHeader title={label} />
                 <div className="flex flex-col items-center justify-center py-5 text-center">
-                  <div className="text-[4.5rem] leading-none font-black tabular-nums tracking-tight text-zinc-900 cursor-help" title={tip}>
-                    {val===null?"—":val.toFixed(1)}
-                  </div>
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-[4.5rem] leading-none font-black tabular-nums tracking-tight text-zinc-900 cursor-help">
+                          {val===null?"—":val.toFixed(1)}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                        <p>{tip}</p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
                   <div className="flex items-center gap-1.5 mt-2.5 text-zinc-400">
                     <span className="text-zinc-400">{icon}</span>
                     <span className="text-sm font-semibold">{sub}</span>
@@ -387,7 +435,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
 
             {/* Upcoming inspections */}
-            <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            {(l2 || l5) ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <UpcomingCardHeader title="Upcoming Inspections (Next 90 Days)" />
               <div className="p-5 h-[300px] flex items-center">
                 {upcomingData.length === 0 ? (
@@ -415,10 +463,10 @@ export default function Dashboard() {
                   </ResponsiveContainer>
                 )}
               </div>
-            </div>
+            </div>}
 
             {/* Overdue inspections */}
-            <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            {l5 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <OverdueCardHeader title="Overdue Inspections by Aging" />
               <div className="p-5 h-[300px] flex items-center">
                 {overdueData.length === 0 ? (
@@ -452,7 +500,7 @@ export default function Dashboard() {
                   </ResponsiveContainer>
                 )}
               </div>
-            </div>
+            </div>}
 
           </div>
 
@@ -460,29 +508,31 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
             {/* Status distribution */}
+            {l3 ? <ChartSkeleton /> : (
             <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <CardHeader title={`${year} Inspections by Current Status`} />
               <div className="p-4 h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:64, left:8, bottom:5 }} barCategoryGap="18%">
                     <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
+                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:12, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
                     <Tooltip {...TT} />
                     <Bar dataKey="value" barSize={52} radius={[0,5,5,0]}>
                       {statusChartData.map((e,i)=><Cell key={i} fill={e.color} />)}
                       <LabelList content={(props:any) => {
                         const { x,y,width,height,value } = props;
                         if (!value) return null;
-                        return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={17} fontWeight={900} textAnchor="start">{value}</text>;
+                        return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={12} fontWeight={900} textAnchor="start">{value}</text>;
                       }} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
+            )}
 
             {/* Monthly activity */}
-            <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            {l4 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <CardHeader title={`${year} Monthly Inspection Activity`} />
               <div className="p-4 h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -498,7 +548,7 @@ export default function Dashboard() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
+            </div>}
 
           </div>
         </section>
@@ -509,7 +559,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
             {/* Overdue — light red tint, red accents only */}
-            <div className="bg-red-50/50 border border-red-200 border-l-4 border-l-red-600 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            {l2 ? <TableSkeleton /> : <div className="bg-red-50/50 border border-red-200 border-l-4 border-l-red-600 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <OverdueCardHeader
                 title="Overdue Inspections"
                 badge={<CountBadge n={overdueItems.length} variant="danger" />}
@@ -557,10 +607,10 @@ export default function Dashboard() {
                   </TableBody>
                 </Table>
               </div>
-            </div>
+            </div>}
 
             {/* Upcoming — indigo presence */}
-            <div className="bg-indigo-50/30 border border-indigo-200 border-l-4 border-l-indigo-500 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            {l2 ? <TableSkeleton /> : <div className="bg-indigo-50/30 border border-indigo-200 border-l-4 border-l-indigo-500 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <UpcomingCardHeader
                 title="Upcoming — Next 14 Days"
                 badge={<CountBadge n={upcoming.length} />}
@@ -613,7 +663,7 @@ export default function Dashboard() {
                   </TableBody>
                 </Table>
               </div>
-            </div>
+            </div>}
 
           </div>
         </section>

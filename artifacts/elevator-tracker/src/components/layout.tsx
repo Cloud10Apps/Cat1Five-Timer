@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import logoSrc from "@/assets/logo.svg";
 import {
@@ -20,6 +20,7 @@ import {
   LogOut,
   ShieldAlert,
   CreditCard,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,20 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [overdueCount, setOverdueCount] = useState(0);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch("/api/dashboard/attention", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => {
+        setOverdueCount(data.filter((i: any) => i.status === "OVERDUE").length);
+      })
+      .catch(() => {});
+  }, [location]);
 
   const mainNav = [
     { name: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
@@ -142,6 +157,17 @@ export function Layout({ children }: LayoutProps) {
           <header className="flex h-12 items-center gap-4 border-b bg-card px-4">
             <SidebarTrigger />
             <div className="w-full flex-1" />
+            {overdueCount > 0 && (
+              <Link
+                href="/elevators"
+                className="relative flex items-center justify-center w-9 h-9 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+              >
+                <Bell className="h-5 w-5" />
+                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                  {overdueCount > 99 ? "99+" : overdueCount}
+                </span>
+              </Link>
+            )}
           </header>
           <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 bg-background">
             {children}

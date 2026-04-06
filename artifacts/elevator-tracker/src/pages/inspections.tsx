@@ -820,10 +820,21 @@ export default function Inspections() {
       {isLoading ? (
         <div className="flex justify-center py-20"><Spinner /></div>
       ) : allGroups.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-zinc-400">
-          <ClipboardList className="h-12 w-12 opacity-20" />
-          <p className="text-base font-medium">No inspections found</p>
-          <p className="text-sm text-zinc-400">Try adjusting your filters or add a new inspection</p>
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center">
+            <ClipboardList className="h-6 w-6 text-zinc-400" />
+          </div>
+          <p className="text-sm font-semibold text-zinc-600">No inspections found</p>
+          {(selectedStatuses.length > 0 || selectedInspTypes.length > 0 || selectedUnitTypes.length > 0 || selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedElevatorIds.length > 0 || selectedBanks.length > 0 || filterDueMonths.length > 0 || filterDueYears.length > 0 || filterAgingBuckets.length > 0 || lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo) ? (
+            <button
+              onClick={clearAllFilters}
+              className="text-sm text-amber-600 hover:text-amber-700 font-semibold underline-offset-2 hover:underline"
+            >
+              Clear all filters
+            </button>
+          ) : (
+            <p className="text-xs text-zinc-400">Add your first inspection to get started</p>
+          )}
         </div>
       ) : (
         <>

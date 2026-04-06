@@ -149,7 +149,7 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
         <div className="flex items-center justify-between pt-1 border-t">
           <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1 text-xs font-semibold">
             <Building2 className="h-3 w-3" />
-            {elevatorCount} {elevatorCount === 1 ? "Elevator" : "Elevators"}
+            {elevatorCount} {elevatorCount === 1 ? "Unit" : "Units"}
           </span>
         </div>
       </CardContent>
