@@ -422,7 +422,7 @@ export default function Dashboard() {
 
             {/* Upcoming inspections */}
             {(l2 || l5) ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <UpcomingCardHeader title={`${year} Inspections by Current Due Status`} />
+              <UpcomingCardHeader title={`${year} Inspections by Due Status`} />
               <div className="p-5 h-[300px] flex items-center">
                 {upcomingData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
@@ -496,7 +496,7 @@ export default function Dashboard() {
             {/* Status distribution */}
             {l3 ? <ChartSkeleton /> : (
             <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <CardHeader title={`${year} Inspections by Current Status`} />
+              <CardHeader title={`${year} Inspection Status Breakdown`} />
               <div className="p-4 h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:64, left:8, bottom:5 }} barCategoryGap="18%">
