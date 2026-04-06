@@ -1019,10 +1019,29 @@ export default function Inspections() {
 
 
 
-                        const daysToSchedule = (insp.scheduledDate && insp.nextDueDate)
+                        const isCompleted = insp.status === "COMPLETED" || !!insp.completionDate;
+
+                        // scheduledDate is valid for this cycle only if it's ≤ completionDate
+                        // (a later scheduled date belongs to the next follow-up cycle)
+                        const scheduledBeforeOrAtCompletion =
+                          insp.scheduledDate &&
+                          insp.completionDate &&
+                          dayjs(insp.scheduledDate).isBefore(dayjs(insp.completionDate).add(1, "day"));
+
+                        const daysToSchedule = (
+                          isCompleted &&
+                          scheduledBeforeOrAtCompletion &&
+                          insp.scheduledDate &&
+                          insp.nextDueDate
+                        )
                           ? dayjs(insp.scheduledDate).startOf("day").diff(dayjs(insp.nextDueDate).startOf("day"), "day")
                           : null;
-                        const daysToComplete = (insp.completionDate && insp.nextDueDate)
+
+                        const daysToComplete = (
+                          isCompleted &&
+                          insp.completionDate &&
+                          insp.nextDueDate
+                        )
                           ? dayjs(insp.completionDate).startOf("day").diff(dayjs(insp.nextDueDate).startOf("day"), "day")
                           : null;
 

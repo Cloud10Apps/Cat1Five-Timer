@@ -1,0 +1,214 @@
+You are an expert senior developer. The date picker (DatePickerField) 
+is broken in production — clicking a date in the calendar popup does 
+nothing. The dialog closes before the date selection registers.
+
+This is a known conflict between react-datepicker's portal rendering 
+and Radix UI's Dialog focus trap / pointer event interception.
+
+Two files need to be fixed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## FIX 1 — Update the Dialog component to ignore outside clicks 
+## that originate from the date picker portal
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/elevator-tracker/src/components/ui/dialog.tsx
+
+Find the DialogContent component definition. It currently renders:
+
+  <DialogPrimitive.Content
+    ref={ref}
+    className={cn(...)}
+    {...props}
+  >
+
+Replace it with a version that checks if a pointer-down event 
+originated from the date picker portal before deciding to close:
+
+  <DialogPrimitive.Content
+    ref={ref}
+    className={cn(...)}
+    onPointerDownOutside={(e) => {
+      // Prevent dialog from closing when clicking inside the 
+      // react-datepicker portal (which renders to document.body
+      // outside the dialog DOM tree)
+      const target = e.target as HTMLElement;
+      if (
+        target.closest(".react-datepicker") ||
+        target.closest(".react-datepicker__portal") ||
+        target.closest(".react-datepicker-popper") ||
+        target.closest("[class*='react-datepicker']")
+      ) {
+        e.preventDefault();
+      }
+    }}
+    onInteractOutside={(e) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.closest(".react-datepicker") ||
+        target.closest(".react-datepicker__portal") ||
+        target.closest(".react-datepicker-popper") ||
+        target.closest("[class*='react-datepicker']")
+      ) {
+        e.preventDefault();
+      }
+    }}
+    {...props}
+  >
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## FIX 2 — Simplify the DatePickerField portal approach
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/elevator-tracker/src/components/ui/date-picker-field.tsx
+
+The current implementation uses popperContainer={DatePickerPortal} 
+with createPortal. This is causing the click interception issue.
+
+Replace the entire file with this cleaner version that uses 
+react-datepicker's built-in withPortal for full-screen rendering
+OR simply uses strategy="fixed" on the popper to escape overflow 
+clipping without needing a portal at all:
+
+  import * as React from "react";
+  import ReactDatePicker from "react-datepicker";
+  import { parse, isValid, format } from "date-fns";
+  import { CalendarIcon, X } from "lucide-react";
+  import { Button } from "@/components/ui/button";
+  import { cn } from "@/lib/utils";
+  import "react-datepicker/dist/react-datepicker.css";
+
+  /** Convert our internal YYYY-MM-DD string to a Date, or null */
+  function toDate(value: string | undefined): Date | null {
+    if (!value) return null;
+    const d = parse(value, "yyyy-MM-dd", new Date());
+    return isValid(d) ? d : null;
+  }
+
+  interface DatePickerFieldProps {
+    value?: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    disabled?: boolean;
+    className?: string;
+  }
+
+  export function DatePickerField({
+    value,
+    onChange,
+    placeholder = "MM/DD/YYYY",
+    disabled,
+    className,
+  }: DatePickerFieldProps) {
+    const selected = React.useMemo(() => toDate(value), [value]);
+
+    const handleChange = (date: Date | null) => {
+      if (!date || !isValid(date)) {
+        onChange("");
+        return;
+      }
+      try {
+        onChange(format(date, "yyyy-MM-dd"));
+      } catch {
+        onChange("");
+      }
+    };
+
+    return (
+      <div className={cn("relative datepicker-wrapper", className)}>
+        <ReactDatePicker
+          selected={selected}
+          onChange={handleChange}
+          disabled={disabled}
+          placeholderText={placeholder}
+          dateFormat="MM/dd/yyyy"
+          showMonthDropdown
+          showYearDropdown
+          dropdownMode="select"
+          yearDropdownItemNumber={20}
+          scrollableYearDropdown
+          popperProps={{ strategy: "fixed" }}
+          popperPlacement="bottom-start"
+          popperClassName="z-[9999]"
+          isClearable
+          autoComplete="off"
+          customInput={
+            <CustomInput
+              disabled={disabled}
+              onClear={() => handleChange(null)}
+              hasValue={!!selected}
+            />
+          }
+        />
+      </div>
+    );
+  }
+
+  /** Styled input that matches the rest of the app */
+  const CustomInput = React.forwardRef
+    HTMLInputElement,
+    React.InputHTMLAttributes<HTMLInputElement> & {
+      onClear?: () => void;
+      hasValue?: boolean;
+    }
+  >(({ onClear, hasValue, disabled, className, ...props }, ref) => (
+    <div className="flex gap-1">
+      <div className="relative flex-1">
+        <input
+          ref={ref}
+          {...props}
+          disabled={disabled}
+          className={cn(
+            "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 pr-8 text-sm shadow-xs",
+            "placeholder:text-muted-foreground",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            className
+          )}
+        />
+        {hasValue && !disabled && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onClear?.(); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            tabIndex={-1}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        disabled={disabled}
+        className="shrink-0 pointer-events-none"
+        tabIndex={-1}
+        aria-hidden
+      >
+        <CalendarIcon className="h-4 w-4" />
+      </Button>
+    </div>
+  ));
+  CustomInput.displayName = "CustomInput";
+
+KEY CHANGE: Remove popperContainer={DatePickerPortal} and the 
+DatePickerPortal component entirely. Use popperProps={{ strategy: "fixed" }} 
+instead — this makes the popper escape overflow clipping using CSS 
+position:fixed without moving it outside the Dialog's DOM tree.
+This means Radix UI can still detect clicks inside the dialog correctly.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## AFTER ALL CHANGES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Confirm app builds without TypeScript errors
+2. Open the Current Inspections by Unit page
+3. Click the edit pencil on any inspection
+4. Click a date field — the calendar should open
+5. Click a date in the calendar — it should SELECT the date 
+   WITHOUT closing the dialog
+6. Confirm the year dropdown still works without crashes
+7. Only modify these two files:
+   - artifacts/elevator-tracker/src/components/ui/dialog.tsx
+   - artifacts/elevator-tracker/src/components/ui/date-picker-field.tsx
