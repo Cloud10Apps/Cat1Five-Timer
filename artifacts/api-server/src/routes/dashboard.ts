@@ -204,8 +204,8 @@ router.get("/status-breakdown", asyncHandler(async (req, res) => {
       COUNT(*) FILTER (
         WHERE i.status = 'SCHEDULED'
           AND i.completion_date IS NULL
-          AND i.next_due_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND i.scheduled_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.scheduled_date::date) = ${currentYear}
       ) AS scheduled,
       COUNT(*) FILTER (
         WHERE i.status = 'IN_PROGRESS'
@@ -215,8 +215,11 @@ router.get("/status-breakdown", asyncHandler(async (req, res) => {
       ) AS in_progress,
       COUNT(*) FILTER (
         WHERE i.completion_date IS NOT NULL
-          AND i.next_due_date IS NOT NULL
-          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND (
+            (i.next_due_date IS NOT NULL AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear})
+            OR
+            (i.completion_date IS NOT NULL AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear})
+          )
       ) AS completed,
       COUNT(*) FILTER (
         WHERE i.completion_date IS NULL

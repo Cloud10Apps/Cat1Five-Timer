@@ -597,10 +597,15 @@ export default function Elevators() {
     if (!cat1Valid || !cat5Valid) return;
     const cat1Data = inspForm.getValues();
     const cat5Data = inspCat5Form.getValues();
+    const deriveStatusBoth = (v: InspectionFormValues): InspectionFormValues["status"] => {
+      if (v.completionDate) return "COMPLETED";
+      if (v.scheduledDate && (!v.status || v.status === "NOT_STARTED")) return "SCHEDULED";
+      return v.status ?? "NOT_STARTED";
+    };
     try {
       const [cat1Result, cat5Result]: any[] = await Promise.all([
-        createInspMutation.mutateAsync({ data: { ...cat1Data, elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
-        createInspMutation.mutateAsync({ data: { ...cat5Data, elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
       ]);
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
@@ -665,10 +670,8 @@ export default function Elevators() {
         return;
       }
 
-      const cat1Values = inspForm.getValues();
-      const cat5Values = inspCat5Form.getValues();
-      const wantCat1 = hasInspData(cat1Values);
-      const wantCat5 = hasInspData(cat5Values);
+      const wantCat1 = hasInspData(inspForm.getValues());
+      const wantCat5 = hasInspData(inspCat5Form.getValues());
 
       if (!wantCat1 && !wantCat5) {
         setIsAddOpen(false);
@@ -683,9 +686,19 @@ export default function Elevators() {
       const valid = await Promise.all(validations);
       if (valid.some(v => !v)) return;
 
+      // Capture values AFTER trigger so any pending form-state changes are committed.
+      // Also derive the status deterministically so we don't depend on async useEffect timing.
+      const cat1Values = inspForm.getValues();
+      const cat5Values = inspCat5Form.getValues();
+      const deriveStatus = (v: InspectionFormValues): InspectionFormValues["status"] => {
+        if (v.completionDate) return "COMPLETED";
+        if (v.scheduledDate && (!v.status || v.status === "NOT_STARTED")) return "SCHEDULED";
+        return v.status ?? "NOT_STARTED";
+      };
+
       const inspPromises: Promise<any>[] = [];
-      if (wantCat1) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat1Values, elevatorId, recurrenceYears: Number(cat1Values.recurrenceYears), lastInspectionDate: cat1Values.lastInspectionDate || undefined, scheduledDate: cat1Values.scheduledDate || undefined, completionDate: cat1Values.completionDate || undefined } }));
-      if (wantCat5) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat5Values, elevatorId, recurrenceYears: Number(cat5Values.recurrenceYears), lastInspectionDate: cat5Values.lastInspectionDate || undefined, scheduledDate: cat5Values.scheduledDate || undefined, completionDate: cat5Values.completionDate || undefined } }));
+      if (wantCat1) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat1Values, status: deriveStatus(cat1Values), elevatorId, recurrenceYears: Number(cat1Values.recurrenceYears), lastInspectionDate: cat1Values.lastInspectionDate || undefined, scheduledDate: cat1Values.scheduledDate || undefined, completionDate: cat1Values.completionDate || undefined } }));
+      if (wantCat5) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat5Values, status: deriveStatus(cat5Values), elevatorId, recurrenceYears: Number(cat5Values.recurrenceYears), lastInspectionDate: cat5Values.lastInspectionDate || undefined, scheduledDate: cat5Values.scheduledDate || undefined, completionDate: cat5Values.completionDate || undefined } }));
 
       try {
         const inspResults = await Promise.all(inspPromises);
