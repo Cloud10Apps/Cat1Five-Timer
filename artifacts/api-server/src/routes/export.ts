@@ -248,7 +248,7 @@ router.get("/inspections", asyncHandler(async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   await workbook.xlsx.write(res);
   res.end();
-});
+}));
 
 /* ── Elevator export helpers ── */
 function statusLabel(status: string, nextDueDate: string | null | undefined): string {
