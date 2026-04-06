@@ -10,6 +10,9 @@ import usersRouter from "./users.js";
 import exportRouter from "./export.js";
 import billingRouter from "./billing.js";
 
+// TODO: Add requireActiveSubscription middleware after billing launch
+// import { requireActiveSubscription } from "../middleware/auth.js";
+
 const router: IRouter = Router();
 
 router.use(healthRouter);

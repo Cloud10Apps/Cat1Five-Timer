@@ -12,24 +12,35 @@ export class StripeStorage {
 
   async getProductsWithPrices() {
     const stripe = await getUncachableStripeClient();
-    const products = await stripe.products.list({ active: true, limit: 20 });
-    const results: any[] = [];
 
-    for (const product of products.data) {
-      const prices = await stripe.prices.list({ product: product.id, active: true, limit: 10 });
-      for (const price of prices.data) {
-        results.push({
+    const prices = await stripe.prices.list({
+      active: true,
+      limit: 100,
+      expand: ["data.product"],
+    });
+
+    return prices.data
+      .filter(price => {
+        const product = price.product as any;
+        return (
+          price.recurring != null &&
+          typeof product === "object" &&
+          product !== null &&
+          product.active === true
+        );
+      })
+      .map(price => {
+        const product = price.product as any;
+        return {
           product_id: product.id,
           product_name: product.name,
-          product_description: product.description,
+          product_description: product.description ?? null,
           price_id: price.id,
           unit_amount: price.unit_amount,
           currency: price.currency,
           recurring: price.recurring,
-        });
-      }
-    }
-    return results;
+        };
+      });
   }
 }
 

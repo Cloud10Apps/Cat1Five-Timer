@@ -36,6 +36,7 @@ interface BillingStatus {
     currentPeriodEnd: number;
     cancelAtPeriodEnd: boolean;
     quantity: number;
+    unitAmount: number | null;
   } | null;
   userCount: number;
 }
@@ -118,8 +119,10 @@ export default function Billing() {
   const meta = STATUS_META[status?.status ?? "inactive"] ?? STATUS_META.inactive;
   const StatusIcon = meta.icon;
   const isActive = status?.status === "active" || status?.status === "trialing";
-  const monthlyCost = status?.subscription?.quantity
-    ? (status.subscription.quantity * 50).toLocaleString("en-US", { style: "currency", currency: "USD" })
+  const monthlyCost = status?.subscription?.quantity != null &&
+                      status?.subscription?.unitAmount != null
+    ? (status.subscription.quantity * (status.subscription.unitAmount / 100))
+        .toLocaleString("en-US", { style: "currency", currency: "USD" })
     : null;
 
   return (

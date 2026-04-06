@@ -1,0 +1,129 @@
+You are an expert senior developer. Please fix the following 3 calendar bugs.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## BUG 1 — CRITICAL: Calendar only shows inspections based on Due Date month
+## Inspections whose Scheduled Date or Completion Date fall in a different
+## month than their Due Date are invisible on the calendar for that month.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/api-server/src/routes/inspections.ts
+
+Find the month/year filter block that looks like this:
+  if (params.data.month && params.data.year) {
+    const startDate = dayjs().year(params.data.year).month(params.data.month - 1).startOf("month").format("YYYY-MM-DD");
+    const endDate = dayjs().year(params.data.year).month(params.data.month - 1).endOf("month").format("YYYY-MM-DD");
+    conditions.push(gte(inspectionsTable.nextDueDate, startDate));
+    conditions.push(lte(inspectionsTable.nextDueDate, endDate));
+  }
+
+Replace it entirely with this OR condition that covers all three date fields:
+  if (params.data.month && params.data.year) {
+    const startDate = dayjs()
+      .year(params.data.year)
+      .month(params.data.month - 1)
+      .startOf("month")
+      .format("YYYY-MM-DD");
+    const endDate = dayjs()
+      .year(params.data.year)
+      .month(params.data.month - 1)
+      .endOf("month")
+      .format("YYYY-MM-DD");
+    conditions.push(
+      or(
+        and(
+          sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
+          gte(inspectionsTable.nextDueDate, startDate),
+          lte(inspectionsTable.nextDueDate, endDate)
+        ),
+        and(
+          sql`${inspectionsTable.scheduledDate} IS NOT NULL`,
+          gte(inspectionsTable.scheduledDate, startDate),
+          lte(inspectionsTable.scheduledDate, endDate)
+        ),
+        and(
+          sql`${inspectionsTable.completionDate} IS NOT NULL`,
+          gte(inspectionsTable.completionDate, startDate),
+          lte(inspectionsTable.completionDate, endDate)
+        )
+      )
+    );
+  }
+
+Make sure { or } is imported from "drizzle-orm" at the top of the file.
+It is likely already imported — just verify it is in the import list.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## BUG 2 — Completed inspections show both a "DUE" chip AND a "COMPLETED"
+## chip on the same calendar day, which is confusing and misleading.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/elevator-tracker/src/pages/calendar.tsx
+
+Find the getDayActivities function which looks like this:
+  const getDayActivities = (date: dayjs.Dayjs): CalendarActivity[] => {
+    if (!inspections) return [];
+    const activities: CalendarActivity[] = [];
+    for (const insp of inspections) {
+      if (insp.nextDueDate && dayjs(insp.nextDueDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "due" });
+      if (insp.scheduledDate && dayjs(insp.scheduledDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "scheduled" });
+      if (insp.completionDate && dayjs(insp.completionDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "completed" });
+    }
+    return activities;
+  };
+
+Replace it with this version that suppresses the "due" chip for completed
+inspections, and suppresses the "scheduled" chip when a completion date exists:
+  const getDayActivities = (date: dayjs.Dayjs): CalendarActivity[] => {
+    if (!inspections) return [];
+    const activities: CalendarActivity[] = [];
+    for (const insp of inspections) {
+      const isCompleted = insp.status === "COMPLETED" || !!insp.completionDate;
+
+      // Only show "due" chip if the inspection is NOT completed
+      if (!isCompleted && insp.nextDueDate && dayjs(insp.nextDueDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "due" });
+
+      // Only show "scheduled" chip if the inspection has NOT been completed
+      if (!isCompleted && insp.scheduledDate && dayjs(insp.scheduledDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "scheduled" });
+
+      // Always show "completed" chip on the completion date
+      if (insp.completionDate && dayjs(insp.completionDate).isSame(date, "day"))
+        activities.push({ insp, activityType: "completed" });
+    }
+    return activities;
+  };
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## BUG 3 — The page subtitle still says "Elevator" instead of the correct
+## industry term, which is shown consistently everywhere else as "Unit"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: artifacts/elevator-tracker/src/pages/calendar.tsx
+
+Find this subtitle line:
+  <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">
+    All inspection activity by date — due, scheduled, and completed.
+  </p>
+
+Update it to clarify what "activity" means and use the correct terminology:
+  <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">
+    Each unit appears on its Due Date, Scheduled Date, and Completion Date —
+    so a single unit may appear multiple times across the calendar.
+  </p>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## AFTER ALL FIXES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Confirm all 3 bugs are fixed
+2. Verify the app builds without TypeScript errors
+3. Verify the calendar still loads and navigation between months works
+4. Verify that inspections with scheduled dates in a different month 
+   than their due date now appear on the correct calendar month
+5. List all files modified
+6. Do not change any other calendar logic, filter behavior, 
+   or any backend files other than the one route change above

@@ -276,7 +276,7 @@ function agingBucketLabel(nextDueDate: string | null | undefined): string {
   return "Overdue 91+ Days";
 }
 
-router.get("/elevators", async (req, res) => {
+router.get("/elevators", asyncHandler(async (req, res) => {
   const params = ExportElevatorsQueryParams.safeParse(req.query);
   const orgId = req.user!.organizationId;
 
@@ -316,42 +316,39 @@ router.get("/elevators", async (req, res) => {
     .where(and(...conditions))
     .orderBy(customersTable.name, buildingsTable.name, elevatorsTable.name);
 
-  // Most urgent open inspection per elevator using DISTINCT ON (PostgreSQL)
+  // Most urgent open inspection per elevator
   const elevatorIds = rows.map(r => r.elevatorId);
-  type LatestInsp = { elevator_id: number; status: string; inspection_type: string; next_due_date: string | null; scheduled_date: string | null; last_inspection_date: string | null };
+  type LatestInsp = { elevatorId: number; status: string; inspection_type: string; nextDueDate: string | null; scheduledDate: string | null; lastInspectionDate: string | null };
   let latestInspMap = new Map<number, LatestInsp>();
   if (elevatorIds.length > 0) {
-    const idArray = sql.raw(`ARRAY[${elevatorIds.join(",")}]`);
-    const openRows = await db.execute<LatestInsp>(sql`
-      SELECT DISTINCT ON (elevator_id)
-        elevator_id, status, inspection_type, next_due_date, scheduled_date, last_inspection_date
-      FROM inspections
-      WHERE organization_id = ${orgId}
-        AND elevator_id = ANY(${idArray})
-        AND status != 'COMPLETED'
-      ORDER BY
-        elevator_id,
-        EXTRACT(YEAR FROM next_due_date::date) ASC NULLS LAST,
-        CASE inspection_type WHEN 'CAT5' THEN 0 ELSE 1 END ASC,
-        next_due_date ASC NULLS LAST
-    `);
-    for (const r of openRows.rows) {
-      latestInspMap.set(r.elevator_id, r);
+    const allInspRows = await db
+      .select({
+        elevatorId:          inspectionsTable.elevatorId,
+        status:              inspectionsTable.status,
+        inspection_type:     inspectionsTable.inspectionType,
+        nextDueDate:         inspectionsTable.nextDueDate,
+        scheduledDate:       inspectionsTable.scheduledDate,
+        lastInspectionDate:  inspectionsTable.lastInspectionDate,
+      })
+      .from(inspectionsTable)
+      .where(
+        and(
+          eq(inspectionsTable.organizationId, orgId),
+          inArray(inspectionsTable.elevatorId, elevatorIds)
+        )
+      )
+      .orderBy(inspectionsTable.nextDueDate);
+
+    // Keep only the most urgent open inspection per elevator; fall back to any if none open
+    const openMap = new Map<number, LatestInsp>();
+    const anyMap  = new Map<number, LatestInsp>();
+    for (const r of allInspRows) {
+      const row: LatestInsp = { elevatorId: r.elevatorId, status: r.status, inspection_type: r.inspection_type ?? "", nextDueDate: r.nextDueDate ?? null, scheduledDate: r.scheduledDate ?? null, lastInspectionDate: r.lastInspectionDate ?? null };
+      if (!anyMap.has(r.elevatorId)) anyMap.set(r.elevatorId, row);
+      if (r.status !== "COMPLETED" && !openMap.has(r.elevatorId)) openMap.set(r.elevatorId, row);
     }
-    const missingIds = elevatorIds.filter(id => !latestInspMap.has(id));
-    if (missingIds.length > 0) {
-      const fallbackRows = await db.execute<LatestInsp>(sql`
-        SELECT DISTINCT ON (elevator_id)
-          elevator_id, status, inspection_type, next_due_date, scheduled_date, last_inspection_date
-        FROM inspections
-        WHERE organization_id = ${orgId}
-          AND elevator_id = ANY(${sql.raw(`ARRAY[${missingIds.join(",")}]`)})
-        ORDER BY elevator_id, next_due_date DESC NULLS LAST
-      `);
-      for (const r of fallbackRows.rows) {
-        latestInspMap.set(r.elevator_id, r);
-      }
-    }
+    for (const [id, row] of openMap) latestInspMap.set(id, row);
+    for (const [id, row] of anyMap) { if (!latestInspMap.has(id)) latestInspMap.set(id, row); }
   }
 
   const workbook = new ExcelJS.Workbook();
@@ -379,8 +376,8 @@ router.get("/elevators", async (req, res) => {
   const today = dayjs();
   rows.forEach(r => {
     const insp = latestInspMap.get(r.elevatorId);
-    const daysVal = insp?.next_due_date
-      ? today.diff(dayjs(insp.next_due_date), "day")
+    const daysVal = insp?.nextDueDate
+      ? today.diff(dayjs(insp.nextDueDate), "day")
       : null;
     sheet.addRow({
       customerName:  r.customerName ?? "",
@@ -391,12 +388,12 @@ router.get("/elevators", async (req, res) => {
       internalId:    r.internalId ?? "",
       stateId:       r.stateId ?? "",
       inspType:      insp?.inspection_type ?? "",
-      inspStatus:    insp ? statusLabel(insp.status, insp.next_due_date) : "",
-      lastInspDate:  toDate(insp?.last_inspection_date),
-      nextDueDate:   toDate(insp?.next_due_date),
+      inspStatus:    insp ? statusLabel(insp.status, insp.nextDueDate) : "",
+      lastInspDate:  toDate(insp?.lastInspectionDate),
+      nextDueDate:   toDate(insp?.nextDueDate),
       days:          daysVal ?? "",
-      agingBucket:   agingBucketLabel(insp?.next_due_date),
-      scheduledDate: toDate(insp?.scheduled_date),
+      agingBucket:   agingBucketLabel(insp?.nextDueDate),
+      scheduledDate: toDate(insp?.scheduledDate),
     });
   });
 
@@ -405,9 +402,9 @@ router.get("/elevators", async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   await workbook.xlsx.write(res);
   res.end();
-});
+}));
 
-router.get("/overdue", async (req, res) => {
+router.get("/overdue", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const todayStr = dayjs().format("YYYY-MM-DD");
   const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
@@ -480,9 +477,9 @@ router.get("/overdue", async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   await workbook.xlsx.write(res);
   res.end();
-});
+}));
 
-router.get("/upcoming", async (req, res) => {
+router.get("/upcoming", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const todayStr = dayjs().format("YYYY-MM-DD");
   const in14Days  = dayjs().add(14, "day").format("YYYY-MM-DD");
@@ -557,6 +554,6 @@ router.get("/upcoming", async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   await workbook.xlsx.write(res);
   res.end();
-});
+}));
 
 export default router;

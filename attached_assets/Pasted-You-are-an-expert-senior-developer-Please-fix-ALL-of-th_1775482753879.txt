@@ -1,0 +1,365 @@
+You are an expert senior developer. Please fix ALL of the following issues 
+in one pass. Work through each section in order, confirm each fix, and do 
+not break any existing functionality.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## SECTION 1 — SECURITY FIXES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 1A. Fix hardcoded $50 price in billing frontend
+FILE: artifacts/elevator-tracker/src/pages/billing.tsx
+
+The BillingStatus interface is missing unitAmount. The backend already 
+returns it — update the frontend to use it.
+
+STEP 1 — Update the BillingStatus TypeScript interface to add unitAmount:
+  interface BillingStatus {
+    status: string;
+    subscription: {
+      id: string;
+      status: string;
+      currentPeriodEnd: number;
+      cancelAtPeriodEnd: boolean;
+      quantity: number;
+      unitAmount: number | null;   // ADD THIS LINE
+    } | null;
+    userCount: number;
+  }
+
+STEP 2 — Replace the hardcoded monthlyCost calculation (~line 121):
+  FROM:
+    const monthlyCost = status?.subscription?.quantity
+      ? (status.subscription.quantity * 50).toLocaleString("en-US", 
+          { style: "currency", currency: "USD" })
+      : null;
+
+  TO:
+    const monthlyCost = status?.subscription?.quantity != null && 
+                        status?.subscription?.unitAmount != null
+      ? (status.subscription.quantity * (status.subscription.unitAmount / 100))
+          .toLocaleString("en-US", { style: "currency", currency: "USD" })
+      : null;
+
+---
+
+### 1B. Fix remaining sql.raw() SQL injection risks
+FILE: artifacts/api-server/src/routes/export.ts
+
+There are 2 remaining sql.raw() calls using string interpolation that 
+bypass Drizzle's parameterized query protection.
+
+Find line ~324:
+  const idArray = sql.raw(`ARRAY[${elevatorIds.join(",")}]`);
+
+And line ~348 (inside a raw SQL query):
+  AND elevator_id = ANY(${sql.raw(`ARRAY[${missingIds.join(",")}]`)})
+
+FIX both by replacing the entire raw SQL block that uses these arrays 
+with a proper Drizzle query using inArray():
+
+For the latest inspection lookup (the block around lines 320-355), 
+replace the raw SQL with:
+
+  let latestInspMap = new Map();
+  if (elevatorIds.length > 0) {
+    // Get all inspections for these elevators, then find latest per elevator in JS
+    const allInspRows = await db
+      .select({
+        elevatorId: inspectionsTable.elevatorId,
+        status: inspectionsTable.status,
+        inspectionType: inspectionsTable.inspectionType,
+        nextDueDate: inspectionsTable.nextDueDate,
+        scheduledDate: inspectionsTable.scheduledDate,
+      })
+      .from(inspectionsTable)
+      .where(
+        and(
+          eq(inspectionsTable.organizationId, orgId),
+          inArray(inspectionsTable.elevatorId, elevatorIds)
+        )
+      )
+      .orderBy(inspectionsTable.nextDueDate);
+
+    // Keep only the latest per elevator
+    for (const r of allInspRows) {
+      if (!latestInspMap.has(r.elevatorId)) {
+        latestInspMap.set(r.elevatorId, r);
+      }
+    }
+  }
+
+Make sure to import { inArray, and, eq } from "drizzle-orm" at the top 
+if not already imported.
+
+---
+
+### 1C. Add CORS warning at startup
+FILE: artifacts/api-server/src/app.ts
+
+After the allowedOrigins array is built (around line 51), add a startup 
+warning when no origins are configured:
+
+  if (allowedOrigins.length === 0) {
+    console.warn(
+      "[CORS WARNING] ALLOWED_ORIGINS environment variable is not set. " +
+      "CORS is currently open to all origins. " +
+      "Set ALLOWED_ORIGINS=https://your-app.replit.app in Replit Secrets."
+    );
+  }
+
+---
+
+### 1D. Find and wrap the 4 remaining unprotected route handlers
+FILES: All route files in artifacts/api-server/src/routes/
+
+Run this check mentally: find any router.get/post/put/delete calls that 
+do NOT use asyncHandler(). Wrap them with asyncHandler() like all the 
+others. The asyncHandler utility is at ../lib/asyncHandler.js
+
+Pattern to follow:
+  BEFORE: router.get("/path", async (req, res) => { ... })
+  AFTER:  router.get("/path", asyncHandler(async (req, res) => { ... }))
+
+---
+
+## SECTION 2 — UI/UX FIXES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 2A. Add "Forgot password?" to login page
+FILE: artifacts/elevator-tracker/src/pages/login.tsx
+
+Find the password label row which currently looks like:
+  <div className="flex items-center justify-between">
+    <Label htmlFor="password" className="text-zinc-950 font-medium">
+      Password
+    </Label>
+  </div>
+
+Replace with:
+  <div className="flex items-center justify-between">
+    <Label htmlFor="password" className="text-zinc-950 font-medium">
+      Password
+    </Label>
+    <span
+      className="text-xs text-zinc-400 cursor-not-allowed select-none"
+      title="Contact your administrator to reset your password"
+    >
+      Forgot password?
+    </span>
+  </div>
+
+---
+
+### 2B. Fix inconsistent chart font sizes in dashboard
+FILE: artifacts/elevator-tracker/src/pages/dashboard.tsx
+
+The bar label renderers inside the upcoming and overdue aging charts use 
+fontSize={16} and fontSize={17} which are inconsistent with the rest of 
+the UI. Find every LabelList content renderer and custom label function 
+inside these two charts and change font sizes:
+  fontSize={16} → fontSize={16}
+  fontSize={17} → fontSize={16}
+  fontSize={15} → fontSize={16}
+
+Only change values INSIDE the aging/upcoming/overdue bar chart label 
+renderers. Do NOT change the tickStyle constant (already correct at 12) 
+and do NOT change tooltip font sizes.
+
+---
+
+### 2C. Replace remaining inline SVGs with Lucide icons
+FILE: artifacts/elevator-tracker/src/pages/dashboard.tsx
+
+There are inline SVG elements used as section/card header icons that 
+should use Lucide for consistency. Find inline <svg> elements that are 
+NOT inside Recharts chart components (i.e. not inside BarChart, XAxis, 
+YAxis, LabelList, or custom label render functions).
+
+Replace them with these Lucide equivalents:
+- Warning/alert triangle SVGs → <AlertTriangle className="w-4 h-4" />
+- Calendar SVGs used as header icons → <CalendarDays className="w-4 h-4" />
+- Clock/time SVGs → <Clock className="w-4 h-4" />
+- Checkmark/circle-check SVGs → <CheckCircle2 className="w-4 h-4" />
+
+Add any missing imports to the lucide-react import line at the top of 
+the file. Do NOT touch any SVGs inside Recharts chart rendering functions 
+or LabelList content renderers — only standalone icon SVGs in card 
+headers and section labels.
+
+---
+
+### 2D. Add URL-persisted filter state to Inspections page
+FILE: artifacts/elevator-tracker/src/pages/inspections.tsx
+
+PROBLEM: All filter selections reset when the user navigates away and 
+back. Power users managing large elevator portfolios work the same 
+filters every day.
+
+FIX: Persist the core filter state in the URL query string using wouter's 
+useSearch hook. This also makes filtered views shareable via URL.
+
+STEP 1 — Add wouter search params imports at the top:
+  import { useSearch, useLocation } from "wouter";
+
+STEP 2 — Replace the simple useState for the primary filters with URL 
+params. Add this helper near the top of the Inspections component:
+
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+
+  // Helper to read array params from URL
+  function getParamArray(key: string): string[] {
+    const val = params.get(key);
+    return val ? val.split(",").filter(Boolean) : [];
+  }
+
+STEP 3 — Initialize the primary filter states from URL params:
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
+    () => getParamArray("status")
+  );
+  const [selectedInspTypes, setSelectedInspTypes] = useState<string[]>(
+    () => getParamArray("type")
+  );
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>(
+    () => getParamArray("customer")
+  );
+  const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>(
+    () => getParamArray("building")
+  );
+
+STEP 4 — Add a useEffect that syncs filter state back to the URL whenever 
+filters change:
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (selectedStatuses.length > 0) p.set("status", selectedStatuses.join(","));
+    if (selectedInspTypes.length > 0) p.set("type", selectedInspTypes.join(","));
+    if (selectedCustomerIds.length > 0) p.set("customer", selectedCustomerIds.join(","));
+    if (selectedBuildingIds.length > 0) p.set("building", selectedBuildingIds.join(","));
+    const qs = p.toString();
+    navigate(qs ? `/inspections?${qs}` : "/inspections", { replace: true });
+  }, [selectedStatuses, selectedInspTypes, selectedCustomerIds, selectedBuildingIds]);
+
+Only persist these 4 primary filters in the URL. Leave date range 
+filters, bank, elevator, and unit type filters as local state only 
+(they are too complex for URL encoding).
+
+---
+
+### 2E. Add subscription enforcement middleware
+FILE: artifacts/api-server/src/middleware/auth.ts (add to existing file)
+FILE: artifacts/api-server/src/routes/index.ts (apply middleware)
+
+PROBLEM: Users can sign up and use the full app forever without paying.
+
+FIX STEP 1 — Add requireActiveSubscription to auth.ts:
+
+  export async function requireActiveSubscription(
+    req: Request, 
+    res: Response, 
+    next: NextFunction
+  ) {
+    // Skip enforcement if Stripe is not configured (dev/demo mode)
+    if (!process.env.STRIPE_SECRET_KEY) return next();
+
+    const orgId = req.user!.organizationId;
+
+    try {
+      const { db, organizationsTable } = await import("@workspace/db");
+      const { eq } = await import("drizzle-orm");
+      const [org] = await db
+        .select()
+        .from(organizationsTable)
+        .where(eq(organizationsTable.id, orgId));
+
+      if (!org?.stripeSubscriptionId) {
+        // No subscription — check if within grace period (14 days from org creation)
+        const createdAt = new Date(org?.createdAt ?? 0);
+        const daysSinceCreation = (Date.now() - createdAt.getTime()) / 86_400_000;
+        if (daysSinceCreation <= 14) return next(); // 14-day free trial grace period
+        return res.status(402).json({ 
+          error: "Active subscription required.",
+          code: "SUBSCRIPTION_REQUIRED"
+        });
+      }
+
+      const { stripeStorage } = await import("./stripeStorage.js");
+      const sub = await stripeStorage.getSubscription(org.stripeSubscriptionId);
+      if (sub && (sub.status === "active" || sub.status === "trialing")) {
+        return next();
+      }
+
+      return res.status(402).json({ 
+        error: "Your subscription is inactive. Please update your billing.",
+        code: "SUBSCRIPTION_INACTIVE"
+      });
+    } catch {
+      // On error, fail open (don't block users due to Stripe outages)
+      return next();
+    }
+  }
+
+FIX STEP 2 — Do NOT apply this middleware yet to any routes. 
+Just add it to auth.ts and export it so it's ready to use when billing 
+goes live. Add a TODO comment in routes/index.ts:
+  // TODO: Add requireActiveSubscription middleware after billing launch
+  // import { requireActiveSubscription } from "../middleware/auth.js";
+
+---
+
+### 2F. Fix Stripe N+1 API calls
+FILE: artifacts/api-server/src/stripeStorage.ts
+
+CURRENT CODE makes one API call per product:
+  for (const product of products.data) {
+    const prices = await stripe.prices.list({ product: product.id, ... });
+  }
+
+FIX: Fetch all active prices in a single call with product expansion:
+
+  async getProductsWithPrices() {
+    const stripe = await getUncachableStripeClient();
+    
+    const prices = await stripe.prices.list({
+      active: true,
+      limit: 100,
+      expand: ["data.product"],
+    });
+
+    return prices.data
+      .filter(price => {
+        const product = price.product as any;
+        return (
+          price.recurring != null &&
+          typeof product === "object" &&
+          product !== null &&
+          product.active === true
+        );
+      })
+      .map(price => {
+        const product = price.product as any;
+        return {
+          product_id: product.id,
+          product_name: product.name,
+          product_description: product.description ?? null,
+          price_id: price.id,
+          unit_amount: price.unit_amount,
+          currency: price.currency,
+          recurring: price.recurring,
+        };
+      });
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## AFTER ALL FIXES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Verify the app builds without TypeScript errors
+2. Verify the app runs and the dashboard loads correctly
+3. Verify login still works
+4. Confirm each of the 10 fix items (1A through 2F) is complete
+5. List every file that was modified
+6. Flag anything you were unable to fix or had to implement differently
+
+Do not modify any database schema, migration files, or the pnpm-lock.yaml 
+unless absolutely required by a dependency change.

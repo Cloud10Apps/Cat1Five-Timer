@@ -137,6 +137,12 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-zinc-950 font-medium">Password</Label>
+                  <span
+                    className="text-xs text-zinc-400 cursor-not-allowed select-none"
+                    title="Contact your administrator to reset your password"
+                  >
+                    Forgot password?
+                  </span>
                 </div>
                 <Input
                   id="password"

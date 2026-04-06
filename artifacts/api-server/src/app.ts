@@ -50,6 +50,14 @@ app.post(
 const rawAllowedOrigins = process.env.ALLOWED_ORIGINS ?? "";
 const allowedOrigins = rawAllowedOrigins.split(",").map(s => s.trim()).filter(Boolean);
 
+if (allowedOrigins.length === 0) {
+  console.warn(
+    "[CORS WARNING] ALLOWED_ORIGINS environment variable is not set. " +
+    "CORS is currently open to all origins. " +
+    "Set ALLOWED_ORIGINS=https://your-app.replit.app in Replit Secrets."
+  );
+}
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);

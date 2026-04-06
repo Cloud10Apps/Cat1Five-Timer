@@ -48,3 +48,45 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 export function generateToken(user: AuthUser): string {
   return jwt.sign(user, JWT_SECRET!, { expiresIn: "7d" });
 }
+
+export async function requireActiveSubscription(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  if (!process.env.STRIPE_SECRET_KEY) return next();
+
+  const orgId = req.user!.organizationId;
+
+  try {
+    const { db, organizationsTable } = await import("@workspace/db");
+    const { eq } = await import("drizzle-orm");
+    const [org] = await db
+      .select()
+      .from(organizationsTable)
+      .where(eq(organizationsTable.id, orgId));
+
+    if (!org?.stripeSubscriptionId) {
+      const createdAt = new Date(org?.createdAt ?? 0);
+      const daysSinceCreation = (Date.now() - createdAt.getTime()) / 86_400_000;
+      if (daysSinceCreation <= 14) return next();
+      return res.status(402).json({
+        error: "Active subscription required.",
+        code: "SUBSCRIPTION_REQUIRED"
+      });
+    }
+
+    const { stripeStorage } = await import("../stripeStorage.js");
+    const sub = await stripeStorage.getSubscription(org.stripeSubscriptionId);
+    if (sub && (sub.status === "active" || sub.status === "trialing")) {
+      return next();
+    }
+
+    return res.status(402).json({
+      error: "Your subscription is inactive. Please update your billing.",
+      code: "SUBSCRIPTION_INACTIVE"
+    });
+  } catch {
+    return next();
+  }
+}

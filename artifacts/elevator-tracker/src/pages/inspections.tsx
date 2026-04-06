@@ -45,6 +45,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import dayjs from "dayjs";
+import { useSearch, useLocation } from "wouter";
 
 /* ─── Constants ─────────────────────────────────────────────── */
 const PAGE_GROUPS = 20; // elevator cards per page
@@ -154,17 +155,37 @@ type ElevGroup = {
 /* ═══════════════════════════════════════════════════════════════ */
 export default function Inspections() {
 
+  /* ── URL filter params ── */
+  const search = useSearch();
+  const [, navigate] = useLocation();
+  const params = new URLSearchParams(search);
+  function getParamArray(key: string): string[] {
+    const val = params.get(key);
+    return val ? val.split(",").filter(Boolean) : [];
+  }
+
   /* ── Filter state ── */
-  const [selectedStatuses,     setSelectedStatuses]     = useState<string[]>([]);
-  const [selectedInspTypes,    setSelectedInspTypes]    = useState<string[]>([]);
+  const [selectedStatuses,     setSelectedStatuses]     = useState<string[]>(() => getParamArray("status"));
+  const [selectedInspTypes,    setSelectedInspTypes]    = useState<string[]>(() => getParamArray("type"));
   const [selectedUnitTypes,    setSelectedUnitTypes]    = useState<string[]>([]);
-  const [selectedCustomerIds,  setSelectedCustomerIds]  = useState<string[]>([]);
-  const [selectedBuildingIds,  setSelectedBuildingIds]  = useState<string[]>([]);
+  const [selectedCustomerIds,  setSelectedCustomerIds]  = useState<string[]>(() => getParamArray("customer"));
+  const [selectedBuildingIds,  setSelectedBuildingIds]  = useState<string[]>(() => getParamArray("building"));
   const [selectedElevatorIds,  setSelectedElevatorIds]  = useState<string[]>([]);
   const [selectedBanks,        setSelectedBanks]        = useState<string[]>([]);
   const [filterDueMonths,      setFilterDueMonths]      = useState<string[]>([]);
   const [filterDueYears,       setFilterDueYears]       = useState<string[]>([]);
   const [filterAgingBuckets,   setFilterAgingBuckets]   = useState<string[]>([]);
+
+  /* ── Sync primary filters to URL ── */
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (selectedStatuses.length    > 0) p.set("status",   selectedStatuses.join(","));
+    if (selectedInspTypes.length   > 0) p.set("type",     selectedInspTypes.join(","));
+    if (selectedCustomerIds.length > 0) p.set("customer", selectedCustomerIds.join(","));
+    if (selectedBuildingIds.length > 0) p.set("building", selectedBuildingIds.join(","));
+    const qs = p.toString();
+    navigate(qs ? `/inspections?${qs}` : "/inspections", { replace: true });
+  }, [selectedStatuses, selectedInspTypes, selectedCustomerIds, selectedBuildingIds]);
 
   /* ── Date range panel ── */
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);

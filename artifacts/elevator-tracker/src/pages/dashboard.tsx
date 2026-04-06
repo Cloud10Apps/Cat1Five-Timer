@@ -8,7 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid,
 } from "recharts";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertTriangle, Clock, CalendarDays, CheckCircle2 } from "lucide-react";
 import dayjs from "dayjs";
 
 /* ─── label helper ─── */
@@ -55,9 +55,7 @@ function OverdueBadge({ days }: { days: number }) {
   else                  { label = `${days} days overdue`; bg = "bg-amber-500"; }
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold whitespace-nowrap text-white ${bg}`}>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 shrink-0">
-        <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 4a.75.75 0 0 1 .75.75v3a.75.75 0 1 1-1.5 0v-3A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-      </svg>
+      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
       {label}
     </span>
   );
@@ -165,9 +163,7 @@ function CardHeader({ title, badge, action }: { title: string; badge?: React.Rea
 function OverdueCardHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="px-5 py-3 border-b border-red-200 bg-red-50 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-red-500 shrink-0">
-        <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 4a.75.75 0 0 1 .75.75v3a.75.75 0 1 1-1.5 0v-3A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-      </svg>
+      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
       <h3 className="text-xs font-black text-red-700 uppercase tracking-[0.09em] flex-1 text-center">{title}</h3>
       {badge}
       <div className="flex justify-end">{action}</div>
@@ -179,9 +175,7 @@ function OverdueCardHeader({ title, badge, action }: { title: string; badge?: Re
 function UpcomingCardHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="px-5 py-3 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-indigo-500 shrink-0">
-        <path fillRule="evenodd" d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8Zm7.75-4.25a.75.75 0 0 0-1.5 0V8c0 .414.336.75.75.75h3.25a.75.75 0 0 0 0-1.5h-2.5V3.75Z" clipRule="evenodd" />
-      </svg>
+      <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
       <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1 text-center">{title}</h3>
       {badge}
       <div className="flex justify-end">{action}</div>
@@ -217,7 +211,7 @@ function BarValueLabel(props: any) {
   if (!value || Number(value) === 0 || Number(width) < 22) return null;
   return (
     <text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5}
-      fill="#fff" fontSize={15} fontWeight={700} textAnchor="middle">{value}</text>
+      fill="#fff" fontSize={16} fontWeight={700} textAnchor="middle">{value}</text>
   );
 }
 
@@ -230,7 +224,7 @@ function TotalLabel(data: any[]) {
     if (!d) return null;
     const total = (Number(d.notStarted)||0) + (Number(d.scheduled)||0) + (Number(d.inProgress)||0);
     if (!total) return null;
-    return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={17} fontWeight={900} textAnchor="start">{total}</text>;
+    return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={16} fontWeight={900} textAnchor="start">{total}</text>;
   };
 }
 
@@ -240,7 +234,7 @@ function TotalLabelVertical(data: any[]) {
     const { x, y, width, index } = props;
     const d = data[index];
     if (!d || d._total === 0) return null;
-    return <text x={Number(x)+Number(width)/2} y={Number(y)-7} fill="#18181b" fontSize={15} fontWeight={900} textAnchor="middle">{d._total}</text>;
+    return <text x={Number(x)+Number(width)/2} y={Number(y)-7} fill="#18181b" fontSize={16} fontWeight={900} textAnchor="middle">{d._total}</text>;
   };
 }
 
@@ -356,13 +350,13 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {l1 ? [1,2,3,4].map(i => <StatSkeleton key={i} />) : ([
               { label:"Not Scheduled", value:summary?.notStartedCount??0, numCls:"text-zinc-800",  topCls:"border-t-zinc-400", iconCls:"text-zinc-400",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8Zm7.75-4.25a.75.75 0 0 0-1.5 0V8c0 .414.336.75.75.75h3.25a.75.75 0 0 0 0-1.5h-2.5V3.75Z" clipRule="evenodd" /></svg> },
+                icon: <Clock className="w-4 h-4" /> },
               { label:"Scheduled",     value:summary?.scheduledCount??0,  numCls:"text-blue-700",  topCls:"border-t-blue-500", iconCls:"text-blue-400",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clipRule="evenodd" /></svg> },
+                icon: <CalendarDays className="w-4 h-4" /> },
               { label:"In Progress",   value:summary?.inProgressCount??0, numCls:"text-amber-600", topCls:"border-t-amber-500", iconCls:"text-amber-400",
                 icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08 1.01.75.75 0 1 1-1.3-.75 6 6 0 0 1 9.44-1.345l.842.841V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.345l-.842-.841v1.273a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.84.841a4.5 4.5 0 0 0 7.08-1.01.75.75 0 0 1 1.025-.295Z" clipRule="evenodd" /></svg> },
               { label:"Completed",     value:summary?.completedCount??0,  numCls:"text-green-700", topCls:"border-t-green-500", iconCls:"text-green-500",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg> },
+                icon: <CheckCircle2 className="w-4 h-4" /> },
             ] as { label:string; value:number; numCls:string; topCls:string; iconCls:string; icon:React.ReactNode }[]).map(({ label, value, numCls, topCls, iconCls, icon }) => (
               <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
                 <CardHeader title={label} action={<span className={`w-6 h-6 opacity-50 ${iconCls} [&>svg]:w-full [&>svg]:h-full`}>{icon}</span>} />
@@ -384,22 +378,14 @@ export default function Dashboard() {
                 sub:  "Average time from due date to scheduling",
                 val:  summary?.avgDaysToSchedule??null,
                 tip:  "Average days between an inspection's due date and when it was scheduled. Positive = scheduled after due date.",
-                icon: (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-zinc-400">
-                    <path fillRule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clipRule="evenodd" />
-                  </svg>
-                ),
+                icon: <CalendarDays className="w-5 h-5 text-zinc-400" />,
               },
               {
                 label:"Avg Days To Complete",
                 sub:  "Average time from due date to completion",
                 val:  summary?.avgDaysToComplete??null,
                 tip:  "Average days between an inspection's due date and when it was marked completed. Positive = completed after due date.",
-                icon: (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-zinc-400">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
-                  </svg>
-                ),
+                icon: <Clock className="w-5 h-5 text-zinc-400" />,
               },
             ].map(({ label, sub, val, tip, icon }) => (
               <div key={label} className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
@@ -440,7 +426,7 @@ export default function Dashboard() {
               <div className="p-5 h-[300px] flex items-center">
                 {upcomingData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8 opacity-30"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg>
+                    <CheckCircle2 className="w-8 h-8 opacity-30" />
                     <span className="text-sm font-medium">No upcoming inspections</span>
                   </div>
                 ) : (
@@ -471,7 +457,7 @@ export default function Dashboard() {
               <div className="p-5 h-[300px] flex items-center">
                 {overdueData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8 opacity-30"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg>
+                    <CheckCircle2 className="w-8 h-8 opacity-30" />
                     <span className="text-sm font-medium">No overdue inspections</span>
                   </div>
                 ) : (
@@ -580,9 +566,7 @@ export default function Dashboard() {
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-10 text-sm text-zinc-500 font-medium">
                           <div className="flex flex-col items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-green-500">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-                            </svg>
+                            <CheckCircle2 className="w-6 h-6 text-green-500" />
                             No overdue inspections — great work!
                           </div>
                         </TableCell>
