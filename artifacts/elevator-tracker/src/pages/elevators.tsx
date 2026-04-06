@@ -961,7 +961,7 @@ export default function Elevators() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Current Inspections by Unit</h1>
-          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Keeps all current open inspections front and center. Once completed, inspection records move automatically to <span className="font-medium text-zinc-600">Inspection History</span> for tracking.</p>
+          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Keeps all current open inspections front and center.<br />Once completed, inspection records move automatically to <span className="font-medium text-zinc-600">Inspection History</span> for tracking.</p>
         </div>
 
         <div className="flex items-center gap-2">
