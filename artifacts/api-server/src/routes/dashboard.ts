@@ -44,19 +44,27 @@ router.get("/summary", asyncHandler(async (req, res) => {
 
   const result = await db.execute(sql`
     SELECT
+      -- NOT_STARTED: due this year, not yet scheduled
       COUNT(*) FILTER (
         WHERE i.status = 'NOT_STARTED'
           AND i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
-          AND i.next_due_date::date >= ${todayStr}::date
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
       ) AS not_started,
+      -- SCHEDULED: inspection was scheduled (scheduled_date) in the current year, any due year
       COUNT(*) FILTER (
         WHERE i.status = 'SCHEDULED'
+          AND i.scheduled_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.scheduled_date::date) = ${currentYear}
+      ) AS scheduled,
+      -- IN_PROGRESS: due this year, currently in progress
+      COUNT(*) FILTER (
+        WHERE i.status = 'IN_PROGRESS'
           AND i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
-          AND i.next_due_date::date >= ${todayStr}::date
-      ) AS scheduled,
-      COUNT(*) FILTER (WHERE i.status = 'IN_PROGRESS' AND i.completion_date IS NULL) AS in_progress,
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+      ) AS in_progress,
+      -- COMPLETED: completion date in current year, any due year
       COUNT(*) FILTER (
         WHERE i.completion_date IS NOT NULL
           AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}

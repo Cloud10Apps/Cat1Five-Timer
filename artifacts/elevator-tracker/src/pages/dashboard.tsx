@@ -422,7 +422,7 @@ export default function Dashboard() {
 
             {/* Upcoming inspections */}
             {(l2 || l5) ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <UpcomingCardHeader title={`${year} Inspections by Due Status`} />
+              <UpcomingCardHeader title={`${year} Inspections by Current Due Status`} />
               <div className="p-5 h-[300px] flex items-center">
                 {upcomingData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
