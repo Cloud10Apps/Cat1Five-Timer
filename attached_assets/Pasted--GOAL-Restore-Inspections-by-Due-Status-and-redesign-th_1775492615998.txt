@@ -1,0 +1,102 @@
+🎯 GOAL
+
+Restore Inspections by Due Status and redesign the chart to display ONLY future/upcoming inspections, excluding all overdue inspections.
+
+This chart should represent:
+
+👉 “Upcoming Inspections by Due Window”
+
+🧠 PROBLEM
+
+Current chart:
+
+Renamed to “Inspections by Due Status”
+Includes overdue inspections ❌
+No longer focused on forward planning ❌
+✅ REQUIRED FIX
+📊 1. RENAME THE CHART
+
+Change title to:
+
+👉 Upcoming Inspections by Due Window
+
+🚫 2. EXCLUDE OVERDUE RECORDS (CRITICAL)
+
+Filter logic must be:
+
+👉 Include ONLY inspections where:
+
+Next Due Date >= TODAY
+
+👉 Exclude:
+
+Any inspection where:
+Next Due Date < TODAY
+🧩 3. DEFINE NEW BUCKETS (FUTURE ONLY)
+
+Group upcoming inspections into these buckets:
+
+Due Today
+Due in Next 7 Days
+Due in Next 14 Days
+Due in Next 30 Days
+Due in Next 60 Days
+Due in Next 90 Days
+Due in 90+ Days
+⚠️ IMPORTANT
+Buckets must be mutually exclusive
+Each inspection belongs to ONLY ONE bucket
+🧮 4. BUCKET LOGIC (EXACT)
+
+Assume:
+
+DaysUntilDue = NextDueDate - Today
+
+Then:
+
+0 → Due Today
+1–7 → Next 7 Days
+8–14 → Next 14 Days
+15–30 → Next 30 Days
+31–60 → Next 60 Days
+61–90 → Next 90 Days
+91+ → 90+ Days
+🎨 5. COLOR STRATEGY (FORWARD-LOOKING)
+
+Use cool → warm progression:
+
+Today → Red (urgent)
+7 days → Orange
+14 days → Yellow
+30+ days → Blue/Gray
+
+👉 DO NOT use “overdue red” styling here
+
+📈 6. VISUAL STRUCTURE
+Horizontal bar chart
+Sorted by urgency (Today → 90+ Days)
+Show count labels on bars
+🧪 7. VALIDATION
+
+Confirm:
+
+No overdue inspections appear in this chart
+Counts match filtered dataset
+Total = count of all future inspections
+⚠️ FINAL RULE
+
+👉 This chart is for planning ahead, not reporting past failures.
+
+🎯 GOAL
+
+Refine the Upcoming Inspections by Due Window chart to:
+
+Show ONLY near-term upcoming inspections
+Exclude:
+Overdue inspections ❌
+Inspections due beyond 90 days ❌
+Inspections due next year ❌
+
+This chart should represent:
+
+👉 Actionable inspections requiring attention in the next 90 days
