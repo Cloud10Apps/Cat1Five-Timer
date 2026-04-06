@@ -31,7 +31,17 @@ function toDate(value: string | undefined): Date | null {
  */
 const DatePickerPortal: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   if (typeof document === "undefined") return null;
-  return createPortal(children ?? null, document.body);
+  /**
+   * Radix Dialog (DismissableLayer) sets `document.body.style.pointerEvents = "none"`
+   * while the dialog is open, then explicitly restores pointer-events only on its own
+   * layer element. Any React portal rendered directly into document.body (like this
+   * calendar) inherits pointer-events:none and its clicks are silently swallowed.
+   * The wrapper div overrides that inheritance so date cells are clickable.
+   */
+  return createPortal(
+    <div style={{ pointerEvents: "auto" }}>{children ?? null}</div>,
+    document.body
+  );
 };
 
 interface DatePickerFieldProps {
