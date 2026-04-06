@@ -155,11 +155,11 @@ function AgingBucketPill({ due }: { due: string | null | undefined }) {
   const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
     bucket === "due-future"    ? "bg-zinc-100   text-zinc-500   border-zinc-200"   :
-    bucket === "due-today"     ? "bg-blue-900   text-white      border-blue-900"   :
-    bucket === "due-1-7"       ? "bg-blue-100   text-blue-900   border-blue-300"   :
-    bucket === "due-8-14"      ? "bg-blue-100   text-blue-800   border-blue-200"   :
-    bucket === "due-15-30"     ? "bg-sky-100    text-sky-800    border-sky-200"    :
-    bucket === "due-31-60"     ? "bg-sky-50     text-sky-700    border-sky-200"    :
+    bucket === "due-today"     ? "bg-red-600    text-white      border-red-700"    :
+    bucket === "due-1-7"       ? "bg-orange-100 text-orange-700 border-orange-300" :
+    bucket === "due-8-14"      ? "bg-amber-100  text-amber-700  border-amber-300"  :
+    bucket === "due-15-30"     ? "bg-blue-100   text-blue-700   border-blue-300"   :
+    bucket === "due-31-60"     ? "bg-indigo-100 text-indigo-700 border-indigo-300" :
     bucket === "due-61-90"     ? "bg-slate-100  text-slate-600  border-slate-200"  :
     bucket === "overdue-1-30"  ? "bg-amber-100  text-amber-700  border-amber-200"  :
     bucket === "overdue-31-60" ? "bg-orange-100 text-orange-700 border-orange-200" :
