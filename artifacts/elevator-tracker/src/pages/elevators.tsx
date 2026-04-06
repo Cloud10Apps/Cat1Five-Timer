@@ -993,7 +993,7 @@ export default function Elevators() {
                 form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
               }}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Elevator
+                Add New Unit
               </Button>
             </DialogTrigger>
 
