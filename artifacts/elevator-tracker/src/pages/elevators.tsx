@@ -76,6 +76,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
+function isValidDateStr(value: string | undefined): boolean {
+  if (!value || value.length < 10) return false;
+  const d = dayjs(value);
+  return d.isValid();
+}
+
 const elevatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
   internalId: z.string().optional(),
@@ -451,7 +457,7 @@ export default function Elevators() {
     : null;
 
   const completionYearMismatch = !!(
-    watchCompletionDate && nextDuePreview &&
+    isValidDateStr(watchCompletionDate) && nextDuePreview &&
     dayjs(watchCompletionDate).year() !== dayjs(nextDuePreview).year()
   );
 
@@ -1102,12 +1108,12 @@ export default function Elevators() {
                           </div>
 
                           {/* Year mismatch warning */}
-                          {completionYearMismatch && (
+                          {completionYearMismatch && isValidDateStr(watchCompletionDate) && (
                             <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 text-amber-900">
                               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
                               <div className="text-sm leading-snug">
                                 <span className="font-semibold">Are you sure?</span>{" "}
-                                The completion year ({dayjs(watchCompletionDate).year()}) doesn't match the expected next due year ({dayjs(nextDuePreview!).year()}). Double-check the dates before saving.
+                                The completion year ({dayjs(watchCompletionDate).year()}) doesn't match the expected next due year ({nextDuePreview ? dayjs(nextDuePreview).year() : "unknown"}). Double-check the dates before saving.
                               </div>
                             </div>
                           )}

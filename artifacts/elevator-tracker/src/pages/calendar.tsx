@@ -51,6 +51,12 @@ import { useToast } from "@/hooks/use-toast";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { cn } from "@/lib/utils";
 
+function isValidDateStr(value: string | undefined): boolean {
+  if (!value || value.length < 10) return false;
+  const d = dayjs(value);
+  return d.isValid();
+}
+
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_VISIBLE = 3;
 
@@ -349,9 +355,10 @@ export default function CalendarView() {
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
     : null;
 
-  const completionYearMismatch =
-    watchCompletion && nextDuePreview &&
-    dayjs(watchCompletion).year() !== dayjs(nextDuePreview).year();
+  const completionYearMismatch = !!(
+    isValidDateStr(watchCompletion) && nextDuePreview &&
+    dayjs(watchCompletion).year() !== dayjs(nextDuePreview).year()
+  );
 
   useEffect(() => {
     if (watchStatus === "NOT_STARTED" && watchScheduled) {
@@ -763,12 +770,12 @@ export default function CalendarView() {
                 </div>
 
                 {/* ── Year mismatch warning ── */}
-                {completionYearMismatch && (
+                {completionYearMismatch && isValidDateStr(watchCompletion) && (
                   <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 text-amber-900">
                     <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
                     <div className="text-sm leading-snug">
                       <span className="font-semibold">Are you sure?</span>{" "}
-                      The completion year ({dayjs(watchCompletion).year()}) doesn't match the expected next due year ({dayjs(nextDuePreview!).year()}). Double-check the dates before saving.
+                      The completion year ({dayjs(watchCompletion).year()}) doesn't match the expected next due year ({nextDuePreview ? dayjs(nextDuePreview).year() : "unknown"}). Double-check the dates before saving.
                     </div>
                   </div>
                 )}

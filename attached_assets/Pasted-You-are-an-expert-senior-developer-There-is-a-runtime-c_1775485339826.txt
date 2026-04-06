@@ -1,0 +1,101 @@
+You are an expert senior developer. There is a runtime crash in the 
+Current Inspections by Unit page (elevators.tsx) that occurs when a 
+user types a completion date character by character into the date field.
+
+FILE: artifacts/elevator-tracker/src/pages/elevators.tsx
+
+THE CAUSE:
+When the user types into the completion date field, the intermediate 
+partial string (e.g. "04", "04/0", "04/06") is passed to dayjs() 
+before the date is complete. dayjs() returns an invalid date for these 
+partial strings, and calling .year() on an invalid dayjs object returns 
+NaN, which causes a runtime error when rendered in the JSX.
+
+THE FIX — Two changes needed:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHANGE 1: Add an isValidDate helper function
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Near the top of the file, after the imports, add this helper function:
+
+  function isValidDateStr(value: string | undefined): boolean {
+    if (!value || value.length < 10) return false;
+    const d = dayjs(value);
+    return d.isValid();
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHANGE 2: Guard the completionYearMismatch calculation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Find this block (~line 453):
+  const completionYearMismatch = !!(
+    watchCompletionDate && nextDuePreview &&
+    dayjs(watchCompletionDate).year() !== dayjs(nextDuePreview).year()
+  );
+
+Replace with:
+  const completionYearMismatch = !!(
+    isValidDateStr(watchCompletionDate) && nextDuePreview &&
+    dayjs(watchCompletionDate).year() !== dayjs(nextDuePreview).year()
+  );
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHANGE 3: Guard the JSX rendering of the mismatch warning
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Find the JSX block that renders the year mismatch warning 
+(~line 1105-1112). It looks like this:
+
+  {completionYearMismatch && (
+    <div className="flex items-start gap-2.5 ...">
+      <AlertTriangle ... />
+      <div className="text-sm leading-snug">
+        <span className="font-semibold">Are you sure?</span>{" "}
+        The completion year ({dayjs(watchCompletionDate).year()}) 
+        doesn't match the expected next due year 
+        ({dayjs(nextDuePreview!).year()}). 
+        Double-check the dates before saving.
+      </div>
+    </div>
+  )}
+
+Replace it with a version that guards against invalid dates:
+
+  {completionYearMismatch && isValidDateStr(watchCompletionDate) && (
+    <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 text-amber-900">
+      <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
+      <div className="text-sm leading-snug">
+        <span className="font-semibold">Are you sure?</span>{" "}
+        The completion year ({dayjs(watchCompletionDate).year()}) 
+        doesn't match the expected next due year 
+        ({nextDuePreview ? dayjs(nextDuePreview).year() : "unknown"}). 
+        Double-check the dates before saving.
+      </div>
+    </div>
+  )}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHANGE 4: Check if the same crash exists in the CAT5 form
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Search for any other places in elevators.tsx where 
+dayjs(watchCompletionDateCat5).year() is called without a validity 
+check, and apply the same isValidDateStr() guard to those too.
+
+Also check calendar.tsx for the same pattern — find:
+  dayjs(watchCompletion).year()
+and guard it with isValidDateStr() as well.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AFTER ALL CHANGES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Confirm the app builds without TypeScript errors
+2. Verify that typing a date character by character no longer 
+   causes a runtime error overlay
+3. Verify the year mismatch warning still appears correctly 
+   when a fully valid completion date from a different year 
+   is entered
+4. Only modify elevators.tsx and calendar.tsx — no other files
