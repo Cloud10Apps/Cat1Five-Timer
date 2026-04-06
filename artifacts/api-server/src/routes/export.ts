@@ -161,14 +161,20 @@ router.get("/inspections", async (req, res) => {
     .where(and(...conditions))
     .orderBy(customersTable.name, buildingsTable.name, elevatorsTable.name, inspectionsTable.inspectionType, inspectionsTable.nextDueDate);
 
-  // Post-process: compute status, aging
+  // Post-process: compute status, aging, and raw day metrics
   let processed = rows.map(r => {
     const computedStatus   = computeInspStatus(r.status, r.nextDueDate, r.completionDate);
     const agingBucketKey   = getAgingBucketKey(r.nextDueDate, computedStatus);
     const agingDays        = (computedStatus !== "COMPLETED" && r.nextDueDate)
       ? dayjs().startOf("day").diff(dayjs(r.nextDueDate).startOf("day"), "day")
       : null;
-    return { ...r, computedStatus, agingBucketKey, agingDays };
+    const daysToSchedule   = (r.scheduledDate && r.nextDueDate)
+      ? dayjs(r.scheduledDate).startOf("day").diff(dayjs(r.nextDueDate).startOf("day"), "day")
+      : null;
+    const daysToComplete   = (r.completionDate && r.nextDueDate)
+      ? dayjs(r.completionDate).startOf("day").diff(dayjs(r.nextDueDate).startOf("day"), "day")
+      : null;
+    return { ...r, computedStatus, agingBucketKey, agingDays, daysToSchedule, daysToComplete };
   });
 
   // Post-DB filters (computed values)
@@ -202,10 +208,12 @@ router.get("/inspections", async (req, res) => {
     { header: "Next Due Date",        key: "nextDueDate",        width: 18, style: DATE_STYLE },
     { header: "Scheduled Date",       key: "scheduledDate",      width: 18, style: DATE_STYLE },
     { header: "Completion Date",      key: "completionDate",     width: 18, style: DATE_STYLE },
-    { header: "Inspection Status",    key: "status",             width: 20 },
-    { header: "Aging Days",           key: "agingDays",          width: 12 },
-    { header: "Due Status",            key: "agingBucket",        width: 16 },
-    { header: "Notes",                key: "notes",              width: 45 },
+    { header: "Inspection Status",      key: "status",           width: 20 },
+    { header: "Aging Days",             key: "agingDays",        width: 12 },
+    { header: "Due Status",             key: "agingBucket",      width: 16 },
+    { header: "Days to Schedule (Raw)", key: "daysToSchedule",   width: 22 },
+    { header: "Days to Complete (Raw)", key: "daysToComplete",   width: 22 },
+    { header: "Notes",                  key: "notes",            width: 45 },
   ];
 
   sheet.getRow(1).font = { bold: true };
@@ -228,6 +236,8 @@ router.get("/inspections", async (req, res) => {
       status:             STATUS_LABEL_MAP[r.computedStatus] ?? r.computedStatus,
       agingDays:          r.agingDays ?? "",
       agingBucket:        getAgingBucketDisplay(r.agingBucketKey),
+      daysToSchedule:     r.daysToSchedule ?? "",
+      daysToComplete:     r.daysToComplete ?? "",
       notes:              r.notes ?? "",
     });
   });
