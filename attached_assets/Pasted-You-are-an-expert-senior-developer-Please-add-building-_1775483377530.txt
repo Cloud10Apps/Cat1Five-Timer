@@ -1,0 +1,155 @@
+You are an expert senior developer. Please add building address, city, state, 
+and zip columns to ALL 4 Excel export endpoints in the following file.
+
+FILE: artifacts/api-server/src/routes/export.ts
+
+The buildings table already has these columns in the database schema:
+  address, city, state, zip
+
+The buildingsTable is already imported and joined in every query — you just 
+need to SELECT the fields, add them to the sheet columns, and include them 
+in each addRow() call.
+
+Place the new columns IMMEDIATELY AFTER the "Building" column in every export.
+The column order should be: Customer → Building → Address → City → State → Zip → 
+then the rest of the existing columns.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## EXPORT 1 — /inspections (Inspection History export)
+## This is the router.get("/inspections", ...) handler (~line 77)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1 — Add building address fields to the db.select() block.
+Find the select block that starts with:
+  const rows = await db
+    .select({
+      customerName:       customersTable.name,
+      buildingName:       buildingsTable.name,
+
+Add these 4 new fields immediately after buildingName:
+      buildingAddress:    buildingsTable.address,
+      buildingCity:       buildingsTable.city,
+      buildingState:      buildingsTable.state,
+      buildingZip:        buildingsTable.zip,
+
+STEP 2 — Add columns to sheet.columns array.
+Find the sheet.columns = [...] array. After the Building column:
+  { header: "Building", key: "buildingName", width: 30 },
+
+Insert these 4 new columns:
+  { header: "Address",  key: "buildingAddress", width: 30 },
+  { header: "City",     key: "buildingCity",    width: 20 },
+  { header: "State",    key: "buildingState",   width: 10 },
+  { header: "Zip",      key: "buildingZip",     width: 10 },
+
+STEP 3 — Add the values to sheet.addRow() inside the processed.forEach() block.
+After buildingName: r.buildingName ?? "", add:
+  buildingAddress: r.buildingAddress ?? "",
+  buildingCity:    r.buildingCity    ?? "",
+  buildingState:   r.buildingState   ?? "",
+  buildingZip:     r.buildingZip     ?? "",
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## EXPORT 2 — /elevators (Current Inspections by Unit export)
+## This is the router.get("/elevators", ...) handler (~line 279)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1 — Add building address fields to the db.select() block.
+Find the select block that starts with:
+  const rows = await db
+    .select({
+      elevatorId:   elevatorsTable.id,
+      customerName: customersTable.name,
+      buildingName: buildingsTable.name,
+
+Add these 4 new fields immediately after buildingName:
+      buildingAddress: buildingsTable.address,
+      buildingCity:    buildingsTable.city,
+      buildingState:   buildingsTable.state,
+      buildingZip:     buildingsTable.zip,
+
+STEP 2 — Add columns to sheet.columns array.
+Find the sheet.columns = [...] array. After the Building column:
+  { header: "Building", key: "buildingName", width: 30 },
+
+Insert these 4 new columns:
+  { header: "Address",  key: "buildingAddress", width: 30 },
+  { header: "City",     key: "buildingCity",    width: 20 },
+  { header: "State",    key: "buildingState",   width: 10 },
+  { header: "Zip",      key: "buildingZip",     width: 10 },
+
+STEP 3 — Add the values to sheet.addRow() inside the rows.forEach() block.
+After buildingName: r.buildingName ?? "", add:
+  buildingAddress: r.buildingAddress ?? "",
+  buildingCity:    r.buildingCity    ?? "",
+  buildingState:   r.buildingState   ?? "",
+  buildingZip:     r.buildingZip     ?? "",
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## EXPORT 3 — /overdue (Overdue Inspections dashboard export)
+## This is the router.get("/overdue", ...) handler (~line 410)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1 — Add building address fields to the db.select() block.
+Find the select block that includes:
+      customerName:   customersTable.name,
+      buildingName:   buildingsTable.name,
+
+Add these 4 new fields immediately after buildingName:
+      buildingAddress: buildingsTable.address,
+      buildingCity:    buildingsTable.city,
+      buildingState:   buildingsTable.state,
+      buildingZip:     buildingsTable.zip,
+
+STEP 2 — Add columns to sheet.columns array after the Building column:
+  { header: "Address",  key: "buildingAddress", width: 30 },
+  { header: "City",     key: "buildingCity",    width: 20 },
+  { header: "State",    key: "buildingState",   width: 10 },
+  { header: "Zip",      key: "buildingZip",     width: 10 },
+
+STEP 3 — Add to sheet.addRow() after buildingName:
+  buildingAddress: r.buildingAddress ?? "",
+  buildingCity:    r.buildingCity    ?? "",
+  buildingState:   r.buildingState   ?? "",
+  buildingZip:     r.buildingZip     ?? "",
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## EXPORT 4 — /upcoming (Upcoming Inspections dashboard export)
+## This is the router.get("/upcoming", ...) handler (~line 485)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1 — Add building address fields to the db.select() block.
+Find the select block that includes:
+      customerName:   customersTable.name,
+      buildingName:   buildingsTable.name,
+
+Add these 4 new fields immediately after buildingName:
+      buildingAddress: buildingsTable.address,
+      buildingCity:    buildingsTable.city,
+      buildingState:   buildingsTable.state,
+      buildingZip:     buildingsTable.zip,
+
+STEP 2 — Add columns to sheet.columns array after the Building column:
+  { header: "Address",  key: "buildingAddress", width: 30 },
+  { header: "City",     key: "buildingCity",    width: 20 },
+  { header: "State",    key: "buildingState",   width: 10 },
+  { header: "Zip",      key: "buildingZip",     width: 10 },
+
+STEP 3 — Add to sheet.addRow() after buildingName:
+  buildingAddress: r.buildingAddress ?? "",
+  buildingCity:    r.buildingCity    ?? "",
+  buildingState:   r.buildingState   ?? "",
+  buildingZip:     r.buildingZip     ?? "",
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## AFTER ALL CHANGES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Confirm all 4 export endpoints are updated
+2. Verify the app builds without TypeScript errors
+3. Do not change any other files
+4. Do not modify any existing columns, their order relative to each other,
+   or any filter/query logic — only add the 4 new building location columns
+5. The buildingsTable is already imported and joined in all 4 queries —
+   no join changes are needed, only the SELECT fields, sheet.columns 
+   definitions, and sheet.addRow() values

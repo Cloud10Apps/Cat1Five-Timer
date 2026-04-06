@@ -141,6 +141,10 @@ router.get("/inspections", asyncHandler(async (req, res) => {
     .select({
       customerName:       customersTable.name,
       buildingName:       buildingsTable.name,
+      buildingAddress:    buildingsTable.address,
+      buildingCity:       buildingsTable.city,
+      buildingState:      buildingsTable.state,
+      buildingZip:        buildingsTable.zip,
       elevatorName:       elevatorsTable.name,
       elevatorType:       elevatorsTable.type,
       bank:               elevatorsTable.bank,
@@ -198,6 +202,10 @@ router.get("/inspections", asyncHandler(async (req, res) => {
   sheet.columns = [
     { header: "Customer",             key: "customerName",       width: 25 },
     { header: "Building",             key: "buildingName",       width: 30 },
+    { header: "Address",              key: "buildingAddress",    width: 30 },
+    { header: "City",                 key: "buildingCity",       width: 20 },
+    { header: "State",                key: "buildingState",      width: 10 },
+    { header: "Zip",                  key: "buildingZip",        width: 10 },
     { header: "Elevator",             key: "elevatorName",       width: 25 },
     { header: "Elevator Type",        key: "elevatorType",       width: 15 },
     { header: "Bank",                 key: "bank",               width: 14 },
@@ -223,6 +231,10 @@ router.get("/inspections", asyncHandler(async (req, res) => {
     sheet.addRow({
       customerName:       r.customerName       ?? "",
       buildingName:       r.buildingName       ?? "",
+      buildingAddress:    r.buildingAddress    ?? "",
+      buildingCity:       r.buildingCity       ?? "",
+      buildingState:      r.buildingState      ?? "",
+      buildingZip:        r.buildingZip        ?? "",
       elevatorName:       r.elevatorName       ?? "",
       elevatorType:       r.elevatorType       ?? "",
       bank:               r.bank               ?? "",
@@ -301,10 +313,14 @@ router.get("/elevators", asyncHandler(async (req, res) => {
 
   const rows = await db
     .select({
-      elevatorId:   elevatorsTable.id,
-      customerName: customersTable.name,
-      buildingName: buildingsTable.name,
-      elevatorName: elevatorsTable.name,
+      elevatorId:      elevatorsTable.id,
+      customerName:    customersTable.name,
+      buildingName:    buildingsTable.name,
+      buildingAddress: buildingsTable.address,
+      buildingCity:    buildingsTable.city,
+      buildingState:   buildingsTable.state,
+      buildingZip:     buildingsTable.zip,
+      elevatorName:    elevatorsTable.name,
       elevatorType: elevatorsTable.type,
       bank:         elevatorsTable.bank,
       internalId:   elevatorsTable.internalId,
@@ -357,6 +373,10 @@ router.get("/elevators", asyncHandler(async (req, res) => {
   sheet.columns = [
     { header: "Customer",           key: "customerName",       width: 25 },
     { header: "Building",           key: "buildingName",       width: 30 },
+    { header: "Address",            key: "buildingAddress",    width: 30 },
+    { header: "City",               key: "buildingCity",       width: 20 },
+    { header: "State",              key: "buildingState",      width: 10 },
+    { header: "Zip",                key: "buildingZip",        width: 10 },
     { header: "Elevator Name",      key: "elevatorName",       width: 25 },
     { header: "Elevator Type",      key: "elevatorType",       width: 15 },
     { header: "Bank",               key: "bank",               width: 15 },
@@ -380,10 +400,14 @@ router.get("/elevators", asyncHandler(async (req, res) => {
       ? today.diff(dayjs(insp.nextDueDate), "day")
       : null;
     sheet.addRow({
-      customerName:  r.customerName ?? "",
-      buildingName:  r.buildingName ?? "",
-      elevatorName:  r.elevatorName ?? "",
-      elevatorType:  r.elevatorType ?? "",
+      customerName:    r.customerName    ?? "",
+      buildingName:    r.buildingName    ?? "",
+      buildingAddress: r.buildingAddress ?? "",
+      buildingCity:    r.buildingCity    ?? "",
+      buildingState:   r.buildingState   ?? "",
+      buildingZip:     r.buildingZip     ?? "",
+      elevatorName:    r.elevatorName    ?? "",
+      elevatorType:    r.elevatorType    ?? "",
       bank:          r.bank ?? "",
       internalId:    r.internalId ?? "",
       stateId:       r.stateId ?? "",
@@ -425,14 +449,18 @@ router.get("/overdue", asyncHandler(async (req, res) => {
 
   const rows = await db
     .select({
-      customerName:   customersTable.name,
-      buildingName:   buildingsTable.name,
-      elevatorName:   elevatorsTable.name,
-      inspectionType: inspectionsTable.inspectionType,
-      status:         inspectionsTable.status,
-      nextDueDate:    inspectionsTable.nextDueDate,
-      scheduledDate:  inspectionsTable.scheduledDate,
-      notes:          inspectionsTable.notes,
+      customerName:    customersTable.name,
+      buildingName:    buildingsTable.name,
+      buildingAddress: buildingsTable.address,
+      buildingCity:    buildingsTable.city,
+      buildingState:   buildingsTable.state,
+      buildingZip:     buildingsTable.zip,
+      elevatorName:    elevatorsTable.name,
+      inspectionType:  inspectionsTable.inspectionType,
+      status:          inspectionsTable.status,
+      nextDueDate:     inspectionsTable.nextDueDate,
+      scheduledDate:   inspectionsTable.scheduledDate,
+      notes:           inspectionsTable.notes,
     })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
@@ -447,6 +475,10 @@ router.get("/overdue", asyncHandler(async (req, res) => {
   sheet.columns = [
     { header: "Customer",        key: "customerName",   width: 25 },
     { header: "Building",        key: "buildingName",   width: 30 },
+    { header: "Address",         key: "buildingAddress", width: 30 },
+    { header: "City",            key: "buildingCity",   width: 20 },
+    { header: "State",           key: "buildingState",  width: 10 },
+    { header: "Zip",             key: "buildingZip",    width: 10 },
     { header: "Elevator",        key: "elevatorName",   width: 25 },
     { header: "Type",            key: "inspectionType", width: 10 },
     { header: "Inspection Status", key: "status",       width: 20 },
@@ -460,15 +492,19 @@ router.get("/overdue", asyncHandler(async (req, res) => {
   rows.forEach(r => {
     const daysOverdue = r.nextDueDate ? dayjs().startOf("day").diff(dayjs(r.nextDueDate).startOf("day"), "day") : null;
     sheet.addRow({
-      customerName:   r.customerName ?? "",
-      buildingName:   r.buildingName ?? "",
-      elevatorName:   r.elevatorName ?? "",
-      inspectionType: r.inspectionType,
-      status:         STATUS_LABEL_MAP[r.status] ?? r.status,
-      nextDueDate:    toDate(r.nextDueDate),
-      daysOverdue:    daysOverdue ?? "",
-      scheduledDate:  toDate(r.scheduledDate),
-      notes:          r.notes ?? "",
+      customerName:    r.customerName    ?? "",
+      buildingName:    r.buildingName    ?? "",
+      buildingAddress: r.buildingAddress ?? "",
+      buildingCity:    r.buildingCity    ?? "",
+      buildingState:   r.buildingState   ?? "",
+      buildingZip:     r.buildingZip     ?? "",
+      elevatorName:    r.elevatorName    ?? "",
+      inspectionType:  r.inspectionType,
+      status:          STATUS_LABEL_MAP[r.status] ?? r.status,
+      nextDueDate:     toDate(r.nextDueDate),
+      daysOverdue:     daysOverdue ?? "",
+      scheduledDate:   toDate(r.scheduledDate),
+      notes:           r.notes ?? "",
     });
   });
 
@@ -502,14 +538,18 @@ router.get("/upcoming", asyncHandler(async (req, res) => {
 
   const rows = await db
     .select({
-      customerName:   customersTable.name,
-      buildingName:   buildingsTable.name,
-      elevatorName:   elevatorsTable.name,
-      inspectionType: inspectionsTable.inspectionType,
-      status:         inspectionsTable.status,
-      nextDueDate:    inspectionsTable.nextDueDate,
-      scheduledDate:  inspectionsTable.scheduledDate,
-      notes:          inspectionsTable.notes,
+      customerName:    customersTable.name,
+      buildingName:    buildingsTable.name,
+      buildingAddress: buildingsTable.address,
+      buildingCity:    buildingsTable.city,
+      buildingState:   buildingsTable.state,
+      buildingZip:     buildingsTable.zip,
+      elevatorName:    elevatorsTable.name,
+      inspectionType:  inspectionsTable.inspectionType,
+      status:          inspectionsTable.status,
+      nextDueDate:     inspectionsTable.nextDueDate,
+      scheduledDate:   inspectionsTable.scheduledDate,
+      notes:           inspectionsTable.notes,
     })
     .from(inspectionsTable)
     .leftJoin(elevatorsTable, eq(inspectionsTable.elevatorId, elevatorsTable.id))
@@ -522,9 +562,13 @@ router.get("/upcoming", asyncHandler(async (req, res) => {
   const sheet = workbook.addWorksheet("Upcoming Inspections");
 
   sheet.columns = [
-    { header: "Customer",        key: "customerName",   width: 25 },
-    { header: "Building",        key: "buildingName",   width: 30 },
-    { header: "Elevator",        key: "elevatorName",   width: 25 },
+    { header: "Customer",        key: "customerName",    width: 25 },
+    { header: "Building",        key: "buildingName",    width: 30 },
+    { header: "Address",         key: "buildingAddress", width: 30 },
+    { header: "City",            key: "buildingCity",    width: 20 },
+    { header: "State",           key: "buildingState",   width: 10 },
+    { header: "Zip",             key: "buildingZip",     width: 10 },
+    { header: "Elevator",        key: "elevatorName",    width: 25 },
     { header: "Type",            key: "inspectionType", width: 10 },
     { header: "Inspection Status", key: "status",       width: 20 },
     { header: "Due Date",        key: "nextDueDate",    width: 18, style: DATE_STYLE },
@@ -537,15 +581,19 @@ router.get("/upcoming", asyncHandler(async (req, res) => {
   rows.forEach(r => {
     const daysUntil = r.nextDueDate ? dayjs(r.nextDueDate).diff(dayjs(), "day") : null;
     sheet.addRow({
-      customerName:   r.customerName ?? "",
-      buildingName:   r.buildingName ?? "",
-      elevatorName:   r.elevatorName ?? "",
-      inspectionType: r.inspectionType,
-      status:         STATUS_LABEL_MAP[r.status] ?? r.status,
-      nextDueDate:    toDate(r.nextDueDate),
-      daysUntil:      daysUntil ?? "",
-      scheduledDate:  toDate(r.scheduledDate),
-      notes:          r.notes ?? "",
+      customerName:    r.customerName    ?? "",
+      buildingName:    r.buildingName    ?? "",
+      buildingAddress: r.buildingAddress ?? "",
+      buildingCity:    r.buildingCity    ?? "",
+      buildingState:   r.buildingState   ?? "",
+      buildingZip:     r.buildingZip     ?? "",
+      elevatorName:    r.elevatorName    ?? "",
+      inspectionType:  r.inspectionType,
+      status:          STATUS_LABEL_MAP[r.status] ?? r.status,
+      nextDueDate:     toDate(r.nextDueDate),
+      daysUntil:       daysUntil ?? "",
+      scheduledDate:   toDate(r.scheduledDate),
+      notes:           r.notes ?? "",
     });
   });
 
