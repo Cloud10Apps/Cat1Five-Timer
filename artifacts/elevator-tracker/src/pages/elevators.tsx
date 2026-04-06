@@ -1491,7 +1491,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-x-auto shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid min-w-[1550px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[1fr_150px_150px_125px_130px_150px_145px_155px_160px_145px_85px]"
+                  className="w-full grid min-w-[1440px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[minmax(280px,1fr)_90px_90px_95px_110px_150px_145px_155px_160px_145px_85px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-3">
@@ -1585,11 +1585,11 @@ export default function Elevators() {
                                       const isSoon = !isOverdue && !!due && due <= new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                                       const scheduledDate = latestInsp?.scheduledDate?.slice(0, 10);
                                       const completionDate = lastCompletedByElevator.get(elevator.id);
-                                      const nameIndent = "pl-40";
+                                      const nameIndent = "pl-20";
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className={`grid min-w-[1550px] grid-cols-[1fr_150px_150px_125px_130px_150px_145px_155px_160px_145px_85px] group relative transition-colors border-b ${
+                                          className={`grid min-w-[1440px] grid-cols-[minmax(280px,1fr)_90px_90px_95px_110px_150px_145px_155px_160px_145px_85px] group relative transition-colors border-b ${
                                             isOverdue
                                               ? "bg-red-50/60 border-red-200 hover:bg-red-50"
                                               : "hover:bg-amber-50/60 border-zinc-300"
@@ -1601,7 +1601,7 @@ export default function Elevators() {
                                           }`} />
                                           {/* Name */}
                                           <div className={`flex items-center px-4 py-2.5 min-w-0 ${nameIndent}`}>
-                                            <div className="font-semibold text-sm leading-snug truncate text-zinc-900">{elevator.name}</div>
+                                            <div className="font-semibold text-sm leading-snug break-words text-zinc-900" title={elevator.name}>{elevator.name}</div>
                                           </div>
                                           {/* Unit ID — reference field, de-emphasized */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
