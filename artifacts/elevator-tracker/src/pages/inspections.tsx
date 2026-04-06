@@ -33,6 +33,7 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { fireCompletionConfetti } from "@/lib/confetti";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -387,12 +388,12 @@ export default function Inspections() {
   const onSubmit = (data: InspectionFormValues) => {
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data }, {
-        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); toast({ title: "Inspection updated" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
+        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection updated" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
         onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not update inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
     } else {
       createMutation.mutate({ data }, {
-        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); toast({ title: "Inspection added" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
+        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection added" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
         onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not add inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
     }

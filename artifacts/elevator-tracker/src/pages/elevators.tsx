@@ -75,6 +75,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { fireCompletionConfetti } from "@/lib/confetti";
 
 function isValidDateStr(value: string | undefined): boolean {
   if (!value) return false;
@@ -545,6 +546,7 @@ export default function Elevators() {
         {
           onSuccess: (data: any) => {
             invalidateInspections();
+            if (payload.status === "COMPLETED") fireCompletionConfetti();
             toast({ title: "Inspection saved" });
             if (data?._warning) toast({ title: "Follow-up not auto-created", description: data._warning, variant: "destructive", duration: 10000 });
             setIsAddOpen(false);

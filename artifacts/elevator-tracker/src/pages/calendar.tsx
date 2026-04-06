@@ -50,6 +50,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { cn } from "@/lib/utils";
+import { fireCompletionConfetti } from "@/lib/confetti";
 
 function isValidDateStr(value: string | undefined): boolean {
   if (!value) return false;
@@ -409,6 +410,7 @@ export default function CalendarView() {
           queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
           setEditingInsp(null);
           form.reset();
+          if (data.status === "COMPLETED") fireCompletionConfetti();
           toast({ title: "Inspection updated" });
         },
         onError: () => {
