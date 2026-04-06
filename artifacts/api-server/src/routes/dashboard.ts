@@ -350,6 +350,7 @@ router.get("/aging", asyncHandler(async (req, res) => {
 
   if (effectiveIds !== null && effectiveIds.length === 0) {
     res.json([
+      EMPTY("due-future",    "Future (90+ Days)",    -91),
       EMPTY("due-today",     "Due Today",              0),
       EMPTY("due-1-7",       "Next 7 Days",           -1),
       EMPTY("due-8-14",      "Next 14 Days",          -8),
@@ -369,6 +370,7 @@ router.get("/aging", asyncHandler(async (req, res) => {
   const rows = await db.execute(sql`
     SELECT
       CASE
+        WHEN i.next_due_date::date > CURRENT_DATE + 90                                 THEN 'due-future'
         WHEN i.next_due_date::date = CURRENT_DATE                                      THEN 'due-today'
         WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 1  AND CURRENT_DATE + 7     THEN 'due-1-7'
         WHEN i.next_due_date::date BETWEEN CURRENT_DATE + 8  AND CURRENT_DATE + 14    THEN 'due-8-14'
@@ -392,8 +394,9 @@ router.get("/aging", asyncHandler(async (req, res) => {
     GROUP BY 1, i.status
   `) as unknown as { rows: { bucket: string; status: string; count: string }[] };
 
-  const ORDER = ["due-today", "due-1-7", "due-8-14", "due-15-30", "due-31-60", "due-61-90", "overdue-1-30", "overdue-31-60", "overdue-61-90", "overdue-91+"];
+  const ORDER = ["due-future", "due-today", "due-1-7", "due-8-14", "due-15-30", "due-31-60", "due-61-90", "overdue-1-30", "overdue-31-60", "overdue-61-90", "overdue-91+"];
   const LABELS: Record<string, string> = {
+    "due-future":    "Future (90+ Days)",
     "due-today":     "Due Today",
     "due-1-7":       "Next 7 Days",
     "due-8-14":      "Next 14 Days",
@@ -406,7 +409,7 @@ router.get("/aging", asyncHandler(async (req, res) => {
     "overdue-91+":   "Overdue 91+ Days",
   };
   const DAYS: Record<string, number> = {
-    "due-today": 0, "due-1-7": -1, "due-8-14": -8, "due-15-30": -15, "due-31-60": -31, "due-61-90": -61,
+    "due-future": -91, "due-today": 0, "due-1-7": -1, "due-8-14": -8, "due-15-30": -15, "due-31-60": -31, "due-61-90": -61,
     "overdue-1-30": 1, "overdue-31-60": 31, "overdue-61-90": 61, "overdue-91+": 91,
   };
 

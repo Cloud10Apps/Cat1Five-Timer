@@ -115,6 +115,7 @@ type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
 /* ── Due status helpers ── */
 const AGING_BUCKET_OPTIONS = [
+  { value: "due-future",    label: "Future (90+ Days)" },
   { value: "due-today",     label: "Due Today"   },
   { value: "due-1-7",       label: "Next 7 Days"  },
   { value: "due-8-14",      label: "Next 14 Days" },
@@ -145,7 +146,7 @@ function getAgingBucketValue(due: string | null | undefined): string | null {
   if (days >= -30)  return "due-15-30";
   if (days >= -60)  return "due-31-60";
   if (days >= -90)  return "due-61-90";
-  return null;
+  return "due-future";
 }
 
 function AgingBucketPill({ due }: { due: string | null | undefined }) {
@@ -153,6 +154,7 @@ function AgingBucketPill({ due }: { due: string | null | undefined }) {
   if (!bucket) return <span className="text-zinc-300 text-xs">—</span>;
   const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
+    bucket === "due-future"    ? "bg-zinc-100   text-zinc-500   border-zinc-200"   :
     bucket === "due-today"     ? "bg-blue-900   text-white      border-blue-900"   :
     bucket === "due-1-7"       ? "bg-blue-100   text-blue-900   border-blue-300"   :
     bucket === "due-8-14"      ? "bg-blue-100   text-blue-800   border-blue-200"   :

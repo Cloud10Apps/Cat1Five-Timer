@@ -77,6 +77,7 @@ const MONTH_OPTIONS = [
   { value: "11", label: "November" }, { value: "12", label: "December" },
 ];
 const AGING_BUCKET_OPTIONS = [
+  { value: "due-future",    label: "Future (90+ Days)" },
   { value: "due-today",     label: "Due Today"   },
   { value: "due-1-7",       label: "Next 7 Days"  },
   { value: "due-8-14",      label: "Next 14 Days" },
@@ -111,7 +112,7 @@ function getAgingBucketValue(due: string | null | undefined, status?: string): s
   if (days >= -30)  return "due-15-30";
   if (days >= -60)  return "due-31-60";
   if (days >= -90)  return "due-61-90";
-  return null;
+  return "due-future";
 }
 
 /* ── Edit form schema ────────────────────────────────────────────── */

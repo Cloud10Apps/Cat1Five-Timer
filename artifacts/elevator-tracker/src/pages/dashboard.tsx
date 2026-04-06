@@ -19,6 +19,7 @@ function toLabel(s: string) {
 
 /* ─── Upcoming / Overdue bucket colours ─── */
 const UPCOMING_COLORS: Record<string, string> = {
+  "due-future": "#d4d4d8",
   "due-today":  "#1e3a8a",
   "due-1-7":    "#1d4ed8",
   "due-8-14":   "#2563eb",
@@ -312,7 +313,7 @@ export default function Dashboard() {
     .filter(b => b.status !== "OVERDUE")
     .map(b=>({ name:toLabel(b.status), value:b.count, color:getStatusColor(b.status) }));
   const agingData       = ((aging??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0) }));
-  const upcomingData    = agingData.filter((b:any) => ["due-today","due-1-7","due-8-14","due-15-30","due-31-60","due-61-90"].includes(b.bucket) && b._total > 0);
+  const upcomingData    = agingData.filter((b:any) => ["due-future","due-today","due-1-7","due-8-14","due-15-30","due-31-60","due-61-90"].includes(b.bucket) && b._total > 0);
   const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket) && b._total > 0);
   const forecastData    = ((forecast??[]) as any[]).map(b=>({ ...b, _total:(b.scheduled??0)+(b.completed??0) }));
   const year            = dayjs().year();
