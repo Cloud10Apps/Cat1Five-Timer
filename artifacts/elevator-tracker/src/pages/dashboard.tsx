@@ -313,6 +313,7 @@ export default function Dashboard() {
     .filter(b => b.status !== "OVERDUE")
     .map(b=>({ name:toLabel(b.status), value:b.count, color:getStatusColor(b.status) }));
   const agingData       = ((aging??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0) }));
+  const allDueStatusData = agingData.filter((b:any) => b._total > 0);
   const upcomingData    = agingData.filter((b:any) => ["due-future","due-today","due-1-7","due-8-14","due-15-30","due-31-60","due-61-90"].includes(b.bucket) && b._total > 0);
   const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket) && b._total > 0);
   const forecastData    = ((forecast??[]) as any[]).map(b=>({ ...b, _total:(b.scheduled??0)+(b.completed??0) }));
@@ -421,29 +422,29 @@ export default function Dashboard() {
           {/* Row 1: Upcoming + Overdue aging charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
 
-            {/* Upcoming inspections */}
+            {/* All inspections by due status */}
             {(l2 || l5) ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <UpcomingCardHeader title={`${year} Inspections by Due Status`} />
-              <div className="p-5 h-[300px] flex items-center">
-                {upcomingData.length === 0 ? (
+              <CardHeader title="Inspections by Due Status" />
+              <div className="p-5 h-[380px] flex items-center">
+                {allDueStatusData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
                     <CheckCircle2 className="w-8 h-8 opacity-30" />
-                    <span className="text-sm font-medium">No upcoming inspections</span>
+                    <span className="text-sm font-medium">No open inspections</span>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={upcomingData} layout="vertical" margin={{ top:6, right:52, left:8, bottom:6 }} barCategoryGap="20%">
+                    <BarChart data={allDueStatusData} layout="vertical" margin={{ top:6, right:52, left:8, bottom:6 }} barCategoryGap="20%">
                       <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:14, fontWeight:700 }} axisLine={false} tickLine={false} width={148} />
+                      <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={158} />
                       <Tooltip {...TT} />
-                      <Bar dataKey="_total" name="Count" barSize={52} radius={[0,6,6,0]}>
-                        {upcomingData.map((entry:any, i:number) => (
-                          <Cell key={i} fill={UPCOMING_COLORS[entry.bucket] ?? "#3b82f6"} />
+                      <Bar dataKey="_total" name="Count" barSize={40} radius={[0,6,6,0]}>
+                        {allDueStatusData.map((entry:any, i:number) => (
+                          <Cell key={i} fill={UPCOMING_COLORS[entry.bucket] ?? OVERDUE_COLORS[entry.bucket] ?? "#94a3b8"} />
                         ))}
                         <LabelList content={(props:any) => {
                           const { x,y,width,height,value } = props;
                           if (!value) return null;
-                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={16} fontWeight={800} textAnchor="start">{value}</text>;
+                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={15} fontWeight={800} textAnchor="start">{value}</text>;
                         }} />
                       </Bar>
                     </BarChart>
