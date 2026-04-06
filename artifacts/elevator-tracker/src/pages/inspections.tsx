@@ -167,7 +167,7 @@ export default function Inspections() {
   const [filterAgingBuckets,   setFilterAgingBuckets]   = useState<string[]>([]);
 
   /* ── Date range panel ── */
-  const [showDateFilters, setShowDateFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [lastInspFrom,   setLastInspFrom]   = useState("");
   const [lastInspTo,     setLastInspTo]     = useState("");
   const [nextDueFrom,    setNextDueFrom]    = useState("");
@@ -457,6 +457,8 @@ export default function Inspections() {
     selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears,
     selectedStatuses, filterAgingBuckets,
   ].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
+  const advancedFilterCount = [selectedBanks, selectedElevatorIds, selectedUnitTypes, selectedInspTypes, filterDueMonths].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
+  const clearAdvancedFilters = () => { setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedUnitTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); clearDateFilters(); setCurrentPage(1); };
 
   const chipLabel = (arr: string[], opts: { value: string; label: string }[], single: string) =>
     arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
@@ -678,64 +680,52 @@ export default function Inspections() {
       </div>
 
       {/* ── Filter bar ── */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+
+        {/* Quick filter row (Tier 1 — single row, no-wrap) */}
         <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
-          <div className="flex items-center gap-0 px-3 py-2.5 min-h-[52px]">
+          <div className="flex items-center gap-1.5 px-3 py-2 min-h-[48px]">
 
-            {/* Left label */}
-            <div className="flex items-center gap-2 pr-3 mr-2 border-r border-zinc-200 shrink-0 self-stretch py-0.5">
-              <SlidersHorizontal className="h-[15px] w-[15px] text-zinc-400" />
-              <span className="text-sm font-bold text-zinc-900 uppercase tracking-[0.12em] whitespace-nowrap">Filters</span>
-              {activeFilterCount > 0 && (
-                <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">{activeFilterCount}</span>
+            {/* Tier 1: Customer, Building, Due Year, Insp Status, Due Status */}
+            <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[155px]" />
+            <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[140px]" />
+            <FilterCombobox value={filterDueYears} onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }} options={yearFilterOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
+            <FilterCombobox value={selectedStatuses} onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }} options={STATUS_OPTIONS} placeholder="Insp. Status" searchPlaceholder="Search statuses..." width="w-[150px]" />
+            <FilterCombobox value={filterAgingBuckets} onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }} options={AGING_BUCKET_OPTIONS} placeholder="Due Status" searchPlaceholder="Search buckets..." width="w-[150px]" />
+
+            <div className="h-5 w-px bg-zinc-200 mx-1 shrink-0" />
+
+            {/* More Filters button */}
+            <button
+              onClick={() => setShowAdvancedFilters(v => !v)}
+              className={cn(
+                "h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0",
+                showAdvancedFilters || advancedFilterCount > 0
+                  ? "bg-blue-50 border-blue-300 text-blue-700"
+                  : "bg-white border-zinc-200 hover:border-zinc-300 hover:text-zinc-700 text-zinc-600"
               )}
-            </div>
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+              More Filters
+              {advancedFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center h-[16px] min-w-[16px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
+                  {advancedFilterCount}
+                </span>
+              )}
+              {showAdvancedFilters ? <ChevronUp className="h-3 w-3 shrink-0" /> : <ChevronDown className="h-3 w-3 shrink-0" />}
+            </button>
 
-            {/* Middle combobox groups */}
-            <div className="flex flex-wrap items-center gap-1.5 flex-1">
-              {/* Group 1 — Location */}
-              <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange}           options={customerOptions}     placeholder="All Customers"  searchPlaceholder="Search customers..."  width="w-[175px]" />
-              <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange}           options={buildingOptions}     placeholder="All Buildings"  searchPlaceholder="Search buildings..."  width="w-[150px]" />
-              <FilterCombobox value={selectedBanks}       onValueChange={(v) => { setSelectedBanks(v); setSelectedElevatorIds([]); setCurrentPage(1); }}  options={bankOptions}        placeholder="All Banks"      searchPlaceholder="Search banks..."      disabled={bankOptions.length === 0}      width="w-[150px]" />
-              <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }}   options={elevatorOptions}    placeholder="All Elevators" searchPlaceholder="Search elevators..."  disabled={elevatorOptions.length === 0}  width="w-[160px]" />
-              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
-              {/* Group 2 — Type */}
-              <FilterCombobox value={selectedUnitTypes}   onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }}     options={UNIT_TYPE_OPTIONS}  placeholder="All Unit Types" searchPlaceholder="Search unit types..."  width="w-[175px]" />
-              <FilterCombobox value={selectedInspTypes}   onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }}     options={INSP_TYPE_OPTIONS}  placeholder="All Insp Types" searchPlaceholder="Search insp types..."  width="w-[170px]" />
-              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
-              {/* Group 3 — Schedule & Status */}
-              <FilterCombobox value={filterDueMonths}     onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }}       options={MONTH_OPTIONS}      placeholder="Due Month"     searchPlaceholder="Search months..."     width="w-[150px]" />
-              <FilterCombobox value={filterDueYears}      onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }}        options={yearFilterOptions}  placeholder="Due Year"      searchPlaceholder="Search years..."      width="w-[130px]" />
-              <FilterCombobox value={selectedStatuses}    onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}      options={STATUS_OPTIONS}     placeholder="Insp. Status"  searchPlaceholder="Search statuses..."   width="w-[150px]" />
-              <FilterCombobox value={filterAgingBuckets}  onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }}    options={AGING_BUCKET_OPTIONS} placeholder="Due Status"   searchPlaceholder="Search buckets..."   width="w-[165px]" />
-              <div className="h-5 w-px bg-zinc-200 mx-0.5 shrink-0" />
-              {/* Date Ranges toggle */}
-              <button onClick={() => setShowDateFilters(v => !v)}
-                className={cn("h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap",
-                  showDateFilters || hasDateFilters ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-zinc-200 hover:border-zinc-300 hover:text-zinc-700 text-[#09090b]")}>
-                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                Date Ranges
-                {hasDateFilters && (
-                  <span role="button" aria-label="Clear date filters"
-                    onClick={e => { e.stopPropagation(); clearDateFilters(); }}
-                    className="h-[14px] w-[14px] rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer shrink-0">
-                    <X className="h-2 w-2 text-white" />
-                  </span>
-                )}
-                {showDateFilters ? <ChevronUp className="h-3 w-3 shrink-0" /> : <ChevronDown className="h-3 w-3 shrink-0" />}
-              </button>
-            </div>
+            <div className="flex-1 min-w-0" />
 
-            {/* Right: count + clear */}
-            <div className="flex items-center gap-2 pl-3 ml-2 border-l border-zinc-200 shrink-0">
+            {/* Right: result count + clear all */}
+            <div className="flex items-center gap-2 pl-2 shrink-0">
               <span className="text-xs tabular-nums whitespace-nowrap">
                 <span className="font-bold text-zinc-700">{totalInspCount}</span>
                 <span className="text-zinc-400 ml-1">{totalInspCount === 1 ? "inspection" : "inspections"}</span>
               </span>
               {activeFilterCount > 0 && (
-                <button onClick={clearAllFilters}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap">
-                  <X className="h-3.5 w-3.5" /> Clear
+                <button onClick={clearAllFilters} className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap">
+                  <X className="h-3 w-3" /> Clear all
                 </button>
               )}
             </div>
@@ -743,14 +733,12 @@ export default function Inspections() {
 
           {/* Active chips */}
           {activeChips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 border-t border-zinc-100">
-              <span className="text-sm font-medium text-zinc-400 mr-0.5 mt-2.5">Active:</span>
+            <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2 pt-0 border-t border-zinc-100">
+              <span className="text-xs font-medium text-zinc-400 mr-0.5 mt-2">Active:</span>
               {activeChips.map(chip => (
-                <span key={chip.label}
-                  className="inline-flex items-center gap-1 mt-2.5 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-sm font-medium text-blue-700 leading-none whitespace-nowrap">
+                <span key={chip.label} className="inline-flex items-center gap-1 mt-2 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 leading-none whitespace-nowrap">
                   <span className="text-blue-400 font-normal">{chip.label}:</span>{chip.value}
-                  <button onClick={chip.onRemove}
-                    className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors">
+                  <button onClick={chip.onRemove} className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -759,37 +747,57 @@ export default function Inspections() {
           )}
         </div>
 
-        {/* Date range panel */}
-        {showDateFilters && (
-          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm px-4 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-zinc-400" />
-                <span className="text-sm font-bold text-zinc-900 uppercase tracking-[0.12em]">Date Ranges</span>
-              </div>
-              {hasDateFilters && (
-                <button onClick={clearDateFilters}
-                  className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
-                  <X className="h-3.5 w-3.5" /> Clear dates
+        {/* Advanced filter panel (Tier 2) */}
+        {showAdvancedFilters && (
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm px-4 py-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Advanced Filters</span>
+              {advancedFilterCount > 0 && (
+                <button onClick={clearAdvancedFilters} className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
+                  <X className="h-3 w-3" /> Clear advanced
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {[
-                { label: "Last Inspection", from: lastInspFrom,   to: lastInspTo,    setFrom: setLastInspFrom,   setTo: setLastInspTo },
-                { label: "Next Due",        from: nextDueFrom,    to: nextDueTo,     setFrom: setNextDueFrom,    setTo: setNextDueTo },
-                { label: "Scheduled Date",  from: scheduledFrom,  to: scheduledTo,   setFrom: setScheduledFrom,  setTo: setScheduledTo },
-                { label: "Completion Date", from: completionFrom, to: completionTo,  setFrom: setCompletionFrom, setTo: setCompletionTo },
-              ].map(({ label, from, to, setFrom, setTo }) => (
-                <div key={label} className="space-y-1.5">
-                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-[0.1em]">{label}</p>
-                  <div className="flex gap-1.5 items-center">
-                    <input type="date" className="h-9 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
-                    <span className="text-zinc-300 text-sm shrink-0">–</span>
-                    <input type="date" className="h-9 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to}   onChange={e => setTo(e.target.value)} />
+
+            {/* Location */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Location</p>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setSelectedElevatorIds([]); setCurrentPage(1); }} options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankOptions.length === 0} width="w-[145px]" />
+                <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }} options={elevatorOptions} placeholder="All Units" searchPlaceholder="Search units..." disabled={elevatorOptions.length === 0} width="w-[155px]" />
+              </div>
+            </div>
+
+            {/* Inspection Details */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Inspection Details</p>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterCombobox value={selectedUnitTypes} onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }} options={UNIT_TYPE_OPTIONS} placeholder="All Unit Types" searchPlaceholder="Search unit types..." width="w-[165px]" />
+                <FilterCombobox value={selectedInspTypes} onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS} placeholder="All Insp Types" searchPlaceholder="Search insp types..." width="w-[160px]" />
+                <FilterCombobox value={filterDueMonths} onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }} options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[140px]" />
+              </div>
+            </div>
+
+            {/* Date Ranges */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Date Ranges</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: "Last Inspection", from: lastInspFrom,   to: lastInspTo,    setFrom: setLastInspFrom,   setTo: setLastInspTo },
+                  { label: "Next Due",        from: nextDueFrom,    to: nextDueTo,     setFrom: setNextDueFrom,    setTo: setNextDueTo },
+                  { label: "Scheduled Date",  from: scheduledFrom,  to: scheduledTo,   setFrom: setScheduledFrom,  setTo: setScheduledTo },
+                  { label: "Completion Date", from: completionFrom, to: completionTo,  setFrom: setCompletionFrom, setTo: setCompletionTo },
+                ].map(({ label, from, to, setFrom, setTo }) => (
+                  <div key={label} className="space-y-1.5">
+                    <p className="text-xs font-medium text-zinc-400">{label}</p>
+                    <div className="flex gap-1.5 items-center">
+                      <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
+                      <span className="text-zinc-300 text-xs shrink-0">–</span>
+                      <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to} onChange={e => setTo(e.target.value)} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
