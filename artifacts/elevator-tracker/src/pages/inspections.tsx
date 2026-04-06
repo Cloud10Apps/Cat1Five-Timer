@@ -47,6 +47,19 @@ import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import dayjs from "dayjs";
 import { useSearch, useLocation } from "wouter";
 
+function isValidDateStr(value: string | undefined): boolean {
+  if (!value) return false;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const year  = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const day   = parseInt(match[3], 10);
+  if (year < 1900 || year > 2200) return false;
+  if (month < 1   || month > 12)  return false;
+  if (day < 1     || day > 31)    return false;
+  return dayjs(value, "YYYY-MM-DD", true).isValid();
+}
+
 /* ─── Constants ─────────────────────────────────────────────── */
 const PAGE_GROUPS = 20; // elevator cards per page
 
@@ -460,8 +473,8 @@ export default function Inspections() {
     ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD") : null;
 
   const completionYearMismatch = !!(
-    watchCompletion && nextDuePreview &&
-    dayjs(watchCompletion).year() !== dayjs(nextDuePreview).year()
+    isValidDateStr(watchCompletion) && nextDuePreview &&
+    dayjs(watchCompletion, "YYYY-MM-DD", true).year() !== dayjs(nextDuePreview).year()
   );
 
   useEffect(() => { if (watchCompletion) form.setValue("status", "COMPLETED"); }, [watchCompletion]);
@@ -667,12 +680,12 @@ export default function Inspections() {
                   </div>
 
                   {/* ── Year mismatch warning ── */}
-                  {completionYearMismatch && (
+                  {completionYearMismatch && isValidDateStr(watchCompletion) && (
                     <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 text-amber-900">
                       <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
                       <div className="text-sm leading-snug">
                         <span className="font-semibold">Are you sure?</span>{" "}
-                        The completion year ({dayjs(watchCompletion).year()}) doesn't match the expected next due year ({dayjs(nextDuePreview!).year()}). Double-check the dates before saving.
+                        The completion year ({dayjs(watchCompletion, "YYYY-MM-DD", true).year()}) doesn't match the expected next due year ({nextDuePreview ? dayjs(nextDuePreview).year() : "unknown"}). Double-check the dates before saving.
                       </div>
                     </div>
                   )}
