@@ -31,7 +31,15 @@ export function DatePickerField({
   const selected = React.useMemo(() => toDate(value), [value]);
 
   const handleChange = (date: Date | null) => {
-    onChange(date ? format(date, "yyyy-MM-dd") : "");
+    if (!date || !isValid(date)) {
+      onChange("");
+      return;
+    }
+    try {
+      onChange(format(date, "yyyy-MM-dd"));
+    } catch {
+      onChange("");
+    }
   };
 
   return (
