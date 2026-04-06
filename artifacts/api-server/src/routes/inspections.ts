@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams } from "@workspace/api-zod";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
@@ -120,9 +121,6 @@ async function maybeCreateFollowUp(
   }
 
   const newLastDate = completedInspection.completionDate;
-  // If the inspection was completed EARLY (before its scheduled nextDueDate), base the
-  // follow-up cycle on the original nextDueDate so we don't create another record in the
-  // same year as the one just completed.
   const cycleBase =
     completedInspection.nextDueDate && completedInspection.completionDate < completedInspection.nextDueDate
       ? completedInspection.nextDueDate
@@ -130,7 +128,6 @@ async function maybeCreateFollowUp(
   const newNextDue = computeNextDueDate(cycleBase, completedInspection.recurrenceYears);
   if (!newNextDue) return { created: false, reason: "not_applicable" };
 
-  // Skip if a follow-up already references this exact completion date as its lastInspectionDate
   const existing = await db
     .select({ id: inspectionsTable.id })
     .from(inspectionsTable)
@@ -147,10 +144,6 @@ async function maybeCreateFollowUp(
 
   if (existing.length > 0) return { created: false, reason: "already_exists" };
 
-  // Block if ANY record (including the completed inspection itself) already occupies the
-  // same due year as the computed follow-up. We intentionally do NOT pass excludeId here:
-  // if the completed record's own nextDueDate lands in the same year as newNextDue (e.g.
-  // recurrenceYears=0), that is a real conflict and the follow-up must be suppressed.
   const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId);
   if (dupCheck) return { created: false, reason: "duplicate_year", dueYear: dupCheck.dueYear };
 
@@ -169,7 +162,7 @@ async function maybeCreateFollowUp(
   return { created: true };
 }
 
-router.get("/", async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   const params = ListInspectionsQueryParams.safeParse(req.query);
   const orgId = req.user!.organizationId;
 
@@ -232,7 +225,7 @@ router.get("/", async (req, res) => {
     .orderBy(inspectionsTable.nextDueDate);
 
   res.json(rows.map(formatInspection));
-});
+}));
 
 function sanitizeDates(body: Record<string, unknown>) {
   const dateCols = ["lastInspectionDate", "scheduledDate", "completionDate"];
@@ -243,7 +236,7 @@ function sanitizeDates(body: Record<string, unknown>) {
   return result;
 }
 
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const parsed = CreateInspectionBody.safeParse(sanitizeDates(req.body));
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -281,9 +274,9 @@ router.post("/", async (req, res) => {
     ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
     : undefined;
   res.status(201).json({ ...formatted, _warning: warning });
-});
+}));
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", asyncHandler(async (req, res) => {
   const params = GetInspectionParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -295,9 +288,9 @@ router.get("/:id", async (req, res) => {
     return;
   }
   res.json(formatInspection(row));
-});
+}));
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", asyncHandler(async (req, res) => {
   const params = UpdateInspectionParams.safeParse({ id: Number(req.params.id) });
   const body = CreateInspectionBody.safeParse(sanitizeDates(req.body));
   if (!params.success || !body.success) {
@@ -309,9 +302,6 @@ router.put("/:id", async (req, res) => {
   const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
   const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
 
-  // BLOCK before writing: if the new nextDueDate would land in a year already occupied by
-  // another record for the same unit + type, refuse the save entirely so we never end up
-  // with two records in the same due-year.
   if (nextDueDate) {
     const ownYearConflict = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId, params.data.id);
     if (ownYearConflict) {
@@ -338,9 +328,9 @@ router.put("/:id", async (req, res) => {
     ? `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
     : undefined;
   res.json({ ...formatted, _warning: warning });
-});
+}));
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", asyncHandler(async (req, res) => {
   const params = DeleteInspectionParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -349,6 +339,6 @@ router.delete("/:id", async (req, res) => {
   const orgId = req.user!.organizationId;
   await db.delete(inspectionsTable).where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
   res.status(204).send();
-});
+}));
 
 export default router;

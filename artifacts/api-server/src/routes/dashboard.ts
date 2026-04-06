@@ -1,13 +1,20 @@
 import { Router } from "express";
 import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } from "@workspace/db";
-import { eq, and, count, ne, gte, inArray, sql } from "drizzle-orm";
+import { eq, and, count, gte, inArray, sql } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
 router.use(requireAuth);
+
+function parseCustomerIdParam(raw: unknown): number | null {
+  if (!raw) return null;
+  const n = parseInt(String(raw), 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
 
 function getEffectiveIds(allowedIds: number[] | null, customerIdParam: number | null): number[] | null {
   if (customerIdParam === null) return allowedIds;
@@ -15,9 +22,9 @@ function getEffectiveIds(allowedIds: number[] | null, customerIdParam: number | 
   return allowedIds.includes(customerIdParam) ? [customerIdParam] : [];
 }
 
-router.get("/summary", async (req, res) => {
+router.get("/summary", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
-  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+  const customerIdParam = parseCustomerIdParam(req.query.customerId);
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
@@ -33,11 +40,8 @@ router.get("/summary", async (req, res) => {
 
   const currentYear = dayjs().year();
   const todayStr = dayjs().format("YYYY-MM-DD");
-  // Pass IDs as a comma-separated string; empty string means "no filter".
-  // This avoids Drizzle expanding arrays into ($2,$3,...) which breaks ::int[] casts.
   const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
-  // Single-pass query using COUNT(*) FILTER to replace 7 separate round-trips
   const result = await db.execute(sql`
     SELECT
       COUNT(*) FILTER (
@@ -92,21 +96,19 @@ router.get("/summary", async (req, res) => {
     avgDaysToSchedule: parseAvg(row.avg_schedule ?? null),
     avgDaysToComplete: parseAvg(row.avg_complete ?? null),
   });
-});
+}));
 
-router.get("/attention", async (req, res) => {
+router.get("/attention", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const today = dayjs();
   const todayStr = today.format("YYYY-MM-DD");
   const currentYear = today.year();
-  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+  const customerIdParam = parseCustomerIdParam(req.query.customerId);
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
   if (effectiveIds !== null && effectiveIds.length === 0) { res.json([]); return; }
 
-  // Include: (a) all past-due non-completed from any year (overdue),
-  //          (b) all non-completed inspections due in the current year
   const conditions: any[] = [
     eq(inspectionsTable.organizationId, orgId),
     sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
@@ -166,13 +168,13 @@ router.get("/attention", async (req, res) => {
       createdAt: r.createdAt.toISOString(),
     }))
   );
-});
+}));
 
-router.get("/status-breakdown", async (req, res) => {
+router.get("/status-breakdown", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const currentYear = dayjs().year();
   const todayBd = dayjs().format("YYYY-MM-DD");
-  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+  const customerIdParam = parseCustomerIdParam(req.query.customerId);
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
@@ -183,7 +185,6 @@ router.get("/status-breakdown", async (req, res) => {
 
   const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
-  // Single-pass query — all counts scoped strictly to YEAR(next_due_date) = currentYear
   const result = await db.execute(sql`
     SELECT
       COUNT(*) FILTER (
@@ -230,9 +231,9 @@ router.get("/status-breakdown", async (req, res) => {
     { status: "COMPLETED",   count: Number(row.completed   ?? 0) },
     { status: "OVERDUE",     count: Number(row.overdue     ?? 0) },
   ]);
-});
+}));
 
-router.get("/overdue-by-building", async (req, res) => {
+router.get("/overdue-by-building", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const todayObd = dayjs().format("YYYY-MM-DD");
 
@@ -267,13 +268,13 @@ router.get("/overdue-by-building", async (req, res) => {
     customerName: r.customerName ?? undefined,
     overdueCount: Number(r.overdueCount),
   })));
-});
+}));
 
-router.get("/monthly-forecast", async (req, res) => {
+router.get("/monthly-forecast", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const today = dayjs();
   const start = today.startOf("year");
-  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+  const customerIdParam = parseCustomerIdParam(req.query.customerId);
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
@@ -288,8 +289,6 @@ router.get("/monthly-forecast", async (req, res) => {
   const yearStart = start.format("YYYY-MM-DD");
   const yearEnd   = start.endOf("year").format("YYYY-MM-DD");
 
-  // Fetch records that have a scheduled_date OR completion_date falling in the current year.
-  // An inspection can contribute to both (e.g. scheduled in March, completed in April).
   const rows = await db
     .select({
       scheduledDate:  inspectionsTable.scheduledDate,
@@ -312,7 +311,6 @@ router.get("/monthly-forecast", async (req, res) => {
       buildingCustomerFilter,
     ));
 
-  // Build 12 monthly buckets keyed by "YYYY-MM"
   const months: { key: string; label: string; scheduled: number; completed: number }[] = [];
   for (let i = 0; i < 12; i++) {
     const m = start.add(i, "month");
@@ -323,7 +321,6 @@ router.get("/monthly-forecast", async (req, res) => {
     dateStr ? months.find(m => m.key === dateStr.substring(0, 7)) : undefined;
 
   for (const row of rows) {
-    // Each event date is independent — an inspection can add to both
     const scheduledBucket  = findBucket(row.scheduledDate);
     if (scheduledBucket)  scheduledBucket.scheduled++;
 
@@ -332,11 +329,11 @@ router.get("/monthly-forecast", async (req, res) => {
   }
 
   res.json(months);
-});
+}));
 
-router.get("/aging", async (req, res) => {
+router.get("/aging", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
-  const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+  const customerIdParam = parseCustomerIdParam(req.query.customerId);
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
   const effectiveIds = getEffectiveIds(allowedIds, customerIdParam);
@@ -359,7 +356,6 @@ router.get("/aging", async (req, res) => {
     return;
   }
 
-  // Pass IDs as a comma-separated string to avoid Drizzle expanding arrays into ($2,$3,...)
   const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
   const rows = await db.execute(sql`
@@ -421,6 +417,6 @@ router.get("/aging", async (req, res) => {
   }
 
   res.json(ORDER.map(b => bucketMap.get(b)!));
-});
+}));
 
 export default router;

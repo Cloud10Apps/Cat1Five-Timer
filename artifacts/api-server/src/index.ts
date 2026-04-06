@@ -26,32 +26,47 @@ async function bootstrapIfEmpty() {
       return;
     }
 
+    const orgName       = process.env.BOOTSTRAP_ORG_NAME      ?? "Acme Elevator Services";
+    const adminEmail    = process.env.BOOTSTRAP_ADMIN_EMAIL    ?? "admin@acme.com";
+    const adminPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+    const userEmail     = process.env.BOOTSTRAP_USER_EMAIL     ?? "inspector@acme.com";
+    const userPassword  = process.env.BOOTSTRAP_USER_PASSWORD;
+
+    if (!adminPassword) {
+      logger.error("BOOTSTRAP_ADMIN_PASSWORD environment variable is required for first-time setup. Aborting bootstrap.");
+      return;
+    }
+    if (!userPassword) {
+      logger.error("BOOTSTRAP_USER_PASSWORD environment variable is required for first-time setup. Aborting bootstrap.");
+      return;
+    }
+
     logger.info("Database is empty — running bootstrap seed...");
 
     const [org] = await db
       .insert(organizationsTable)
-      .values({ name: "Acme Elevator Services" })
+      .values({ name: orgName })
       .returning();
 
-    const adminHash = await bcrypt.hash("admin123", 10);
+    const adminHash = await bcrypt.hash(adminPassword, 10);
     await db.insert(usersTable).values({
-      email: "admin@acme.com",
+      email: adminEmail,
       passwordHash: adminHash,
       role: "ADMIN",
       organizationId: org.id,
       isActive: true,
     });
 
-    const userHash = await bcrypt.hash("user123", 10);
+    const userHash = await bcrypt.hash(userPassword, 10);
     await db.insert(usersTable).values({
-      email: "inspector@acme.com",
+      email: userEmail,
       passwordHash: userHash,
       role: "USER",
       organizationId: org.id,
       isActive: true,
     });
 
-    logger.info("Bootstrap complete — admin@acme.com / admin123 created");
+    logger.info({ adminEmail }, "Bootstrap complete — admin user created");
   } catch (err) {
     logger.error({ err }, "Bootstrap failed");
   }

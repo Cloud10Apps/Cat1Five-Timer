@@ -1,0 +1,267 @@
+You are an expert security engineer. Please fix the following security vulnerabilities in this codebase. Work through each one systematically and confirm each fix when done.
+
+---
+
+## 1. CRITICAL: JWT Secret Fallback to Hardcoded String
+FILE: artifacts/api-server/src/middleware/auth.ts
+
+CURRENT CODE:
+const JWT_SECRET = process.env.SESSION_SECRET || "dev-secret-key";
+
+PROBLEM: If SESSION_SECRET is missing from the environment, all JWT tokens are signed with "dev-secret-key" which is publicly visible in the GitHub repo. Anyone can forge admin tokens.
+
+FIX: Throw an error if the env var is missing:
+const JWT_SECRET = process.env.SESSION_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("SESSION_SECRET environment variable is required but was not provided.");
+}
+
+---
+
+## 2. CRITICAL: CORS Wide Open — Allows Any Origin
+FILE: artifacts/api-server/src/app.ts
+
+CURRENT CODE:
+app.use(cors());
+
+PROBLEM: This allows any website on the internet to make authenticated API requests to your backend if they have a token.
+
+FIX: Restrict CORS to your specific frontend domain:
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
+
+Then add ALLOWED_ORIGINS=https://cat1five-timer.replit.app to your Replit environment secrets.
+
+---
+
+## 3. CRITICAL: No Rate Limiting on Login Endpoint
+FILE: artifacts/api-server/src/routes/auth.ts
+
+PROBLEM: Unlimited login attempts allow brute-force password attacks.
+
+FIX: Install express-rate-limit and add it to the login route:
+
+Run: npm install express-rate-limit
+
+Add to artifacts/api-server/src/routes/auth.ts:
+import rateLimit from "express-rate-limit";
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // max 10 attempts per IP per window
+  message: { error: "Too many login attempts. Please try again in 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post("/login", loginLimiter, async (req, res) => {
+  // ... existing login code unchanged
+});
+
+---
+
+## 4. CRITICAL: No Error Handling on Database Calls
+FILE: All route files in artifacts/api-server/src/routes/
+
+PROBLEM: If the database throws (connection drop, constraint violation, timeout), Express crashes with an unhandled promise rejection. Users get no error message and the server may go down.
+
+FIX: Wrap all route handlers in try/catch blocks. For example, update every route handler like this:
+
+router.get("/", async (req, res) => {
+  try {
+    // ... existing DB query code
+  } catch (err) {
+    console.error("Database error:", err);
+    res.status(500).json({ error: "An internal server error occurred." });
+  }
+});
+
+Please apply this pattern to every async route handler across ALL route files:
+- artifacts/api-server/src/routes/auth.ts
+- artifacts/api-server/src/routes/buildings.ts
+- artifacts/api-server/src/routes/customers.ts
+- artifacts/api-server/src/routes/dashboard.ts
+- artifacts/api-server/src/routes/elevators.ts
+- artifacts/api-server/src/routes/export.ts
+- artifacts/api-server/src/routes/inspections.ts
+- artifacts/api-server/src/routes/users.ts
+- artifacts/api-server/src/routes/billing.ts
+
+---
+
+## 5. CRITICAL: Hardcoded Bootstrap Credentials in Source Code
+FILE: artifacts/api-server/src/index.ts
+
+CURRENT CODE:
+const adminHash = await bcrypt.hash("admin123", 10);
+// email: "admin@acme.com"
+const userHash = await bcrypt.hash("user123", 10);
+// email: "inspector@acme.com"
+
+PROBLEM: Default admin credentials are visible in the public GitHub repo. Anyone can see them.
+
+FIX: Use environment variables with fallbacks only for local dev:
+const adminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL || "admin@acme.com";
+const adminPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+if (!adminPassword) {
+  throw new Error("BOOTSTRAP_ADMIN_PASSWORD environment variable is required.");
+}
+const adminHash = await bcrypt.hash(adminPassword, 10);
+
+const inspectorEmail = process.env.BOOTSTRAP_INSPECTOR_EMAIL || "inspector@acme.com";
+const inspectorPassword = process.env.BOOTSTRAP_INSPECTOR_PASSWORD;
+if (!inspectorPassword) {
+  throw new Error("BOOTSTRAP_INSPECTOR_PASSWORD environment variable is required.");
+}
+const userHash = await bcrypt.hash(inspectorPassword, 10);
+
+Then add BOOTSTRAP_ADMIN_PASSWORD and BOOTSTRAP_INSPECTOR_PASSWORD to your Replit environment secrets.
+
+---
+
+## 6. HIGH: SQL Injection Risk — Raw String Interpolation
+FILE: artifacts/api-server/src/routes/export.ts
+
+CURRENT CODE:
+AND elevator_id = ANY(${sql.raw(`ARRAY[${elevatorIds.join(",")}]`)})
+
+PROBLEM: sql.raw() with string interpolation bypasses Drizzle's parameterized query protection. Replace with Drizzle's safe inArray() helper:
+
+FIX:
+import { inArray } from "drizzle-orm";
+// Replace the sql.raw() call with:
+.where(inArray(inspectionsTable.elevatorId, elevatorIds))
+
+---
+
+## 7. HIGH: Stripe Checkout Opens in New Tab (Blocked by Popup Blockers)
+FILE: artifacts/elevator-tracker/src/pages/billing.tsx
+
+CURRENT CODE:
+window.open(url, "_blank");
+
+PROBLEM: Most browsers block popup windows triggered by async operations. Users will think the checkout button is broken.
+
+FIX: Redirect in the same tab instead:
+window.location.href = url;
+
+Apply this fix to BOTH the handleSubscribe and handlePortal functions.
+
+---
+
+## 8. HIGH: Hardcoded Price in Billing Page
+FILE: artifacts/elevator-tracker/src/pages/billing.tsx
+
+CURRENT CODE:
+(status.subscription.quantity * 50).toLocaleString(...)
+
+PROBLEM: The $50/user price is hardcoded. If pricing changes in Stripe, this display will be wrong.
+
+FIX: The billing status endpoint doesn't return unit_amount today. Update the /api/billing/status backend endpoint to include the unit_amount from the Stripe subscription, then use that value in the frontend calculation instead of the hardcoded 50.
+
+---
+
+## 9. MEDIUM: No Subscription Enforcement on API Routes
+FILE: artifacts/api-server/src/middleware/auth.ts (or a new middleware file)
+
+PROBLEM: Users can sign up, skip billing, and use the full app forever with no payment. If this is a paid product, API routes are not enforcing active subscription status.
+
+FIX: Create a requireActiveSubscription middleware:
+
+export async function requireActiveSubscription(req: Request, res: Response, next: NextFunction) {
+  const orgId = req.user!.organizationId;
+  const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
+  
+  // Allow if no Stripe is configured (dev mode)
+  if (!process.env.STRIPE_SECRET_KEY) return next();
+  
+  // Allow if org has active or trialing subscription
+  if (org.stripeSubscriptionId) {
+    const { stripeStorage } = await import("../stripeStorage.js");
+    const sub = await stripeStorage.getSubscription(org.stripeSubscriptionId);
+    if (sub && (sub.status === "active" || sub.status === "trialing")) {
+      return next();
+    }
+  }
+  
+  res.status(402).json({ error: "Active subscription required." });
+}
+
+Then apply this middleware to protected routes after requireAuth. Consider giving a grace period (e.g., 14 days from account creation) before enforcing.
+
+---
+
+## 10. MEDIUM: Stripe N+1 API Calls
+FILE: artifacts/api-server/src/stripeStorage.ts
+
+CURRENT CODE:
+for (const product of products.data) {
+  const prices = await stripe.prices.list({ product: product.id, ... });
+}
+
+PROBLEM: One Stripe API call per product — slow and inefficient.
+
+FIX: Fetch all prices in one call with product expansion:
+async getProductsWithPrices() {
+  const stripe = await getUncachableStripeClient();
+  const prices = await stripe.prices.list({
+    active: true,
+    limit: 100,
+    expand: ["data.product"],
+  });
+  
+  return prices.data
+    .filter(price => price.recurring && typeof price.product !== "string" && (price.product as any).active)
+    .map(price => {
+      const product = price.product as Stripe.Product;
+      return {
+        product_id: product.id,
+        product_name: product.name,
+        product_description: product.description,
+        price_id: price.id,
+        unit_amount: price.unit_amount,
+        currency: price.currency,
+        recurring: price.recurring,
+      };
+    });
+}
+
+---
+
+## 11. MEDIUM: customerId Query Param Not Validated
+FILE: artifacts/api-server/src/routes/dashboard.ts
+
+CURRENT CODE:
+const customerIdParam = req.query.customerId ? parseInt(req.query.customerId as string) : null;
+
+PROBLEM: parseInt("abc") returns NaN which causes silent query failures.
+
+FIX: Validate using Zod like the rest of the codebase:
+import { z } from "zod";
+const customerIdParam = req.query.customerId
+  ? z.coerce.number().int().positive().safeParse(req.query.customerId).data ?? null
+  : null;
+
+Apply this fix everywhere customerId is parsed from query params in dashboard.ts, export.ts, and any other route files.
+
+---
+
+After completing all fixes:
+1. Make sure the app still runs without errors
+2. Test the login flow still works
+3. Test that the dashboard loads correctly
+4. Confirm all environment variable names you used so I can add them to Replit Secrets
+5. List any dependencies you installed (e.g., express-rate-limit)

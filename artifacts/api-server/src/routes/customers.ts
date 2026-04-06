@@ -4,12 +4,13 @@ import { eq, and, ilike, inArray } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { CreateCustomerBody, ListCustomersQueryParams, GetCustomerParams, UpdateCustomerParams, DeleteCustomerParams } from "@workspace/api-zod";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get("/", async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   const params = ListCustomersQueryParams.safeParse(req.query);
   const search = params.success ? params.data.search : undefined;
   const orgId = req.user!.organizationId;
@@ -28,9 +29,9 @@ router.get("/", async (req, res) => {
     organizationId: c.organizationId,
     createdAt: c.createdAt.toISOString(),
   })));
-});
+}));
 
-router.post("/", requireAdmin, async (req, res) => {
+router.post("/", requireAdmin, asyncHandler(async (req, res) => {
   const parsed = CreateCustomerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -48,9 +49,9 @@ router.post("/", requireAdmin, async (req, res) => {
     organizationId: c.organizationId,
     createdAt: c.createdAt.toISOString(),
   });
-});
+}));
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", asyncHandler(async (req, res) => {
   const params = GetCustomerParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -66,9 +67,9 @@ router.get("/:id", async (req, res) => {
   }
   const c = customers[0];
   res.json({ id: c.id, name: c.name, organizationId: c.organizationId, createdAt: c.createdAt.toISOString() });
-});
+}));
 
-router.get("/:id/users", async (req, res) => {
+router.get("/:id/users", asyncHandler(async (req, res) => {
   const params = GetCustomerParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -83,10 +84,6 @@ router.get("/:id/users", async (req, res) => {
     res.status(404).json({ error: "Customer not found" });
     return;
   }
-
-  const allCustomerUsers = await db.select({ id: usersTable.id })
-    .from(usersTable)
-    .where(and(eq(usersTable.organizationId, orgId), eq(usersTable.allCustomers, true)));
 
   const assignedUsers = await db
     .select({
@@ -117,9 +114,9 @@ router.get("/:id/users", async (req, res) => {
   });
 
   res.json(combined);
-});
+}));
 
-router.put("/:id", requireAdmin, async (req, res) => {
+router.put("/:id", requireAdmin, asyncHandler(async (req, res) => {
   const params = UpdateCustomerParams.safeParse({ id: Number(req.params.id) });
   const body = CreateCustomerBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -137,9 +134,9 @@ router.put("/:id", requireAdmin, async (req, res) => {
   }
   const c = updated[0];
   res.json({ id: c.id, name: c.name, organizationId: c.organizationId, createdAt: c.createdAt.toISOString() });
-});
+}));
 
-router.delete("/:id", requireAdmin, async (req, res) => {
+router.delete("/:id", requireAdmin, asyncHandler(async (req, res) => {
   const params = DeleteCustomerParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -149,6 +146,6 @@ router.delete("/:id", requireAdmin, async (req, res) => {
   await db.delete(customersTable)
     .where(and(eq(customersTable.id, params.data.id), eq(customersTable.organizationId, orgId)));
   res.status(204).send();
-});
+}));
 
 export default router;

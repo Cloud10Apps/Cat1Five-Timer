@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "dev-secret-key";
+const JWT_SECRET = process.env.SESSION_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("SESSION_SECRET environment variable is required but was not provided.");
+}
 
 export interface AuthUser {
   id: number;
@@ -26,7 +29,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
   const token = authHeader.slice(7);
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthUser;
+    const decoded = jwt.verify(token, JWT_SECRET!) as AuthUser;
     req.user = decoded;
     next();
   } catch {
@@ -43,5 +46,5 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 export function generateToken(user: AuthUser): string {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign(user, JWT_SECRET!, { expiresIn: "7d" });
 }

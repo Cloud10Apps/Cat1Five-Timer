@@ -1,0 +1,372 @@
+You are an expert UI/UX developer. Please fix the following user experience 
+issues in this codebase. Work through each one in order, confirm each fix, 
+and do not change any backend logic, API routes, or database code.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 1. CRITICAL: Dashboard Blocks on Full-Page Spinner
+FILE: artifacts/elevator-tracker/src/pages/dashboard.tsx
+
+PROBLEM: The entire dashboard shows a blank spinner until ALL 5 API queries 
+resolve. On slow connections this is a 3-5 second blank screen.
+
+FIX: Remove the single blocking spinner gate and replace with per-section 
+skeleton loading. Each section should render independently as its data arrives.
+
+Replace this pattern:
+  if (l1||l2||l3||l4||l5) return (
+    <div className="flex h-[50vh] items-center justify-center bg-zinc-50">
+      <Spinner className="h-8 w-8" />
+    </div>
+  );
+
+With per-section skeletons like this:
+
+  // Add this skeleton component near the top of the file:
+  function StatSkeleton() {
+    return (
+      <div className="bg-white border border-t-4 border-zinc-200 border-t-zinc-300 
+                      rounded-lg shadow-sm overflow-hidden animate-pulse">
+        <div className="p-4 h-6 bg-zinc-100 rounded w-2/3 mb-4" />
+        <div className="flex items-center justify-center py-6">
+          <div className="h-16 w-20 bg-zinc-100 rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  function ChartSkeleton() {
+    return (
+      <div className="bg-white border border-zinc-200 rounded-lg shadow-sm 
+                      overflow-hidden animate-pulse" style={{ height: 360 }}>
+        <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50">
+          <div className="h-4 bg-zinc-200 rounded w-1/3" />
+        </div>
+        <div className="p-6 flex items-end gap-3 h-[300px]">
+          {[40,70,30,90,55,75,45].map((h,i) => (
+            <div key={i} className="flex-1 bg-zinc-100 rounded" style={{ height: `${h}%` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function TableSkeleton() {
+    return (
+      <div className="bg-white border border-zinc-200 rounded-lg shadow-sm 
+                      overflow-hidden animate-pulse">
+        <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50">
+          <div className="h-4 bg-zinc-200 rounded w-1/4" />
+        </div>
+        {[1,2,3].map(i => (
+          <div key={i} className="flex gap-4 px-4 py-3 border-b border-zinc-100">
+            <div className="flex-1 h-4 bg-zinc-100 rounded" />
+            <div className="w-16 h-4 bg-zinc-100 rounded" />
+            <div className="w-24 h-4 bg-zinc-100 rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+Then in the return JSX, wrap each section individually:
+
+  {/* Volume section */}
+  <section>
+    <SectionLabel>Volume</SectionLabel>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {l1 ? [1,2,3,4].map(i => <StatSkeleton key={i} />) : /* existing KPI cards */}
+    </div>
+  </section>
+
+  {/* Performance Metrics section */}
+  <section>
+    <SectionLabel>Performance Metrics</SectionLabel>
+    <div className="grid grid-cols-2 gap-4">
+      {l1 ? [1,2].map(i => <StatSkeleton key={i} />) : /* existing metric cards */}
+    </div>
+  </section>
+
+  {/* Analytics section */}
+  <section>
+    <SectionLabel>Analytics</SectionLabel>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      {l2 || l5 ? <ChartSkeleton /> : /* upcoming chart */}
+      {l5 ? <ChartSkeleton /> : /* overdue chart */}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {l3 ? <ChartSkeleton /> : /* status chart */}
+      {l4 ? <ChartSkeleton /> : /* forecast chart */}
+    </div>
+  </section>
+
+  {/* Action tables */}
+  <section>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {l2 ? <TableSkeleton /> : /* overdue table */}
+      {l2 ? <TableSkeleton /> : /* upcoming table */}
+    </div>
+  </section>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 2. CRITICAL: Empty Header Bar on Every Page
+FILE: artifacts/elevator-tracker/src/components/layout.tsx
+
+PROBLEM: The header bar is 48px of wasted space — it only contains the 
+sidebar collapse trigger and an empty div.
+
+CURRENT CODE:
+  <header className="flex h-12 items-center gap-4 border-b bg-card px-4">
+    <SidebarTrigger />
+    <div className="w-full flex-1" />
+  </header>
+
+FIX: Add a notification bell showing overdue inspection count. Replace with:
+
+  // Add this import at the top:
+  import { Bell } from "lucide-react";
+
+  // Add this hook inside Layout to fetch overdue count:
+  const [overdueCount, setOverdueCount] = useState(0);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch("/api/dashboard/attention", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => {
+        setOverdueCount(data.filter(i => i.status === "OVERDUE").length);
+      })
+      .catch(() => {});
+  }, [location]);
+
+  // Replace the header element with:
+  <header className="flex h-12 items-center gap-4 border-b bg-card px-4">
+    <SidebarTrigger />
+    <div className="w-full flex-1" />
+    {overdueCount > 0 && (
+      <Link href="/elevators" 
+        className="relative flex items-center justify-center w-9 h-9 
+                   rounded-lg text-zinc-500 hover:text-zinc-900 
+                   hover:bg-zinc-100 transition-colors">
+        <Bell className="h-5 w-5" />
+        <span className="absolute -top-0.5 -right-0.5 flex items-center 
+                         justify-center min-w-[18px] h-[18px] px-1 rounded-full 
+                         bg-red-500 text-white text-[10px] font-bold leading-none">
+          {overdueCount > 99 ? "99+" : overdueCount}
+        </span>
+      </Link>
+    )}
+  </header>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 3. HIGH: Replace Inline SVG Refresh Icon with Lucide
+FILE: artifacts/elevator-tracker/src/pages/dashboard.tsx
+
+PROBLEM: The Refresh button uses a hardcoded inline SVG path instead of 
+the Lucide icon system used everywhere else. This breaks icon consistency.
+
+FIX: 
+1. Add RefreshCw to the lucide-react import at the top of dashboard.tsx
+2. Find the inline SVG inside the refresh button and replace the entire 
+   <svg>...</svg> element with: <RefreshCw className="w-3.5 h-3.5" />
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 4. HIGH: Replace Native title Tooltip with Proper Tooltip Component
+FILE: artifacts/elevator-tracker/src/pages/dashboard.tsx
+
+PROBLEM: Performance metric numbers use the native HTML title attribute 
+for tooltips. These don't work on touch devices and are invisible on mobile.
+
+CURRENT CODE (on the big metric number divs):
+  <div className="text-[4.5rem]... cursor-help" title={tip}>
+
+FIX: 
+1. Import the Tooltip components at the top of dashboard.tsx:
+   import {
+     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
+   } from "@/components/ui/tooltip";
+
+2. Wrap the metric number in a proper tooltip:
+   <TooltipProvider>
+     <Tooltip>
+       <TooltipTrigger asChild>
+         <div className="text-[4.5rem] leading-none font-black tabular-nums 
+                         tracking-tight text-zinc-900 cursor-help">
+           {val === null ? "—" : val.toFixed(1)}
+         </div>
+       </TooltipTrigger>
+       <TooltipContent side="bottom" className="max-w-[220px] text-center">
+         <p>{tip}</p>
+       </TooltipContent>
+     </Tooltip>
+   </TooltipProvider>
+
+Apply this to BOTH performance metric cards (Avg Days To Schedule and 
+Avg Days To Complete).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 5. HIGH: Calendar Missing "Today" Button
+FILE: artifacts/elevator-tracker/src/pages/calendar.tsx
+
+PROBLEM: Users who navigate to a future or past month have no quick way 
+to return to the current month. This is a standard calendar UX pattern.
+
+FIX: Find the month navigation controls (the prev/next arrows and month 
+label) and add a "Today" button between them.
+
+Find the navigation section that looks like:
+  <button onClick={() => setCurrentDate(d => d.subtract(1, "month"))}>
+    <ChevronLeft ... />
+  </button>
+  <span>{currentDate.format("MMMM YYYY")}</span>
+  <button onClick={() => setCurrentDate(d => d.add(1, "month"))}>
+    <ChevronRight ... />
+  </button>
+
+Add a Today button between the month label and right arrow:
+  <button
+    onClick={() => { setCurrentDate(dayjs()); setSelectedDate(dayjs()); }}
+    className="px-3 py-1 text-xs font-semibold rounded-md border 
+               border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 
+               hover:border-zinc-400 transition-colors shadow-sm"
+  >
+    Today
+  </button>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 6. HIGH: Empty State on Inspections Page Needs CTA
+FILE: artifacts/elevator-tracker/src/pages/inspections.tsx 
+and artifacts/elevator-tracker/src/pages/elevators.tsx
+
+PROBLEM: When filters return no results the page shows minimal text with 
+no actionable next step. Dead-end empty states lose users.
+
+FIX: Find the empty state messages and enhance them:
+
+In elevators.tsx, find:
+  <p>No elevators found.</p>
+
+Replace with:
+  <div className="flex flex-col items-center justify-center py-16 gap-3 
+                  text-center">
+    <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center 
+                    justify-center">
+      <ClipboardList className="h-6 w-6 text-zinc-400" />
+    </div>
+    <p className="text-sm font-semibold text-zinc-600">No units found</p>
+    {hasAnyFilter ? (
+      <button onClick={clearAllFilters}
+        className="text-sm text-amber-600 hover:text-amber-700 
+                   font-semibold underline-offset-2 hover:underline">
+        Clear all filters
+      </button>
+    ) : (
+      <p className="text-xs text-zinc-400">
+        Add your first unit to get started
+      </p>
+    )}
+  </div>
+
+Apply a similar pattern to any other empty state messages across 
+inspections.tsx and elevators.tsx using the hasAnyFilter check pattern 
+already present in those files.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 7. MEDIUM: Standardize Chart Font Sizes
+FILES: artifacts/elevator-tracker/src/pages/dashboard.tsx
+
+PROBLEM: The status distribution chart uses fontSize: 16 on axis labels 
+while all other charts use fontSize: 12. This inconsistency makes the 
+status chart labels disproportionately large.
+
+FIX: Find the BarChart for status distribution. Change all instances of 
+  fontSize: 16 
+to 
+  fontSize: 12 
+inside that chart's XAxis, YAxis, Tooltip, and itemStyle configurations.
+Do not change font sizes in any other chart.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 8. MEDIUM: Buildings Page Shows "Elevator" Count Label
+FILE: artifacts/elevator-tracker/src/pages/buildings.tsx
+
+PROBLEM: Line ~152 shows:
+  {elevatorCount} {elevatorCount === 1 ? "Elevator" : "Elevators"}
+
+This should use "Unit" terminology to match the rest of the app.
+
+FIX: Change to:
+  {elevatorCount} {elevatorCount === 1 ? "Unit" : "Units"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 9. MEDIUM: Add Page Titles to All Pages
+FILES: All page files in artifacts/elevator-tracker/src/pages/
+
+PROBLEM: No page has a visible <h1> heading. Users lose orientation when 
+navigating and screen readers have no landmark. The browser tab always 
+shows the app name, never the current page.
+
+FIX: The elevators.tsx page already has a correct example:
+  <h1 className="text-3xl font-bold tracking-tight">
+    Current Inspections by Unit
+  </h1>
+
+Ensure the following pages each have a matching visible page title as the 
+first element in their content area (not inside the sidebar):
+
+- customers.tsx: "Customers"
+- buildings.tsx: "Buildings"  
+- inspections.tsx: "Inspection History"
+- calendar.tsx: "Compliance Calendar"
+- settings.tsx: "Settings"
+- admin.tsx: "Admin"
+- billing.tsx — already has a title ✅
+- dashboard.tsx — uses "2026 Inspection Activity" inline ✅
+
+Use this consistent pattern for each:
+  <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
+    [Page Name]
+  </h1>
+
+Place it as the first element inside the page's outermost content div, 
+before any other content.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 10. LOW: Add "Forgot Password?" Link to Login
+FILE: artifacts/elevator-tracker/src/pages/login.tsx
+
+PROBLEM: The password label row has a flex justify-between layout that 
+is clearly a placeholder for a "Forgot password?" link, but it was never 
+added. Users expect this on every login form.
+
+CURRENT CODE:
+  <div className="flex items-center justify-between">
+    <Label htmlFor="password" className="text-zinc-950 font-medium">
+      Password
+    </Label>
+  </div>
+
+FIX: Add a disabled "Forgot password?" link (since the feature doesn't 
+exist yet, show it as coming soon on hover):
+
+  <div className="flex items-center justify-between">
+    <Label htmlFor="password" className="text-zinc-950 font-medium">
+      Password
+    </Label>
+    <span 
+      className="text-xs text-zinc-400 cursor-not-allowed select-none"
+      title="Password reset coming soon — contact your administrator to reset your password"
+    >
+      Forgot password?
+    </span>
+  </div>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After completing ALL fixes:
+1. Confirm each of the 10 items is done
+2. List any files you modified
+3. Make sure the app still builds and runs without errors
+4. Do not modify any backend files, API routes, database schema, 
+   or TypeScript types

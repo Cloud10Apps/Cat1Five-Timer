@@ -5,27 +5,29 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { getUncachableStripeClient, getStripePublishableKey } from "../stripeClient.js";
 import { stripeStorage } from "../stripeStorage.js";
 import { usersTable } from "@workspace/db";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get("/publishable-key", async (_req, res) => {
+router.get("/publishable-key", asyncHandler(async (_req, res) => {
   const key = await getStripePublishableKey();
   res.json({ publishableKey: key });
-});
+}));
 
-router.get("/status", async (req, res) => {
+router.get("/status", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
 
+  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
+
   if (!org.stripeSubscriptionId) {
-    const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
-    return res.json({ status: "inactive", subscription: null, userCount });
+    res.json({ status: "inactive", subscription: null, userCount });
+    return;
   }
 
   const subscription = await stripeStorage.getSubscription(org.stripeSubscriptionId);
-  const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
 
   res.json({
     status: subscription?.status ?? "inactive",
@@ -35,20 +37,24 @@ router.get("/status", async (req, res) => {
       currentPeriodEnd: subscription.current_period_end,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       quantity: subscription.quantity,
+      unitAmount: subscription.items?.data?.[0]?.price?.unit_amount ?? null,
     } : null,
     userCount,
   });
-});
+}));
 
-router.get("/plans", async (_req, res) => {
+router.get("/plans", asyncHandler(async (_req, res) => {
   const rows = await stripeStorage.getProductsWithPrices();
   res.json({ plans: rows });
-});
+}));
 
-router.post("/checkout", requireAdmin, async (req, res) => {
+router.post("/checkout", requireAdmin, asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const { priceId } = req.body as { priceId: string };
-  if (!priceId) return res.status(400).json({ error: "priceId required" });
+  if (!priceId) {
+    res.status(400).json({ error: "priceId required" });
+    return;
+  }
 
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
   const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
@@ -78,14 +84,15 @@ router.post("/checkout", requireAdmin, async (req, res) => {
   });
 
   res.json({ url: session.url });
-});
+}));
 
-router.post("/portal", requireAdmin, async (req, res) => {
+router.post("/portal", requireAdmin, asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
 
   if (!org.stripeCustomerId) {
-    return res.status(400).json({ error: "No billing account found. Please subscribe first." });
+    res.status(400).json({ error: "No billing account found. Please subscribe first." });
+    return;
   }
 
   const stripe = await getUncachableStripeClient();
@@ -97,14 +104,15 @@ router.post("/portal", requireAdmin, async (req, res) => {
   });
 
   res.json({ url: session.url });
-});
+}));
 
-router.post("/sync-seats", requireAdmin, async (req, res) => {
+router.post("/sync-seats", requireAdmin, asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
 
   if (!org.stripeSubscriptionId) {
-    return res.status(400).json({ error: "No active subscription" });
+    res.status(400).json({ error: "No active subscription" });
+    return;
   }
 
   const [{ value: userCount }] = await db.select({ value: count() }).from(usersTable).where(and(eq(usersTable.organizationId, orgId), eq(usersTable.isActive, true)));
@@ -112,11 +120,14 @@ router.post("/sync-seats", requireAdmin, async (req, res) => {
 
   const subscription = await stripe.subscriptions.retrieve(org.stripeSubscriptionId);
   const itemId = subscription.items.data[0]?.id;
-  if (!itemId) return res.status(400).json({ error: "No subscription item found" });
+  if (!itemId) {
+    res.status(400).json({ error: "No subscription item found" });
+    return;
+  }
 
   await stripe.subscriptionItems.update(itemId, { quantity: Math.max(userCount, 1) });
 
   res.json({ ok: true, seats: userCount });
-});
+}));
 
 export default router;

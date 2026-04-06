@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { UpdateUserBody, InviteUserBody, UpdateUserParams } from "@workspace/api-zod";
 import { syncSeatsToStripe } from "../syncSeats.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
@@ -22,13 +23,13 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-router.get("/", requireAdmin, async (req, res) => {
+router.get("/", requireAdmin, asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const users = await db.select().from(usersTable).where(eq(usersTable.organizationId, orgId)).orderBy(usersTable.email);
   res.json(users.map(formatUser));
-});
+}));
 
-router.post("/invite", requireAdmin, async (req, res) => {
+router.post("/invite", requireAdmin, asyncHandler(async (req, res) => {
   const parsed = InviteUserBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -46,9 +47,9 @@ router.post("/invite", requireAdmin, async (req, res) => {
   }).returning();
   syncSeatsToStripe(orgId).catch(() => {});
   res.status(201).json(formatUser(inserted[0]));
-});
+}));
 
-router.put("/:id", requireAdmin, async (req, res) => {
+router.put("/:id", requireAdmin, asyncHandler(async (req, res) => {
   const params = UpdateUserParams.safeParse({ id: Number(req.params.id) });
   const body = UpdateUserBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -72,9 +73,9 @@ router.put("/:id", requireAdmin, async (req, res) => {
     syncSeatsToStripe(orgId).catch(() => {});
   }
   res.json(formatUser(updated[0]));
-});
+}));
 
-router.get("/:id/customers", requireAdmin, async (req, res) => {
+router.get("/:id/customers", requireAdmin, asyncHandler(async (req, res) => {
   const userId = Number(req.params.id);
   const orgId = req.user!.organizationId;
   if (isNaN(userId)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -87,9 +88,9 @@ router.get("/:id/customers", requireAdmin, async (req, res) => {
     allCustomers: user.allCustomers ?? true,
     customerIds: assignments.map(a => a.customerId),
   });
-});
+}));
 
-router.put("/:id/customers", requireAdmin, async (req, res) => {
+router.put("/:id/customers", requireAdmin, asyncHandler(async (req, res) => {
   const userId = Number(req.params.id);
   const orgId = req.user!.organizationId;
   if (isNaN(userId)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -110,6 +111,6 @@ router.put("/:id/customers", requireAdmin, async (req, res) => {
   }
 
   res.json({ allCustomers, customerIds: allCustomers ? [] : customerIds });
-});
+}));
 
 export default router;

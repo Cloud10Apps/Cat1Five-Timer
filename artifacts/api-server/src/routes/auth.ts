@@ -1,13 +1,23 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, generateToken, AuthUser } from "../middleware/auth.js";
 import { LoginBody } from "@workspace/api-zod";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
-router.post("/login", async (req, res) => {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Please try again in 15 minutes." },
+});
+
+router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -48,9 +58,9 @@ router.post("/login", async (req, res) => {
       createdAt: user.createdAt.toISOString(),
     },
   });
-});
+}));
 
-router.get("/me", requireAuth, async (req, res) => {
+router.get("/me", requireAuth, asyncHandler(async (req, res) => {
   const user = req.user!;
   const users = await db.select().from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
   if (!users[0]) {
@@ -66,6 +76,6 @@ router.get("/me", requireAuth, async (req, res) => {
     organizationId: u.organizationId,
     createdAt: u.createdAt.toISOString(),
   });
-});
+}));
 
 export default router;

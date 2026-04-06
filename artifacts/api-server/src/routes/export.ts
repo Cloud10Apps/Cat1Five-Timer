@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
 import { ExportElevatorsQueryParams } from "@workspace/api-zod";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
@@ -73,7 +74,7 @@ function qArr(query: Record<string, any>, key: string): string[] {
   return Array.isArray(val) ? (val as string[]) : [val as string];
 }
 
-router.get("/inspections", async (req, res) => {
+router.get("/inspections", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);

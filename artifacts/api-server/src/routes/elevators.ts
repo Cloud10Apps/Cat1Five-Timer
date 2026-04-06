@@ -4,6 +4,7 @@ import { eq, and, ilike, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { CreateElevatorBody, ListElevatorsQueryParams, GetElevatorParams, UpdateElevatorParams, DeleteElevatorParams } from "@workspace/api-zod";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
@@ -53,7 +54,7 @@ function formatElevator(e: Awaited<ReturnType<typeof fetchElevator>>) {
   };
 }
 
-router.get("/", async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   const params = ListElevatorsQueryParams.safeParse(req.query);
   const orgId = req.user!.organizationId;
 
@@ -93,9 +94,9 @@ router.get("/", async (req, res) => {
     .orderBy(elevatorsTable.name);
 
   res.json(rows.map(formatElevator));
-});
+}));
 
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const parsed = CreateElevatorBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -114,9 +115,9 @@ router.post("/", async (req, res) => {
   }).returning();
   const e = await fetchElevator(inserted[0].id, orgId);
   res.status(201).json(formatElevator(e));
-});
+}));
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", asyncHandler(async (req, res) => {
   const params = GetElevatorParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -128,9 +129,9 @@ router.get("/:id", async (req, res) => {
     return;
   }
   res.json(formatElevator(e));
-});
+}));
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", asyncHandler(async (req, res) => {
   const params = UpdateElevatorParams.safeParse({ id: Number(req.params.id) });
   const body = CreateElevatorBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -147,9 +148,9 @@ router.put("/:id", async (req, res) => {
     return;
   }
   res.json(formatElevator(e));
-});
+}));
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", asyncHandler(async (req, res) => {
   const params = DeleteElevatorParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -158,6 +159,6 @@ router.delete("/:id", async (req, res) => {
   const orgId = req.user!.organizationId;
   await db.delete(elevatorsTable).where(and(eq(elevatorsTable.id, params.data.id), eq(elevatorsTable.organizationId, orgId)));
   res.status(204).send();
-});
+}));
 
 export default router;
