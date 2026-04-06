@@ -1,0 +1,63 @@
+You are an expert senior developer. There is a confirmed bug in the 
+"Due Status" column of the Current Inspections by Unit Excel export.
+
+FILE: artifacts/api-server/src/routes/export.ts
+
+THE PROBLEM:
+There are two aging bucket functions in this file. The /elevators export 
+uses a function called agingBucketLabel() which has broken logic. It uses 
+a simple catch-all "Due in 60+ Days" for anything beyond 30 days away, 
+meaning a unit due in 2032 (2,193 days away) incorrectly shows 
+"Due in 60+ Days" instead of something accurate.
+
+The /inspections export correctly uses getAgingBucketKey() + 
+getAgingBucketDisplay() which has proper granular buckets. The /elevators 
+export needs to use the same logic.
+
+THE FIX:
+Find the agingBucketLabel() function which looks like this:
+
+  function agingBucketLabel(nextDueDate: string | null | undefined): string {
+    if (!nextDueDate) return "";
+    const days = dayjs().startOf("day").diff(dayjs(nextDueDate).startOf("day"), "day");
+    if (days === 0)  return "Due Today";
+    if (days >= -7)  return "Due in 7 Days";
+    if (days >= -14) return "Due in 14 Days";
+    if (days >= -30) return "Due in 30 Days";
+    if (days < 0)    return "Due in 60+ Days";
+    if (days <= 30)  return "Overdue 1–30 Days";
+    if (days <= 60)  return "Overdue 31–60 Days";
+    if (days <= 90)  return "Overdue 61–90 Days";
+    return "Overdue 91+ Days";
+  }
+
+Replace it entirely with this corrected version that matches the same 
+bucket definitions used everywhere else in the app:
+
+  function agingBucketLabel(nextDueDate: string | null | undefined, 
+                             status?: string): string {
+    if (!nextDueDate) return "";
+    if (status === "COMPLETED") return "";
+    const days = dayjs().startOf("day").diff(dayjs(nextDueDate).startOf("day"), "day");
+    if (days === 0)   return "Due Today";
+    if (days > 90)    return "Overdue 91+ Days";
+    if (days > 60)    return "Overdue 61–90 Days";
+    if (days > 30)    return "Overdue 31–60 Days";
+    if (days > 0)     return "Overdue 1–30 Days";
+    if (days >= -7)   return "Next 7 Days";
+    if (days >= -14)  return "Next 14 Days";
+    if (days >= -30)  return "Next 30 Days";
+    if (days >= -60)  return "Next 60 Days";
+    if (days >= -90)  return "Next 90 Days";
+    return "Due in 90+ Days";
+  }
+
+Then find where agingBucketLabel() is called inside the /elevators 
+router.get handler (in the rows.forEach() block):
+  agingBucket: agingBucketLabel(insp?.next_due_date),
+
+Update it to also pass the status so completed units show blank:
+  agingBucket: agingBucketLabel(insp?.next_due_date, insp?.status),
+
+Do not change any other functions, routes, or logic.
+After the fix, confirm the app builds without TypeScript errors.

@@ -274,18 +274,22 @@ function statusLabel(status: string, nextDueDate: string | null | undefined): st
   return map[status] ?? status;
 }
 
-function agingBucketLabel(nextDueDate: string | null | undefined): string {
+function agingBucketLabel(nextDueDate: string | null | undefined,
+                          status?: string): string {
   if (!nextDueDate) return "";
+  if (status === "COMPLETED") return "";
   const days = dayjs().startOf("day").diff(dayjs(nextDueDate).startOf("day"), "day");
-  if (days === 0)  return "Due Today";
-  if (days >= -7)  return "Due in 7 Days";
-  if (days >= -14) return "Due in 14 Days";
-  if (days >= -30) return "Due in 30 Days";
-  if (days < 0)    return "Due in 60+ Days";
-  if (days <= 30)  return "Overdue 1–30 Days";
-  if (days <= 60)  return "Overdue 31–60 Days";
-  if (days <= 90)  return "Overdue 61–90 Days";
-  return "Overdue 91+ Days";
+  if (days === 0)   return "Due Today";
+  if (days > 90)    return "Overdue 91+ Days";
+  if (days > 60)    return "Overdue 61–90 Days";
+  if (days > 30)    return "Overdue 31–60 Days";
+  if (days > 0)     return "Overdue 1–30 Days";
+  if (days >= -7)   return "Next 7 Days";
+  if (days >= -14)  return "Next 14 Days";
+  if (days >= -30)  return "Next 30 Days";
+  if (days >= -60)  return "Next 60 Days";
+  if (days >= -90)  return "Next 90 Days";
+  return "Due in 90+ Days";
 }
 
 router.get("/elevators", asyncHandler(async (req, res) => {
@@ -416,7 +420,7 @@ router.get("/elevators", asyncHandler(async (req, res) => {
       lastInspDate:  toDate(insp?.lastInspectionDate),
       nextDueDate:   toDate(insp?.nextDueDate),
       days:          daysVal ?? "",
-      agingBucket:   agingBucketLabel(insp?.nextDueDate),
+      agingBucket:   agingBucketLabel(insp?.nextDueDate, insp?.status),
       scheduledDate: toDate(insp?.scheduledDate),
     });
   });
