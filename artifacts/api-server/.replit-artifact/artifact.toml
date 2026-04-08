@@ -8,12 +8,24 @@ id = "3B4_FFSkEVBkAeYMFRJ2e"
 localPort = 8080
 name = "API Server"
 paths = ["/api", "/"]
-development.run = "pnpm --filter @workspace/api-server run dev"
-production.build.args = ["sh", "-c", "pnpm --filter @workspace/elevator-tracker run build && node artifacts/api-server/build.mjs"]
-production.build.env.NODE_ENV = "production"
-production.build.env.BASE_PATH = "/"
-production.build.env.PORT = "23706"
-production.run.args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
-production.run.env.PORT = "8080"
-production.run.env.NODE_ENV = "production"
-production.health.startup.path = "/api/healthz"
+
+[services.development]
+run = "pnpm --filter @workspace/api-server run dev"
+
+[services.production]
+run = "node --enable-source-maps artifacts/api-server/dist/index.mjs"
+
+[services.production.build]
+args = ["sh", "-c", "pnpm --filter @workspace/elevator-tracker run build && node artifacts/api-server/build.mjs"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+BASE_PATH = "/"
+PORT = "23706"
+
+[services.production.env]
+PORT = "8080"
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/api/healthz"
