@@ -2,6 +2,7 @@ import express, { type Express, type Request, type Response, type NextFunction }
 import cors from "cors";
 import pinoHttp from "pino-http";
 import path from "path";
+import { existsSync } from "fs";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 import { WebhookHandlers } from "./webhookHandlers.js";
@@ -75,12 +76,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-if (process.env.NODE_ENV === "production") {
-  const frontendDist = path.join(process.cwd(), "artifacts/elevator-tracker/dist/public");
+const frontendDist = path.join(process.cwd(), "artifacts/elevator-tracker/dist/public");
+if (existsSync(frontendDist)) {
+  logger.info({ frontendDist }, "Serving static frontend");
   app.use(express.static(frontendDist));
   app.get("*", (_req: Request, res: Response) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
+} else {
+  logger.info({ frontendDist }, "No static frontend dist found — API-only mode");
 }
 
 app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
