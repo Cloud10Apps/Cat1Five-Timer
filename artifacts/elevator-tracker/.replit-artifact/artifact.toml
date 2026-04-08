@@ -17,6 +17,18 @@ localPort = 23706
 [services.development]
 run = "pnpm --filter @workspace/elevator-tracker run dev"
 
+[services.production]
+serve = "static"
+publicDir = "dist/public"
+
+[services.production.build]
+args = ["sh", "-c", "pnpm --filter @workspace/elevator-tracker run build"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+BASE_PATH = "/"
+PORT = "23706"
+
 [services.env]
 PORT = "23706"
 BASE_PATH = "/"
