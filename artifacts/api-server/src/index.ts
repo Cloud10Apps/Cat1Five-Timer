@@ -1,7 +1,7 @@
 import app from "./app.js";
 import { logger } from "./lib/logger.js";
 import { db, organizationsTable, usersTable } from "@workspace/db";
-import { count, eq } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient.js";
@@ -78,13 +78,39 @@ async function initStripe() {
     logger.warn("DATABASE_URL not set, skipping Stripe init");
     return;
   }
+
+  // Step 1: Run migrations to create the stripe schema tables.
+  let migrationSucceeded = false;
   try {
     logger.info("Initializing Stripe schema...");
     await runMigrations({ databaseUrl });
     logger.info("Stripe schema ready");
+    migrationSucceeded = true;
   } catch (err) {
-    logger.warn({ err }, "Stripe schema migration skipped");
+    logger.warn({ err }, "Stripe schema migration skipped — billing sync disabled");
   }
+
+  // Step 2: Verify stripe.accounts actually exists in the DB before proceeding.
+  // runMigrations can return without error yet still fail to create the table.
+  // Instantiating StripeSync without the table causes background polling queries
+  // that throw uncaught rejections and crash Node.js.
+  let stripeTableReady = false;
+  try {
+    const rows = await db.execute(sql`
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'stripe' AND table_name = 'accounts'
+      LIMIT 1
+    `);
+    stripeTableReady = (rows as any[]).length > 0;
+  } catch {
+    stripeTableReady = false;
+  }
+
+  if (!stripeTableReady) {
+    logger.warn("stripe.accounts table not found — skipping StripeSync to avoid background crashes");
+    return;
+  }
+
   try {
     const stripeSync = await getStripeSync();
     const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
