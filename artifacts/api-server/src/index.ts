@@ -124,16 +124,28 @@ async function initStripe() {
   }
 }
 
+// Catch any unhandled rejections or exceptions so production deployments always log
+// the crash reason before dying, instead of going silent.
+process.on("unhandledRejection", (reason) => {
+  logger.error({ reason }, "Unhandled promise rejection — check for missing await or uncaught async error");
+});
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "Uncaught exception — process will exit");
+  process.exit(1);
+});
+
 await bootstrapIfEmpty();
 
 // Start the server first so the health check can pass regardless of Stripe init status.
 // Stripe init runs in the background — failures are non-fatal.
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
+logger.info({ port }, "Calling app.listen...");
+const server = app.listen(port, () => {
   logger.info({ port }, "Server listening");
+});
+
+server.on("error", (err) => {
+  logger.error({ err }, "Server failed to bind port — exiting");
+  process.exit(1);
 });
 
 initStripe().catch((err) =>
