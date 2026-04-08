@@ -99,8 +99,9 @@ async function initStripe() {
 }
 
 await bootstrapIfEmpty();
-await initStripe();
 
+// Start the server first so the health check can pass regardless of Stripe init status.
+// Stripe init runs in the background — failures are non-fatal.
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
@@ -108,3 +109,7 @@ app.listen(port, (err) => {
   }
   logger.info({ port }, "Server listening");
 });
+
+initStripe().catch((err) =>
+  logger.warn({ err }, "Stripe init failed — billing features may be unavailable")
+);
