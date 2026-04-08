@@ -77,14 +77,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
 const frontendDist = path.join(process.cwd(), "artifacts/elevator-tracker/dist/public");
-if (existsSync(frontendDist)) {
+if (process.env.NODE_ENV === "production" && existsSync(frontendDist)) {
   logger.info({ frontendDist }, "Serving static frontend");
   app.use(express.static(frontendDist));
-  app.get("*", (_req: Request, res: Response) => {
+  // Express 5 catch-all — serves index.html for all unmatched GET routes (SPA routing)
+  app.get("/{*path}", (_req: Request, res: Response) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 } else {
-  logger.info({ frontendDist }, "No static frontend dist found — API-only mode");
+  logger.info({ frontendDist, NODE_ENV: process.env.NODE_ENV }, "Static serving skipped — dev mode or dist missing");
 }
 
 app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
