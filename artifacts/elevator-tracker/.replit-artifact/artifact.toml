@@ -19,7 +19,7 @@ run = "pnpm --filter @workspace/elevator-tracker run dev"
 
 [services.production]
 serve = "static"
-publicDir = "dist/public"
+publicDir = "artifacts/elevator-tracker/dist/public"
 
 [services.production.build]
 args = ["sh", "-c", "pnpm --filter @workspace/elevator-tracker run build"]
