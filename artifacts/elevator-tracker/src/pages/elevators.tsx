@@ -538,16 +538,30 @@ export default function Elevators() {
       const elevatorData = {
         ...raw,
         buildingId: Number(raw.buildingId),
-        yearInstalled: raw.yearInstalled !== undefined && raw.yearInstalled !== (""  as any) ? Number(raw.yearInstalled) : undefined,
-        numLandings:   raw.numLandings   !== undefined && raw.numLandings   !== (""  as any) ? Number(raw.numLandings)   : undefined,
-        numOpenings:   raw.numOpenings   !== undefined && raw.numOpenings   !== (""  as any) ? Number(raw.numOpenings)   : undefined,
+        // Sanitize optional enum fields: empty string "" is not a valid enum value
+        elevatorType: raw.elevatorType ? raw.elevatorType : undefined,
+        // Sanitize optional string fields
+        manufacturer: raw.manufacturer || undefined,
+        oemSerialNumber: raw.oemSerialNumber || undefined,
+        capacity: raw.capacity || undefined,
+        speed: raw.speed || undefined,
+        bank: raw.bank || undefined,
+        description: raw.description || undefined,
+        internalId: (raw as any).internalId || undefined,
+        stateId: (raw as any).stateId || undefined,
+        // Coerce integer fields from strings (form.getValues() bypasses zod preprocess)
+        yearInstalled: raw.yearInstalled !== undefined && raw.yearInstalled !== ("" as any) ? Number(raw.yearInstalled) : undefined,
+        numLandings:   raw.numLandings   !== undefined && raw.numLandings   !== ("" as any) ? Number(raw.numLandings)   : undefined,
+        numOpenings:   raw.numOpenings   !== undefined && raw.numOpenings   !== ("" as any) ? Number(raw.numOpenings)   : undefined,
       };
       try {
-        const created = await createMutation.mutateAsync({ data: elevatorData });
+        const created = await createMutation.mutateAsync({ data: elevatorData as any });
         queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
         elevatorId = (created as any).id;
-      } catch {
-        toast({ title: "Failed to create elevator", variant: "destructive" });
+      } catch (err: any) {
+        console.error("Elevator creation failed:", err);
+        const msg = err?.data?.error ?? err?.message;
+        toast({ title: "Failed to create elevator", description: msg ?? undefined, variant: "destructive" });
         return;
       }
     }
