@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Lockfile — regenerated per-platform at install time
+pnpm-lock.yaml

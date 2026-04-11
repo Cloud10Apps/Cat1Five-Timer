@@ -14,7 +14,7 @@ COPY artifacts/api-server/package.json ./artifacts/api-server/
 COPY artifacts/elevator-tracker/package.json ./artifacts/elevator-tracker/
 COPY scripts/package.json ./scripts/
 
-RUN rm -f pnpm-lock.yaml && pnpm install --no-frozen-lockfile
+RUN pnpm install
 
 # ── Stage 2: build frontend ─────────────────────────────────────────────────
 FROM deps AS frontend-builder
@@ -55,7 +55,7 @@ COPY lib/api-spec/package.json ./lib/api-spec/
 COPY artifacts/api-server/package.json ./artifacts/api-server/
 COPY scripts/package.json ./scripts/
 
-RUN rm -f pnpm-lock.yaml && pnpm install --no-frozen-lockfile --prod
+RUN pnpm install --prod
 
 # Copy built outputs
 COPY --from=api-builder /app/artifacts/api-server/dist ./artifacts/api-server/dist
