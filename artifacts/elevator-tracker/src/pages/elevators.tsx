@@ -86,6 +86,16 @@ const elevatorSchema = z.object({
   description: z.string().optional(),
   bank: z.string().optional(),
   type: z.enum(["traction", "hydraulic", "other"] as const),
+  // Unit Profile fields
+  manufacturer: z.string().optional(),
+  elevatorType: z.enum(["passenger", "freight"]).optional(),
+  oemSerialNumber: z.string().optional(),
+  capacity: z.string().optional(),
+  speed: z.string().optional(),
+  yearInstalled: z.preprocess(v => (v === "" || v == null) ? undefined : Number(v), z.number().int().positive().optional()),
+  numLandings: z.preprocess(v => (v === "" || v == null) ? undefined : Number(v), z.number().int().positive().optional()),
+  numOpenings: z.preprocess(v => (v === "" || v == null) ? undefined : Number(v), z.number().int().positive().optional()),
+  locationId: z.string().optional(),
 });
 
 type ElevatorFormValues = z.infer<typeof elevatorSchema>;
@@ -702,6 +712,15 @@ export default function Elevators() {
       description: elevator.description || "",
       bank: elevator.bank || "",
       type: elevator.type,
+      manufacturer: (elevator as any).manufacturer || "",
+      elevatorType: (elevator as any).elevatorType || undefined,
+      oemSerialNumber: (elevator as any).oemSerialNumber || "",
+      capacity: (elevator as any).capacity || "",
+      speed: (elevator as any).speed || "",
+      yearInstalled: (elevator as any).yearInstalled ?? undefined,
+      numLandings: (elevator as any).numLandings ?? undefined,
+      numOpenings: (elevator as any).numOpenings ?? undefined,
+      locationId: (elevator as any).locationId || "",
     });
     // Pre-load the most actionable inspection for this elevator
     const latestInsp = latestInspByElevator.get(elevator.id);
@@ -932,6 +951,152 @@ export default function Elevators() {
                   <FormLabel>Bank / Group</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. High Rise" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* ── Unit Profile ── */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Unit Profile</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="manufacturer"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Manufacturer <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Otis, KONE, Schindler" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="elevatorType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Elevator Type <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type…" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="passenger">Passenger</SelectItem>
+                      <SelectItem value="freight">Freight</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="oemSerialNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>OEM Serial Number <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. SN-98765" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="locationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location / ID <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. LOC-101" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="capacity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Capacity <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 2500 lbs" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="speed"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Speed <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 150 fpm" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="yearInstalled"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Year Installed <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g. 2010" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="numLandings"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel># Landings <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g. 12" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="numOpenings"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel># Openings <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g. 24" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1611,7 +1776,12 @@ export default function Elevators() {
                                           }`} />
                                           {/* Name */}
                                           <div className={`flex items-center px-4 py-2.5 min-w-0 ${nameIndent}`}>
-                                            <div className="font-semibold text-sm leading-snug break-words text-zinc-900" title={elevator.name}>{elevator.name}</div>
+                                            <div>
+                                              <div className="font-semibold text-sm leading-snug break-words text-zinc-900" title={elevator.name}>{elevator.name}</div>
+                                              {(elevator as any).manufacturer && (
+                                                <div className="text-xs text-zinc-400 truncate mt-0.5">{(elevator as any).manufacturer}</div>
+                                              )}
+                                            </div>
                                           </div>
                                           {/* Unit ID — reference field, de-emphasized */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">

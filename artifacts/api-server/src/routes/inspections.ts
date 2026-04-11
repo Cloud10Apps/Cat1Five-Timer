@@ -184,7 +184,7 @@ router.get("/", asyncHandler(async (req, res) => {
     if (params.data.status) conditions.push(eq(inspectionsTable.status, params.data.status as any));
     if (params.data.inspectionType) conditions.push(eq(inspectionsTable.inspectionType, params.data.inspectionType));
     if (params.data.elevatorType) conditions.push(eq(elevatorsTable.type, params.data.elevatorType));
-    if (params.data.bank) conditions.push(eq(elevatorsTable.bank, params.data.bank));
+    if ((params.data as any).bank) conditions.push(eq(elevatorsTable.bank, (params.data as any).bank));
     if (params.data.search) conditions.push(ilike(elevatorsTable.name, `%${params.data.search}%`));
     if (params.data.month && params.data.year) {
       const startDate = dayjs()
@@ -217,14 +217,15 @@ router.get("/", asyncHandler(async (req, res) => {
         )!
       );
     }
-    if (params.data.lastInspectionDateFrom) conditions.push(gte(inspectionsTable.lastInspectionDate, params.data.lastInspectionDateFrom));
-    if (params.data.lastInspectionDateTo) conditions.push(lte(inspectionsTable.lastInspectionDate, params.data.lastInspectionDateTo));
-    if (params.data.nextDueDateFrom) conditions.push(gte(inspectionsTable.nextDueDate, params.data.nextDueDateFrom));
-    if (params.data.nextDueDateTo) conditions.push(lte(inspectionsTable.nextDueDate, params.data.nextDueDateTo));
-    if (params.data.scheduledDateFrom) conditions.push(gte(inspectionsTable.scheduledDate, params.data.scheduledDateFrom));
-    if (params.data.scheduledDateTo) conditions.push(lte(inspectionsTable.scheduledDate, params.data.scheduledDateTo));
-    if (params.data.completionDateFrom) conditions.push(gte(inspectionsTable.completionDate, params.data.completionDateFrom));
-    if (params.data.completionDateTo) conditions.push(lte(inspectionsTable.completionDate, params.data.completionDateTo));
+    const pd = params.data as any;
+    if (pd.lastInspectionDateFrom) conditions.push(gte(inspectionsTable.lastInspectionDate, pd.lastInspectionDateFrom));
+    if (pd.lastInspectionDateTo) conditions.push(lte(inspectionsTable.lastInspectionDate, pd.lastInspectionDateTo));
+    if (pd.nextDueDateFrom) conditions.push(gte(inspectionsTable.nextDueDate, pd.nextDueDateFrom));
+    if (pd.nextDueDateTo) conditions.push(lte(inspectionsTable.nextDueDate, pd.nextDueDateTo));
+    if (pd.scheduledDateFrom) conditions.push(gte(inspectionsTable.scheduledDate, pd.scheduledDateFrom));
+    if (pd.scheduledDateTo) conditions.push(lte(inspectionsTable.scheduledDate, pd.scheduledDateTo));
+    if (pd.completionDateFrom) conditions.push(gte(inspectionsTable.completionDate, pd.completionDateFrom));
+    if (pd.completionDateTo) conditions.push(lte(inspectionsTable.completionDate, pd.completionDateTo));
   }
 
   const rows = await db

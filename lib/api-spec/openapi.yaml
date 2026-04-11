@@ -924,6 +924,25 @@ components:
         type:
           type: string
           enum: [traction, hydraulic, other]
+        manufacturer:
+          type: string
+        elevatorType:
+          type: string
+          enum: [passenger, freight]
+        oemSerialNumber:
+          type: string
+        capacity:
+          type: string
+        speed:
+          type: string
+        yearInstalled:
+          type: integer
+        numLandings:
+          type: integer
+        numOpenings:
+          type: integer
+        locationId:
+          type: string
         buildingId:
           type: integer
         buildingName:
@@ -957,6 +976,25 @@ components:
         type:
           type: string
           enum: [traction, hydraulic, other]
+        manufacturer:
+          type: string
+        elevatorType:
+          type: string
+          enum: [passenger, freight]
+        oemSerialNumber:
+          type: string
+        capacity:
+          type: string
+        speed:
+          type: string
+        yearInstalled:
+          type: integer
+        numLandings:
+          type: integer
+        numOpenings:
+          type: integer
+        locationId:
+          type: string
         buildingId:
           type: integer
       required:
