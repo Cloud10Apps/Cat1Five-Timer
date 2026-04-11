@@ -1,5 +1,5 @@
 # ── Stage 1: install all dependencies ──────────────────────────────────────
-FROM node:22-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Install pnpm
@@ -41,7 +41,7 @@ COPY artifacts/api-server/ ./artifacts/api-server/
 RUN pnpm --filter @workspace/api-server run build
 
 # ── Stage 4: production image ────────────────────────────────────────────────
-FROM node:22-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
