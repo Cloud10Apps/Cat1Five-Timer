@@ -43,6 +43,7 @@ router.get("/", asyncHandler(async (req, res) => {
       city: buildingsTable.city,
       state: buildingsTable.state,
       zip: buildingsTable.zip,
+      locationId: buildingsTable.locationId,
       customerId: buildingsTable.customerId,
       customerName: customersTable.name,
       organizationId: buildingsTable.organizationId,
@@ -64,6 +65,7 @@ router.get("/", asyncHandler(async (req, res) => {
     city: b.city ?? undefined,
     state: b.state ?? undefined,
     zip: b.zip ?? undefined,
+    locationId: b.locationId ?? undefined,
     customerId: b.customerId,
     customerName: b.customerName ?? undefined,
     organizationId: b.organizationId,
@@ -86,6 +88,7 @@ router.post("/", asyncHandler(async (req, res) => {
     city: parsed.data.city,
     state: parsed.data.state,
     zip: parsed.data.zip,
+    locationId: (parsed.data as any).locationId,
     customerId: parsed.data.customerId,
     organizationId: orgId,
   }).returning();
@@ -98,6 +101,7 @@ router.post("/", asyncHandler(async (req, res) => {
     city: b.city ?? undefined,
     state: b.state ?? undefined,
     zip: b.zip ?? undefined,
+    locationId: b.locationId ?? undefined,
     customerId: b.customerId,
     customerName: customers[0]?.name,
     organizationId: b.organizationId,
@@ -120,6 +124,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
       city: buildingsTable.city,
       state: buildingsTable.state,
       zip: buildingsTable.zip,
+      locationId: buildingsTable.locationId,
       customerId: buildingsTable.customerId,
       customerName: customersTable.name,
       organizationId: buildingsTable.organizationId,
@@ -134,7 +139,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
     return;
   }
   const b = buildings[0];
-  res.json({ id: b.id, name: b.name, address: b.address ?? undefined, city: b.city ?? undefined, state: b.state ?? undefined, zip: b.zip ?? undefined, customerId: b.customerId, customerName: b.customerName ?? undefined, organizationId: b.organizationId, createdAt: b.createdAt.toISOString() });
+  res.json({ id: b.id, name: b.name, address: b.address ?? undefined, city: b.city ?? undefined, state: b.state ?? undefined, zip: b.zip ?? undefined, locationId: (b as any).locationId ?? undefined, customerId: b.customerId, customerName: b.customerName ?? undefined, organizationId: b.organizationId, createdAt: b.createdAt.toISOString() });
 }));
 
 router.put("/:id", asyncHandler(async (req, res) => {
@@ -146,7 +151,7 @@ router.put("/:id", asyncHandler(async (req, res) => {
   }
   const orgId = req.user!.organizationId;
   const updated = await db.update(buildingsTable)
-    .set({ name: body.data.name, address: body.data.address, city: body.data.city, state: body.data.state, zip: body.data.zip, customerId: body.data.customerId })
+    .set({ name: body.data.name, address: body.data.address, city: body.data.city, state: body.data.state, zip: body.data.zip, locationId: (body.data as any).locationId, customerId: body.data.customerId })
     .where(and(eq(buildingsTable.id, params.data.id), eq(buildingsTable.organizationId, orgId)))
     .returning();
   if (!updated[0]) {
@@ -155,7 +160,7 @@ router.put("/:id", asyncHandler(async (req, res) => {
   }
   const b = updated[0];
   const customers = await db.select().from(customersTable).where(eq(customersTable.id, b.customerId)).limit(1);
-  res.json({ id: b.id, name: b.name, address: b.address ?? undefined, city: b.city ?? undefined, state: b.state ?? undefined, zip: b.zip ?? undefined, customerId: b.customerId, customerName: customers[0]?.name, organizationId: b.organizationId, createdAt: b.createdAt.toISOString() });
+  res.json({ id: b.id, name: b.name, address: b.address ?? undefined, city: b.city ?? undefined, state: b.state ?? undefined, zip: b.zip ?? undefined, locationId: b.locationId ?? undefined, customerId: b.customerId, customerName: customers[0]?.name, organizationId: b.organizationId, createdAt: b.createdAt.toISOString() });
 }));
 
 router.delete("/:id", asyncHandler(async (req, res) => {

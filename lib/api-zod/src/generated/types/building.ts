@@ -13,6 +13,7 @@ export interface Building {
   city?: string;
   state?: string;
   zip?: string;
+  locationId?: string;
   customerId: number;
   customerName?: string;
   organizationId: number;

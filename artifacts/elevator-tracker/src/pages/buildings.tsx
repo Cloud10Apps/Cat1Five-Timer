@@ -55,6 +55,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 
 const buildingSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  locationId: z.string().optional(),
   customerId: z.coerce.number().min(1, "Customer is required"),
   address: z.string().optional(),
   city: z.string().optional(),
@@ -195,7 +196,7 @@ export default function Buildings() {
 
   const form = useForm<BuildingFormValues>({
     resolver: zodResolver(buildingSchema),
-    defaultValues: { name: "", customerId: 0, address: "", city: "", state: "", zip: "" },
+    defaultValues: { name: "", locationId: "", customerId: 0, address: "", city: "", state: "", zip: "" },
   });
 
   const onSubmit = (data: BuildingFormValues) => {
@@ -255,6 +256,7 @@ export default function Buildings() {
     setEditingBuilding(building);
     form.reset({
       name: building.name,
+      locationId: (building as any).locationId || "",
       customerId: building.customerId,
       address: building.address || "",
       city: building.city || "",
@@ -294,19 +296,34 @@ export default function Buildings() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Building Name</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Downtown Tower" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Building Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Downtown Tower" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="locationId"
+            render={({ field }) => (
+              <FormItem className="w-32">
+                <FormLabel>Location / ID <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. LOC-101" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="address"
@@ -372,7 +389,7 @@ export default function Buildings() {
           onOpenChange={(open) => {
             setIsAddOpen(open);
             if (!open) {
-              form.reset({ name: "", customerId: 0, address: "", city: "", state: "", zip: "" });
+              form.reset({ name: "", locationId: "", customerId: 0, address: "", city: "", state: "", zip: "" });
               setEditingBuilding(null);
             }
           }}
@@ -381,7 +398,7 @@ export default function Buildings() {
             <Button
               onClick={() => {
                 setEditingBuilding(null);
-                form.reset({ name: "", customerId: 0, address: "", city: "", state: "", zip: "" });
+                form.reset({ name: "", locationId: "", customerId: 0, address: "", city: "", state: "", zip: "" });
               }}
             >
               <Plus className="mr-2 h-4 w-4" />

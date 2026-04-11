@@ -12,5 +12,6 @@ export interface CreateBuildingBody {
   city?: string;
   state?: string;
   zip?: string;
+  locationId?: string;
   customerId: number;
 }

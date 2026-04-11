@@ -871,6 +871,8 @@ components:
           type: string
         zip:
           type: string
+        locationId:
+          type: string
         customerId:
           type: integer
         customerName:
@@ -903,6 +905,8 @@ components:
         state:
           type: string
         zip:
+          type: string
+        locationId:
           type: string
         customerId:
           type: integer

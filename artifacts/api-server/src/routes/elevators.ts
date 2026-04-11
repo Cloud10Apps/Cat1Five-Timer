@@ -145,7 +145,6 @@ router.post("/", asyncHandler(async (req, res) => {
     yearInstalled: (parsed.data as any).yearInstalled,
     numLandings: (parsed.data as any).numLandings,
     numOpenings: (parsed.data as any).numOpenings,
-    locationId: (parsed.data as any).locationId,
     buildingId: parsed.data.buildingId,
     organizationId: orgId,
   }).returning();
@@ -191,7 +190,6 @@ router.put("/:id", asyncHandler(async (req, res) => {
       yearInstalled: (body.data as any).yearInstalled,
       numLandings: (body.data as any).numLandings,
       numOpenings: (body.data as any).numOpenings,
-      locationId: (body.data as any).locationId,
       buildingId: body.data.buildingId,
     })
     .where(and(eq(elevatorsTable.id, params.data.id), eq(elevatorsTable.organizationId, orgId)));

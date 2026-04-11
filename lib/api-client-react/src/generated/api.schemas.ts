@@ -85,6 +85,7 @@ export interface Building {
   city?: string;
   state?: string;
   zip?: string;
+  locationId?: string;
   customerId: number;
   customerName?: string;
   organizationId: number;
@@ -99,6 +100,7 @@ export interface CreateBuildingBody {
   city?: string;
   state?: string;
   zip?: string;
+  locationId?: string;
   customerId: number;
 }
 

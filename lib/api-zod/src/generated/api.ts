@@ -131,6 +131,7 @@ export const ListBuildingsResponseItem = zod.object({
   "city": zod.string().optional(),
   "state": zod.string().optional(),
   "zip": zod.string().optional(),
+  "locationId": zod.string().optional(),
   "customerId": zod.number(),
   "customerName": zod.string().optional(),
   "organizationId": zod.number(),
@@ -150,6 +151,7 @@ export const CreateBuildingBody = zod.object({
   "city": zod.string().optional(),
   "state": zod.string().optional(),
   "zip": zod.string().optional(),
+  "locationId": zod.string().optional(),
   "customerId": zod.number()
 })
 
@@ -168,6 +170,7 @@ export const GetBuildingResponse = zod.object({
   "city": zod.string().optional(),
   "state": zod.string().optional(),
   "zip": zod.string().optional(),
+  "locationId": zod.string().optional(),
   "customerId": zod.number(),
   "customerName": zod.string().optional(),
   "organizationId": zod.number(),
@@ -190,6 +193,7 @@ export const UpdateBuildingBody = zod.object({
   "city": zod.string().optional(),
   "state": zod.string().optional(),
   "zip": zod.string().optional(),
+  "locationId": zod.string().optional(),
   "customerId": zod.number()
 })
 
@@ -200,6 +204,7 @@ export const UpdateBuildingResponse = zod.object({
   "city": zod.string().optional(),
   "state": zod.string().optional(),
   "zip": zod.string().optional(),
+  "locationId": zod.string().optional(),
   "customerId": zod.number(),
   "customerName": zod.string().optional(),
   "organizationId": zod.number(),

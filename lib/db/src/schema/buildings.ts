@@ -11,6 +11,7 @@ export const buildingsTable = pgTable("buildings", {
   city: text("city"),
   state: text("state"),
   zip: text("zip"),
+  locationId: text("location_id"),
   customerId: integer("customer_id").notNull().references(() => customersTable.id, { onDelete: "cascade" }),
   organizationId: integer("organization_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
