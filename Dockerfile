@@ -1,11 +1,12 @@
 # ── Stage 1: install all dependencies ──────────────────────────────────────
-FROM node:20-alpine AS deps
+FROM node:20-slim AS deps
 WORKDIR /app
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY package.json pnpm-workspace.yaml ./
+COPY .npmrc ./
 COPY lib/db/package.json ./lib/db/
 COPY lib/api-zod/package.json ./lib/api-zod/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
@@ -14,7 +15,7 @@ COPY artifacts/api-server/package.json ./artifacts/api-server/
 COPY artifacts/elevator-tracker/package.json ./artifacts/elevator-tracker/
 COPY scripts/package.json ./scripts/
 
-RUN pnpm install
+RUN pnpm install --shamefully-hoist
 
 # ── Stage 2: build frontend ─────────────────────────────────────────────────
 FROM deps AS frontend-builder
@@ -41,13 +42,14 @@ COPY artifacts/api-server/ ./artifacts/api-server/
 RUN pnpm --filter @workspace/api-server run build
 
 # ── Stage 4: production image ────────────────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy package manifests for production install
-COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY package.json pnpm-workspace.yaml ./
+COPY .npmrc ./
 COPY lib/db/package.json ./lib/db/
 COPY lib/api-zod/package.json ./lib/api-zod/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
@@ -55,7 +57,7 @@ COPY lib/api-spec/package.json ./lib/api-spec/
 COPY artifacts/api-server/package.json ./artifacts/api-server/
 COPY scripts/package.json ./scripts/
 
-RUN pnpm install --prod
+RUN pnpm install --prod --shamefully-hoist
 
 # Copy built outputs
 COPY --from=api-builder /app/artifacts/api-server/dist ./artifacts/api-server/dist
