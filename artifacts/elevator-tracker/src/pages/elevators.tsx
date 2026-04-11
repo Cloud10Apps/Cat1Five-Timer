@@ -538,6 +538,9 @@ export default function Elevators() {
       const elevatorData = {
         ...raw,
         buildingId: Number(raw.buildingId),
+        yearInstalled: raw.yearInstalled !== undefined && raw.yearInstalled !== (""  as any) ? Number(raw.yearInstalled) : undefined,
+        numLandings:   raw.numLandings   !== undefined && raw.numLandings   !== (""  as any) ? Number(raw.numLandings)   : undefined,
+        numOpenings:   raw.numOpenings   !== undefined && raw.numOpenings   !== (""  as any) ? Number(raw.numOpenings)   : undefined,
       };
       try {
         const created = await createMutation.mutateAsync({ data: elevatorData });
