@@ -56,6 +56,10 @@ router.put("/:id", requireAdmin, asyncHandler(async (req, res) => {
     res.status(400).json({ error: "Invalid request" });
     return;
   }
+  if (params.data.id === req.user!.id && body.data.isActive === false) {
+    res.status(400).json({ error: "You cannot deactivate your own account." });
+    return;
+  }
   const orgId = req.user!.organizationId;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (body.data.role !== undefined) updates.role = body.data.role;

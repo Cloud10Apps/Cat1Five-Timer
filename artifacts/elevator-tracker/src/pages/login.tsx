@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LayoutDashboard, ClipboardCheck, BellRing, Loader2 } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoSrc from "@/assets/logo.svg";
 
@@ -86,15 +86,6 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <div className="mt-1 bg-zinc-900/50 p-2 rounded-lg border border-zinc-800 text-amber-500">
-                <BellRing className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-zinc-100">Automated overdue alerts</h3>
-                <p className="text-zinc-400 text-sm mt-1">Never miss a deadline with proactive notifications and reports.</p>
-              </div>
-            </div>
           </div>
         </div>
 

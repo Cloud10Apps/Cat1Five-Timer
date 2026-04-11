@@ -11,6 +11,12 @@ const router = Router();
 
 router.use(requireAuth);
 
+function toDateStr(d: Date | string | null | undefined): string | null {
+  if (!d) return null;
+  if (typeof d === "string") return d;
+  return dayjs(d).format("YYYY-MM-DD");
+}
+
 function computeNextDueDate(lastDate: string | null | undefined, recurrenceYears: number): string | null {
   if (!lastDate) return null;
   return dayjs(lastDate).add(recurrenceYears, "year").format("YYYY-MM-DD");
@@ -175,7 +181,7 @@ router.get("/", asyncHandler(async (req, res) => {
     if (params.data.elevatorId) conditions.push(eq(inspectionsTable.elevatorId, params.data.elevatorId));
     if (params.data.buildingId) conditions.push(eq(buildingsTable.id, params.data.buildingId));
     if (params.data.customerId) conditions.push(eq(customersTable.id, params.data.customerId));
-    if (params.data.status) conditions.push(eq(inspectionsTable.status, params.data.status));
+    if (params.data.status) conditions.push(eq(inspectionsTable.status, params.data.status as any));
     if (params.data.inspectionType) conditions.push(eq(inspectionsTable.inspectionType, params.data.inspectionType));
     if (params.data.elevatorType) conditions.push(eq(elevatorsTable.type, params.data.elevatorType));
     if (params.data.bank) conditions.push(eq(elevatorsTable.bank, params.data.bank));
@@ -269,8 +275,11 @@ router.post("/", asyncHandler(async (req, res) => {
   }
   const orgId = req.user!.organizationId;
   const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = parsed.data;
+  const lastInspDateStr = toDateStr(lastInspectionDate);
+  const scheduledDateStr = toDateStr(scheduledDate);
+  const completionDateStr = toDateStr(completionDate);
 
-  const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
+  const nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears);
 
   const dup = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId);
   if (dup) {
@@ -284,17 +293,17 @@ router.post("/", asyncHandler(async (req, res) => {
     organizationId: orgId,
     inspectionType,
     recurrenceYears,
-    lastInspectionDate: lastInspectionDate ?? null,
+    lastInspectionDate: lastInspDateStr,
     nextDueDate,
-    scheduledDate: scheduledDate ?? null,
-    completionDate: completionDate ?? null,
+    scheduledDate: scheduledDateStr,
+    completionDate: completionDateStr,
     status: status ?? "NOT_STARTED",
     notes: notes ?? null,
   }).returning();
 
   const row = await fetchInspection(inserted[0].id, orgId);
   const formatted = formatInspection(row);
-  const followUp = await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
+  const followUp = await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
   const warning = (followUp.created === false && followUp.reason === "duplicate_year")
     ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
     : undefined;
@@ -324,7 +333,10 @@ router.put("/:id", asyncHandler(async (req, res) => {
   }
   const orgId = req.user!.organizationId;
   const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = body.data;
-  const nextDueDate = computeNextDueDate(lastInspectionDate, recurrenceYears);
+  const lastInspDateStr = toDateStr(lastInspectionDate);
+  const scheduledDateStr = toDateStr(scheduledDate);
+  const completionDateStr = toDateStr(completionDate);
+  const nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears);
   const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
 
   if (nextDueDate) {
@@ -338,7 +350,7 @@ router.put("/:id", asyncHandler(async (req, res) => {
   }
 
   await db.update(inspectionsTable)
-    .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspectionDate ?? null, nextDueDate, scheduledDate: scheduledDate ?? null, completionDate: (status === "COMPLETED" ? completionDate : null) ?? null, status: status ?? "NOT_STARTED", notes: notes ?? null })
+    .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspDateStr, nextDueDate, scheduledDate: scheduledDateStr, completionDate: status === "COMPLETED" ? completionDateStr : null, status: status ?? "NOT_STARTED", notes: notes ?? null })
     .where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
 
   const row = await fetchInspection(params.data.id, orgId);
@@ -347,7 +359,7 @@ router.put("/:id", asyncHandler(async (req, res) => {
     return;
   }
   const formatted = formatInspection(row);
-  const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
+  const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
 
   const warning = (followUp.created === false && followUp.reason === "duplicate_year")
     ? `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`

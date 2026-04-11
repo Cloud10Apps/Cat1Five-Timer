@@ -34,9 +34,9 @@ router.get("/status", asyncHandler(async (req, res) => {
     subscription: subscription ? {
       id: subscription.id,
       status: subscription.status,
-      currentPeriodEnd: subscription.current_period_end,
+      currentPeriodEnd: (subscription as any).current_period_end,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      quantity: subscription.quantity,
+      quantity: (subscription as any).quantity,
       unitAmount: subscription.items?.data?.[0]?.price?.unit_amount ?? null,
     } : null,
     userCount,

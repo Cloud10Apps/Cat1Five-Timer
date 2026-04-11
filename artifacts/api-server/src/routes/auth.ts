@@ -60,6 +60,37 @@ router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
   });
 }));
 
+router.put("/password", requireAuth, asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body as { currentPassword?: unknown; newPassword?: unknown };
+  if (typeof currentPassword !== "string" || !currentPassword ||
+      typeof newPassword !== "string" || !newPassword) {
+    res.status(400).json({ error: "currentPassword and newPassword are required" });
+    return;
+  }
+  if (newPassword.length < 8) {
+    res.status(400).json({ error: "New password must be at least 8 characters" });
+    return;
+  }
+
+  const userId = req.user!.id;
+  const users = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  const user = users[0];
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    res.status(400).json({ error: "Current password is incorrect" });
+    return;
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, userId));
+  res.json({ message: "Password updated successfully" });
+}));
+
 router.get("/me", requireAuth, asyncHandler(async (req, res) => {
   const user = req.user!;
   const users = await db.select().from(usersTable).where(eq(usersTable.id, user.id)).limit(1);

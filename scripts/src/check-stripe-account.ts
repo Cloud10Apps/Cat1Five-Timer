@@ -2,7 +2,7 @@ import { getUncachableStripeClient } from './stripeClient.js';
 
 async function main() {
   const stripe = await getUncachableStripeClient();
-  const account = await stripe.account.retrieve();
+  const account = await stripe.accounts.retrieve();
   console.log('Account ID:', account.id);
   console.log('Display name:', (account as any).settings?.dashboard?.display_name ?? '(none)');
   console.log('Email:', account.email);

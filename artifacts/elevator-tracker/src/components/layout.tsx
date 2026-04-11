@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import logoSrc from "@/assets/logo.svg";
 import {
@@ -24,6 +24,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
+import {
+  useGetAttentionInspections,
+  getGetAttentionInspectionsQueryKey,
+} from "@workspace/api-client-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -32,20 +36,14 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const [overdueCount, setOverdueCount] = useState(0);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    fetch("/api/dashboard/attention", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.ok ? r.json() : [])
-      .then((data: any[]) => {
-        setOverdueCount(data.filter((i: any) => i.status === "OVERDUE").length);
-      })
-      .catch(() => {});
-  }, [location]);
+  const { data: attentionItems } = useGetAttentionInspections({
+    query: {
+      queryKey: getGetAttentionInspectionsQueryKey(),
+      staleTime: 5 * 60 * 1000,
+    },
+  });
+  const overdueCount = (attentionItems ?? []).filter((i: any) => i.status === "OVERDUE").length;
 
   const mainNav = [
     { name: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
@@ -159,7 +157,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="w-full flex-1" />
             {overdueCount > 0 && (
               <Link
-                href="/elevators"
+                href="/inspections?status=NOT_STARTED"
                 className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm shrink-0"
               >
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />

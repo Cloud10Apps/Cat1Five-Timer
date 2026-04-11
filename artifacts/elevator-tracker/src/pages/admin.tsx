@@ -50,6 +50,17 @@ import { ShieldAlert, UserPlus, Mail, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import dayjs from "dayjs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/components/auth-provider";
 
 const inviteSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -192,8 +203,10 @@ function CustomerAccessDialog({ user }: { user: User }) {
 
 export default function Admin() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const { data: users, isLoading } = useListUsers({}, { query: { queryKey: getListUsersQueryKey() } });
+  const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null);
+  const { data: users, isLoading } = useListUsers({ query: { queryKey: getListUsersQueryKey() } });
 
+  const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -222,16 +235,21 @@ export default function Admin() {
     );
   };
 
-  const toggleStatus = (user: User) => {
-    updateMutation.mutate(
-      { id: user.id, data: { isActive: !user.isActive } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-          toast({ title: `User ${!user.isActive ? 'activated' : 'deactivated'}` });
-        },
-      }
-    );
+  const toggleStatus = (u: User) => {
+    if (u.id === currentUser?.id) return;
+    if (u.isActive) {
+      setDeactivateTarget(u);
+    } else {
+      updateMutation.mutate(
+        { id: u.id, data: { isActive: true } },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+            toast({ title: "User activated" });
+          },
+        }
+      );
+    }
   };
 
   const changeRole = (user: User, newRole: "ADMIN" | "USER") => {
@@ -388,7 +406,7 @@ export default function Admin() {
                     <Switch
                       checked={u.isActive}
                       onCheckedChange={() => toggleStatus(u)}
-                      disabled={updateMutation.isPending}
+                      disabled={updateMutation.isPending || u.id === currentUser?.id}
                       aria-label="Toggle user active status"
                     />
                   </TableCell>
@@ -398,6 +416,37 @@ export default function Admin() {
           </TableBody>
         </Table>
       </div>
+      <AlertDialog open={!!deactivateTarget} onOpenChange={(open) => { if (!open) setDeactivateTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate <strong>{deactivateTarget?.email}</strong>? They will no longer be able to log in.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (!deactivateTarget) return;
+                updateMutation.mutate(
+                  { id: deactivateTarget.id, data: { isActive: false } },
+                  {
+                    onSuccess: () => {
+                      queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+                      toast({ title: "User deactivated" });
+                      setDeactivateTarget(null);
+                    },
+                  }
+                );
+              }}
+            >
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

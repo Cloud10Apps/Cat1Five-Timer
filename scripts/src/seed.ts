@@ -59,7 +59,7 @@ async function seed() {
       recurrenceYears: 1,
       lastInspectionDate: today.subtract(14, "month").format("YYYY-MM-DD"),
       nextDueDate: today.subtract(2, "month").format("YYYY-MM-DD"),
-      status: "OVERDUE",
+      status: "NOT_STARTED",
     },
     {
       elevatorId: elev1.id,
@@ -105,7 +105,7 @@ async function seed() {
       recurrenceYears: 1,
       lastInspectionDate: today.subtract(13, "month").format("YYYY-MM-DD"),
       nextDueDate: today.subtract(1, "month").format("YYYY-MM-DD"),
-      status: "OVERDUE",
+      status: "NOT_STARTED",
     },
     {
       elevatorId: elev6.id,

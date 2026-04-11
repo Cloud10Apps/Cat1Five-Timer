@@ -6,17 +6,23 @@ import bcrypt from "bcryptjs";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient.js";
 
+// Graceful startup validation — fail fast with a clear message rather than a silent crash
+const missingVars: string[] = [];
+if (!process.env.DATABASE_URL)  missingVars.push("DATABASE_URL");
+if (!process.env.SESSION_SECRET) missingVars.push("SESSION_SECRET");
+if (missingVars.length > 0) {
+  console.error(
+    `\n[STARTUP ERROR] The following required environment variables are missing:\n` +
+    missingVars.map(v => `  - ${v}`).join("\n") +
+    `\n\nSet them in your environment (e.g. a .env file or hosting dashboard) and restart.\n`
+  );
+  process.exit(1);
+}
+
 const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error("PORT environment variable is required but was not provided.");
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+const port = rawPort && !Number.isNaN(Number(rawPort)) && Number(rawPort) > 0
+  ? Number(rawPort)
+  : 3000;
 
 async function bootstrapIfEmpty() {
   try {
@@ -101,7 +107,7 @@ async function initStripe() {
       WHERE table_schema = 'stripe' AND table_name = 'accounts'
       LIMIT 1
     `);
-    stripeTableReady = (rows as any[]).length > 0;
+    stripeTableReady = (rows as unknown as any[]).length > 0;
   } catch {
     stripeTableReady = false;
   }

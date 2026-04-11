@@ -12,6 +12,7 @@ import {
   getListCustomersQueryKey,
   useListBuildings,
   getListBuildingsQueryKey,
+  Inspection,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -51,45 +52,12 @@ import { useToast } from "@/hooks/use-toast";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { cn } from "@/lib/utils";
 import { fireCompletionConfetti } from "@/lib/confetti";
-
-function isValidDateStr(value: string | undefined): boolean {
-  if (!value) return false;
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return false;
-  const year  = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10);
-  const day   = parseInt(match[3], 10);
-  if (year < 1900 || year > 2200) return false;
-  if (month < 1   || month > 12)  return false;
-  if (day < 1     || day > 31)    return false;
-  return dayjs(value, "YYYY-MM-DD", true).isValid();
-}
+import { isValidDateStr, getAgingBucketValue, MONTH_OPTIONS, AGING_BUCKET_OPTIONS } from "@/lib/inspection-utils";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_VISIBLE = 3;
 
 /* ── Filter constants (mirror inspections page) ──────────────────── */
-const MONTH_OPTIONS = [
-  { value: "01", label: "January" },  { value: "02", label: "February" },
-  { value: "03", label: "March" },    { value: "04", label: "April" },
-  { value: "05", label: "May" },      { value: "06", label: "June" },
-  { value: "07", label: "July" },     { value: "08", label: "August" },
-  { value: "09", label: "September" },{ value: "10", label: "October" },
-  { value: "11", label: "November" }, { value: "12", label: "December" },
-];
-const AGING_BUCKET_OPTIONS = [
-  { value: "due-future",    label: "Future (90+ Days)" },
-  { value: "due-today",     label: "Due Today"   },
-  { value: "due-1-7",       label: "Next 7 Days"  },
-  { value: "due-8-14",      label: "Next 14 Days" },
-  { value: "due-15-30",     label: "Next 30 Days" },
-  { value: "due-31-60",     label: "Next 60 Days" },
-  { value: "due-61-90",     label: "Next 90 Days" },
-  { value: "overdue-1-30",  label: "Overdue 1–30 Days"   },
-  { value: "overdue-31-60", label: "Overdue 31–60 Days"  },
-  { value: "overdue-61-90", label: "Overdue 61–90 Days"  },
-  { value: "overdue-91+",   label: "Overdue 91+ Days"    },
-];
 const STATUS_OPTIONS = [
   { value: "NOT_STARTED", label: "Not Scheduled" },
   { value: "SCHEDULED",   label: "Scheduled" },
@@ -98,23 +66,6 @@ const STATUS_OPTIONS = [
 ];
 const INSP_TYPE_OPTIONS = [{ value: "CAT1", label: "CAT 1" }, { value: "CAT5", label: "CAT 5" }];
 const UNIT_TYPE_OPTIONS = [{ value: "traction", label: "Traction" }, { value: "hydraulic", label: "Hydraulic" }, { value: "other", label: "Other" }];
-
-function getAgingBucketValue(due: string | null | undefined, status?: string): string | null {
-  if (status === "COMPLETED") return null;
-  if (!due) return null;
-  const days = dayjs().startOf("day").diff(dayjs(due).startOf("day"), "day");
-  if (days === 0)   return "due-today";
-  if (days > 90)    return "overdue-91+";
-  if (days > 60)    return "overdue-61-90";
-  if (days > 30)    return "overdue-31-60";
-  if (days > 0)     return "overdue-1-30";
-  if (days >= -7)   return "due-1-7";
-  if (days >= -14)  return "due-8-14";
-  if (days >= -30)  return "due-15-30";
-  if (days >= -60)  return "due-31-60";
-  if (days >= -90)  return "due-61-90";
-  return "due-future";
-}
 
 /* ── Edit form schema ────────────────────────────────────────────── */
 const editSchema = z.object({
@@ -138,7 +89,6 @@ function statusStyle(status: string): string {
   }
 }
 
-type Inspection = NonNullable<ReturnType<typeof useListInspections>["data"]>[number];
 type ActivityType = "due" | "scheduled" | "completed";
 type CalendarActivity = { insp: Inspection; activityType: ActivityType };
 
@@ -253,7 +203,7 @@ export default function CalendarView() {
   /* ── Elevator meta map ── */
   const elevatorMeta = useMemo(() => {
     const map = new Map<number, { bank: string; type: string; customerId: number; buildingId: number; name: string }>();
-    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId, buildingId: e.buildingId, name: e.name });
+    for (const e of elevators ?? []) map.set(e.id, { bank: e.bank ?? "", type: e.type ?? "", customerId: e.customerId ?? 0, buildingId: e.buildingId, name: e.name });
     return map;
   }, [elevators]);
 

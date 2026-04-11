@@ -76,19 +76,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { fireCompletionConfetti } from "@/lib/confetti";
-
-function isValidDateStr(value: string | undefined): boolean {
-  if (!value) return false;
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return false;
-  const year  = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10);
-  const day   = parseInt(match[3], 10);
-  if (year < 1900 || year > 2200) return false;
-  if (month < 1   || month > 12)  return false;
-  if (day < 1     || day > 31)    return false;
-  return dayjs(value, "YYYY-MM-DD", true).isValid();
-}
+import { isValidDateStr, getAgingBucketValue, MONTH_OPTIONS, AGING_BUCKET_OPTIONS } from "@/lib/inspection-utils";
 
 const elevatorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -115,43 +103,9 @@ const inspectionSchema = z.object({
 type InspectionFormValues = z.infer<typeof inspectionSchema>;
 
 /* ── Due status helpers ── */
-const AGING_BUCKET_OPTIONS = [
-  { value: "due-future",    label: "Future (90+ Days)" },
-  { value: "due-today",     label: "Due Today"   },
-  { value: "due-1-7",       label: "Next 7 Days"  },
-  { value: "due-8-14",      label: "Next 14 Days" },
-  { value: "due-15-30",     label: "Next 30 Days" },
-  { value: "due-31-60",     label: "Next 60 Days" },
-  { value: "due-61-90",     label: "Next 90 Days" },
-  { value: "overdue-1-30",  label: "Overdue 1–30 Days"   },
-  { value: "overdue-31-60", label: "Overdue 31–60 Days"  },
-  { value: "overdue-61-90", label: "Overdue 61–90 Days"  },
-  { value: "overdue-91+",   label: "Overdue 91+ Days"    },
-];
 
-function getAgingDays(due: string | null | undefined): number | null {
-  if (!due) return null;
-  return dayjs().startOf("day").diff(dayjs(due).startOf("day"), "day");
-}
-
-function getAgingBucketValue(due: string | null | undefined): string | null {
-  const days = getAgingDays(due);
-  if (days === null) return null;
-  if (days === 0)   return "due-today";
-  if (days > 90)    return "overdue-91+";
-  if (days > 60)    return "overdue-61-90";
-  if (days > 30)    return "overdue-31-60";
-  if (days > 0)     return "overdue-1-30";
-  if (days >= -7)   return "due-1-7";
-  if (days >= -14)  return "due-8-14";
-  if (days >= -30)  return "due-15-30";
-  if (days >= -60)  return "due-31-60";
-  if (days >= -90)  return "due-61-90";
-  return "due-future";
-}
-
-function AgingBucketPill({ due }: { due: string | null | undefined }) {
-  const bucket = getAgingBucketValue(due);
+function AgingBucketPill({ due, status }: { due: string | null | undefined; status?: string }) {
+  const bucket = getAgingBucketValue(due, status);
   if (!bucket) return <span className="text-zinc-300 text-xs">—</span>;
   const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
@@ -261,15 +215,6 @@ export default function Elevators() {
       .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
       .map(el => ({ value: el.id.toString(), label: el.name + (el.buildingName ? ` – ${el.buildingName}` : "") }));
   }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks]);
-  const MONTH_OPTIONS = [
-    { value: "01", label: "January" }, { value: "02", label: "February" },
-    { value: "03", label: "March" },   { value: "04", label: "April" },
-    { value: "05", label: "May" },     { value: "06", label: "June" },
-    { value: "07", label: "July" },    { value: "08", label: "August" },
-    { value: "09", label: "September"},{ value: "10", label: "October" },
-    { value: "11", label: "November" },{ value: "12", label: "December" },
-  ];
-
   // Inspections for the currently-edited elevator
   const { data: elevatorInspections, isLoading: inspLoading } = useListInspections(
     { elevatorId: editingElevator?.id },
@@ -384,14 +329,16 @@ export default function Elevators() {
     type BuildingEntry = { buildingName: string; bankMap: Map<string, ElevatorItem[]> };
     const customerMap = new Map<number, { customerName: string; buildingMap: Map<number, BuildingEntry> }>();
     for (const el of filteredElevators ?? []) {
-      if (!customerMap.has(el.customerId)) {
-        customerMap.set(el.customerId, { customerName: el.customerName ?? "Unknown", buildingMap: new Map() });
+      const custId = el.customerId ?? 0;
+      const bldgId = el.buildingId;
+      if (!customerMap.has(custId)) {
+        customerMap.set(custId, { customerName: el.customerName ?? "Unknown", buildingMap: new Map() });
       }
-      const cust = customerMap.get(el.customerId)!;
-      if (!cust.buildingMap.has(el.buildingId)) {
-        cust.buildingMap.set(el.buildingId, { buildingName: el.buildingName ?? "Unknown", bankMap: new Map() });
+      const cust = customerMap.get(custId)!;
+      if (!cust.buildingMap.has(bldgId)) {
+        cust.buildingMap.set(bldgId, { buildingName: el.buildingName ?? "Unknown", bankMap: new Map() });
       }
-      const bldg = cust.buildingMap.get(el.buildingId)!;
+      const bldg = cust.buildingMap.get(bldgId)!;
       const bankKey = el.bank || "";
       if (!bldg.bankMap.has(bankKey)) bldg.bankMap.set(bankKey, []);
       bldg.bankMap.get(bankKey)!.push(el);
@@ -542,7 +489,7 @@ export default function Elevators() {
 
     if (editingInspection) {
       updateInspMutation.mutate(
-        { id: editingInspection.id, data: payload },
+        { id: editingInspection.id, data: payload as any },
         {
           onSuccess: (data: any) => {
             invalidateInspections();
@@ -556,7 +503,7 @@ export default function Elevators() {
       );
     } else {
       createInspMutation.mutate(
-        { data: payload },
+        { data: payload as any },
         {
           onSuccess: (created: any) => {
             invalidateInspections();
@@ -604,8 +551,8 @@ export default function Elevators() {
     };
     try {
       const [cat1Result, cat5Result]: any[] = await Promise.all([
-        createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } }),
-        createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } }),
+        createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } as any }),
+        createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } as any }),
       ]);
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
@@ -697,8 +644,8 @@ export default function Elevators() {
       };
 
       const inspPromises: Promise<any>[] = [];
-      if (wantCat1) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat1Values, status: deriveStatus(cat1Values), elevatorId, recurrenceYears: Number(cat1Values.recurrenceYears), lastInspectionDate: cat1Values.lastInspectionDate || undefined, scheduledDate: cat1Values.scheduledDate || undefined, completionDate: cat1Values.completionDate || undefined } }));
-      if (wantCat5) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat5Values, status: deriveStatus(cat5Values), elevatorId, recurrenceYears: Number(cat5Values.recurrenceYears), lastInspectionDate: cat5Values.lastInspectionDate || undefined, scheduledDate: cat5Values.scheduledDate || undefined, completionDate: cat5Values.completionDate || undefined } }));
+      if (wantCat1) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat1Values, status: deriveStatus(cat1Values), elevatorId, recurrenceYears: Number(cat1Values.recurrenceYears), lastInspectionDate: cat1Values.lastInspectionDate || undefined, scheduledDate: cat1Values.scheduledDate || undefined, completionDate: cat1Values.completionDate || undefined } as any }));
+      if (wantCat5) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat5Values, status: deriveStatus(cat5Values), elevatorId, recurrenceYears: Number(cat5Values.recurrenceYears), lastInspectionDate: cat5Values.lastInspectionDate || undefined, scheduledDate: cat5Values.scheduledDate || undefined, completionDate: cat5Values.completionDate || undefined } as any }));
 
       try {
         const inspResults = await Promise.all(inspPromises);
@@ -749,8 +696,8 @@ export default function Elevators() {
     setFormCustomerId(elevator.customerId ? elevator.customerId.toString() : "all");
     form.reset({
       name: elevator.name,
-      internalId: elevator.internalId || "",
-      stateId: elevator.stateId || "",
+      internalId: (elevator as any).internalId || "",
+      stateId: (elevator as any).stateId || "",
       buildingId: elevator.buildingId,
       description: elevator.description || "",
       bank: elevator.bank || "",
@@ -1668,11 +1615,11 @@ export default function Elevators() {
                                           </div>
                                           {/* Unit ID — reference field, de-emphasized */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                            <span className="text-xs tabular-nums text-zinc-400 truncate">{elevator.internalId ?? <span className="text-zinc-300">—</span>}</span>
+                                            <span className="text-xs tabular-nums text-zinc-400 truncate">{(elevator as any).internalId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
                                           {/* State ID — reference field, de-emphasized */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                            <span className="text-xs tabular-nums text-zinc-400 truncate">{elevator.stateId ?? <span className="text-zinc-300">—</span>}</span>
+                                            <span className="text-xs tabular-nums text-zinc-400 truncate">{(elevator as any).stateId ?? <span className="text-zinc-300">—</span>}</span>
                                           </div>
                                           {/* Unit Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
@@ -1702,7 +1649,7 @@ export default function Elevators() {
                                           </div>
                                           {/* Due Status — primary attention signal */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-300">
-                                            <AgingBucketPill due={due} />
+                                            <AgingBucketPill due={due} status={latestInsp?.status} />
                                           </div>
                                           {/* Status */}
                                           <div className="flex items-center justify-center overflow-hidden px-4 py-2.5 border-l border-zinc-200">
