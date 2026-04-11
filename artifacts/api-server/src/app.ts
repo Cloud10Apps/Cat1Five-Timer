@@ -51,19 +51,19 @@ app.post(
 
 const rawAllowedOrigins = process.env.ALLOWED_ORIGINS ?? "";
 const allowedOrigins = rawAllowedOrigins.split(",").map(s => s.trim()).filter(Boolean);
+const allowAllOrigins = allowedOrigins.length === 0 || allowedOrigins.includes("*");
 
-if (allowedOrigins.length === 0) {
+if (allowAllOrigins) {
   console.warn(
-    "[CORS WARNING] ALLOWED_ORIGINS environment variable is not set. " +
-    "CORS is currently open to all origins. " +
-    "Set ALLOWED_ORIGINS=https://your-app.replit.app in Replit Secrets."
+    "[CORS WARNING] ALLOWED_ORIGINS is not set or is '*'. " +
+    "CORS is currently open to all origins."
   );
 }
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.length === 0) return callback(null, true);
+    if (allowAllOrigins) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     if (origin.endsWith(".replit.dev") || origin.endsWith(".replit.app")) return callback(null, true);
     callback(new Error("Not allowed by CORS"));
@@ -77,6 +77,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
 const frontendDist = path.join(process.cwd(), "artifacts/elevator-tracker/dist/public");
+console.log(`[STATIC] frontendDist resolved to: ${frontendDist} (exists: ${existsSync(frontendDist)})`);
 if (process.env.NODE_ENV === "production" && existsSync(frontendDist)) {
   logger.info({ frontendDist }, "Serving static frontend");
   app.use(express.static(frontendDist));
