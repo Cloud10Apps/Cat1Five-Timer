@@ -1032,7 +1032,7 @@ export default function Elevators() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-x-auto shadow-sm">
                 {/* Customer header — grid matches elevator row grid-cols exactly */}
                 <button
-                  className="w-full grid min-w-[1440px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[minmax(280px,1fr)_90px_90px_95px_110px_150px_145px_155px_160px_145px_85px]"
+                  className="w-full grid min-w-[1500px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[minmax(280px,1fr)_120px_120px_95px_110px_150px_145px_155px_160px_145px_85px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   <div className="flex items-center gap-2 min-w-0 px-4 py-4">
@@ -1130,7 +1130,7 @@ export default function Elevators() {
                                       return (
                                         <div
                                           key={elevator.id}
-                                          className={`grid min-w-[1440px] grid-cols-[minmax(280px,1fr)_90px_90px_95px_110px_150px_145px_155px_160px_145px_85px] group relative transition-colors border-b ${
+                                          className={`grid min-w-[1500px] grid-cols-[minmax(280px,1fr)_120px_120px_95px_110px_150px_145px_155px_160px_145px_85px] group relative transition-colors border-b ${
                                             isOverdue
                                               ? "bg-red-50/60 border-red-200 hover:bg-red-50"
                                               : "hover:bg-amber-50/60 border-zinc-300"
@@ -1149,13 +1149,13 @@ export default function Elevators() {
                                               )}
                                             </div>
                                           </div>
-                                          {/* Unit ID — reference field, de-emphasized */}
-                                          <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">
-                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{elevator.internalId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
+                                          {/* Unit ID */}
+                                          <div className="flex items-center justify-center px-3 py-3.5 border-l border-zinc-200">
+                                            <span className="text-sm tabular-nums font-semibold text-zinc-700 break-all">{elevator.internalId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
                                           </div>
-                                          {/* State ID — reference field, de-emphasized */}
-                                          <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">
-                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{elevator.stateId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
+                                          {/* State ID */}
+                                          <div className="flex items-center justify-center px-3 py-3.5 border-l border-zinc-200">
+                                            <span className="text-sm tabular-nums font-semibold text-zinc-700 break-all">{elevator.stateId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
                                           </div>
                                           {/* Unit Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">

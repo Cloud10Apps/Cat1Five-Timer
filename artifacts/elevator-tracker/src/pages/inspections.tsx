@@ -1002,14 +1002,14 @@ export default function Inspections() {
                             </span>
                           )}
                           {group.unitId && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
-                              <span className="text-zinc-400 font-normal">Unit</span>
+                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-sm font-semibold text-zinc-700 ring-1 ring-zinc-200">
+                              <span className="text-xs text-zinc-400 font-normal">Unit</span>
                               {group.unitId}
                             </span>
                           )}
                           {group.stateId && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
-                              <span className="text-zinc-400 font-normal">State</span>
+                            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-sm font-semibold text-zinc-700 ring-1 ring-zinc-200">
+                              <span className="text-xs text-zinc-400 font-normal">State</span>
                               {group.stateId}
                             </span>
                           )}
