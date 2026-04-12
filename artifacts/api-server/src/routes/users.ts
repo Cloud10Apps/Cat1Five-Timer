@@ -117,4 +117,34 @@ router.put("/:id/customers", requireAdmin, asyncHandler(async (req, res) => {
   res.json({ allCustomers, customerIds: allCustomers ? [] : customerIds });
 }));
 
+router.put("/:id/reset-password", requireAdmin, asyncHandler(async (req, res) => {
+  const userId = parseInt(req.params["id"] as string);
+  const { newPassword } = req.body as { newPassword?: string };
+
+  if (!newPassword || newPassword.length < 8) {
+    res.status(400).json({ error: "Password must be at least 8 characters" });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  const updated = await db
+    .update(usersTable)
+    .set({ passwordHash, mustChangePassword: true })
+    .where(
+      and(
+        eq(usersTable.id, userId),
+        eq(usersTable.organizationId, req.user!.organizationId)
+      )
+    )
+    .returning();
+
+  if (!updated[0]) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  res.json({ message: "Password reset successfully" });
+}));
+
 export default router;

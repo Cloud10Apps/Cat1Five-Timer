@@ -46,7 +46,13 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ShieldAlert, UserPlus, Mail, Building2 } from "lucide-react";
+import { ShieldAlert, UserPlus, Mail, Building2, KeyRound } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import dayjs from "dayjs";
@@ -204,6 +210,9 @@ function CustomerAccessDialog({ user }: { user: User }) {
 export default function Admin() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null);
+  const [resetTarget, setResetTarget] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const { data: users, isLoading } = useListUsers({ query: { queryKey: getListUsersQueryKey() } });
 
   const { user: currentUser } = useAuth();
@@ -251,6 +260,26 @@ export default function Admin() {
       );
     }
   };
+
+  async function handleResetPassword() {
+    if (!resetTarget || newPassword.length < 8) return;
+    setResetLoading(true);
+    try {
+      const res = await fetch(`/api/users/${resetTarget.id}/reset-password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ newPassword }),
+      });
+      if (!res.ok) throw new Error("Failed to reset password");
+      toast({ title: `Password reset for ${resetTarget.email}` });
+      setResetTarget(null);
+      setNewPassword("");
+    } catch {
+      toast({ title: "Failed to reset password", variant: "destructive" });
+    } finally {
+      setResetLoading(false);
+    }
+  }
 
   const changeRole = (user: User, newRole: "ADMIN" | "USER") => {
     updateMutation.mutate(
@@ -352,7 +381,7 @@ export default function Admin() {
               <TableHead>Role</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead>Customer Access</TableHead>
-              <TableHead className="text-right">Active Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -403,12 +432,30 @@ export default function Admin() {
                     <CustomerAccessDialog user={u} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Switch
-                      checked={u.isActive}
-                      onCheckedChange={() => toggleStatus(u)}
-                      disabled={updateMutation.isPending || u.id === currentUser?.id}
-                      aria-label="Toggle user active status"
-                    />
+                    <div className="flex items-center justify-end gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => { setResetTarget(u); setNewPassword(""); }}
+                              disabled={!u.isActive}
+                            >
+                              <KeyRound className="h-4 w-4 text-zinc-400 hover:text-amber-600" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Reset Password</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <Switch
+                        checked={u.isActive}
+                        onCheckedChange={() => toggleStatus(u)}
+                        disabled={updateMutation.isPending || u.id === currentUser?.id}
+                        aria-label="Toggle user active status"
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -443,6 +490,45 @@ export default function Admin() {
               }}
             >
               Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!resetTarget} onOpenChange={(open) => { if (!open) { setResetTarget(null); setNewPassword(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Password</AlertDialogTitle>
+            <AlertDialogDescription>
+              Set a new temporary password for{" "}
+              <strong>{resetTarget?.email}</strong>.
+              They will be prompted to change it when they log in.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Input
+              type="password"
+              placeholder="New temporary password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="h-10"
+              minLength={8}
+            />
+            {newPassword.length > 0 && newPassword.length < 8 && (
+              <p className="text-xs text-red-500 mt-1">Password must be at least 8 characters</p>
+            )}
+            <p className="text-xs text-zinc-400 mt-2">
+              Tell the user their new temporary password directly — do not send it by email.
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetPassword}
+              disabled={newPassword.length < 8 || resetLoading}
+              className="bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
+            >
+              {resetLoading ? "Resetting..." : "Reset Password"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

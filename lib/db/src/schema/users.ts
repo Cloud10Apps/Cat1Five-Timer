@@ -12,6 +12,7 @@ export const usersTable = pgTable("users", {
   organizationId: integer("organization_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   isActive: boolean("is_active").notNull().default(true),
   allCustomers: boolean("all_customers").notNull().default(true),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
