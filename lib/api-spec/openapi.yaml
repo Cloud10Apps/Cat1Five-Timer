@@ -945,6 +945,10 @@ components:
           type: integer
         numOpenings:
           type: integer
+        internalId:
+          type: string
+        stateId:
+          type: string
         locationId:
           type: string
         buildingId:
@@ -997,6 +1001,10 @@ components:
           type: integer
         numOpenings:
           type: integer
+        internalId:
+          type: string
+        stateId:
+          type: string
         locationId:
           type: string
         buildingId:

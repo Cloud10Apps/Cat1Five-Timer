@@ -1184,18 +1184,18 @@ export default function Elevators() {
                                           <div className={`flex items-center px-4 py-3.5 min-w-0 ${nameIndent}`}>
                                             <div>
                                               <div className="font-semibold text-base leading-snug break-words text-zinc-900" title={elevator.name}>{elevator.name}</div>
-                                              {(elevator as any).manufacturer && (
-                                                <div className="text-sm text-zinc-500 truncate mt-0.5">{(elevator as any).manufacturer}</div>
+                                              {elevator.manufacturer && (
+                                                <div className="text-sm text-zinc-500 truncate mt-0.5">{elevator.manufacturer}</div>
                                               )}
                                             </div>
                                           </div>
                                           {/* Unit ID — reference field, de-emphasized */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">
-                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).internalId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
+                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{elevator.internalId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
                                           </div>
                                           {/* State ID — reference field, de-emphasized */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">
-                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).stateId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
+                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{elevator.stateId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
                                           </div>
                                           {/* Unit Type */}
                                           <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">

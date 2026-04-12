@@ -251,20 +251,20 @@ export default function Units() {
     setFormCustomerId(elevator.customerId ? elevator.customerId.toString() : "all");
     form.reset({
       name: elevator.name,
-      internalId: (elevator as any).internalId || "",
-      stateId: (elevator as any).stateId || "",
+      internalId: elevator.internalId || "",
+      stateId: elevator.stateId || "",
       buildingId: elevator.buildingId,
       description: elevator.description || "",
       bank: elevator.bank || "",
       type: elevator.type,
-      manufacturer: (elevator as any).manufacturer || "",
-      elevatorType: (elevator as any).elevatorType || undefined,
-      oemSerialNumber: (elevator as any).oemSerialNumber || "",
-      capacity: (elevator as any).capacity || "",
-      speed: (elevator as any).speed || "",
-      yearInstalled: (elevator as any).yearInstalled ?? undefined,
-      numLandings: (elevator as any).numLandings ?? undefined,
-      numOpenings: (elevator as any).numOpenings ?? undefined,
+      manufacturer: elevator.manufacturer || "",
+      elevatorType: elevator.elevatorType || undefined,
+      oemSerialNumber: elevator.oemSerialNumber || "",
+      capacity: elevator.capacity || "",
+      speed: elevator.speed || "",
+      yearInstalled: elevator.yearInstalled ?? undefined,
+      numLandings: elevator.numLandings ?? undefined,
+      numOpenings: elevator.numOpenings ?? undefined,
     });
   };
 
@@ -748,8 +748,8 @@ export default function Units() {
                                         {/* LEFT ZONE — Unit Identity (40%) */}
                                         <div className="w-[40%] min-w-0 shrink-0">
                                           <div className="font-bold text-base text-zinc-900 leading-snug truncate">{elevator.name}</div>
-                                          {(elevator as any).manufacturer && (
-                                            <div className="text-sm text-zinc-400 italic truncate mt-0.5">{(elevator as any).manufacturer}</div>
+                                          {elevator.manufacturer && (
+                                            <div className="text-sm text-zinc-400 italic truncate mt-0.5">{elevator.manufacturer}</div>
                                           )}
                                           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                             {elevator.type && (
@@ -757,9 +757,9 @@ export default function Units() {
                                                 {elevator.type}
                                               </span>
                                             )}
-                                            {(elevator as any).elevatorType && (
+                                            {elevator.elevatorType && (
                                               <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold capitalize">
-                                                {(elevator as any).elevatorType}
+                                                {elevator.elevatorType}
                                               </span>
                                             )}
                                             {elevator.bank && (
@@ -769,11 +769,11 @@ export default function Units() {
                                             )}
                                           </div>
                                           <div className="flex items-center gap-3 mt-1.5">
-                                            {(elevator as any).internalId && (
-                                              <span className="text-xs text-zinc-400">Unit: <span className="font-mono font-medium text-zinc-600">{(elevator as any).internalId}</span></span>
+                                            {elevator.internalId && (
+                                              <span className="text-xs text-zinc-400">Unit: <span className="font-mono font-medium text-zinc-600">{elevator.internalId}</span></span>
                                             )}
-                                            {(elevator as any).stateId && (
-                                              <span className="text-xs text-zinc-400">State: <span className="font-mono font-medium text-zinc-600">{(elevator as any).stateId}</span></span>
+                                            {elevator.stateId && (
+                                              <span className="text-xs text-zinc-400">State: <span className="font-mono font-medium text-zinc-600">{elevator.stateId}</span></span>
                                             )}
                                           </div>
                                         </div>
@@ -783,36 +783,36 @@ export default function Units() {
                                           {/* OEM Serial */}
                                           <div className="min-w-0">
                                             <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">OEM Serial</div>
-                                            {(elevator as any).oemSerialNumber
-                                              ? <div className="text-sm font-semibold text-zinc-700 font-mono truncate">{(elevator as any).oemSerialNumber}</div>
+                                            {elevator.oemSerialNumber
+                                              ? <div className="text-sm font-semibold text-zinc-700 font-mono truncate">{elevator.oemSerialNumber}</div>
                                               : <div className="text-sm text-zinc-300">—</div>}
                                           </div>
                                           {/* Year */}
                                           <div className="min-w-0">
                                             <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Year</div>
-                                            {(elevator as any).yearInstalled
-                                              ? <div className="text-sm font-semibold text-zinc-700">{(elevator as any).yearInstalled}</div>
+                                            {elevator.yearInstalled
+                                              ? <div className="text-sm font-semibold text-zinc-700">{elevator.yearInstalled}</div>
                                               : <div className="text-sm text-zinc-300">—</div>}
                                           </div>
                                           {/* Capacity */}
                                           <div className="min-w-0">
                                             <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Capacity</div>
-                                            {(elevator as any).capacity
-                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{(elevator as any).capacity}</div>
+                                            {elevator.capacity
+                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{elevator.capacity}</div>
                                               : <div className="text-sm text-zinc-300">—</div>}
                                           </div>
                                           {/* Speed */}
                                           <div className="min-w-0">
                                             <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Speed</div>
-                                            {(elevator as any).speed
-                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{(elevator as any).speed}</div>
+                                            {elevator.speed
+                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{elevator.speed}</div>
                                               : <div className="text-sm text-zinc-300">—</div>}
                                           </div>
                                           {/* Landings/Opens */}
                                           <div className="min-w-0">
                                             <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Lands/Opens</div>
-                                            {((elevator as any).numLandings || (elevator as any).numOpenings)
-                                              ? <div className="text-sm font-semibold text-zinc-700">{(elevator as any).numLandings ?? "—"} / {(elevator as any).numOpenings ?? "—"}</div>
+                                            {(elevator.numLandings || elevator.numOpenings)
+                                              ? <div className="text-sm font-semibold text-zinc-700">{elevator.numLandings ?? "—"} / {elevator.numOpenings ?? "—"}</div>
                                               : <div className="text-sm text-zinc-300">—</div>}
                                           </div>
                                         </div>

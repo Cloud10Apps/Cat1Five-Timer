@@ -21,6 +21,8 @@ export interface CreateElevatorBody {
   yearInstalled?: number;
   numLandings?: number;
   numOpenings?: number;
+  internalId?: string;
+  stateId?: string;
   locationId?: string;
   buildingId: number;
 }
