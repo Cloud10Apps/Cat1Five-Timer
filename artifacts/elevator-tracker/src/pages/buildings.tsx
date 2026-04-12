@@ -67,22 +67,7 @@ const buildingSchema = z.object({
 
 type BuildingFormValues = z.infer<typeof buildingSchema>;
 
-const AVATAR_PALETTE = [
-  { bg: "bg-indigo-100", text: "text-indigo-700", border: "border-indigo-200" },
-  { bg: "bg-blue-100",   text: "text-blue-700",   border: "border-blue-200"   },
-  { bg: "bg-violet-100", text: "text-violet-700", border: "border-violet-200" },
-  { bg: "bg-teal-100",   text: "text-teal-700",   border: "border-teal-200"   },
-  { bg: "bg-emerald-100",text: "text-emerald-700",border: "border-emerald-200"},
-  { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-200" },
-  { bg: "bg-rose-100",   text: "text-rose-700",   border: "border-rose-200"   },
-  { bg: "bg-amber-100",  text: "text-amber-700",  border: "border-amber-200"  },
-];
-
-function getAvatarStyle(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
-}
+const avatarStyle = { bg: "bg-zinc-800", text: "text-white", border: "border-zinc-700" };
 
 function formatAddress(building: Building): string | null {
   const parts: string[] = [];
@@ -101,7 +86,6 @@ interface BuildingCardProps {
 }
 
 function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCardProps) {
-  const avatar = getAvatarStyle(building.name);
   const initials = building.name.slice(0, 2).toUpperCase();
   const address = formatAddress(building);
   const elevatorCount = building.elevatorCount ?? 0;
@@ -149,7 +133,7 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
       <CardHeader className="pb-4 px-6 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-4 min-w-0">
-            <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border-2 text-xl font-black uppercase shrink-0 ${avatar.bg} ${avatar.text} ${avatar.border}`}>
+            <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border-2 text-xl font-black uppercase shrink-0 ${avatarStyle.bg} ${avatarStyle.text} ${avatarStyle.border}`}>
               {initials}
             </div>
             <div className="min-w-0 pt-1">
