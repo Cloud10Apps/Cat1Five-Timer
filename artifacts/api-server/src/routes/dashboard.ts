@@ -40,6 +40,7 @@ router.get("/summary", asyncHandler(async (req, res) => {
 
   const currentYear = dayjs().year();
   const todayStr = dayjs().format("YYYY-MM-DD");
+  const in90Str = dayjs().add(90, "day").format("YYYY-MM-DD");
   const customerParam = effectiveIds !== null ? effectiveIds.join(",") : "";
 
   const result = await db.execute(sql`
@@ -84,7 +85,44 @@ router.get("/summary", asyncHandler(async (req, res) => {
         WHERE i.completion_date IS NOT NULL
           AND i.next_due_date IS NOT NULL
           AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}
-      ) AS avg_complete
+      ) AS avg_complete,
+
+      -- SCORE 1: Unit Compliance
+      COUNT(DISTINCT e.id) AS total_units,
+      COUNT(DISTINCT e.id) FILTER (
+        WHERE e.id NOT IN (
+          SELECT DISTINCT i2.elevator_id
+          FROM inspections i2
+          WHERE i2.organization_id = ${orgId}
+            AND i2.status != 'COMPLETED'
+            AND i2.completion_date IS NULL
+            AND i2.next_due_date IS NOT NULL
+            AND i2.next_due_date::date < ${todayStr}::date
+        )
+      ) AS compliant_units,
+
+      -- SCORE 2: Inspection Completion (90 days)
+      COUNT(*) FILTER (
+        WHERE i.next_due_date IS NOT NULL
+          AND i.next_due_date::date <= ${in90Str}::date
+      ) AS relevant_total,
+      COUNT(*) FILTER (
+        WHERE i.next_due_date IS NOT NULL
+          AND i.next_due_date::date <= ${in90Str}::date
+          AND i.completion_date IS NOT NULL
+      ) AS relevant_completed,
+
+      -- SCORE 3: Annual Completion Rate
+      COUNT(*) FILTER (
+        WHERE i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+      ) AS annual_total,
+      COUNT(*) FILTER (
+        WHERE i.next_due_date IS NOT NULL
+          AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND i.completion_date IS NOT NULL
+      ) AS annual_completed
+
     FROM inspections i
     JOIN elevators e ON e.id = i.elevator_id
     JOIN buildings b ON b.id = e.building_id
@@ -97,13 +135,19 @@ router.get("/summary", asyncHandler(async (req, res) => {
     val == null ? null : parseFloat(parseFloat(val).toFixed(1));
 
   res.json({
-    notStartedCount:   Number(row.not_started   ?? 0),
-    scheduledCount:    Number(row.scheduled      ?? 0),
-    inProgressCount:   Number(row.in_progress    ?? 0),
-    completedCount:    Number(row.completed      ?? 0),
-    overdueCount:      Number(row.overdue        ?? 0),
-    avgDaysToSchedule: parseAvg(row.avg_schedule ?? null),
-    avgDaysToComplete: parseAvg(row.avg_complete ?? null),
+    notStartedCount:   Number(row.not_started       ?? 0),
+    scheduledCount:    Number(row.scheduled          ?? 0),
+    inProgressCount:   Number(row.in_progress        ?? 0),
+    completedCount:    Number(row.completed          ?? 0),
+    overdueCount:      Number(row.overdue            ?? 0),
+    avgDaysToSchedule: parseAvg(row.avg_schedule     ?? null),
+    avgDaysToComplete: parseAvg(row.avg_complete     ?? null),
+    totalUnits:        Number(row.total_units        ?? 0),
+    compliantUnits:    Number(row.compliant_units    ?? 0),
+    relevantTotal:     Number(row.relevant_total     ?? 0),
+    relevantCompleted: Number(row.relevant_completed ?? 0),
+    annualTotal:       Number(row.annual_total       ?? 0),
+    annualCompleted:   Number(row.annual_completed   ?? 0),
   });
 }));
 

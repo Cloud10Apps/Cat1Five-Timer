@@ -5,7 +5,13 @@ import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { RefreshCw, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import { RefreshCw, AlertTriangle, Clock, CheckCircle2, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import dayjs from "dayjs";
 
 /* ─── label helper ─── */
@@ -201,71 +207,120 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ══ COMPLIANCE SCORE BANNER ══ */}
-        {!l1 && !l2 && !l3 && (() => {
-          const overdueCount = overdueItems.length;
-          const dueSoonCount = upcomingSoon.length;
-          const completedCount = summary?.completedCount ?? 0;
+        {/* ══ THREE SCORE CARDS ══ */}
+        {!l1 && (() => {
+          const totalUnits        = summary?.totalUnits        ?? 0;
+          const compliantUnits    = summary?.compliantUnits    ?? 0;
+          const relevantTotal     = summary?.relevantTotal     ?? 0;
+          const relevantCompleted = summary?.relevantCompleted ?? 0;
+          const annualTotal       = summary?.annualTotal       ?? 0;
+          const annualCompleted   = summary?.annualCompleted   ?? 0;
+          const year              = dayjs().year();
 
-          const relevantTotal = completedCount + overdueCount + dueSoonCount;
-          if (relevantTotal === 0 && overdueCount === 0) return null;
-          const score = relevantTotal > 0
-            ? Math.round((completedCount / relevantTotal) * 100)
-            : 100;
+          const unitScore   = totalUnits     > 0 ? Math.round((compliantUnits    / totalUnits)     * 100) : 100;
+          const comp90Score = relevantTotal  > 0 ? Math.round((relevantCompleted / relevantTotal)  * 100) : 100;
+          const annualScore = annualTotal    > 0 ? Math.round((annualCompleted   / annualTotal)    * 100) : 100;
 
-          const barColor    = score >= 80 ? "#16a34a" : score >= 50 ? "#d97706" : "#dc2626";
-          const scoreColor  = score >= 80 ? "text-green-700" : score >= 50 ? "text-amber-600" : "text-red-700";
-          const accentBorder = score >= 80 ? "border-l-green-500" : score >= 50 ? "border-l-amber-500" : "border-l-red-500";
-          const statusMsg = score === 100
-            ? "All inspections are up to date — great work!"
-            : score >= 80
-            ? "Your portfolio is in good shape"
-            : score >= 50
-            ? "Some attention needed — review overdue items below"
-            : "Action required — you have overdue inspections";
+          function scoreColor(s: number)   { return s >= 80 ? "text-green-700"      : s >= 50 ? "text-amber-600"      : "text-red-700"; }
+          function barColor(s: number)     { return s >= 80 ? "#16a34a"             : s >= 50 ? "#d97706"             : "#dc2626"; }
+          function accentBorder(s: number) { return s >= 80 ? "border-l-green-500"  : s >= 50 ? "border-l-amber-500"  : "border-l-red-500"; }
+          function statusMsg(s: number)    {
+            return s === 100 ? "Fully compliant — great work!"
+              : s >= 80 ? "In good shape"
+              : s >= 50 ? "Some attention needed"
+              : "Action required";
+          }
+
+          type CardProps = {
+            title: string; subtitle: string; score: number;
+            statLine: string; tooltipText: string; pills: React.ReactNode;
+          };
+          function ScoreCard({ title, subtitle, score, statLine, tooltipText, pills }: CardProps) {
+            return (
+              <div className={`bg-white rounded-xl border border-zinc-200 border-l-4 ${accentBorder(score)} shadow-sm p-6 flex flex-col gap-3`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">{title}</p>
+                    <p className="text-xs text-zinc-400 font-normal italic mt-0.5">{subtitle}</p>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3.5 w-3.5 text-zinc-300 hover:text-zinc-500 cursor-help shrink-0 mt-0.5" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[220px] text-xs text-center leading-relaxed">
+                        {tooltipText}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className={`text-5xl font-black tabular-nums leading-none ${scoreColor(score)}`}>
+                  {score}%
+                </div>
+                <div className="w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: barColor(score) }} />
+                </div>
+                <p className={`text-sm font-medium ${scoreColor(score)}`}>{statusMsg(score)}</p>
+                <p className="text-xs text-zinc-500">{statLine}</p>
+                <div className="flex flex-wrap gap-2 mt-auto pt-1">{pills}</div>
+              </div>
+            );
+          }
+
           return (
             <section>
-              <div className={`bg-white border border-zinc-200 border-l-4 ${accentBorder} rounded-xl shadow-sm overflow-hidden`}>
-                <div className="px-8 py-6 flex flex-col sm:flex-row items-center gap-8">
-                  {/* Big score number */}
-                  <div className="flex flex-col items-center shrink-0">
-                    <span className={`text-[5rem] leading-none font-black tabular-nums ${scoreColor}`}>{score}%</span>
-                    <span className="text-xs font-bold uppercase tracking-[0.15em] text-zinc-400 mt-1.5">Compliance Score</span>
-                  </div>
-                  {/* Divider */}
-                  <div className="hidden sm:block w-px h-24 bg-zinc-200 shrink-0" />
-                  {/* Right: label + bar + message + pills */}
-                  <div className="flex flex-col gap-3 flex-1 min-w-0">
-                    <div>
-                      <p className="text-lg font-black text-zinc-900 tracking-tight">Your Portfolio Compliance Score</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">Measuring inspections due within 90 days and any overdue</p>
-                      <p className={`text-sm mt-1 font-medium ${scoreColor}`}>{statusMsg}</p>
-                    </div>
-                    {/* Progress bar */}
-                    <div className="w-full h-3 bg-zinc-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700" style={{ width:`${score}%`, backgroundColor: barColor }} />
-                    </div>
-                    {/* Stat pills */}
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-green-50 text-green-700 border border-green-200">
-                        <CheckCircle2 className="w-4 h-4" />
-                        {completedCount} Compliant
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ScoreCard
+                  title="Unit Compliance"
+                  subtitle="Are my elevators legally compliant right now?"
+                  score={unitScore}
+                  statLine={`${compliantUnits} of ${totalUnits} elevator units have no overdue inspections`}
+                  tooltipText="Percentage of elevator units with no overdue inspections. A unit is compliant when all its CAT1 and CAT5 inspections are either completed or not yet due. This score only changes when an inspection becomes overdue or is completed — it does not fluctuate daily."
+                  pills={<>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                      ✅ {compliantUnits} Compliant Units
+                    </span>
+                    {(totalUnits - compliantUnits) > 0 && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                        ⚠️ {totalUnits - compliantUnits} Need Attention
                       </span>
-                      {overdueCount > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200">
-                          <AlertTriangle className="w-4 h-4" />
-                          {overdueCount} Overdue
-                        </span>
-                      )}
-                      {dueSoonCount > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          <Clock className="w-4 h-4" />
-                          {dueSoonCount} Due Within 90 Days
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                    )}
+                  </>}
+                />
+                <ScoreCard
+                  title="Inspection Completion (90 Days)"
+                  subtitle="How am I managing my near-term schedule?"
+                  score={comp90Score}
+                  statLine={`${relevantCompleted} of ${relevantTotal} inspections due within 90 days are complete`}
+                  tooltipText="Percentage of inspections due within the next 90 days — plus any overdue — that have been completed. Updates daily as inspections come due. Use this to track how well you are managing your near-term inspection schedule."
+                  pills={<>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                      ✅ {relevantCompleted} Complete
+                    </span>
+                    {(relevantTotal - relevantCompleted) > 0 && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        ⏳ {relevantTotal - relevantCompleted} Incomplete
+                      </span>
+                    )}
+                  </>}
+                />
+                <ScoreCard
+                  title={`Annual Completion Rate (${year})`}
+                  subtitle="How have I performed this calendar year overall?"
+                  score={annualScore}
+                  statLine={`${annualCompleted} of ${annualTotal} inspections due in ${year} are complete`}
+                  tooltipText="Percentage of all inspections due this calendar year that have been completed. Resets on January 1st each year. Use this for annual reporting, audits, and comparing your performance year over year."
+                  pills={<>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                      ✅ {annualCompleted} Completed
+                    </span>
+                    {(annualTotal - annualCompleted) > 0 && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        📋 {annualTotal - annualCompleted} Remaining
+                      </span>
+                    )}
+                  </>}
+                />
               </div>
             </section>
           );
