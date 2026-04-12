@@ -580,8 +580,8 @@ export default function Elevators() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Current Inspections</h1>
-          <p className="text-sm text-zinc-500 mt-1">Open compliance status for every elevator unit. Completed inspections move to Inspection History.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Active Inspections</h1>
+          <p className="text-sm text-zinc-500 mt-1">Your open inspection records by unit. Completed inspections move automatically to Inspection History.</p>
         </div>
 
         <div className="flex items-center gap-2">

@@ -507,7 +507,7 @@ export default function Dashboard() {
               {overdueItems.length > 0 && (
                 <div className="px-6 py-3 border-t border-zinc-100 flex justify-end">
                   <Link href="/elevators" className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
-                    View all in Current Inspections →
+                    View all in Active Inspections →
                   </Link>
                 </div>
               )}
@@ -576,7 +576,7 @@ export default function Dashboard() {
               {upcoming.length > 0 && (
                 <div className="px-6 py-3 border-t border-zinc-100 flex justify-end">
                   <Link href="/elevators" className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
-                    View all in Current Inspections →
+                    View all in Active Inspections →
                   </Link>
                 </div>
               )}

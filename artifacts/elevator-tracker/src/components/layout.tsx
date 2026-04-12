@@ -46,14 +46,14 @@ export function Layout({ children }: LayoutProps) {
   });
   const overdueCount = (attentionItems ?? []).filter((i: any) => i.status === "OVERDUE").length;
 
-  const mainNav = [
-    { name: "Dashboard",            href: "/dashboard",   icon: LayoutDashboard },
-    { name: "Customers",            href: "/customers",   icon: Users },
-    { name: "Buildings",            href: "/buildings",   icon: Building },
-    { name: "Units",                href: "/units",       icon: Layers },
-    { name: "Current Inspections",  href: "/elevators",   icon: ArrowUpSquare },
-    { name: "Inspection History",   href: "/inspections", icon: ClipboardCheck },
-    { name: "Calendar",             href: "/calendar",    icon: Calendar },
+  const mainNav: { name: string; href: string; icon: typeof Settings; subtitle?: string }[] = [
+    { name: "Dashboard",           href: "/dashboard",   icon: LayoutDashboard as typeof Settings },
+    { name: "Customers",           href: "/customers",   icon: Users as typeof Settings },
+    { name: "Buildings",           href: "/buildings",   icon: Building as typeof Settings },
+    { name: "Units",               href: "/units",       icon: Layers as typeof Settings },
+    { name: "Active Inspections",  href: "/elevators",   icon: ArrowUpSquare as typeof Settings,  subtitle: "Open records needing attention" },
+    { name: "Inspection History",  href: "/inspections", icon: ClipboardCheck as typeof Settings, subtitle: "Completed inspection records" },
+    { name: "Calendar",            href: "/calendar",    icon: Calendar as typeof Settings },
   ];
 
   const bottomNav: { name: string; href: string; icon: typeof Settings }[] = [];
@@ -63,7 +63,7 @@ export function Layout({ children }: LayoutProps) {
   }
   bottomNav.push({ name: "Settings", href: "/settings", icon: Settings });
 
-  const NavItem = ({ name, href, icon: Icon }: { name: string; href: string; icon: typeof Settings }) => {
+  const NavItem = ({ name, href, icon: Icon, subtitle }: { name: string; href: string; icon: typeof Settings; subtitle?: string }) => {
     const isActive = location === href;
     return (
       <Link
@@ -83,14 +83,19 @@ export function Layout({ children }: LayoutProps) {
         )}>
           <Icon className="h-5 w-5" />
         </div>
-        <span className={cn(
-          "text-base font-semibold tracking-wide leading-none",
-          isActive ? "text-zinc-950" : ""
-        )}>
-          {name}
-        </span>
+        <div className="flex flex-col min-w-0">
+          <span className={cn(
+            "text-base font-semibold tracking-wide leading-none",
+            isActive ? "text-zinc-950" : ""
+          )}>
+            {name}
+          </span>
+          {subtitle && (
+            <span className="text-[10px] text-zinc-500 leading-none mt-0.5">{subtitle}</span>
+          )}
+        </div>
         {isActive && (
-          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-zinc-950/40" />
+          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-zinc-950/40 shrink-0" />
         )}
       </Link>
     );

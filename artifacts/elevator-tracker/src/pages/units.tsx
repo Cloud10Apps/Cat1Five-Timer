@@ -87,8 +87,6 @@ const elevatorSchema = z.object({
 
 type ElevatorFormValues = z.infer<typeof elevatorSchema>;
 
-const GRID_COLS = "grid-cols-[minmax(200px,1fr)_80px_80px_90px_130px_100px_90px_76px_95px_70px]";
-const MIN_W = "min-w-[1020px]";
 
 export default function Units() {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
@@ -350,7 +348,7 @@ export default function Units() {
         </div>
 
         {/* Building picker */}
-        <div className="space-y-2">
+        <div className="space-y-2 mt-2">
           <FormField
             control={form.control}
             name="buildingId"
@@ -401,33 +399,35 @@ export default function Units() {
           />
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-5">
           <FormField control={form.control} name="name" render={({ field }) => (
             <FormItem>
               <FormLabel>Unit Name</FormLabel>
-              <FormControl><Input placeholder="e.g. Main Lobby Elevator" {...field} /></FormControl>
+              <FormControl><Input placeholder="e.g. Main Lobby Elevator" className="h-11" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
+          <div className="border-t border-zinc-100 my-2" />
+          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">Identification</p>
           <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="internalId" render={({ field }) => (
               <FormItem>
                 <FormLabel>Unit ID</FormLabel>
-                <FormControl><Input placeholder="e.g. PE-1" {...field} /></FormControl>
+                <FormControl><Input placeholder="e.g. PE-1" className="h-11" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="stateId" render={({ field }) => (
               <FormItem>
                 <FormLabel>State ID</FormLabel>
-                <FormControl><Input placeholder="e.g. NY-12345" {...field} /></FormControl>
+                <FormControl><Input placeholder="e.g. NY-12345" className="h-11" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="type" render={({ field }) => (
               <FormItem>
@@ -454,7 +454,7 @@ export default function Units() {
         </div>
 
         {/* Unit Profile */}
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-4 pt-3 pb-4 space-y-3">
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-4 pt-3 pb-4 space-y-5">
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-1 h-4 rounded-full bg-amber-400 shrink-0" />
             <span className="text-sm font-semibold text-zinc-700 tracking-tight">Unit Profile</span>
@@ -554,7 +554,7 @@ export default function Units() {
 
         <Button
           type="submit"
-          className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
+          className="w-full mt-6 h-12 text-base bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
           disabled={createMutation.isPending || updateMutation.isPending}
         >
           {(createMutation.isPending || updateMutation.isPending) ? "Saving…" : editingElevator ? "Save Changes" : "Add Unit"}
@@ -689,25 +689,18 @@ export default function Units() {
           {grouped.map((customer) => {
             const isCustomerCollapsed = collapsedCustomers.has(customer.customerId);
             return (
-              <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-x-auto shadow-sm">
+              <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header */}
                 <button
-                  className={`w-full grid ${MIN_W} bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left ${GRID_COLS}`}
+                  className="w-full flex items-center gap-2 min-w-0 px-4 py-4 bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
-                  <div className="flex items-center gap-2 min-w-0 px-4 py-4">
-                    {isCustomerCollapsed ? <ChevronRight className="h-5 w-5 shrink-0 text-zinc-400" /> : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
-                    <Users className="h-5 w-5 shrink-0 text-zinc-400" />
-                    <span className="font-bold text-lg tracking-tight truncate">{customer.customerName}</span>
-                    <span className="text-sm font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
-                      {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
-                    </span>
-                  </div>
-                  {["Unit ID","State ID","Type","OEM Serial","Capacity","Speed","Year","Lands/Opens","Actions"].map((h) => (
-                    <div key={h} className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                      <span className="text-xs font-semibold text-white text-center whitespace-nowrap">{h}</span>
-                    </div>
-                  ))}
+                  {isCustomerCollapsed ? <ChevronRight className="h-5 w-5 shrink-0 text-zinc-400" /> : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
+                  <Users className="h-5 w-5 shrink-0 text-zinc-400" />
+                  <span className="font-bold text-lg tracking-tight truncate">{customer.customerName}</span>
+                  <span className="text-sm font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
+                    {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
+                  </span>
                 </button>
 
                 {!isCustomerCollapsed && (
@@ -747,56 +740,85 @@ export default function Units() {
                                     {!isBankCollapsed && bank.elevators.map((elevator, rowIdx) => (
                                       <div
                                         key={elevator.id}
-                                        className={`grid ${MIN_W} ${GRID_COLS} group relative transition-colors border-b hover:bg-amber-50/60 border-zinc-200 ${rowIdx % 2 === 1 ? "bg-zinc-50/30" : ""}`}
+                                        className={`group relative flex items-center gap-6 px-4 py-4 pl-20 border-b border-zinc-200 transition-colors hover:bg-amber-50/40 ${rowIdx % 2 === 1 ? "bg-zinc-50/20" : ""}`}
+                                        style={{ minHeight: "72px" }}
                                       >
                                         <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
-                                        {/* Name + manufacturer */}
-                                        <div className="flex items-center px-4 py-4 min-w-0 pl-20">
-                                          <div>
-                                            <div className="font-semibold text-base leading-snug break-words text-zinc-900">{elevator.name}</div>
-                                            {(elevator as any).manufacturer && (
-                                              <div className="text-sm text-zinc-500 truncate mt-0.5">{(elevator as any).manufacturer}</div>
+
+                                        {/* LEFT ZONE — Unit Identity (40%) */}
+                                        <div className="w-[40%] min-w-0 shrink-0">
+                                          <div className="font-bold text-base text-zinc-900 leading-snug truncate">{elevator.name}</div>
+                                          {(elevator as any).manufacturer && (
+                                            <div className="text-sm text-zinc-400 italic truncate mt-0.5">{(elevator as any).manufacturer}</div>
+                                          )}
+                                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {elevator.type && (
+                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold capitalize">
+                                                {elevator.type}
+                                              </span>
+                                            )}
+                                            {(elevator as any).elevatorType && (
+                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold capitalize">
+                                                {(elevator as any).elevatorType}
+                                              </span>
+                                            )}
+                                            {elevator.bank && (
+                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200 text-xs font-medium">
+                                                {elevator.bank}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-3 mt-1.5">
+                                            {(elevator as any).internalId && (
+                                              <span className="text-xs text-zinc-400">Unit: <span className="font-mono font-medium text-zinc-600">{(elevator as any).internalId}</span></span>
+                                            )}
+                                            {(elevator as any).stateId && (
+                                              <span className="text-xs text-zinc-400">State: <span className="font-mono font-medium text-zinc-600">{(elevator as any).stateId}</span></span>
                                             )}
                                           </div>
                                         </div>
-                                        {/* Unit ID */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).internalId || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
+
+                                        {/* RIGHT ZONE — Technical Specs (60%) */}
+                                        <div className="flex-1 min-w-0 grid grid-cols-5 gap-4">
+                                          {/* OEM Serial */}
+                                          <div className="min-w-0">
+                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">OEM Serial</div>
+                                            {(elevator as any).oemSerialNumber
+                                              ? <div className="text-sm font-semibold text-zinc-700 font-mono truncate">{(elevator as any).oemSerialNumber}</div>
+                                              : <div className="text-sm text-zinc-300">—</div>}
+                                          </div>
+                                          {/* Year */}
+                                          <div className="min-w-0">
+                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Year</div>
+                                            {(elevator as any).yearInstalled
+                                              ? <div className="text-sm font-semibold text-zinc-700">{(elevator as any).yearInstalled}</div>
+                                              : <div className="text-sm text-zinc-300">—</div>}
+                                          </div>
+                                          {/* Capacity */}
+                                          <div className="min-w-0">
+                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Capacity</div>
+                                            {(elevator as any).capacity
+                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{(elevator as any).capacity}</div>
+                                              : <div className="text-sm text-zinc-300">—</div>}
+                                          </div>
+                                          {/* Speed */}
+                                          <div className="min-w-0">
+                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Speed</div>
+                                            {(elevator as any).speed
+                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{(elevator as any).speed}</div>
+                                              : <div className="text-sm text-zinc-300">—</div>}
+                                          </div>
+                                          {/* Landings/Opens */}
+                                          <div className="min-w-0">
+                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Lands/Opens</div>
+                                            {((elevator as any).numLandings || (elevator as any).numOpenings)
+                                              ? <div className="text-sm font-semibold text-zinc-700">{(elevator as any).numLandings ?? "—"} / {(elevator as any).numOpenings ?? "—"}</div>
+                                              : <div className="text-sm text-zinc-300">—</div>}
+                                          </div>
                                         </div>
-                                        {/* State ID */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).stateId || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
-                                        </div>
-                                        {/* Type */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          <span className="text-sm font-medium text-zinc-600 capitalize truncate">{elevator.type}</span>
-                                        </div>
-                                        {/* OEM Serial */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          <span className="text-sm text-zinc-500 truncate font-mono">{(elevator as any).oemSerialNumber || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
-                                        </div>
-                                        {/* Capacity */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          <span className="text-sm text-zinc-500 truncate">{(elevator as any).capacity || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
-                                        </div>
-                                        {/* Speed */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          <span className="text-sm text-zinc-500 truncate">{(elevator as any).speed || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
-                                        </div>
-                                        {/* Year Installed */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          <span className="text-sm tabular-nums text-zinc-500">{(elevator as any).yearInstalled || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
-                                        </div>
-                                        {/* Landings / Openings */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
-                                          {((elevator as any).numLandings || (elevator as any).numOpenings) ? (
-                                            <span className="text-sm tabular-nums text-zinc-500">
-                                              {(elevator as any).numLandings ?? "—"} / {(elevator as any).numOpenings ?? "—"}
-                                            </span>
-                                          ) : <span className="text-zinc-300 italic text-xs">Not set</span>}
-                                        </div>
+
                                         {/* Actions */}
-                                        <div className="flex items-center justify-center border-l border-zinc-200 gap-1 px-2">
+                                        <div className="flex items-center gap-1 shrink-0">
                                           <TooltipProvider>
                                             <Tooltip>
                                               <TooltipTrigger asChild>

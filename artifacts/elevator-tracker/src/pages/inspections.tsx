@@ -470,7 +470,7 @@ export default function Inspections() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Inspection History</h1>
-          <p className="text-sm text-zinc-500 mt-1">Complete audit trail of all CAT1 and CAT5 inspections.</p>
+          <p className="text-sm text-zinc-500 mt-1">A complete audit trail of all completed CAT1 and CAT5 inspections across your portfolio.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" onClick={handleExport} className="gap-2">

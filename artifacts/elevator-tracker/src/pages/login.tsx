@@ -52,12 +52,12 @@ export default function Login() {
       <div className="hidden md:flex md:w-1/2 bg-zinc-950 text-zinc-50 flex-col justify-between p-12 lg:p-24 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-zinc-900/50 to-zinc-950 pointer-events-none" />
 
-        <div className="relative z-10">
-          <img src={logoSrc} alt="Cat1Five Timer" className="h-14 w-auto" />
+        <div className="relative z-10 flex flex-col items-center mt-16 mb-12">
+          <img src={logoSrc} alt="Cat1Five Timer" className="h-28 w-auto" />
         </div>
 
-        <div className="relative z-10 max-w-lg mt-12 mb-auto md:my-auto">
-          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6 text-zinc-50 leading-[1.1]">
+        <div className="relative z-10 max-w-lg mb-auto md:my-auto">
+          <h1 className="text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-zinc-50 leading-[1.1]">
             Track compliance. <br />
             <span className="text-amber-500">Stay ahead of inspections.</span>
           </h1>
@@ -68,20 +68,20 @@ export default function Login() {
           <div className="space-y-6">
             <div className="flex items-start gap-4">
               <div className="mt-1 bg-zinc-900/50 p-2 rounded-lg border border-zinc-800 text-amber-500">
-                <LayoutDashboard className="h-5 w-5" />
+                <LayoutDashboard className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-zinc-100">Real-time compliance dashboard</h3>
+                <h3 className="text-base font-semibold text-zinc-100">Real-time compliance dashboard</h3>
                 <p className="text-zinc-400 text-sm mt-1">See the status of every elevator in your portfolio at a glance.</p>
               </div>
             </div>
 
             <div className="flex items-start gap-4">
               <div className="mt-1 bg-zinc-900/50 p-2 rounded-lg border border-zinc-800 text-amber-500">
-                <ClipboardCheck className="h-5 w-5" />
+                <ClipboardCheck className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-zinc-100">CAT1 & CAT5 tracking</h3>
+                <h3 className="text-base font-semibold text-zinc-100">CAT1 & CAT5 tracking</h3>
                 <p className="text-zinc-400 text-sm mt-1">Dedicated workflows for annual and 5-year testing requirements.</p>
               </div>
             </div>
@@ -96,14 +96,11 @@ export default function Login() {
 
       {/* Right Panel — Login Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-white relative">
-        {/* Mobile header — only visible on small screens */}
-        <div className="absolute top-8 left-8 md:hidden">
-          <img src={logoSrc} alt="Cat1Five Timer" className="h-9 w-auto rounded-md" />
-        </div>
 
         <div className="w-full max-w-[400px] space-y-8">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-zinc-950 mb-2">Welcome back</h2>
+            <img src={logoSrc} alt="Cat1Five Timer" className="h-16 w-auto mb-8 md:hidden mx-auto" />
+            <h2 className="text-4xl font-bold tracking-tight text-zinc-950 mb-2">Welcome back</h2>
             <p className="text-zinc-500 text-sm">
               Sign in to your account to manage your portfolio.
             </p>
@@ -118,7 +115,7 @@ export default function Login() {
                   type="email"
                   placeholder="name@company.com"
                   {...form.register("email")}
-                  className="h-11 border-zinc-200 focus-visible:ring-amber-500"
+                  className="h-12 border-zinc-200 focus-visible:ring-amber-500"
                 />
                 {form.formState.errors.email && (
                   <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
@@ -140,7 +137,7 @@ export default function Login() {
                   type="password"
                   placeholder="••••••••"
                   {...form.register("password")}
-                  className="h-11 border-zinc-200 focus-visible:ring-amber-500"
+                  className="h-12 border-zinc-200 focus-visible:ring-amber-500"
                 />
                 {form.formState.errors.password && (
                   <p className="text-sm text-red-600">{form.formState.errors.password.message}</p>
@@ -156,7 +153,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold shadow-none border-none"
+              className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-zinc-950 text-base font-bold shadow-none border-none"
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending ? (
@@ -168,6 +165,7 @@ export default function Login() {
                 "Sign in"
               )}
             </Button>
+            <p className="text-center text-xs text-zinc-400 mt-4">Elevator compliance tracking for New Mexico building owners</p>
           </form>
         </div>
       </div>

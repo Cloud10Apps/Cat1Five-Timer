@@ -504,15 +504,13 @@ export default function Buildings() {
           {grouped.map((group) => (
             <div key={group.customerId}>
               {/* Customer section header */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-zinc-400 shrink-0" />
-                  <h2 className="text-base font-semibold text-zinc-800">{group.customerName}</h2>
+              <div className="flex items-center gap-3 mt-8 first:mt-0 mb-4">
+                <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-zinc-900 text-white text-sm font-bold shrink-0">
+                  {group.customerName.slice(0, 2).toUpperCase()}
                 </div>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-500 border border-zinc-200">
-                  {group.buildings?.length ?? 0} {(group.buildings?.length ?? 0) === 1 ? "building" : "buildings"}
-                </span>
-                <div className="flex-1 h-px bg-zinc-100" />
+                <span className="font-bold text-zinc-900 text-lg tracking-tight">{group.customerName}</span>
+                <div className="flex-1 h-px bg-zinc-200" />
+                <span className="text-xs text-zinc-400 font-medium">{group.buildings?.length ?? 0} buildings</span>
               </div>
               {/* Building cards grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
