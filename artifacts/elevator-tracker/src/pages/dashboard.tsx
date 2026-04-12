@@ -198,22 +198,30 @@ export default function Dashboard() {
 
         {/* ══ COMPLIANCE SCORE BANNER ══ */}
         {!l1 && !l2 && (() => {
-          const completed    = summary?.completedCount    ?? 0;
-          const notStarted   = summary?.notStartedCount   ?? 0;
-          const scheduled    = summary?.scheduledCount    ?? 0;
-          const inProgress   = summary?.inProgressCount   ?? 0;
-          const overdue      = overdueItems.length;
-          const dueThisMonth = upcoming.filter(
-            (i: any) => i.nextDueDate && i.nextDueDate.slice(0, 7) === dayjs().format("YYYY-MM")
+          const in90 = dayjs().add(90, "day").format("YYYY-MM-DD");
+
+          const overdueCount = overdueItems.length;
+          const dueSoonCount = ((attention ?? []) as any[]).filter(
+            (i: any) => i.status !== "OVERDUE" &&
+              i.nextDueDate &&
+              i.nextDueDate >= todayStr &&
+              i.nextDueDate <= in90
           ).length;
-          const totalActive  = completed + notStarted + scheduled + inProgress + overdue;
-          if (totalActive === 0) return null;
-          const score = Math.round((completed / totalActive) * 100);
-          const barColor = score >= 80 ? "#16a34a" : score >= 50 ? "#d97706" : "#dc2626";
-          const scoreColor = score >= 80 ? "text-green-700" : score >= 50 ? "text-amber-600" : "text-red-700";
+          const completedCount = summary?.completedCount ?? 0;
+
+          const relevantTotal = completedCount + overdueCount + dueSoonCount;
+          if (relevantTotal === 0 && overdueCount === 0) return null;
+          const score = relevantTotal > 0
+            ? Math.round((completedCount / relevantTotal) * 100)
+            : 100;
+
+          const barColor    = score >= 80 ? "#16a34a" : score >= 50 ? "#d97706" : "#dc2626";
+          const scoreColor  = score >= 80 ? "text-green-700" : score >= 50 ? "text-amber-600" : "text-red-700";
           const accentBorder = score >= 80 ? "border-l-green-500" : score >= 50 ? "border-l-amber-500" : "border-l-red-500";
-          const statusMsg = score >= 80
-            ? "Great work — your portfolio is in good shape"
+          const statusMsg = score === 100
+            ? "All inspections are up to date — great work!"
+            : score >= 80
+            ? "Your portfolio is in good shape"
             : score >= 50
             ? "Some attention needed — review overdue items below"
             : "Action required — you have overdue inspections";
@@ -232,7 +240,7 @@ export default function Dashboard() {
                   <div className="flex flex-col gap-3 flex-1 min-w-0">
                     <div>
                       <p className="text-lg font-black text-zinc-900 tracking-tight">Your Portfolio Compliance Score</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">Based on all active inspections across your portfolio</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">Measuring inspections due within 90 days and any overdue</p>
                       <p className={`text-sm mt-1 font-medium ${scoreColor}`}>{statusMsg}</p>
                     </div>
                     {/* Progress bar */}
@@ -243,18 +251,18 @@ export default function Dashboard() {
                     <div className="flex flex-wrap gap-2 mt-1">
                       <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-green-50 text-green-700 border border-green-200">
                         <CheckCircle2 className="w-4 h-4" />
-                        {completed} Compliant
+                        {completedCount} Compliant
                       </span>
-                      {overdue > 0 && (
+                      {overdueCount > 0 && (
                         <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200">
                           <AlertTriangle className="w-4 h-4" />
-                          {overdue} Overdue
+                          {overdueCount} Overdue
                         </span>
                       )}
-                      {dueThisMonth > 0 && (
+                      {dueSoonCount > 0 && (
                         <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock className="w-4 h-4" />
-                          {dueThisMonth} Due This Month
+                          {dueSoonCount} Due Within 90 Days
                         </span>
                       )}
                     </div>
