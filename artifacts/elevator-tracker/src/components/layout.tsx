@@ -159,7 +159,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="w-full flex-1" />
             {overdueCount > 0 && (
               <Link
-                href="/inspections?status=NOT_STARTED"
+                href="/elevators"
                 className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm shrink-0"
               >
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />

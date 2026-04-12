@@ -344,6 +344,66 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ══ COMPLIANCE SCORE BANNER ══ */}
+        {!l1 && (() => {
+          const completed    = summary?.completedCount    ?? 0;
+          const notStarted   = summary?.notStartedCount   ?? 0;
+          const scheduled    = summary?.scheduledCount    ?? 0;
+          const inProgress   = summary?.inProgressCount   ?? 0;
+          const overdue      = overdueItems.length;
+          const dueThisMonth = ((attention ?? []) as any[]).filter(
+            (i: any) => i.status !== "OVERDUE" && i.nextDueDate &&
+              i.nextDueDate >= todayStr && i.nextDueDate <= dayjs().add(30, "day").format("YYYY-MM-DD")
+          ).length;
+          const totalActive  = completed + notStarted + scheduled + inProgress + overdue;
+          if (totalActive === 0) return null;
+          const score = Math.round((completed / totalActive) * 100);
+          const barColor = score >= 80 ? "#16a34a" : score >= 50 ? "#d97706" : "#dc2626";
+          const scoreColor = score >= 80 ? "text-green-700" : score >= 50 ? "text-amber-600" : "text-red-700";
+          return (
+            <section>
+              <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                  {/* Big score */}
+                  <div className="flex flex-col items-center shrink-0 w-28">
+                    <span className={`text-6xl font-black tabular-nums leading-none ${scoreColor}`}>{score}%</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">Compliant</span>
+                  </div>
+                  {/* Progress + pills */}
+                  <div className="flex flex-col gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-black text-zinc-700 uppercase tracking-wide whitespace-nowrap">Portfolio Compliance Score</span>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="w-full h-3 bg-zinc-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width:`${score}%`, backgroundColor: barColor }} />
+                    </div>
+                    {/* Stat pills */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {completed} Compliant
+                      </span>
+                      {overdue > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          {overdue} Overdue
+                        </span>
+                      )}
+                      {dueThisMonth > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <Clock className="w-3.5 h-3.5" />
+                          {dueThisMonth} Due This Month
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        })()}
+
         {/* ══ SECTION 1 — VOLUME ══ */}
         <section>
           <SectionLabel>Volume</SectionLabel>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,8 @@ import {
   useDeleteBuilding,
   useListCustomers,
   getListCustomersQueryKey,
+  useListInspections,
+  getListInspectionsQueryKey,
   Building,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -104,6 +106,44 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
   const address = formatAddress(building);
   const elevatorCount = building.elevatorCount ?? 0;
 
+  const { data: inspections } = useListInspections(
+    { buildingId: building.id },
+    { query: { queryKey: getListInspectionsQueryKey({ buildingId: building.id }), staleTime: 5 * 60 * 1000 } }
+  );
+
+  const today = new Date().toISOString().slice(0, 10);
+  const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const overdueCount = (inspections ?? []).filter((i: any) => i.status === "OVERDUE").length;
+  const dueSoonCount = (inspections ?? []).filter(
+    (i: any) => i.status !== "OVERDUE" && i.nextDueDate >= today && i.nextDueDate <= in30
+  ).length;
+
+  let complianceBadge: React.ReactNode = null;
+  if (elevatorCount > 0 && inspections !== undefined) {
+    if (overdueCount > 0) {
+      complianceBadge = (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+          {overdueCount} Overdue
+        </span>
+      );
+    } else if (dueSoonCount > 0) {
+      complianceBadge = (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+          Due Soon
+        </span>
+      );
+    } else {
+      complianceBadge = (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+          Compliant
+        </span>
+      );
+    }
+  }
+
   return (
     <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md">
       <CardHeader className="pb-3">
@@ -147,11 +187,12 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-1 border-t">
-          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1 text-xs font-semibold">
+        <div className="flex items-center justify-between pt-1 border-t gap-2">
+          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1 text-xs font-semibold shrink-0">
             <Building2 className="h-3 w-3" />
             {elevatorCount} {elevatorCount === 1 ? "Unit" : "Units"}
           </span>
+          {complianceBadge}
         </div>
       </CardContent>
     </Card>
