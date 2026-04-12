@@ -794,13 +794,13 @@ export default function Units() {
                                     {!isBankCollapsed && bank.elevators.map((elevator, rowIdx) => (
                                       <div
                                         key={elevator.id}
-                                        className="group relative flex items-center gap-6 px-4 py-2.5 pl-20 border-b border-zinc-200 transition-colors hover:bg-amber-50/40 hover:shadow-sm"
+                                        className="group relative flex items-center gap-4 px-4 py-2.5 pl-20 border-b border-zinc-200 transition-colors hover:bg-amber-50/40 hover:shadow-sm"
                                         style={{ minHeight: "72px" }}
                                       >
                                         <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-amber-500" />
 
-                                        {/* ZONE 1 — Unit Identity (35%) */}
-                                        <div className="w-[35%] min-w-0 shrink-0">
+                                        {/* ZONE 1 — Unit Identity */}
+                                        <div className="flex-1 min-w-0">
                                           <div className="text-base font-bold text-zinc-900 leading-tight truncate">{elevator.name}</div>
                                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                             {elevator.manufacturer && (
@@ -830,12 +830,12 @@ export default function Units() {
                                         {/* Divider 1 */}
                                         <div className="w-px bg-zinc-100 self-stretch shrink-0 mx-2" />
 
-                                        {/* ZONE 2 — IDs (18%) */}
-                                        <div className="flex flex-col gap-2 shrink-0 w-[18%]">
+                                        {/* ZONE 2 — IDs */}
+                                        <div className="flex flex-col gap-2 shrink-0 w-[15%]">
                                           {elevator.internalId ? (
                                             <div className="flex flex-col">
                                               <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Unit ID</span>
-                                              <span className="inline-block font-mono text-sm font-bold text-zinc-800 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200 mt-0.5 truncate">
+                                              <span className="inline-block font-mono text-sm font-bold text-zinc-800 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200 w-fit mt-0.5">
                                                 {elevator.internalId}
                                               </span>
                                             </div>
@@ -848,7 +848,7 @@ export default function Units() {
                                           {elevator.stateId ? (
                                             <div className="flex flex-col">
                                               <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">State ID</span>
-                                              <span className="inline-block font-mono text-sm font-bold text-zinc-800 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200 mt-0.5 truncate">
+                                              <span className="inline-block font-mono text-sm font-bold text-zinc-800 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200 w-fit mt-0.5">
                                                 {elevator.stateId}
                                               </span>
                                             </div>
