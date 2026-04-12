@@ -247,6 +247,8 @@ export const ListElevatorsResponseItem = zod.object({
   "yearInstalled": zod.number().optional(),
   "numLandings": zod.number().optional(),
   "numOpenings": zod.number().optional(),
+  "internalId": zod.string().optional(),
+  "stateId": zod.string().optional(),
   "locationId": zod.string().optional(),
   "buildingId": zod.number(),
   "buildingName": zod.string().optional(),
@@ -274,6 +276,8 @@ export const CreateElevatorBody = zod.object({
   "yearInstalled": zod.number().optional(),
   "numLandings": zod.number().optional(),
   "numOpenings": zod.number().optional(),
+  "internalId": zod.string().optional(),
+  "stateId": zod.string().optional(),
   "locationId": zod.string().optional(),
   "buildingId": zod.number()
 })
@@ -300,6 +304,8 @@ export const GetElevatorResponse = zod.object({
   "yearInstalled": zod.number().optional(),
   "numLandings": zod.number().optional(),
   "numOpenings": zod.number().optional(),
+  "internalId": zod.string().optional(),
+  "stateId": zod.string().optional(),
   "locationId": zod.string().optional(),
   "buildingId": zod.number(),
   "buildingName": zod.string().optional(),
@@ -330,6 +336,8 @@ export const UpdateElevatorBody = zod.object({
   "yearInstalled": zod.number().optional(),
   "numLandings": zod.number().optional(),
   "numOpenings": zod.number().optional(),
+  "internalId": zod.string().optional(),
+  "stateId": zod.string().optional(),
   "locationId": zod.string().optional(),
   "buildingId": zod.number()
 })
@@ -348,6 +356,8 @@ export const UpdateElevatorResponse = zod.object({
   "yearInstalled": zod.number().optional(),
   "numLandings": zod.number().optional(),
   "numOpenings": zod.number().optional(),
+  "internalId": zod.string().optional(),
+  "stateId": zod.string().optional(),
   "locationId": zod.string().optional(),
   "buildingId": zod.number(),
   "buildingName": zod.string().optional(),

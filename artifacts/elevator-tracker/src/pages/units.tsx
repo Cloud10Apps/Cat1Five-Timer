@@ -568,7 +568,7 @@ export default function Units() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Units</h1>
-          <p className="mt-1 text-sm text-zinc-500">Elevator unit inventory. Use <span className="font-medium text-zinc-600">Current Inspections</span> to track compliance status.</p>
+          <p className="mt-1 text-sm text-zinc-500">Elevator unit inventory. Use <span className="font-medium text-zinc-600">Active Inspections</span> to track compliance status.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleExport}>
@@ -740,80 +740,80 @@ export default function Units() {
                                     {!isBankCollapsed && bank.elevators.map((elevator, rowIdx) => (
                                       <div
                                         key={elevator.id}
-                                        className={`group relative flex items-center gap-6 px-4 py-4 pl-20 border-b border-zinc-200 transition-colors hover:bg-amber-50/40 ${rowIdx % 2 === 1 ? "bg-zinc-50/20" : ""}`}
-                                        style={{ minHeight: "72px" }}
+                                        className={`group relative flex items-center gap-8 px-4 py-5 pl-20 border-b border-zinc-100 transition-colors hover:bg-amber-50/40 ${rowIdx % 2 === 1 ? "bg-zinc-50/20" : ""}`}
+                                        style={{ minHeight: "80px" }}
                                       >
-                                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
+                                        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-amber-500 transition-colors" />
 
-                                        {/* LEFT ZONE — Unit Identity (40%) */}
-                                        <div className="w-[40%] min-w-0 shrink-0">
-                                          <div className="font-bold text-base text-zinc-900 leading-snug truncate">{elevator.name}</div>
+                                        {/* LEFT ZONE — Unit Identity (45%) */}
+                                        <div className="w-[45%] min-w-0 shrink-0">
+                                          <div className="font-bold text-lg text-zinc-900 leading-snug truncate">{elevator.name}</div>
                                           {elevator.manufacturer && (
                                             <div className="text-sm text-zinc-400 italic truncate mt-0.5">{elevator.manufacturer}</div>
                                           )}
                                           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                             {elevator.type && (
-                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold capitalize">
+                                              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold capitalize">
                                                 {elevator.type}
                                               </span>
                                             )}
                                             {elevator.elevatorType && (
-                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold capitalize">
+                                              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-sm font-semibold capitalize">
                                                 {elevator.elevatorType}
                                               </span>
                                             )}
                                             {elevator.bank && (
-                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200 text-xs font-medium">
+                                              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200 text-sm font-medium">
                                                 {elevator.bank}
                                               </span>
                                             )}
                                           </div>
-                                          <div className="flex items-center gap-3 mt-1.5">
+                                          <div className="flex items-center gap-4 mt-1.5">
                                             {elevator.internalId && (
-                                              <span className="text-xs text-zinc-400">Unit: <span className="font-mono font-medium text-zinc-600">{elevator.internalId}</span></span>
+                                              <span className="text-xs text-zinc-500">Unit ID: <span className="font-mono text-sm font-semibold text-zinc-700">{elevator.internalId}</span></span>
                                             )}
                                             {elevator.stateId && (
-                                              <span className="text-xs text-zinc-400">State: <span className="font-mono font-medium text-zinc-600">{elevator.stateId}</span></span>
+                                              <span className="text-xs text-zinc-500">State ID: <span className="font-mono text-sm font-semibold text-zinc-700">{elevator.stateId}</span></span>
                                             )}
                                           </div>
                                         </div>
 
-                                        {/* RIGHT ZONE — Technical Specs (60%) */}
-                                        <div className="flex-1 min-w-0 grid grid-cols-5 gap-4">
+                                        {/* RIGHT ZONE — Technical Specs */}
+                                        <div className="flex-1 min-w-0 grid grid-cols-5 gap-8">
                                           {/* OEM Serial */}
                                           <div className="min-w-0">
-                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">OEM Serial</div>
+                                            <div className="text-xs uppercase text-zinc-400 mb-0.5">OEM Serial</div>
                                             {elevator.oemSerialNumber
-                                              ? <div className="text-sm font-semibold text-zinc-700 font-mono truncate">{elevator.oemSerialNumber}</div>
-                                              : <div className="text-sm text-zinc-300">—</div>}
+                                              ? <div className="text-base font-bold text-zinc-800 font-mono truncate">{elevator.oemSerialNumber}</div>
+                                              : <div className="text-sm text-zinc-400">—</div>}
                                           </div>
                                           {/* Year */}
                                           <div className="min-w-0">
-                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Year</div>
+                                            <div className="text-xs uppercase text-zinc-400 mb-0.5">Year</div>
                                             {elevator.yearInstalled
-                                              ? <div className="text-sm font-semibold text-zinc-700">{elevator.yearInstalled}</div>
-                                              : <div className="text-sm text-zinc-300">—</div>}
+                                              ? <div className="text-base font-bold text-zinc-800">{elevator.yearInstalled}</div>
+                                              : <div className="text-sm text-zinc-400">—</div>}
                                           </div>
                                           {/* Capacity */}
                                           <div className="min-w-0">
-                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Capacity</div>
+                                            <div className="text-xs uppercase text-zinc-400 mb-0.5">Capacity</div>
                                             {elevator.capacity
-                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{elevator.capacity}</div>
-                                              : <div className="text-sm text-zinc-300">—</div>}
+                                              ? <div className="text-base font-bold text-zinc-800 truncate">{elevator.capacity}</div>
+                                              : <div className="text-sm text-zinc-400">—</div>}
                                           </div>
                                           {/* Speed */}
                                           <div className="min-w-0">
-                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Speed</div>
+                                            <div className="text-xs uppercase text-zinc-400 mb-0.5">Speed</div>
                                             {elevator.speed
-                                              ? <div className="text-sm font-semibold text-zinc-700 truncate">{elevator.speed}</div>
-                                              : <div className="text-sm text-zinc-300">—</div>}
+                                              ? <div className="text-base font-bold text-zinc-800 truncate">{elevator.speed}</div>
+                                              : <div className="text-sm text-zinc-400">—</div>}
                                           </div>
                                           {/* Landings/Opens */}
                                           <div className="min-w-0">
-                                            <div className="text-[10px] uppercase tracking-widest text-zinc-400 mb-0.5">Lands/Opens</div>
+                                            <div className="text-xs uppercase text-zinc-400 mb-0.5">Lands/Opens</div>
                                             {(elevator.numLandings || elevator.numOpenings)
-                                              ? <div className="text-sm font-semibold text-zinc-700">{elevator.numLandings ?? "—"} / {elevator.numOpenings ?? "—"}</div>
-                                              : <div className="text-sm text-zinc-300">—</div>}
+                                              ? <div className="text-base font-bold text-zinc-800">{elevator.numLandings ?? "—"} / {elevator.numOpenings ?? "—"}</div>
+                                              : <div className="text-sm text-zinc-400">—</div>}
                                           </div>
                                         </div>
 
