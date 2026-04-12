@@ -580,8 +580,8 @@ export default function Elevators() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Current Inspections</h1>
-          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Open compliance status for all active inspections by unit.<br />Once completed, records move automatically to <span className="font-medium text-zinc-600">Inspection History</span>.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Current Inspections</h1>
+          <p className="text-sm text-zinc-500 mt-1">Open compliance status for every elevator unit. Completed inspections move to Inspection History.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -888,7 +888,7 @@ export default function Elevators() {
         if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
         return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 sticky top-0 z-10 bg-zinc-100 pb-2 pt-1 -mx-4 px-4">
 
         {/* ── Quick filter row (Tier 1 — single row, no-wrap) ── */}
         <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
@@ -1013,30 +1013,26 @@ export default function Elevators() {
         {/* Expand/collapse depth selector */}
         {!isLoading && grouped.length > 0 && (
           <div className="flex items-center gap-2 shrink-0">
-            <nav className="flex items-center gap-0.5">
+            <nav className="flex items-center gap-1 bg-zinc-100 rounded-lg p-1">
               {([
                 { key: "customers", label: "Customers", action: collapseAll },
                 { key: "buildings", label: "Buildings", action: expandCustomers },
                 { key: "banks",     label: "Banks",     action: expandBuildings },
                 { key: "units",     label: "Units",     action: expandAll },
-              ] as const).map(({ key, label, action }, i) => {
+              ] as const).map(({ key, label, action }) => {
                 const isActive = activeDepth === key;
                 return (
-                  <span key={key} className="flex items-center gap-0.5">
-                    {i > 0 && (
-                      <span className="text-zinc-300 text-sm select-none px-0.5">/</span>
-                    )}
-                    <button
-                      onClick={action}
-                      className={`px-1.5 py-0.5 rounded text-sm transition-colors ${
-                        isActive
-                          ? "text-blue-600 font-semibold"
-                          : "text-zinc-400 hover:text-zinc-700 font-medium"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  </span>
+                  <button
+                    key={key}
+                    onClick={action}
+                    className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                      isActive
+                        ? "bg-white text-zinc-900 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-800"
+                    }`}
+                  >
+                    {label}
+                  </button>
                 );
               })}
             </nav>
@@ -1079,12 +1075,12 @@ export default function Elevators() {
                   className="w-full grid min-w-[1440px] bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left grid-cols-[minmax(280px,1fr)_90px_90px_95px_110px_150px_145px_155px_160px_145px_85px]"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
-                  <div className="flex items-center gap-2 min-w-0 px-4 py-3">
+                  <div className="flex items-center gap-2 min-w-0 px-4 py-4">
                     {isCustomerCollapsed
                       ? <ChevronRight className="h-5 w-5 shrink-0 text-zinc-400" />
                       : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
                     <Users className="h-5 w-5 shrink-0 text-zinc-400" />
-                    <span className="font-bold text-base tracking-tight truncate">{customer.customerName}</span>
+                    <span className="font-bold text-lg tracking-tight truncate">{customer.customerName}</span>
                     <span className="text-sm font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
                       {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
                     </span>
@@ -1129,14 +1125,14 @@ export default function Elevators() {
                         <div key={building.buildingId}>
                           {/* Building header */}
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-3 pl-8 bg-zinc-100 border-l-[3px] border-zinc-600 hover:bg-zinc-200/60 transition-colors text-left border-b border-zinc-200"
+                            className="w-full flex items-center gap-2 px-4 py-3.5 pl-8 bg-zinc-100 border-l-[3px] border-zinc-600 hover:bg-zinc-200/60 transition-colors text-left border-b border-zinc-200"
                             onClick={() => toggleBuilding(building.buildingId)}
                           >
                             {isBuildingCollapsed
-                              ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-                              : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-500" />}
+                              ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500" />
+                              : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500" />}
                             <BuildingIcon className="h-4 w-4 shrink-0 text-zinc-600" />
-                            <span className="font-semibold text-sm text-zinc-800">{building.buildingName}</span>
+                            <span className="font-semibold text-base text-zinc-800">{building.buildingName}</span>
                           </button>
 
                           {!isBuildingCollapsed && (
@@ -1185,65 +1181,65 @@ export default function Elevators() {
                                             isOverdue ? "bg-red-500" : "bg-amber-500 group-hover:bg-amber-400"
                                           }`} />
                                           {/* Name */}
-                                          <div className={`flex items-center px-4 py-2.5 min-w-0 ${nameIndent}`}>
+                                          <div className={`flex items-center px-4 py-3.5 min-w-0 ${nameIndent}`}>
                                             <div>
-                                              <div className="font-semibold text-sm leading-snug break-words text-zinc-900" title={elevator.name}>{elevator.name}</div>
+                                              <div className="font-semibold text-base leading-snug break-words text-zinc-900" title={elevator.name}>{elevator.name}</div>
                                               {(elevator as any).manufacturer && (
-                                                <div className="text-xs text-zinc-400 truncate mt-0.5">{(elevator as any).manufacturer}</div>
+                                                <div className="text-sm text-zinc-500 truncate mt-0.5">{(elevator as any).manufacturer}</div>
                                               )}
                                             </div>
                                           </div>
                                           {/* Unit ID — reference field, de-emphasized */}
-                                          <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                            <span className="text-xs tabular-nums text-zinc-400 truncate">{(elevator as any).internalId ?? <span className="text-zinc-300">—</span>}</span>
+                                          <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">
+                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).internalId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
                                           </div>
                                           {/* State ID — reference field, de-emphasized */}
-                                          <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                            <span className="text-xs tabular-nums text-zinc-400 truncate">{(elevator as any).stateId ?? <span className="text-zinc-300">—</span>}</span>
+                                          <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">
+                                            <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).stateId ?? <span className="text-zinc-300 italic text-xs">—</span>}</span>
                                           </div>
                                           {/* Unit Type */}
-                                          <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                            <span className="text-xs font-medium text-zinc-600 capitalize truncate">{elevator.type}</span>
+                                          <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-200">
+                                            <span className="text-sm font-medium text-zinc-600 capitalize truncate">{elevator.type}</span>
                                           </div>
                                           {/* Insp Type */}
-                                          <div className="flex items-center justify-center overflow-hidden px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center overflow-hidden px-4 py-3.5 border-l border-zinc-200">
                                             {latestInsp ? (
                                               <InspectionTypeBadge type={latestInsp.inspectionType} />
-                                            ) : <span className="text-zinc-400 text-xs">—</span>}
+                                            ) : <span className="text-zinc-300 italic text-xs">—</span>}
                                           </div>
                                           {/* Last Completed */}
-                                          <div className="flex items-center justify-center overflow-hidden px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center overflow-hidden px-4 py-3.5 border-l border-zinc-200">
                                             {completionDate ? (
-                                              <span className="text-xs tabular-nums truncate text-zinc-500">
+                                              <span className="text-sm tabular-nums truncate text-zinc-500">
                                                 {new Date(completionDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-xs text-zinc-300">—</span>}
+                                            ) : <span className="text-zinc-300 italic text-xs">—</span>}
                                           </div>
                                           {/* Next Due */}
-                                          <div className="flex items-center justify-center overflow-hidden px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center overflow-hidden px-4 py-3.5 border-l border-zinc-200">
                                             {due ? (
-                                              <span className={`text-xs tabular-nums truncate font-semibold ${isOverdue ? "text-red-600" : "text-zinc-800"}`}>
+                                              <span className={`text-sm tabular-nums truncate font-semibold ${isOverdue ? "text-red-600" : "text-zinc-800"}`}>
                                                 {new Date(due + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-xs text-zinc-300">—</span>}
+                                            ) : <span className="text-zinc-300 italic text-xs">—</span>}
                                           </div>
                                           {/* Due Status — primary attention signal */}
-                                          <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-300">
+                                          <div className="flex items-center justify-center overflow-hidden px-3 py-3.5 border-l border-zinc-300">
                                             <AgingBucketPill due={due} status={latestInsp?.status} />
                                           </div>
                                           {/* Status */}
-                                          <div className="flex items-center justify-center overflow-hidden px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center overflow-hidden px-4 py-3.5 border-l border-zinc-200">
                                             {latestInsp
                                               ? <StatusBadge status={(latestInsp as any).trueStatus ?? latestInsp.status ?? "NOT_STARTED"} />
-                                              : <span className="text-zinc-400 text-xs">—</span>}
+                                              : <span className="text-zinc-300 italic text-xs">—</span>}
                                           </div>
                                           {/* Scheduled Date */}
-                                          <div className="flex items-center justify-center overflow-hidden px-4 py-2.5 border-l border-zinc-200">
+                                          <div className="flex items-center justify-center overflow-hidden px-4 py-3.5 border-l border-zinc-200">
                                             {scheduledDate ? (
-                                              <span className="text-xs tabular-nums truncate text-zinc-600">
+                                              <span className="text-sm tabular-nums truncate text-zinc-500">
                                                 {new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                                               </span>
-                                            ) : <span className="text-xs text-zinc-300">—</span>}
+                                            ) : <span className="text-zinc-300 italic text-xs">—</span>}
                                           </div>
                                           {/* Actions */}
                                           <div className="flex items-center justify-center border-l border-zinc-200 gap-0.5">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import {
@@ -345,7 +346,7 @@ export default function Dashboard() {
         </div>
 
         {/* ══ COMPLIANCE SCORE BANNER ══ */}
-        {!l1 && (() => {
+        {!l1 && !l2 && (() => {
           const completed    = summary?.completedCount    ?? 0;
           const notStarted   = summary?.notStartedCount   ?? 0;
           const scheduled    = summary?.scheduledCount    ?? 0;
@@ -360,39 +361,48 @@ export default function Dashboard() {
           const score = Math.round((completed / totalActive) * 100);
           const barColor = score >= 80 ? "#16a34a" : score >= 50 ? "#d97706" : "#dc2626";
           const scoreColor = score >= 80 ? "text-green-700" : score >= 50 ? "text-amber-600" : "text-red-700";
+          const accentBorder = score >= 80 ? "border-l-green-500" : score >= 50 ? "border-l-amber-500" : "border-l-red-500";
+          const statusMsg = score >= 80
+            ? "Great work — your portfolio is in good shape"
+            : score >= 50
+            ? "Some attention needed — review overdue items below"
+            : "Action required — you have overdue inspections";
           return (
             <section>
-              <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                  {/* Big score */}
-                  <div className="flex flex-col items-center shrink-0 w-28">
-                    <span className={`text-6xl font-black tabular-nums leading-none ${scoreColor}`}>{score}%</span>
-                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">Compliant</span>
+              <div className={`bg-white border border-zinc-200 border-l-4 ${accentBorder} rounded-xl shadow-sm overflow-hidden`}>
+                <div className="px-8 py-6 flex flex-col sm:flex-row items-center gap-8">
+                  {/* Big score number */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <span className={`text-[5rem] leading-none font-black tabular-nums ${scoreColor}`}>{score}%</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.15em] text-zinc-400 mt-1.5">Compliance Score</span>
                   </div>
-                  {/* Progress + pills */}
+                  {/* Divider */}
+                  <div className="hidden sm:block w-px h-24 bg-zinc-200 shrink-0" />
+                  {/* Right: label + bar + message + pills */}
                   <div className="flex flex-col gap-3 flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-black text-zinc-700 uppercase tracking-wide whitespace-nowrap">Portfolio Compliance Score</span>
+                    <div>
+                      <p className="text-lg font-black text-zinc-900 tracking-tight">Your Portfolio Compliance Score</p>
+                      <p className={`text-sm mt-0.5 font-medium ${scoreColor}`}>{statusMsg}</p>
                     </div>
                     {/* Progress bar */}
                     <div className="w-full h-3 bg-zinc-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width:`${score}%`, backgroundColor: barColor }} />
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width:`${score}%`, backgroundColor: barColor }} />
                     </div>
                     {/* Stat pills */}
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-green-50 text-green-700 border border-green-200">
+                        <CheckCircle2 className="w-4 h-4" />
                         {completed} Compliant
                       </span>
                       {overdue > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
-                          <AlertTriangle className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200">
+                          <AlertTriangle className="w-4 h-4" />
                           {overdue} Overdue
                         </span>
                       )}
                       {dueThisMonth > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          <Clock className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <Clock className="w-4 h-4" />
                           {dueThisMonth} Due This Month
                         </span>
                       )}
@@ -404,85 +414,189 @@ export default function Dashboard() {
           );
         })()}
 
-        {/* ══ SECTION 1 — VOLUME ══ */}
-        <section>
-          <SectionLabel>Volume</SectionLabel>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {l1 ? [1,2,3,4].map(i => <StatSkeleton key={i} />) : ([
-              { label:"Not Scheduled", value:summary?.notStartedCount??0, numCls:"text-zinc-800",  topCls:"border-t-zinc-400", iconCls:"text-zinc-400",
-                icon: <Clock className="w-4 h-4" /> },
-              { label:"Scheduled",     value:summary?.scheduledCount??0,  numCls:"text-blue-700",  topCls:"border-t-blue-500", iconCls:"text-blue-400",
-                icon: <CalendarDays className="w-4 h-4" /> },
-              { label:"In Progress",   value:summary?.inProgressCount??0, numCls:"text-amber-600", topCls:"border-t-amber-500", iconCls:"text-amber-400",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08 1.01.75.75 0 1 1-1.3-.75 6 6 0 0 1 9.44-1.345l.842.841V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.345l-.842-.841v1.273a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.84.841a4.5 4.5 0 0 0 7.08-1.01.75.75 0 0 1 1.025-.295Z" clipRule="evenodd" /></svg> },
-              { label:"Completed",     value:summary?.completedCount??0,  numCls:"text-green-700", topCls:"border-t-green-500", iconCls:"text-green-500",
-                icon: <CheckCircle2 className="w-4 h-4" /> },
-            ] as { label:string; value:number; numCls:string; topCls:string; iconCls:string; icon:React.ReactNode }[]).map(({ label, value, numCls, topCls, iconCls, icon }) => (
-              <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
-                <CardHeader title={label} action={<span className={`w-6 h-6 opacity-50 ${iconCls} [&>svg]:w-full [&>svg]:h-full`}>{icon}</span>} />
-                <div className="flex-1 flex items-center justify-center py-6">
-                  <div className={`text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ══ SECTION 2 — PERFORMANCE METRICS ══ */}
-        <section>
-          <SectionLabel>Performance Metrics</SectionLabel>
-          <div className="grid grid-cols-2 gap-4">
-            {l1 ? [1,2].map(i => <StatSkeleton key={i} />) : [
-              {
-                label:"Avg Days To Schedule",
-                sub:  "Average time from due date to scheduling",
-                val:  summary?.avgDaysToSchedule??null,
-                tip:  "Average days between an inspection's due date and when it was scheduled. Positive = scheduled after due date.",
-                icon: <CalendarDays className="w-5 h-5 text-zinc-400" />,
-              },
-              {
-                label:"Avg Days To Complete",
-                sub:  "Average time from due date to completion",
-                val:  summary?.avgDaysToComplete??null,
-                tip:  "Average days between an inspection's due date and when it was marked completed. Positive = completed after due date.",
-                icon: <Clock className="w-5 h-5 text-zinc-400" />,
-              },
-            ].map(({ label, sub, val, tip, icon }) => (
-              <div key={label} className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                <CardHeader title={label} />
-                <div className="flex flex-col items-center justify-center py-5 text-center">
-                  <TooltipProvider>
-                    <UITooltip>
-                      <TooltipTrigger asChild>
-                        <div className="text-[4.5rem] leading-none font-black tabular-nums tracking-tight text-zinc-900 cursor-help">
-                          {val===null?"—":val.toFixed(1)}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                        <p>{tip}</p>
-                      </TooltipContent>
-                    </UITooltip>
-                  </TooltipProvider>
-                  <div className="flex items-center gap-1.5 mt-2.5 text-zinc-400">
-                    <span className="text-zinc-400">{icon}</span>
-                    <span className="text-sm font-semibold">{sub}</span>
+        {/* ══ KPI CARDS ══ */}
+        {(() => {
+          const overdueCnt = overdueItems.length;
+          const in90Days = dayjs().add(90, "day").format("YYYY-MM-DD");
+          const dueThisMonthCnt = ((attention ?? []) as any[]).filter(
+            (i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate.slice(0, 7) === dayjs().format("YYYY-MM")
+          ).length;
+          const dueNext90Cnt = ((attention ?? []) as any[]).filter(
+            (i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in90Days
+          ).length;
+          const completedCnt = summary?.completedCount ?? 0;
+          const kpiCards = [
+            { label: "Overdue Now",        value: overdueCnt,    numCls: "text-red-700",   topCls: "border-t-red-500",   icon: <AlertTriangle className="w-5 h-5" />,  iconCls: "text-red-400"   },
+            { label: "Due This Month",     value: dueThisMonthCnt, numCls: "text-amber-600", topCls: "border-t-amber-500", icon: <CalendarDays className="w-5 h-5" />,  iconCls: "text-amber-400" },
+            { label: "Due Next 90 Days",   value: dueNext90Cnt,  numCls: "text-blue-700",  topCls: "border-t-blue-500",  icon: <Clock className="w-5 h-5" />,          iconCls: "text-blue-400"  },
+            { label: "Completed This Year",value: completedCnt,  numCls: "text-green-700", topCls: "border-t-green-500", icon: <CheckCircle2 className="w-5 h-5" />,   iconCls: "text-green-500" },
+          ];
+          return (
+            <section>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {(l1 || l2) ? [1,2,3,4].map(i => <StatSkeleton key={i} />) : kpiCards.map(({ label, value, numCls, topCls, icon, iconCls }) => (
+                  <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
+                    <div className="px-6 pt-5 pb-1 flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-[0.1em] text-zinc-500 leading-tight">{label}</span>
+                      <span className={`${iconCls} opacity-60`}>{icon}</span>
+                    </div>
+                    <div className="flex-1 flex items-end px-6 pb-5 pt-1">
+                      <div className={`text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            </section>
+          );
+        })()}
+
+        {/* ══ ACTION TABLES — needs attention ══ */}
+        <section>
+          <SectionLabel>Needs Attention</SectionLabel>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+            {/* Overdue Inspections */}
+            {l2 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+              <div className="px-5 py-3.5 border-b border-red-200 bg-red-50 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <h3 className="text-xs font-black text-red-700 uppercase tracking-[0.09em] flex-1">Overdue Inspections</h3>
+                <CountBadge n={overdueItems.length} variant="danger" />
+                <ExportBtn onClick={()=>dlXlsx("overdue",`overdue_${new Date().toISOString().slice(0,10)}.xlsx`)} />
+              </div>
+              <div className="overflow-x-auto flex-1">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 pl-6">Unit / Building</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Type</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Status</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center pr-6">Was Due</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overdueItems.length===0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            </div>
+                            <span className="font-semibold text-zinc-700">No overdue inspections</span>
+                            <span className="text-xs text-zinc-400">Great work — you're all caught up!</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : overdueItems.map((insp:any) => (
+                      <TableRow key={insp.id} className="border-l-4 border-l-red-400 hover:bg-red-50/40 border-b border-red-100/60 transition-colors">
+                        <TableCell className="py-4 pl-6">
+                          <div className="font-bold text-[15px] text-zinc-900 leading-snug">{insp.elevatorName}</div>
+                          <div className="text-[13px] text-zinc-500 mt-0.5">{insp.buildingName}</div>
+                        </TableCell>
+                        <TableCell className="py-4 text-center"><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
+                        <TableCell className="py-4 text-center"><StatusBadge status={insp.rawStatus} /></TableCell>
+                        <TableCell className="py-4 text-center pr-6">
+                          <span className="text-[14px] font-semibold text-red-700">
+                            {insp.nextDueDate?dayjs(insp.nextDueDate).format("MMM D, YYYY"):"N/A"}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {overdueItems.length > 0 && (
+                <div className="px-6 py-3 border-t border-zinc-100 flex justify-end">
+                  <Link href="/elevators" className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
+                    View all in Current Inspections →
+                  </Link>
+                </div>
+              )}
+            </div>}
+
+            {/* Upcoming — Next 14 Days */}
+            {l2 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+              <div className="px-5 py-3.5 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
+                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1">Upcoming — Next 14 Days</h3>
+                <CountBadge n={upcoming.length} />
+                <ExportBtn onClick={()=>dlXlsx("upcoming",`upcoming_${new Date().toISOString().slice(0,10)}.xlsx`)} />
+              </div>
+              <div className="overflow-x-auto flex-1">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 pl-6">Unit / Building</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Type</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Status</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Due Date</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center pr-6">Timeline</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {upcoming.length===0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center">
+                              <CalendarDays className="w-5 h-5 text-zinc-400" />
+                            </div>
+                            <span className="font-semibold text-zinc-500 text-sm">No inspections due in 14 days</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : upcoming.map((insp:any) => {
+                      const daysUntil = insp.nextDueDate ? dayjs(insp.nextDueDate).diff(dayjs(),"day") : null;
+                      const isToday   = insp.nextDueDate===todayStr;
+                      const isUrgent  = !isToday && insp.nextDueDate<=in3Days;
+                      const borderCls = isToday  ? "border-l-4 border-l-red-400"
+                                      : isUrgent ? "border-l-4 border-l-amber-400"
+                                      :            "border-l-4 border-l-blue-300";
+                      return (
+                        <TableRow key={insp.id} className={`${borderCls} hover:bg-zinc-50 border-b border-zinc-100 transition-colors`}>
+                          <TableCell className="py-4 pl-6">
+                            <div className={`font-bold text-[15px] leading-snug ${isToday?"text-red-800":"text-zinc-900"}`}>{insp.elevatorName}</div>
+                            <div className="text-[13px] text-zinc-500 mt-0.5">{insp.buildingName}</div>
+                          </TableCell>
+                          <TableCell className="py-4 text-center"><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
+                          <TableCell className="py-4 text-center"><StatusBadge status={insp.status} /></TableCell>
+                          <TableCell className="py-4 text-center">
+                            <span className={`text-[14px] font-semibold ${isToday?"text-red-700":isUrgent?"text-amber-700":"text-zinc-800"}`}>
+                              {insp.nextDueDate?dayjs(insp.nextDueDate).format("MMM D, YYYY"):"N/A"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="py-4 text-center pr-6">
+                            {daysUntil!==null&&<UpcomingBadge days={daysUntil} />}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              {upcoming.length > 0 && (
+                <div className="px-6 py-3 border-t border-zinc-100 flex justify-end">
+                  <Link href="/elevators" className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
+                    View all in Current Inspections →
+                  </Link>
+                </div>
+              )}
+            </div>}
+
           </div>
         </section>
 
-        {/* ══ SECTION 3 — ANALYTICS ══ */}
+        {/* ══ TRENDS & INSIGHTS ══ */}
         <section>
-          <SectionLabel>Analytics</SectionLabel>
+          <SectionLabel>Trends &amp; Insights</SectionLabel>
 
           {/* Row 1: Upcoming + Overdue aging charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
 
-            {/* Upcoming inspections by due status */}
-            {(l2 || l5) ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <UpcomingCardHeader title="Upcoming Inspections by Due Status" />
+            {(l2 || l5) ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+              <div className="px-5 py-3 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
+                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1 text-center">Upcoming Inspections by Due Status</h3>
+              </div>
               <div className="p-5 h-[300px] flex items-center">
                 {upcomingData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
@@ -493,7 +607,7 @@ export default function Dashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={upcomingData} layout="vertical" margin={{ top:6, right:52, left:8, bottom:6 }} barCategoryGap="20%">
                       <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:14, fontWeight:700 }} axisLine={false} tickLine={false} width={148} />
+                      <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={148} />
                       <Tooltip {...TT} />
                       <Bar dataKey="_total" name="Count" barSize={52} radius={[0,6,6,0]}>
                         {upcomingData.map((entry:any, i:number) => (
@@ -502,7 +616,7 @@ export default function Dashboard() {
                         <LabelList content={(props:any) => {
                           const { x,y,width,height,value } = props;
                           if (!value) return null;
-                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={16} fontWeight={800} textAnchor="start">{value}</text>;
+                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={14} fontWeight={800} textAnchor="start">{value}</text>;
                         }} />
                       </Bar>
                     </BarChart>
@@ -511,9 +625,11 @@ export default function Dashboard() {
               </div>
             </div>}
 
-            {/* Overdue inspections */}
-            {l5 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <OverdueCardHeader title="Overdue Inspections by Aging" />
+            {l5 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+              <div className="px-5 py-3 border-b border-red-200 bg-red-50 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <h3 className="text-xs font-black text-red-700 uppercase tracking-[0.09em] flex-1 text-center">Overdue Inspections by Aging</h3>
+              </div>
               <div className="p-5 h-[300px] flex items-center">
                 {overdueData.length === 0 ? (
                   <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
@@ -528,7 +644,7 @@ export default function Dashboard() {
                         tick={(props:any) => {
                           const { x, y, payload } = props;
                           const short = (payload.value as string).replace("Overdue ", "");
-                          return <text x={x} y={y} dy={5} textAnchor="end" fill="#18181b" fontSize={14} fontWeight={700}>{short}</text>;
+                          return <text x={x} y={y} dy={5} textAnchor="end" fill="#18181b" fontSize={13} fontWeight={700}>{short}</text>;
                         }}
                       />
                       <Tooltip {...TT} />
@@ -539,7 +655,7 @@ export default function Dashboard() {
                         <LabelList content={(props:any) => {
                           const { x,y,width,height,value } = props;
                           if (!value) return null;
-                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={16} fontWeight={800} textAnchor="start">{value}</text>;
+                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={14} fontWeight={800} textAnchor="start">{value}</text>;
                         }} />
                       </Bar>
                     </BarChart>
@@ -553,22 +669,21 @@ export default function Dashboard() {
           {/* Row 2: Status distribution + Monthly activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-            {/* Status distribution */}
             {l3 ? <ChartSkeleton /> : (
-            <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <CardHeader title={`${year} Inspection Status Breakdown`} />
-              <div className="p-4 h-[320px]">
+              <div className="p-4 h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:64, left:8, bottom:5 }} barCategoryGap="18%">
                     <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:12, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
+                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
                     <Tooltip {...TT} />
-                    <Bar dataKey="value" barSize={52} radius={[0,5,5,0]}>
+                    <Bar dataKey="value" barSize={48} radius={[0,5,5,0]}>
                       {statusChartData.map((e,i)=><Cell key={i} fill={e.color} />)}
                       <LabelList content={(props:any) => {
                         const { x,y,width,height,value } = props;
                         if (!value) return null;
-                        return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={12} fontWeight={900} textAnchor="start">{value}</text>;
+                        return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={13} fontWeight={900} textAnchor="start">{value}</text>;
                       }} />
                     </Bar>
                   </BarChart>
@@ -577,15 +692,14 @@ export default function Dashboard() {
             </div>
             )}
 
-            {/* Monthly activity */}
-            {l4 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            {l4 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
               <CardHeader title={`${year} Monthly Inspection Activity`} />
-              <div className="p-4 h-[320px]">
+              <div className="p-4 h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={forecastData} margin={{ top:26, right:8, left:-16, bottom:0 }} barCategoryGap="20%">
                     <CartesianGrid strokeDasharray="0" vertical={false} stroke="#e4e4e7" strokeWidth={1} />
-                    <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:15, fontWeight:700 }} axisLine={false} tickLine={false} height={32} />
-                    <YAxis tick={{ fill:"#71717a", fontSize:14, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} height={32} />
+                    <YAxis tick={{ fill:"#71717a", fontSize:13, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip {...TT} />
                     <Bar dataKey="scheduled"  name="Scheduled"  stackId="s" fill={STATUS_COLORS.SCHEDULED}  radius={[0,0,0,0]} />
                     <Bar dataKey="completed"  name="Completed"  stackId="s" fill={STATUS_COLORS.COMPLETED}  radius={[5,5,0,0]}>
@@ -593,119 +707,6 @@ export default function Dashboard() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </div>}
-
-          </div>
-        </section>
-
-        {/* ══ SECTION 4 — ACTION LISTS ══ */}
-        <section>
-          <SectionLabel>Action Lists</SectionLabel>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            {/* Overdue — light red tint, red accents only */}
-            {l2 ? <TableSkeleton /> : <div className="bg-red-50/50 border border-red-200 border-l-4 border-l-red-600 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <OverdueCardHeader
-                title="Overdue Inspections"
-                badge={<CountBadge n={overdueItems.length} variant="danger" />}
-                action={<ExportBtn onClick={()=>dlXlsx("overdue",`overdue_${new Date().toISOString().slice(0,10)}.xlsx`)} />}
-              />
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent border-b border-red-200 bg-red-50/70">
-                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 pl-4">Unit / Building</TableHead>
-                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Type</TableHead>
-                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center">Inspection Status</TableHead>
-                      <TableHead className="text-red-700 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">Was Due</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {overdueItems.length===0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10 text-sm text-zinc-500 font-medium">
-                          <div className="flex flex-col items-center gap-1.5">
-                            <CheckCircle2 className="w-6 h-6 text-green-500" />
-                            No overdue inspections — great work!
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : overdueItems.map((insp:any) => {
-                      return (
-                        <TableRow key={insp.id} className="hover:bg-red-100/40 border-b border-red-100/60 transition-colors duration-150">
-                          <TableCell className="py-3 pl-4">
-                            <div className="font-bold text-sm text-zinc-900 leading-snug">{insp.elevatorName}</div>
-                            <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
-                          </TableCell>
-                          <TableCell className="py-3 text-center"><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
-                          <TableCell className="py-3 text-center"><StatusBadge status={insp.rawStatus} /></TableCell>
-                          <TableCell className="py-3 text-center pr-4">
-                            <span className="text-sm font-semibold text-zinc-800">
-                              {insp.nextDueDate?dayjs(insp.nextDueDate).format("MMM D, YYYY"):"N/A"}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>}
-
-            {/* Upcoming — indigo presence */}
-            {l2 ? <TableSkeleton /> : <div className="bg-indigo-50/30 border border-indigo-200 border-l-4 border-l-indigo-500 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <UpcomingCardHeader
-                title="Upcoming — Next 14 Days"
-                badge={<CountBadge n={upcoming.length} />}
-                action={<ExportBtn onClick={()=>dlXlsx("upcoming",`upcoming_${new Date().toISOString().slice(0,10)}.xlsx`)} />}
-              />
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent border-b border-zinc-200 bg-zinc-50">
-                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 pl-4">Unit / Building</TableHead>
-                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Type</TableHead>
-                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Inspection Status</TableHead>
-                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center">Due Date</TableHead>
-                      <TableHead className="text-zinc-600 text-xs font-bold uppercase tracking-wider h-8 text-center pr-4">Due Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {upcoming.length===0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10 text-sm text-zinc-500 font-medium">
-                          No inspections due in the next 14 days.
-                        </TableCell>
-                      </TableRow>
-                    ) : upcoming.map((insp:any) => {
-                      const daysUntil = insp.nextDueDate ? dayjs(insp.nextDueDate).diff(dayjs(),"day") : null;
-                      const isToday   = insp.nextDueDate===todayStr;
-                      const isUrgent  = !isToday && insp.nextDueDate<=in3Days;
-                      const rowBg     = isToday  ? "bg-red-50/60 hover:bg-red-100/40"
-                                      : isUrgent ? "bg-amber-50/50 hover:bg-amber-100/30"
-                                      :            "hover:bg-zinc-50/80";
-                      return (
-                        <TableRow key={insp.id} className={`border-b border-zinc-100 transition-colors duration-150 ${rowBg}`}>
-                          <TableCell className="py-3 pl-4">
-                            <div className={`font-bold text-sm leading-snug ${isToday?"text-red-800":"text-zinc-900"}`}>{insp.elevatorName}</div>
-                            <div className="text-xs text-zinc-500 mt-0.5">{insp.buildingName}</div>
-                          </TableCell>
-                          <TableCell className="py-3 text-center"><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
-                          <TableCell className="py-3 text-center"><StatusBadge status={insp.status} /></TableCell>
-                          <TableCell className="py-3 text-center">
-                            <span className={`text-sm font-semibold ${isToday?"text-red-700":isUrgent?"text-amber-700":"text-zinc-800"}`}>
-                              {insp.nextDueDate?dayjs(insp.nextDueDate).format("MMM D, YYYY"):"N/A"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-3 text-center pr-4">
-                            {daysUntil!==null&&<UpcomingBadge days={daysUntil} />}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
               </div>
             </div>}
 

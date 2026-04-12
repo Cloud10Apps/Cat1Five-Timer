@@ -73,7 +73,7 @@ export default function Settings() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <SettingsIcon className="h-8 w-8 text-primary" />
           Settings
         </h1>
@@ -195,20 +195,15 @@ export default function Settings() {
           </CardTitle>
           <CardDescription>Configure how you receive alerts</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between border p-4 rounded-lg opacity-60">
-            <div>
-              <h4 className="font-medium">Overdue Inspection Alerts</h4>
-              <p className="text-sm text-muted-foreground">Receive emails when inspections pass their due date.</p>
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 shrink-0">
+              <span className="text-xl">🔔</span>
             </div>
-            <Button variant="outline" disabled>Coming Soon</Button>
-          </div>
-          <div className="flex items-center justify-between border p-4 rounded-lg opacity-60">
             <div>
-              <h4 className="font-medium">Weekly Digest</h4>
-              <p className="text-sm text-muted-foreground">Summary of upcoming inspections for the week.</p>
+              <p className="font-semibold text-amber-900">Email Notifications — Coming Soon</p>
+              <p className="text-sm text-amber-800 mt-1">You'll receive email alerts 30, 60, and 90 days before inspections are due. This feature is currently in development.</p>
             </div>
-            <Button variant="outline" disabled>Coming Soon</Button>
           </div>
         </CardContent>
       </Card>

@@ -122,22 +122,22 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
   if (elevatorCount > 0 && inspections !== undefined) {
     if (overdueCount > 0) {
       complianceBadge = (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-red-500 inline-block shrink-0" />
           {overdueCount} Overdue
         </span>
       );
     } else if (dueSoonCount > 0) {
       complianceBadge = (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-amber-400 inline-block shrink-0" />
           Due Soon
         </span>
       );
     } else {
       complianceBadge = (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-green-50 text-green-700 border border-green-200 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-green-500 inline-block shrink-0" />
           Compliant
         </span>
       );
@@ -146,53 +146,60 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
 
   return (
     <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 px-6 pt-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={`flex items-center justify-center w-12 h-12 rounded-2xl border-2 text-base font-black uppercase shrink-0 ${avatar.bg} ${avatar.text} ${avatar.border}`}>
+          <div className="flex items-start gap-4 min-w-0">
+            <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border-2 text-xl font-black uppercase shrink-0 ${avatar.bg} ${avatar.text} ${avatar.border}`}>
               {initials}
             </div>
-            <div className="min-w-0">
-              <CardTitle className="text-base leading-snug truncate">{building.name}</CardTitle>
+            <div className="min-w-0 pt-1">
+              <CardTitle className="text-xl font-bold leading-snug truncate">{building.name}</CardTitle>
+              {(building as any).locationId && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-500 text-xs font-medium mt-1">
+                  LOC: {(building as any).locationId}
+                </span>
+              )}
               {!hideCustomer && (
-                <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex items-center gap-1.5 mt-1.5">
                   <Users className="h-3 w-3 text-zinc-400 shrink-0" />
-                  <span className="text-xs text-muted-foreground truncate">{building.customerName}</span>
+                  <span className="text-sm text-muted-foreground truncate">{building.customerName}</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
-              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onDelete}>
-              <Trash2 className="h-3.5 w-3.5 text-destructive" />
-            </Button>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            {complianceBadge && <div>{complianceBadge}</div>}
+            <div className="flex items-center gap-0.5 -mr-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onDelete}>
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pb-4 pt-0 flex flex-col gap-3">
+      <CardContent className="pb-6 px-6 pt-0 flex flex-col gap-3">
         {address ? (
           <div className="flex items-start gap-2">
             <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0 mt-0.5" />
-            <span className="text-xs text-muted-foreground leading-snug">{address}</span>
+            <span className="text-sm text-muted-foreground leading-snug">{address}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
             <MapPin className="h-3.5 w-3.5 text-zinc-300 shrink-0" />
-            <span className="text-xs text-zinc-300 italic">No address on file</span>
+            <span className="text-sm text-zinc-300 italic">No address on file</span>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-1 border-t gap-2">
+        <div className="flex items-center pt-3 border-t">
           <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1 text-xs font-semibold shrink-0">
             <Building2 className="h-3 w-3" />
             {elevatorCount} {elevatorCount === 1 ? "Unit" : "Units"}
           </span>
-          {complianceBadge}
         </div>
       </CardContent>
     </Card>
@@ -421,8 +428,8 @@ export default function Buildings() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Buildings</h1>
-          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Manage your building locations and see unit counts at a glance.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Buildings</h1>
+          <p className="text-sm text-zinc-500 mt-1">Your building locations and their compliance status at a glance.</p>
         </div>
 
         <Dialog
@@ -437,6 +444,7 @@ export default function Buildings() {
         >
           <DialogTrigger asChild>
             <Button
+              className="bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
               onClick={() => {
                 setEditingBuilding(null);
                 form.reset({ name: "", locationId: "", customerId: 0, address: "", city: "", state: "", zip: "" });
@@ -507,7 +515,7 @@ export default function Buildings() {
                 <div className="flex-1 h-px bg-zinc-100" />
               </div>
               {/* Building cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {group.buildings?.map((building) => (
                   <BuildingCard
                     key={building.id}

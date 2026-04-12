@@ -113,10 +113,10 @@ function EventChip({ activity, onClick }: { activity: CalendarActivity; onClick:
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`w-full text-left rounded px-2 py-1 leading-tight ${ACTIVITY_CHIP[activityType].chip} hover:brightness-95 transition-all`}
+      className={`w-full text-left rounded px-2 py-1.5 leading-tight ${ACTIVITY_CHIP[activityType].chip} hover:brightness-95 transition-all`}
     >
       {header && (
-        <p className="text-[10px] opacity-60 truncate font-normal mb-0.5">{header}</p>
+        <p className="text-xs opacity-60 truncate font-normal mb-0.5">{header}</p>
       )}
       <div className="flex items-center gap-1 min-w-0">
         <span className="truncate flex-1 min-w-0 text-xs font-semibold">{insp.elevatorName ?? "Elevator"}</span>
@@ -138,18 +138,18 @@ function DayListRow({ activity, onClick }: { activity: CalendarActivity; onClick
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded-lg p-3 flex items-start gap-3 border group ${ACTIVITY_CHIP[activityType].chip} hover:brightness-95 transition-all`}
+      className={`w-full text-left rounded-lg p-4 flex items-start gap-3 border group ${ACTIVITY_CHIP[activityType].chip} hover:brightness-95 transition-all`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-sm truncate">{insp.elevatorName}</span>
+          <span className="font-semibold text-base truncate">{insp.elevatorName}</span>
           <InspectionTypeBadge type={insp.inspectionType} />
           <ActivityTypePill type={activityType} />
         </div>
-        <p className="text-xs opacity-75 mt-0.5">{insp.buildingName} · {insp.customerName}</p>
-        {dateLabel && <p className="text-xs opacity-60 mt-0.5">{dateLabel}</p>}
+        <p className="text-sm opacity-75 mt-1">{insp.buildingName} · {insp.customerName}</p>
+        {dateLabel && <p className="text-sm opacity-60 mt-0.5">{dateLabel}</p>}
       </div>
-      <Pencil className="h-3.5 w-3.5 opacity-40 group-hover:opacity-80 shrink-0 mt-0.5 transition-opacity" />
+      <Pencil className="h-4 w-4 opacity-40 group-hover:opacity-80 shrink-0 mt-0.5 transition-opacity" />
     </button>
   );
 }
@@ -405,19 +405,19 @@ export default function CalendarView() {
       {/* ── Header ── */}
       <div className="flex justify-between items-start shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Compliance Calendar</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Compliance Calendar</h1>
           <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Each unit appears on its Due Date, Scheduled Date, and Completion Date — so a single unit may appear multiple times across the calendar.</p>
         </div>
         <div className="flex items-center gap-2 mt-1">
           <Button variant="outline" size="sm" onClick={() => setCurrentDate(dayjs())}>Today</Button>
-          <Button variant="outline" size="icon" onClick={() => setCurrentDate(d => d.subtract(1, "month"))}>
-            <ChevronLeft className="h-4 w-4" />
+          <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setCurrentDate(d => d.subtract(1, "month"))}>
+            <ChevronLeft className="h-5 w-5" />
           </Button>
           <span className="font-semibold text-lg min-w-[160px] text-center">
             {currentDate.format("MMMM YYYY")}
           </span>
-          <Button variant="outline" size="icon" onClick={() => setCurrentDate(d => d.add(1, "month"))}>
-            <ChevronRight className="h-4 w-4" />
+          <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setCurrentDate(d => d.add(1, "month"))}>
+            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
       </div>
@@ -576,12 +576,13 @@ export default function CalendarView() {
                 <div
                   key={date.format("YYYY-MM-DD")}
                   onClick={() => { setEditingInsp(null); setSelectedDate(date); }}
-                  className={`border-r border-b last:border-r-0 p-1.5 cursor-pointer flex flex-col gap-1 min-h-0 overflow-hidden transition-colors
+                  className={`border-r border-b last:border-r-0 p-1.5 cursor-pointer flex flex-col gap-1 overflow-hidden transition-colors
                     ${isToday ? "bg-amber-50/60" : "bg-card hover:bg-muted/30"}`}
+                  style={{ minHeight: "100px" }}
                 >
                   <div className="shrink-0 flex items-center justify-between mb-0.5">
-                    <span className={`text-xs font-semibold h-5 w-5 flex items-center justify-center rounded-full leading-none
-                      ${isToday ? "bg-primary text-primary-foreground" : "text-foreground"}`}>
+                    <span className={`text-xs font-semibold h-6 w-6 flex items-center justify-center rounded-full leading-none
+                      ${isToday ? "bg-amber-500 text-white font-bold" : "text-foreground"}`}>
                       {date.date()}
                     </span>
                     {dayActivities.length > 0 && (

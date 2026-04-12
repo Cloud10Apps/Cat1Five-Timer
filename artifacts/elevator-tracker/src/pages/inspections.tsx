@@ -469,8 +469,8 @@ export default function Inspections() {
       {/* ── Page header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inspection History</h1>
-          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">A complete list of inspections across all customers, buildings, and units.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Inspection History</h1>
+          <p className="text-sm text-zinc-500 mt-1">Complete audit trail of all CAT1 and CAT5 inspections.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" onClick={handleExport} className="gap-2">
@@ -478,7 +478,7 @@ export default function Inspections() {
           </Button>
           <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) { form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" }); setEditingInspection(null); setFormCustomerId(""); setFormBuildingId(""); } }}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingInspection(null); form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" }); setFormCustomerId(""); setFormBuildingId(""); }} className="gap-2">
+              <Button onClick={() => { setEditingInspection(null); form.reset({ elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" }); setFormCustomerId(""); setFormBuildingId(""); }} className="gap-2 bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold">
                 <Plus className="h-4 w-4" /> Add Inspection
               </Button>
             </DialogTrigger>
@@ -880,9 +880,9 @@ export default function Inspections() {
 
               sections.push(
                 <div key={`elev-${group.elevatorId}`}
-                  className={`bg-white rounded-xl border ${cardBorder} shadow-sm overflow-hidden mt-3`}>
+                  className={`bg-white rounded-xl border ${cardBorder} shadow-sm overflow-hidden mt-3 border-l-4 ${hasNoNextDue ? "border-l-red-500" : hasOverdue ? "border-l-red-400" : "border-l-zinc-200"}`}>
                   {/* Card header */}
-                  <div className={`flex items-center justify-between px-4 py-3 ${hasNoNextDue ? "bg-red-50" : hasOverdue ? "bg-amber-50/60" : "bg-gradient-to-r from-slate-50 to-white"} border-b border-zinc-100`}>
+                  <div className={`flex items-center justify-between px-4 py-4 bg-white border-b border-zinc-100`}>
                     <div className="flex items-center gap-3">
                       {/* Icon */}
                       <div className={`flex items-center justify-center h-9 w-9 rounded-lg shrink-0 shadow-sm
@@ -931,20 +931,20 @@ export default function Inspections() {
                   {/* Inspection rows */}
                   <div className="divide-y divide-zinc-200">
                     {/* Column header row */}
-                    <div className="grid items-center gap-3 px-4 py-2.5 bg-zinc-50/90 border-b border-zinc-200"
+                    <div className="grid items-center gap-3 px-4 py-2.5 bg-zinc-50 border-b border-zinc-200"
                       style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.5fr 1.1fr 1fr 1fr 0.9fr 0.9fr 72px" }}>
                       <div />
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">#</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Type</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Last Insp.</span>
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Next Due</span>
-                      <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest text-center">Due Status</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Inspection Status</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Scheduled Date</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">Completed</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">Days to<br/>Schedule</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">Days to<br/>Complete</span>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-right">Actions</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">#</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Type</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Last Insp.</span>
+                      <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest text-center">Next Due</span>
+                      <span className="text-xs font-bold text-zinc-600 uppercase tracking-widest text-center">Due Status</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Insp. Status</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Scheduled</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Completed</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">Days to<br/>Schedule</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">Days to<br/>Complete</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-right">Actions</span>
                     </div>
 
                     {(() => {
@@ -965,7 +965,8 @@ export default function Inspections() {
                         const isOverdue  = insp.status !== "COMPLETED" && !!insp.nextDueDate && dayjs(insp.nextDueDate).isBefore(dayjs());
                         const noNextDue  = !insp.nextDueDate && insp.status !== "COMPLETED";
                         const isSelected = selectedIds.has(insp.id);
-                        const rowBg = noNextDue ? "bg-red-50" : isOverdue ? "bg-orange-50/40" : isSelected ? "bg-blue-50/50" : "bg-white hover:bg-zinc-50/70";
+                        const borderLeft = noNextDue ? "border-l-4 border-l-red-500 bg-red-50/30" : isOverdue ? "border-l-4 border-l-red-400 bg-red-50/20" : isSelected ? "border-l-4 border-l-blue-400 bg-blue-50/30" : insp.status === "COMPLETED" ? "border-l-4 border-l-green-400" : insp.status === "SCHEDULED" || insp.status === "IN_PROGRESS" ? "border-l-4 border-l-blue-400" : "border-l-4 border-l-zinc-200";
+                        const rowBg = noNextDue ? "bg-red-50/30" : isOverdue ? "bg-red-50/20" : isSelected ? "bg-blue-50/30" : "bg-white hover:bg-blue-50/20";
                         const inspNum = rowNumMap.get(insp.id);
 
 
@@ -998,7 +999,7 @@ export default function Inspections() {
 
                         return (
                           <div key={insp.id}
-                            className={`grid items-center gap-3 px-4 py-3 transition-colors ${rowBg}`}
+                            className={`grid items-center gap-3 px-4 py-3.5 transition-colors ${rowBg} ${borderLeft}`}
                             style={{ gridTemplateColumns: "28px 36px 110px 1fr 1fr 1.5fr 1.1fr 1fr 1fr 0.9fr 0.9fr 72px" }}>
 
                             {/* Checkbox */}
@@ -1006,22 +1007,22 @@ export default function Inspections() {
                               className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
 
                             {/* Row number */}
-                            <span className="text-xs tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
+                            <span className="text-sm tabular-nums text-zinc-400 font-medium text-center">{inspNum ?? "—"}</span>
 
                             {/* Insp type */}
                             <InspectionTypeBadge type={insp.inspectionType} />
 
                             {/* Last Inspection */}
                             <div className="flex justify-center">
-                              <span className="text-xs tabular-nums text-zinc-400">
-                                {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300">—</span>}
+                              <span className="text-sm tabular-nums text-zinc-500">
+                                {fmt(insp.lastInspectionDate) ?? <span className="text-zinc-300 italic text-xs">Not set</span>}
                               </span>
                             </div>
 
                             {/* Next Due — emphasis */}
                             <div className="flex justify-center">
-                              <span className={`text-xs tabular-nums font-semibold ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
-                                {fmt(insp.nextDueDate) ?? <span className={`font-normal ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
+                              <span className={`text-sm tabular-nums font-semibold ${isOverdue ? "text-red-600" : noNextDue ? "text-red-500" : "text-zinc-800"}`}>
+                                {fmt(insp.nextDueDate) ?? <span className={`font-normal italic text-xs ${noNextDue ? "text-red-400" : "text-zinc-300"}`}>{noNextDue ? "Not set" : "—"}</span>}
                               </span>
                             </div>
 
@@ -1035,23 +1036,23 @@ export default function Inspections() {
 
                             {/* Scheduled Date */}
                             <div className="flex justify-center">
-                              <span className="text-xs tabular-nums text-zinc-400">
-                                {fmt(insp.scheduledDate) ?? <span className="text-zinc-300">—</span>}
+                              <span className="text-sm tabular-nums text-zinc-500">
+                                {fmt(insp.scheduledDate) ?? <span className="text-zinc-300 italic text-xs">—</span>}
                               </span>
                             </div>
 
                             {/* Completed */}
                             <div className="flex justify-center">
-                              <span className="text-xs tabular-nums text-zinc-400">
-                                {fmt(insp.completionDate) ?? <span className="text-zinc-300">—</span>}
+                              <span className="text-sm tabular-nums text-zinc-500">
+                                {fmt(insp.completionDate) ?? <span className="text-zinc-300 italic text-xs">—</span>}
                               </span>
                             </div>
 
                             {/* Days to Schedule */}
                             <div className="flex justify-center">
                               {daysToSchedule === null
-                                ? <span className="text-zinc-300 text-xs">—</span>
-                                : <span className={`text-xs font-semibold ${daysToSchedule < 0 ? "text-green-600" : daysToSchedule === 0 ? "text-zinc-500" : "text-red-500"}`}>
+                                ? <span className="text-zinc-300 text-sm">—</span>
+                                : <span className={`text-sm font-bold ${daysToSchedule < 0 ? "text-green-600" : daysToSchedule === 0 ? "text-zinc-500" : "text-red-500"}`}>
                                     {daysToSchedule < 0
                                       ? `${Math.abs(daysToSchedule)}d early`
                                       : daysToSchedule === 0
@@ -1064,8 +1065,8 @@ export default function Inspections() {
                             {/* Days to Complete */}
                             <div className="flex justify-center">
                               {daysToComplete === null
-                                ? <span className="text-zinc-300 text-xs">—</span>
-                                : <span className={`text-xs font-semibold ${daysToComplete < 0 ? "text-green-600" : daysToComplete === 0 ? "text-zinc-500" : "text-red-500"}`}>
+                                ? <span className="text-zinc-300 text-sm">—</span>
+                                : <span className={`text-sm font-bold ${daysToComplete < 0 ? "text-green-600" : daysToComplete === 0 ? "text-zinc-500" : "text-red-500"}`}>
                                     {daysToComplete < 0
                                       ? `${Math.abs(daysToComplete)}d early`
                                       : daysToComplete === 0

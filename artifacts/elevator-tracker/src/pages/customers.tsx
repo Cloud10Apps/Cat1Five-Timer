@@ -170,14 +170,14 @@ function CustomerCard({
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className={`flex items-center justify-center w-14 h-14 rounded-2xl border-2 text-xl font-black uppercase shrink-0 ${avatar.bg} ${avatar.text} ${avatar.border}`}>
+            <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border-2 text-2xl font-black uppercase shrink-0 ${avatar.bg} ${avatar.text} ${avatar.border}`}>
               {initials}
             </div>
             <div className="min-w-0">
-              <CardTitle className="text-base leading-snug truncate">{customer.name}</CardTitle>
+              <CardTitle className="text-xl font-bold text-zinc-900 leading-tight truncate">{customer.name}</CardTitle>
               <div className="flex items-center gap-1.5 mt-1">
                 <CalendarDays className="h-3.5 w-3.5 text-zinc-400" />
-                <CardDescription className="text-xs">
+                <CardDescription className="text-sm text-zinc-500">
                   Since {dayjs(customer.createdAt).format("MMM D, YYYY")}
                 </CardDescription>
               </div>
@@ -345,8 +345,8 @@ export default function Customers() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
-          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">This menu lists the customers you have access to. For any changes, please contact your system administrator.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+          <p className="text-sm text-zinc-500 mt-1">Manage the companies and organizations in your portfolio.</p>
         </div>
 
         {isAdmin && (
@@ -362,6 +362,7 @@ export default function Customers() {
           >
             <DialogTrigger asChild>
               <Button
+                className="bg-amber-500 hover:bg-amber-600 text-zinc-900"
                 onClick={() => {
                   setEditingCustomer(null);
                   form.reset({ name: "" });
@@ -427,7 +428,7 @@ export default function Customers() {
           <p className="text-sm">No customers found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {customers?.map((customer) => (
             <CustomerCard
               key={customer.id}

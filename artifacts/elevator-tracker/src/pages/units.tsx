@@ -567,8 +567,8 @@ export default function Units() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Units</h1>
-          <p className="mt-1 text-sm text-zinc-500">Elevator inventory grouped by customer, building, and bank. Use <span className="font-medium text-zinc-600">Current Inspections</span> to track compliance status.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Units</h1>
+          <p className="mt-1 text-sm text-zinc-500">Elevator unit inventory. Use <span className="font-medium text-zinc-600">Current Inspections</span> to track compliance status.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleExport}>
@@ -586,7 +586,7 @@ export default function Units() {
             }
           }}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingElevator(null); setFormCustomerId("all"); form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" }); }}>
+              <Button className="bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold" onClick={() => { setEditingElevator(null); setFormCustomerId("all"); form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" }); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Unit
               </Button>
@@ -650,22 +650,20 @@ export default function Units() {
       {/* Expand/collapse breadcrumb */}
       {!isLoading && grouped.length > 0 && (
         <div className="flex items-center gap-2">
-          <nav className="flex items-center gap-0.5">
+          <nav className="flex items-center gap-1 bg-zinc-100 rounded-lg p-1">
             {([
               { key: "customers", label: "Customers", action: collapseAll },
               { key: "buildings", label: "Buildings", action: expandCustomers },
               { key: "banks",     label: "Banks",     action: expandBuildings },
               { key: "units",     label: "Units",     action: expandAll },
-            ] as const).map(({ key, label, action }, i) => (
-              <span key={key} className="flex items-center gap-0.5">
-                {i > 0 && <span className="text-zinc-300 text-sm select-none px-0.5">/</span>}
-                <button
-                  onClick={action}
-                  className={`px-1.5 py-0.5 rounded text-sm transition-colors ${activeDepth === key ? "text-blue-600 font-semibold" : "text-zinc-400 hover:text-zinc-700 font-medium"}`}
-                >
-                  {label}
-                </button>
-              </span>
+            ] as const).map(({ key, label, action }) => (
+              <button
+                key={key}
+                onClick={action}
+                className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${activeDepth === key ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-800"}`}
+              >
+                {label}
+              </button>
             ))}
           </nav>
         </div>
@@ -697,10 +695,10 @@ export default function Units() {
                   className={`w-full grid ${MIN_W} bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left ${GRID_COLS}`}
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
-                  <div className="flex items-center gap-2 min-w-0 px-4 py-3">
+                  <div className="flex items-center gap-2 min-w-0 px-4 py-4">
                     {isCustomerCollapsed ? <ChevronRight className="h-5 w-5 shrink-0 text-zinc-400" /> : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
                     <Users className="h-5 w-5 shrink-0 text-zinc-400" />
-                    <span className="font-bold text-base tracking-tight truncate">{customer.customerName}</span>
+                    <span className="font-bold text-lg tracking-tight truncate">{customer.customerName}</span>
                     <span className="text-sm font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-1 shrink-0">
                       {customer.buildings.reduce((sum, b) => sum + b.banks.reduce((s, bk) => s + bk.elevators.length, 0), 0)}
                     </span>
@@ -719,12 +717,12 @@ export default function Units() {
                       return (
                         <div key={building.buildingId}>
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-3 pl-8 bg-zinc-100 border-l-[3px] border-zinc-600 hover:bg-zinc-200/60 transition-colors text-left border-b border-zinc-200"
+                            className="w-full flex items-center gap-2 px-4 py-3.5 pl-8 bg-zinc-100 border-l-[3px] border-zinc-600 hover:bg-zinc-200/60 transition-colors text-left border-b border-zinc-200"
                             onClick={() => toggleBuilding(building.buildingId)}
                           >
-                            {isBuildingCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-500" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-500" />}
+                            {isBuildingCollapsed ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500" /> : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500" />}
                             <BuildingIcon className="h-4 w-4 shrink-0 text-zinc-600" />
-                            <span className="font-semibold text-sm text-zinc-800">{building.buildingName}</span>
+                            <span className="font-semibold text-base text-zinc-800">{building.buildingName}</span>
                           </button>
 
                           {!isBuildingCollapsed && (
@@ -736,72 +734,74 @@ export default function Units() {
                                 return (
                                   <div key={bank.bankName}>
                                     <button
-                                      className="w-full flex items-center gap-2 px-4 py-2 pl-12 bg-white border-l-[2px] border-zinc-200 hover:bg-zinc-50 transition-colors text-left border-b border-zinc-100"
+                                      className="w-full flex items-center gap-2 px-4 py-2.5 pl-12 bg-white hover:bg-zinc-50 transition-colors text-left border-b border-zinc-100"
                                       onClick={() => toggleBank(bankKey)}
                                     >
                                       {isBankCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-300" />}
-                                      <Layers className={`h-4 w-4 shrink-0 ${bank.bankName !== "" ? "text-zinc-300" : "text-zinc-200"}`} />
-                                      <span className={`text-sm font-semibold uppercase tracking-wide ${bank.bankName !== "" ? "text-zinc-500" : "text-zinc-400 italic"}`}>{bankLabel}</span>
+                                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${bank.bankName !== "" ? "bg-zinc-100 text-zinc-600 border-zinc-200" : "bg-zinc-50 text-zinc-400 border-zinc-100 italic"}`}>
+                                        <Layers className="h-3 w-3 shrink-0" />
+                                        {bankLabel}
+                                      </span>
                                     </button>
 
-                                    {!isBankCollapsed && bank.elevators.map((elevator) => (
+                                    {!isBankCollapsed && bank.elevators.map((elevator, rowIdx) => (
                                       <div
                                         key={elevator.id}
-                                        className={`grid ${MIN_W} ${GRID_COLS} group relative transition-colors border-b hover:bg-amber-50/60 border-zinc-200`}
+                                        className={`grid ${MIN_W} ${GRID_COLS} group relative transition-colors border-b hover:bg-amber-50/60 border-zinc-200 ${rowIdx % 2 === 1 ? "bg-zinc-50/30" : ""}`}
                                       >
                                         <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500 group-hover:bg-amber-400 transition-colors" />
                                         {/* Name + manufacturer */}
-                                        <div className="flex items-center px-4 py-2.5 min-w-0 pl-20">
+                                        <div className="flex items-center px-4 py-4 min-w-0 pl-20">
                                           <div>
-                                            <div className="font-semibold text-sm leading-snug break-words text-zinc-900">{elevator.name}</div>
+                                            <div className="font-semibold text-base leading-snug break-words text-zinc-900">{elevator.name}</div>
                                             {(elevator as any).manufacturer && (
-                                              <div className="text-xs text-zinc-400 truncate mt-0.5">{(elevator as any).manufacturer}</div>
+                                              <div className="text-sm text-zinc-500 truncate mt-0.5">{(elevator as any).manufacturer}</div>
                                             )}
                                           </div>
                                         </div>
                                         {/* Unit ID */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                          <span className="text-xs tabular-nums text-zinc-400 truncate">{(elevator as any).internalId || <span className="text-zinc-300">—</span>}</span>
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
+                                          <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).internalId || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
                                         </div>
                                         {/* State ID */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                          <span className="text-xs tabular-nums text-zinc-400 truncate">{(elevator as any).stateId || <span className="text-zinc-300">—</span>}</span>
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
+                                          <span className="text-sm tabular-nums text-zinc-500 truncate">{(elevator as any).stateId || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
                                         </div>
                                         {/* Type */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                          <span className="text-xs font-medium text-zinc-600 capitalize truncate">{elevator.type}</span>
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
+                                          <span className="text-sm font-medium text-zinc-600 capitalize truncate">{elevator.type}</span>
                                         </div>
                                         {/* OEM Serial */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                          <span className="text-xs text-zinc-500 truncate font-mono">{(elevator as any).oemSerialNumber || <span className="text-zinc-300">—</span>}</span>
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
+                                          <span className="text-sm text-zinc-500 truncate font-mono">{(elevator as any).oemSerialNumber || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
                                         </div>
                                         {/* Capacity */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                          <span className="text-xs text-zinc-500 truncate">{(elevator as any).capacity || <span className="text-zinc-300">—</span>}</span>
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
+                                          <span className="text-sm text-zinc-500 truncate">{(elevator as any).capacity || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
                                         </div>
                                         {/* Speed */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                          <span className="text-xs text-zinc-500 truncate">{(elevator as any).speed || <span className="text-zinc-300">—</span>}</span>
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
+                                          <span className="text-sm text-zinc-500 truncate">{(elevator as any).speed || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
                                         </div>
                                         {/* Year Installed */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
-                                          <span className="text-xs tabular-nums text-zinc-500">{(elevator as any).yearInstalled || <span className="text-zinc-300">—</span>}</span>
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
+                                          <span className="text-sm tabular-nums text-zinc-500">{(elevator as any).yearInstalled || <span className="text-zinc-300 italic text-xs">Not set</span>}</span>
                                         </div>
                                         {/* Landings / Openings */}
-                                        <div className="flex items-center justify-center overflow-hidden px-3 py-2.5 border-l border-zinc-200">
+                                        <div className="flex items-center justify-center overflow-hidden px-3 py-4 border-l border-zinc-200">
                                           {((elevator as any).numLandings || (elevator as any).numOpenings) ? (
-                                            <span className="text-xs tabular-nums text-zinc-500">
+                                            <span className="text-sm tabular-nums text-zinc-500">
                                               {(elevator as any).numLandings ?? "—"} / {(elevator as any).numOpenings ?? "—"}
                                             </span>
-                                          ) : <span className="text-xs text-zinc-300">—</span>}
+                                          ) : <span className="text-zinc-300 italic text-xs">Not set</span>}
                                         </div>
                                         {/* Actions */}
-                                        <div className="flex items-center justify-center border-l border-zinc-200 gap-0.5">
+                                        <div className="flex items-center justify-center border-l border-zinc-200 gap-1 px-2">
                                           <TooltipProvider>
                                             <Tooltip>
                                               <TooltipTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEdit(elevator); setIsAddOpen(true); }}>
-                                                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { openEdit(elevator); setIsAddOpen(true); }}>
+                                                  <Pencil className="h-3.5 w-3.5 text-zinc-500" />
                                                 </Button>
                                               </TooltipTrigger>
                                               <TooltipContent>Edit Unit</TooltipContent>
@@ -810,7 +810,7 @@ export default function Units() {
                                           <TooltipProvider>
                                             <Tooltip>
                                               <TooltipTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(elevator.id)} disabled={deleteMutation.isPending}>
+                                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setDeleteId(elevator.id)} disabled={deleteMutation.isPending}>
                                                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                                 </Button>
                                               </TooltipTrigger>
