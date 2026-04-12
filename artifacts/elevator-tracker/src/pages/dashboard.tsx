@@ -150,7 +150,6 @@ export default function Dashboard() {
   }
 
   const todayStr = dayjs().format("YYYY-MM-DD");
-  const in30Days = dayjs().add(30, "day").format("YYYY-MM-DD");
   const in90Days = dayjs().add(90, "day").format("YYYY-MM-DD");
   const in3Days  = dayjs().add(3,  "day").format("YYYY-MM-DD");
 
@@ -169,9 +168,9 @@ export default function Dashboard() {
   const upcomingSoon = ((upcomingRaw ?? []) as any[])
     .filter((i: any) => !i.completionDate && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in90Days);
 
-  // Subset for the "Coming Up" table: next 30 days only
+  // "Coming Up" table: full 90-day window, matching compliance score
   const upcoming = upcomingSoon
-    .filter((i: any) => i.nextDueDate <= in30Days)
+    .filter((i: any) => i.nextDueDate <= in90Days)
     .sort((a: any, b: any) => a.nextDueDate.localeCompare(b.nextDueDate));
 
   const customerList = (customers ?? []) as any[];
@@ -342,7 +341,7 @@ export default function Dashboard() {
             {l3 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
               <div className="px-5 py-3.5 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
-                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1">Coming Up — Next 30 Days</h3>
+                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1">Coming Up — Next 90 Days</h3>
                 <CountBadge n={upcoming.length} />
                 <ExportBtn onClick={()=>dlXlsx("upcoming",`upcoming_${new Date().toISOString().slice(0,10)}.xlsx`)} />
               </div>
@@ -365,7 +364,7 @@ export default function Dashboard() {
                             <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center">
                               <Clock className="w-5 h-5 text-zinc-400" />
                             </div>
-                            <span className="font-semibold text-zinc-500 text-sm">No inspections due in 30 days</span>
+                            <span className="font-semibold text-zinc-500 text-sm">No inspections due in 90 days</span>
                           </div>
                         </TableCell>
                       </TableRow>
