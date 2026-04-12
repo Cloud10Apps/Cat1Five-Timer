@@ -253,6 +253,8 @@ export default function Inspections() {
           case "overdue":            if (insp.status === "COMPLETED" || !due || due >= today) return false; break;
           case "due-7-days":         if (!due || due > in7  || due < today || insp.status === "COMPLETED") return false; break;
           case "due-30-days":        if (!due || due > in30 || due < today || insp.status === "COMPLETED") return false; break;
+          case "due-60-days": { const in60 = dayjs().add(60, "day").format("YYYY-MM-DD"); if (!due || due > in60 || due < today || insp.status === "COMPLETED") return false; break; }
+          case "due-90-days": { const in90 = dayjs().add(90, "day").format("YYYY-MM-DD"); if (!due || due > in90 || due < today || insp.status === "COMPLETED") return false; break; }
           case "due-this-year":      if (!due || due.slice(0, 4) !== thisYear) return false; break;
           case "due-next-year":      if (!due || due.slice(0, 4) !== nextYear) return false; break;
           case "completed":          if (trueStatus !== "COMPLETED") return false; break;
@@ -731,6 +733,8 @@ export default function Inspections() {
               <optgroup label="By Due Date">
                 <option value="due-7-days">Due in 7 days</option>
                 <option value="due-30-days">Due in 30 days</option>
+                <option value="due-60-days">Due in 60 days</option>
+                <option value="due-90-days">Due in 90 days</option>
                 <option value="due-this-year">Due this year</option>
                 <option value="due-next-year">Due next year</option>
               </optgroup>
