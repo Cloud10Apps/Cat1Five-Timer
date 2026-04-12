@@ -335,7 +335,7 @@ export default function Dashboard() {
               {secsAgo<60?"Just updated":`Updated ${Math.floor(secsAgo/60)}m ago`}
             </span>
           </div>
-          <h1 className="text-2xl font-black text-zinc-900 tracking-tight">{year} Inspection Activity</h1>
+          <h1 className="text-2xl font-black text-zinc-900 tracking-tight">Portfolio Compliance Overview</h1>
           <div className="flex-1 flex justify-end">
             <select value={cid??""} onChange={e=>setCid(e.target.value?parseInt(e.target.value):null)}
               className="h-9 rounded-md border border-zinc-300 bg-white px-3 py-1 text-sm text-zinc-800 font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 min-w-[200px]">
@@ -382,7 +382,8 @@ export default function Dashboard() {
                   <div className="flex flex-col gap-3 flex-1 min-w-0">
                     <div>
                       <p className="text-lg font-black text-zinc-900 tracking-tight">Your Portfolio Compliance Score</p>
-                      <p className={`text-sm mt-0.5 font-medium ${scoreColor}`}>{statusMsg}</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">Based on all active inspections across your portfolio</p>
+                      <p className={`text-sm mt-1 font-medium ${scoreColor}`}>{statusMsg}</p>
                     </div>
                     {/* Progress bar */}
                     <div className="w-full h-3 bg-zinc-100 rounded-full overflow-hidden">

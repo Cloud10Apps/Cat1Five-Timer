@@ -70,7 +70,8 @@ router.get("/summary", asyncHandler(async (req, res) => {
           AND EXTRACT(YEAR FROM i.completion_date::date) = ${currentYear}
       ) AS completed,
       COUNT(*) FILTER (
-        WHERE i.completion_date IS NULL
+        WHERE i.status != 'COMPLETED'
+          AND i.completion_date IS NULL
           AND i.next_due_date IS NOT NULL
           AND i.next_due_date::date < ${todayStr}::date
       ) AS overdue,
@@ -110,7 +111,6 @@ router.get("/attention", asyncHandler(async (req, res) => {
   const orgId = req.user!.organizationId;
   const today = dayjs();
   const todayStr = today.format("YYYY-MM-DD");
-  const currentYear = today.year();
   const customerIdParam = parseCustomerIdParam(req.query.customerId);
 
   const allowedIds = await getAccessibleCustomerIds(req.user!);
@@ -120,10 +120,9 @@ router.get("/attention", asyncHandler(async (req, res) => {
   const conditions: any[] = [
     eq(inspectionsTable.organizationId, orgId),
     sql`${inspectionsTable.nextDueDate} IS NOT NULL`,
-    sql`(
-      ${inspectionsTable.nextDueDate}::date < ${todayStr}::date
-      OR EXTRACT(YEAR FROM ${inspectionsTable.nextDueDate}::date) = ${currentYear}
-    )`,
+    sql`${inspectionsTable.nextDueDate}::date < ${todayStr}::date`,
+    sql`${inspectionsTable.completionDate} IS NULL`,
+    sql`${inspectionsTable.status} != 'COMPLETED'`,
   ];
   if (effectiveIds !== null) conditions.push(inArray(customersTable.id, effectiveIds));
 
@@ -153,29 +152,26 @@ router.get("/attention", asyncHandler(async (req, res) => {
     .leftJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
     .where(and(...conditions));
 
-  res.json(rows
-    .filter(r => !r.completionDate)
-    .map(r => ({
-      id: r.id,
-      elevatorId: r.elevatorId,
-      elevatorName: r.elevatorName ?? undefined,
-      buildingId: r.buildingId ?? undefined,
-      buildingName: r.buildingName ?? undefined,
-      customerId: r.customerId ?? undefined,
-      customerName: r.customerName ?? undefined,
-      inspectionType: r.inspectionType,
-      recurrenceYears: r.recurrenceYears,
-      lastInspectionDate: r.lastInspectionDate ?? undefined,
-      nextDueDate: r.nextDueDate ?? undefined,
-      scheduledDate: r.scheduledDate ?? undefined,
-      completionDate: r.completionDate ?? undefined,
-      status: r.nextDueDate && r.nextDueDate < todayStr && !r.completionDate ? "OVERDUE" : r.status,
-      rawStatus: r.status,
-      notes: r.notes ?? undefined,
-      organizationId: r.organizationId,
-      createdAt: r.createdAt.toISOString(),
-    }))
-  );
+  res.json(rows.map(r => ({
+    id: r.id,
+    elevatorId: r.elevatorId,
+    elevatorName: r.elevatorName ?? undefined,
+    buildingId: r.buildingId ?? undefined,
+    buildingName: r.buildingName ?? undefined,
+    customerId: r.customerId ?? undefined,
+    customerName: r.customerName ?? undefined,
+    inspectionType: r.inspectionType,
+    recurrenceYears: r.recurrenceYears,
+    lastInspectionDate: r.lastInspectionDate ?? undefined,
+    nextDueDate: r.nextDueDate ?? undefined,
+    scheduledDate: r.scheduledDate ?? undefined,
+    completionDate: r.completionDate ?? undefined,
+    status: "OVERDUE",
+    rawStatus: r.status,
+    notes: r.notes ?? undefined,
+    organizationId: r.organizationId,
+    createdAt: r.createdAt.toISOString(),
+  })));
 }));
 
 router.get("/status-breakdown", asyncHandler(async (req, res) => {
