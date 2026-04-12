@@ -245,6 +245,32 @@ export default function Inspections() {
         if (!haystack.includes(q)) return false;
       }
 
+      // Date range filters — exclude records with no value for the filtered field
+      if (lastInspFrom || lastInspTo) {
+        const lastInsp = insp.lastInspectionDate?.slice(0, 10);
+        if (!lastInsp) return false;
+        if (lastInspFrom && lastInsp < lastInspFrom) return false;
+        if (lastInspTo   && lastInsp > lastInspTo)   return false;
+      }
+      if (nextDueFrom || nextDueTo) {
+        const nextDue = insp.nextDueDate?.slice(0, 10);
+        if (!nextDue) return false;
+        if (nextDueFrom && nextDue < nextDueFrom) return false;
+        if (nextDueTo   && nextDue > nextDueTo)   return false;
+      }
+      if (scheduledFrom || scheduledTo) {
+        const sched = insp.scheduledDate?.slice(0, 10);
+        if (!sched) return false;
+        if (scheduledFrom && sched < scheduledFrom) return false;
+        if (scheduledTo   && sched > scheduledTo)   return false;
+      }
+      if (completionFrom || completionTo) {
+        const completion = insp.completionDate?.slice(0, 10);
+        if (!completion) return false;
+        if (completionFrom && completion < completionFrom) return false;
+        if (completionTo   && completion > completionTo)   return false;
+      }
+
       // Show Me
       if (showMeFilter !== "all") {
         const trueStatus = (insp as any).trueStatus ?? insp.status;
@@ -266,7 +292,7 @@ export default function Inspections() {
 
       return true;
     });
-  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears, filterAgingBuckets, debouncedSearch, showMeFilter]);
+  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears, filterAgingBuckets, debouncedSearch, showMeFilter, lastInspFrom, lastInspTo, nextDueFrom, nextDueTo, scheduledFrom, scheduledTo, completionFrom, completionTo]);
 
   /* ── Cascade filter options ── */
   const customerOptions = useMemo(() => (customers ?? []).map(c => ({ value: String(c.id), label: c.name })), [customers]);

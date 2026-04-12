@@ -218,14 +218,26 @@ router.get("/", asyncHandler(async (req, res) => {
       );
     }
     const pd = params.data as any;
-    if (pd.lastInspectionDateFrom) conditions.push(gte(inspectionsTable.lastInspectionDate, pd.lastInspectionDateFrom));
-    if (pd.lastInspectionDateTo) conditions.push(lte(inspectionsTable.lastInspectionDate, pd.lastInspectionDateTo));
-    if (pd.nextDueDateFrom) conditions.push(gte(inspectionsTable.nextDueDate, pd.nextDueDateFrom));
-    if (pd.nextDueDateTo) conditions.push(lte(inspectionsTable.nextDueDate, pd.nextDueDateTo));
-    if (pd.scheduledDateFrom) conditions.push(gte(inspectionsTable.scheduledDate, pd.scheduledDateFrom));
-    if (pd.scheduledDateTo) conditions.push(lte(inspectionsTable.scheduledDate, pd.scheduledDateTo));
-    if (pd.completionDateFrom) conditions.push(gte(inspectionsTable.completionDate, pd.completionDateFrom));
-    if (pd.completionDateTo) conditions.push(lte(inspectionsTable.completionDate, pd.completionDateTo));
+    if (pd.lastInspectionDateFrom || pd.lastInspectionDateTo) {
+      conditions.push(isNotNull(inspectionsTable.lastInspectionDate));
+      if (pd.lastInspectionDateFrom) conditions.push(gte(inspectionsTable.lastInspectionDate, pd.lastInspectionDateFrom));
+      if (pd.lastInspectionDateTo)   conditions.push(lte(inspectionsTable.lastInspectionDate, pd.lastInspectionDateTo));
+    }
+    if (pd.nextDueDateFrom || pd.nextDueDateTo) {
+      conditions.push(isNotNull(inspectionsTable.nextDueDate));
+      if (pd.nextDueDateFrom) conditions.push(gte(inspectionsTable.nextDueDate, pd.nextDueDateFrom));
+      if (pd.nextDueDateTo)   conditions.push(lte(inspectionsTable.nextDueDate, pd.nextDueDateTo));
+    }
+    if (pd.scheduledDateFrom || pd.scheduledDateTo) {
+      conditions.push(isNotNull(inspectionsTable.scheduledDate));
+      if (pd.scheduledDateFrom) conditions.push(gte(inspectionsTable.scheduledDate, pd.scheduledDateFrom));
+      if (pd.scheduledDateTo)   conditions.push(lte(inspectionsTable.scheduledDate, pd.scheduledDateTo));
+    }
+    if (pd.completionDateFrom || pd.completionDateTo) {
+      conditions.push(isNotNull(inspectionsTable.completionDate));
+      if (pd.completionDateFrom) conditions.push(gte(inspectionsTable.completionDate, pd.completionDateFrom));
+      if (pd.completionDateTo)   conditions.push(lte(inspectionsTable.completionDate, pd.completionDateTo));
+    }
   }
 
   const rows = await db
