@@ -48,6 +48,7 @@ function getAgingBucketKey(nextDueDate: string | null | undefined, computedStatu
   if (days >= -30)  return "due-15-30";
   if (days >= -60)  return "due-31-60";
   if (days >= -90)  return "due-61-90";
+  if (days < -90 && nextDueDate) return `due-${dayjs(nextDueDate).format("YYYY")}`;
   return null;
 }
 
@@ -65,7 +66,9 @@ function getAgingBucketDisplay(key: string | null): string {
     "overdue-61-90": "Overdue 61–90 Days",
     "overdue-91+":   "Overdue 91+ Days",
   };
-  return map[key] ?? "";
+  if (map[key]) return map[key];
+  if (key.startsWith("due-") && /^due-\d{4}$/.test(key)) return `Due ${key.replace("due-", "")}`;
+  return "";
 }
 
 function qArr(query: Record<string, any>, key: string): string[] {
@@ -218,8 +221,7 @@ router.get("/inspections", asyncHandler(async (req, res) => {
     { header: "Scheduled Date",       key: "scheduledDate",      width: 18, style: DATE_STYLE },
     { header: "Completion Date",      key: "completionDate",     width: 18, style: DATE_STYLE },
     { header: "Inspection Status",      key: "status",           width: 20 },
-    { header: "Aging Days",             key: "agingDays",        width: 12 },
-    { header: "Due Status",             key: "agingBucket",      width: 16 },
+    { header: "Timeline",               key: "agingBucket",      width: 18 },
     { header: "Days to Schedule (Raw)", key: "daysToSchedule",   width: 22 },
     { header: "Days to Complete (Raw)", key: "daysToComplete",   width: 22 },
     { header: "Notes",                  key: "notes",            width: 45 },
@@ -247,7 +249,6 @@ router.get("/inspections", asyncHandler(async (req, res) => {
       scheduledDate:      toDate(r.scheduledDate),
       completionDate:     toDate(r.completionDate),
       status:             STATUS_LABEL_MAP[r.computedStatus] ?? r.computedStatus,
-      agingDays:          r.agingDays ?? "",
       agingBucket:        getAgingBucketDisplay(r.agingBucketKey),
       daysToSchedule:     r.daysToSchedule ?? "",
       daysToComplete:     r.daysToComplete ?? "",
@@ -289,7 +290,8 @@ function agingBucketLabel(nextDueDate: string | null | undefined,
   if (days >= -30)  return "Next 30 Days";
   if (days >= -60)  return "Next 60 Days";
   if (days >= -90)  return "Next 90 Days";
-  return "Due in 90+ Days";
+  if (days < -90)   return `Due ${dayjs(nextDueDate).format("YYYY")}`;
+  return "";
 }
 
 router.get("/elevators", asyncHandler(async (req, res) => {
@@ -407,20 +409,15 @@ router.get("/elevators", asyncHandler(async (req, res) => {
     { header: "Inspection Status",  key: "inspStatus",         width: 20 },
     { header: "Last Insp Date",     key: "lastInspDate",       width: 18, style: DATE_STYLE },
     { header: "Next Due Date",      key: "nextDueDate",        width: 18, style: DATE_STYLE },
-    { header: "Days",               key: "days",               width: 10 },
-    { header: "Due Status",         key: "agingBucket",        width: 16 },
+    { header: "Timeline",           key: "agingBucket",        width: 18 },
     { header: "Scheduled Date",     key: "scheduledDate",      width: 18, style: DATE_STYLE },
     { header: "Notes",              key: "notes",              width: 45 },
   ];
 
   sheet.getRow(1).font = { bold: true };
 
-  const today = dayjs();
   rows.forEach(r => {
     const insp = latestInspMap.get(r.elevatorId);
-    const daysVal = insp?.nextDueDate
-      ? today.diff(dayjs(insp.nextDueDate), "day")
-      : null;
     sheet.addRow({
       customerName:    r.customerName    ?? "",
       buildingName:    r.buildingName    ?? "",
@@ -445,7 +442,6 @@ router.get("/elevators", asyncHandler(async (req, res) => {
       inspStatus:    insp ? statusLabel(insp.status, insp.nextDueDate) : "",
       lastInspDate:  toDate(insp?.lastInspectionDate),
       nextDueDate:   toDate(insp?.nextDueDate),
-      days:          daysVal ?? "",
       agingBucket:   agingBucketLabel(insp?.nextDueDate, insp?.status),
       scheduledDate: toDate(insp?.scheduledDate),
       notes:         insp?.notes ?? "",
