@@ -91,7 +91,9 @@ type InspectionFormValues = z.infer<typeof inspectionSchema>;
 function AgingBucketPill({ due, status }: { due: string | null | undefined; status?: string }) {
   const bucket = getAgingBucketValue(due, status);
   if (!bucket) return <span className="text-zinc-300 text-xs">—</span>;
-  const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
+  const label = bucket === "due-future" && due
+    ? `Due ${dayjs(due).format("YYYY")}`
+    : AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
     bucket === "due-future"    ? "bg-zinc-100   text-zinc-500   border-zinc-200"   :
     bucket === "due-today"     ? "bg-red-600    text-white      border-red-700"    :
@@ -1026,7 +1028,7 @@ export default function Elevators() {
                     <span className="text-sm font-semibold text-white text-center">Next Due</span>
                   </div>
                   <div className="flex items-center justify-center px-3 py-3 border-l border-zinc-700">
-                    <span className="text-sm font-semibold text-white text-center">Due Status</span>
+                    <span className="text-sm font-semibold text-white text-center">Timeline</span>
                   </div>
                   <div className="flex items-center justify-center px-4 py-3 border-l border-zinc-700">
                     <span className="text-sm font-semibold text-white text-center">Inspection Status</span>

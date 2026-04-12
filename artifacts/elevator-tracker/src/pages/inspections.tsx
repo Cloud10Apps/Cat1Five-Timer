@@ -69,7 +69,9 @@ function fmt(date?: string | null) { return date ? dayjs(date).format("MM/DD/YYY
 function AgingPill({ due, status }: { due?: string | null; status?: string }) {
   const bucket = getAgingBucketValue(due, status);
   if (!bucket) return <span className="text-zinc-300 text-xs">—</span>;
-  const label = AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
+  const label = bucket === "due-future" && due
+    ? `Due ${dayjs(due).format("YYYY")}`
+    : AGING_BUCKET_OPTIONS.find(b => b.value === bucket)?.label ?? "—";
   const cls =
     bucket === "due-future"    ? "bg-zinc-100   text-zinc-500   border-zinc-200"   :
     bucket === "due-today"     ? "bg-red-600    text-white      border-red-700"    :
@@ -1013,7 +1015,7 @@ export default function Inspections() {
                       <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Type</span>
                       <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Last Insp.</span>
                       <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest text-center">Next Due</span>
-                      <span className="text-xs font-bold text-zinc-600 uppercase tracking-widest text-center">Due Status</span>
+                      <span className="text-xs font-bold text-zinc-600 uppercase tracking-widest text-center">Timeline</span>
                       <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Insp. Status</span>
                       <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Scheduled</span>
                       <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">Completed</span>
