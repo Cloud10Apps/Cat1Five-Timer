@@ -289,17 +289,17 @@ export default function Dashboard() {
                 />
                 <ScoreCard
                   title="Inspection Completion (90 Days)"
-                  subtitle="How am I managing my near-term schedule?"
+                  subtitle="How prepared am I for what's coming next?"
                   score={comp90Score}
-                  statLine={`${relevantCompleted} of ${relevantTotal} inspections due within 90 days are complete`}
-                  tooltipText="Percentage of inspections due within the next 90 days — plus any overdue — that have been completed. Updates daily as inspections come due. Use this to track how well you are managing your near-term inspection schedule."
+                  statLine={`${relevantCompleted} of ${relevantTotal} upcoming inspections due in the next 90 days are complete`}
+                  tooltipText="Percentage of inspections due in the next 90 days that are already completed. This measures how prepared you are for upcoming inspections. Overdue inspections are excluded — those are tracked separately in Unit Compliance."
                   pills={<>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
                       ✅ {relevantCompleted} Complete
                     </span>
                     {(relevantTotal - relevantCompleted) > 0 && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                        ⏳ {relevantTotal - relevantCompleted} Incomplete
+                        📅 {relevantTotal - relevantCompleted} Not Yet Complete
                       </span>
                     )}
                   </>}

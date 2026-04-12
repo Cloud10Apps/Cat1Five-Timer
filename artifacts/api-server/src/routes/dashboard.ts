@@ -101,13 +101,15 @@ router.get("/summary", asyncHandler(async (req, res) => {
         )
       ) AS compliant_units,
 
-      -- SCORE 2: Inspection Completion (90 days)
+      -- SCORE 2: Inspection Completion (90 days, future only — excludes overdue)
       COUNT(*) FILTER (
         WHERE i.next_due_date IS NOT NULL
+          AND i.next_due_date::date >= ${todayStr}::date
           AND i.next_due_date::date <= ${in90Str}::date
       ) AS relevant_total,
       COUNT(*) FILTER (
         WHERE i.next_due_date IS NOT NULL
+          AND i.next_due_date::date >= ${todayStr}::date
           AND i.next_due_date::date <= ${in90Str}::date
           AND i.completion_date IS NOT NULL
       ) AS relevant_completed,
