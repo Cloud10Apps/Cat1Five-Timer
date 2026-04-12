@@ -495,9 +495,24 @@ export default function Buildings() {
           <Spinner />
         </div>
       ) : grouped.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Building2 className="h-12 w-12 mb-3 opacity-20" />
-          <p className="text-sm">No buildings found.</p>
+        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center bg-white rounded-xl border border-dashed border-zinc-300">
+          <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center">
+            <Building2 className="h-8 w-8 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-base font-bold text-zinc-800">No buildings yet</p>
+            <p className="text-sm text-zinc-500 mt-1 max-w-sm">
+              Add your first building to get started.
+              Each building can have multiple elevator units.
+            </p>
+          </div>
+          <Button
+            onClick={() => setIsAddOpen(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold mt-2"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Your First Building
+          </Button>
         </div>
       ) : (
         <div className="space-y-8">

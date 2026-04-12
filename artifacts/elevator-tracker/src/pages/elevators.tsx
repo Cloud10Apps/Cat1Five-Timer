@@ -900,6 +900,12 @@ export default function Elevators() {
             <FilterCombobox value={selectedCustomerIds} onValueChange={(val) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); }} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[155px]" />
             <FilterCombobox value={selectedBuildingIds} onValueChange={(val) => setSelectedBuildingIds(val)} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[140px]" />
 
+            {/* CAT1 / CAT5 */}
+            <FilterCombobox value={selectedInspTypes} onValueChange={setSelectedInspTypes} options={[{ value: "CAT1", label: "CAT 1" }, { value: "CAT5", label: "CAT 5" }]} placeholder="CAT1 / CAT5" searchPlaceholder="Search..." width="w-[130px]" />
+
+            <FilterCombobox value={filterDueYears} onValueChange={setFilterDueYears} options={dueYearOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
+            <FilterCombobox value={filterDueMonths} onValueChange={setFilterDueMonths} options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[130px]" />
+
             {/* Show Me */}
             <select
               value={showMeFilter}
@@ -930,12 +936,6 @@ export default function Elevators() {
                 <option value="scheduled">Scheduled</option>
               </optgroup>
             </select>
-
-            <FilterCombobox value={filterDueYears} onValueChange={setFilterDueYears} options={dueYearOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
-            <FilterCombobox value={filterDueMonths} onValueChange={setFilterDueMonths} options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[130px]" />
-
-            {/* CAT1 / CAT5 */}
-            <FilterCombobox value={selectedInspTypes} onValueChange={setSelectedInspTypes} options={[{ value: "CAT1", label: "CAT 1" }, { value: "CAT5", label: "CAT 5" }]} placeholder="CAT1 / CAT5" searchPlaceholder="Search..." width="w-[130px]" />
 
             <div className="flex-1 min-w-0" />
 
@@ -992,22 +992,38 @@ export default function Elevators() {
           <Spinner />
         </div>
       ) : grouped.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center border rounded-lg bg-white">
-          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center">
-            <ClipboardList className="h-6 w-6 text-zinc-400" />
+        (elevators ?? []).length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-4 text-center bg-white rounded-xl border border-dashed border-zinc-300">
+            <div className="w-16 h-16 rounded-2xl bg-zinc-100 border border-zinc-200 flex items-center justify-center">
+              <ClipboardList className="h-8 w-8 text-zinc-400" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-zinc-800">No active inspections</p>
+              <p className="text-sm text-zinc-500 mt-1 max-w-sm">
+                Active inspections appear here once you add elevator units
+                and their inspection dates.
+              </p>
+            </div>
+            <Link href="/units">
+              <Button className="bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold mt-2">
+                Go to Units →
+              </Button>
+            </Link>
           </div>
-          <p className="text-sm font-semibold text-zinc-600">No units found</p>
-          {(selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedInspTypes.length > 0 || showMeFilter !== "all" || searchQuery || filterDueYears.length > 0 || filterDueMonths.length > 0) ? (
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center border rounded-lg bg-white">
+            <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center">
+              <ClipboardList className="h-6 w-6 text-zinc-400" />
+            </div>
+            <p className="text-sm font-semibold text-zinc-600">No units found</p>
             <button
               onClick={() => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedInspTypes([]); setShowMeFilter("all"); setSearchQuery(""); setFilterDueYears([]); setFilterDueMonths([]); }}
               className="text-sm text-amber-600 hover:text-amber-700 font-semibold underline-offset-2 hover:underline"
             >
               Clear all filters
             </button>
-          ) : (
-            <p className="text-xs text-zinc-400">Add your first unit to get started</p>
-          )}
-        </div>
+          </div>
+        )
       ) : (
         <div className="space-y-3">
           {grouped.map((customer) => {

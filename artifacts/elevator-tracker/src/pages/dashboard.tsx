@@ -275,6 +275,47 @@ export default function Dashboard() {
         <section>
           <div className="flex flex-col gap-5">
 
+            {/* Onboarding banner — only shown when portfolio is completely empty */}
+            {!l1 && !l2 && !l3 && summary?.completedCount === 0 && overdueItems.length === 0 && upcoming.length === 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-xl">👋</span>
+                </div>
+                <div>
+                  <p className="font-bold text-zinc-900 text-base">Welcome to Cat1Five Timer!</p>
+                  <p className="text-sm text-zinc-600 mt-1 mb-3">
+                    Get started in 3 easy steps to track your elevator compliance:
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold shrink-0">1</span>
+                      <span className="text-sm text-zinc-700">
+                        <Link href="/buildings" className="font-semibold text-amber-600 hover:underline">Add your building</Link>
+                        {" "}— enter your building name and address
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold shrink-0">2</span>
+                      <span className="text-sm text-zinc-700">
+                        <Link href="/units" className="font-semibold text-amber-600 hover:underline">Add your elevators</Link>
+                        {" "}— enter each elevator unit with its details
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold shrink-0">3</span>
+                      <span className="text-sm text-zinc-700">
+                        <Link href="/elevators" className="font-semibold text-amber-600 hover:underline">Add your inspection dates</Link>
+                        {" "}— enter your last CAT1 and CAT5 inspection dates
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-3">
+                    Your compliance score will appear automatically once you add your first inspection.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Overdue Inspections */}
             {l2 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
               <div className="px-5 py-3.5 border-b border-red-200 bg-red-50 flex items-center gap-2">
