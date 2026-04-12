@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,9 +6,6 @@ import dayjs from "dayjs";
 import {
   useListElevators,
   getListElevatorsQueryKey,
-  useCreateElevator,
-  useUpdateElevator,
-  useDeleteElevator,
   useListBuildings,
   getListBuildingsQueryKey,
   useListCustomers,
@@ -30,7 +27,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -48,7 +44,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Plus, Pencil, Trash2, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, Check, ChevronsUpDown, AlertTriangle, Info, CalendarDays, ClipboardList } from "lucide-react";
+import { Link } from "wouter";
+import { Pencil, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, AlertTriangle, ClipboardList, ArrowRight } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
@@ -71,33 +68,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { fireCompletionConfetti } from "@/lib/confetti";
 import { isValidDateStr, getAgingBucketValue, MONTH_OPTIONS, AGING_BUCKET_OPTIONS } from "@/lib/inspection-utils";
 
-const elevatorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  internalId: z.string().optional(),
-  stateId: z.string().optional(),
-  buildingId: z.coerce.number().min(1, "Building is required"),
-  description: z.string().optional(),
-  bank: z.string().optional(),
-  type: z.enum(["traction", "hydraulic", "other"] as const),
-  // Unit Profile fields
-  manufacturer: z.string().optional(),
-  elevatorType: z.enum(["passenger", "freight"]).optional(),
-  oemSerialNumber: z.string().optional(),
-  capacity: z.string().optional(),
-  speed: z.string().optional(),
-  yearInstalled: z.preprocess(v => (v === "" || v == null) ? undefined : Number(v), z.number().int().positive().optional()),
-  numLandings: z.preprocess(v => (v === "" || v == null) ? undefined : Number(v), z.number().int().positive().optional()),
-  numOpenings: z.preprocess(v => (v === "" || v == null) ? undefined : Number(v), z.number().int().positive().optional()),
-});
-
-type ElevatorFormValues = z.infer<typeof elevatorSchema>;
 
 const inspectionSchema = z.object({
   inspectionType: z.enum(["CAT1", "CAT5"] as const),
@@ -164,9 +138,6 @@ export default function Elevators() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
-  const [formCustomerId, setFormCustomerId] = useState<string>("all");
-  const [formCustomerOpen, setFormCustomerOpen] = useState(false);
-  const [formBuildingOpen, setFormBuildingOpen] = useState(false);
 
   // Collapsible group state
   const [collapsedCustomers, setCollapsedCustomers] = useState<Set<number>>(new Set());
@@ -390,18 +361,9 @@ export default function Elevators() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const createMutation = useCreateElevator();
-  const updateMutation = useUpdateElevator();
-  const deleteMutation = useDeleteElevator();
-
   const createInspMutation = useCreateInspection();
   const updateInspMutation = useUpdateInspection();
   const deleteInspMutation = useDeleteInspection();
-
-  const form = useForm<ElevatorFormValues>({
-    resolver: zodResolver(elevatorSchema),
-    defaultValues: { name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" },
-  });
 
   const inspForm = useForm<InspectionFormValues>({
     resolver: zodResolver(inspectionSchema),
@@ -527,44 +489,8 @@ export default function Elevators() {
   };
 
   const onSubmitBothInsp = async () => {
-    let elevatorId: number;
-
-    if (editingElevator) {
-      elevatorId = editingElevator.id;
-    } else {
-      const isValid = await form.trigger();
-      if (!isValid) return;
-      const raw = form.getValues();
-      const elevatorData = {
-        ...raw,
-        buildingId: Number(raw.buildingId),
-        // Sanitize optional enum fields: empty string "" is not a valid enum value
-        elevatorType: raw.elevatorType ? raw.elevatorType : undefined,
-        // Sanitize optional string fields
-        manufacturer: raw.manufacturer || undefined,
-        oemSerialNumber: raw.oemSerialNumber || undefined,
-        capacity: raw.capacity || undefined,
-        speed: raw.speed || undefined,
-        bank: raw.bank || undefined,
-        description: raw.description || undefined,
-        internalId: (raw as any).internalId || undefined,
-        stateId: (raw as any).stateId || undefined,
-        // Coerce integer fields from strings (form.getValues() bypasses zod preprocess)
-        yearInstalled: raw.yearInstalled !== undefined && raw.yearInstalled !== ("" as any) ? Number(raw.yearInstalled) : undefined,
-        numLandings:   raw.numLandings   !== undefined && raw.numLandings   !== ("" as any) ? Number(raw.numLandings)   : undefined,
-        numOpenings:   raw.numOpenings   !== undefined && raw.numOpenings   !== ("" as any) ? Number(raw.numOpenings)   : undefined,
-      };
-      try {
-        const created = await createMutation.mutateAsync({ data: elevatorData as any });
-        queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
-        elevatorId = (created as any).id;
-      } catch (err: any) {
-        console.error("Elevator creation failed:", err);
-        const msg = err?.data?.error ?? err?.message;
-        toast({ title: "Failed to create elevator", description: msg ?? undefined, variant: "destructive" });
-        return;
-      }
-    }
+    if (!editingElevator) return;
+    const elevatorId = editingElevator.id;
 
     const [cat1Valid, cat5Valid] = await Promise.all([inspForm.trigger(), inspCat5Form.trigger()]);
     if (!cat1Valid || !cat5Valid) return;
@@ -612,132 +538,8 @@ export default function Elevators() {
     );
   };
 
-  const hasInspData = (values: InspectionFormValues) =>
-    !!(values.lastInspectionDate || values.scheduledDate || values.completionDate || (values.notes && values.notes.trim()) || (values.status && values.status !== "NOT_STARTED"));
-
-  const onSubmit = async (data: ElevatorFormValues) => {
-    if (editingElevator) {
-      updateMutation.mutate(
-        { id: editingElevator.id, data },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
-            setEditingElevator(null);
-            setIsAddOpen(false);
-            form.reset();
-            toast({ title: "Unit updated successfully" });
-          },
-          onError: () => {
-            toast({ title: "Failed to update elevator", variant: "destructive" });
-          },
-        }
-      );
-    } else {
-      let elevatorId: number;
-      try {
-        const created = await createMutation.mutateAsync({ data });
-        queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
-        elevatorId = (created as any).id;
-      } catch {
-        toast({ title: "Failed to add elevator", variant: "destructive" });
-        return;
-      }
-
-      const wantCat1 = hasInspData(inspForm.getValues());
-      const wantCat5 = hasInspData(inspCat5Form.getValues());
-
-      if (!wantCat1 && !wantCat5) {
-        setIsAddOpen(false);
-        form.reset();
-        toast({ title: "Unit added successfully" });
-        return;
-      }
-
-      const validations: Promise<boolean>[] = [];
-      if (wantCat1) validations.push(inspForm.trigger());
-      if (wantCat5) validations.push(inspCat5Form.trigger());
-      const valid = await Promise.all(validations);
-      if (valid.some(v => !v)) return;
-
-      // Capture values AFTER trigger so any pending form-state changes are committed.
-      // Also derive the status deterministically so we don't depend on async useEffect timing.
-      const cat1Values = inspForm.getValues();
-      const cat5Values = inspCat5Form.getValues();
-      const deriveStatus = (v: InspectionFormValues): InspectionFormValues["status"] => {
-        if (v.completionDate) return "COMPLETED";
-        if (v.scheduledDate && (!v.status || v.status === "NOT_STARTED")) return "SCHEDULED";
-        return v.status ?? "NOT_STARTED";
-      };
-
-      const inspPromises: Promise<any>[] = [];
-      if (wantCat1) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat1Values, status: deriveStatus(cat1Values), elevatorId, recurrenceYears: Number(cat1Values.recurrenceYears), lastInspectionDate: cat1Values.lastInspectionDate || undefined, scheduledDate: cat1Values.scheduledDate || undefined, completionDate: cat1Values.completionDate || undefined } as any }));
-      if (wantCat5) inspPromises.push(createInspMutation.mutateAsync({ data: { ...cat5Values, status: deriveStatus(cat5Values), elevatorId, recurrenceYears: Number(cat5Values.recurrenceYears), lastInspectionDate: cat5Values.lastInspectionDate || undefined, scheduledDate: cat5Values.scheduledDate || undefined, completionDate: cat5Values.completionDate || undefined } as any }));
-
-      try {
-        const inspResults = await Promise.all(inspPromises);
-        queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
-        const count = (wantCat1 ? 1 : 0) + (wantCat5 ? 1 : 0);
-        toast({ title: count === 2 ? "Unit and both inspections created" : "Unit and inspection created" });
-        inspResults.forEach((r, i) => {
-          if (r?._warning) {
-            const label = i === 0 ? (wantCat1 ? "CAT 1" : "CAT 5") : "CAT 5";
-            toast({ title: `${label} follow-up not auto-created`, description: r._warning, variant: "destructive", duration: 10000 });
-          }
-        });
-      } catch {
-        toast({ title: "Unit was created but inspections partially failed", variant: "destructive" });
-      }
-
-      setIsAddOpen(false);
-      form.reset();
-    }
-  };
-
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-
-  const confirmDelete = () => {
-    if (deleteId === null) return;
-    deleteMutation.mutate(
-      { id: deleteId },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
-          toast({ title: "Unit deleted successfully" });
-          setDeleteId(null);
-        },
-        onError: () => {
-          toast({ title: "Failed to delete elevator", variant: "destructive" });
-          setDeleteId(null);
-        },
-      }
-    );
-  };
-
-  const handleDelete = (id: number) => {
-    setDeleteId(id);
-  };
-
-  const openEdit = (elevator: Elevator) => {
+  const openInspDialog = (elevator: Elevator) => {
     setEditingElevator(elevator);
-    setFormCustomerId(elevator.customerId ? elevator.customerId.toString() : "all");
-    form.reset({
-      name: elevator.name,
-      internalId: (elevator as any).internalId || "",
-      stateId: (elevator as any).stateId || "",
-      buildingId: elevator.buildingId,
-      description: elevator.description || "",
-      bank: elevator.bank || "",
-      type: elevator.type,
-      manufacturer: (elevator as any).manufacturer || "",
-      elevatorType: (elevator as any).elevatorType || undefined,
-      oemSerialNumber: (elevator as any).oemSerialNumber || "",
-      capacity: (elevator as any).capacity || "",
-      speed: (elevator as any).speed || "",
-      yearInstalled: (elevator as any).yearInstalled ?? undefined,
-      numLandings: (elevator as any).numLandings ?? undefined,
-      numOpenings: (elevator as any).numOpenings ?? undefined,
-    });
-    // Pre-load the most actionable inspection for this elevator
     const latestInsp = latestInspByElevator.get(elevator.id);
     if (latestInsp) {
       openEditInsp(latestInsp);
@@ -773,385 +575,13 @@ export default function Elevators() {
     URL.revokeObjectURL(url);
   };
 
-  const elevatorFormFields = (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
-        {/* ── Step 1: Customer picker (local state, not a form field) ── */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium leading-none">Customer</p>
-          <Popover open={formCustomerOpen} onOpenChange={setFormCustomerOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                role="combobox"
-                className={cn(
-                  "w-full justify-between font-normal",
-                  formCustomerId === "all" && "text-muted-foreground"
-                )}
-              >
-                <span className="truncate">
-                  {formCustomerId === "all"
-                    ? "Select a customer…"
-                    : (customers?.find((c) => c.id.toString() === formCustomerId)?.name ?? "Select a customer…")}
-                </span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
-              <Command>
-                <CommandInput placeholder="Search customers…" className="h-9" />
-                <CommandList>
-                  <CommandEmpty className="py-4 text-center text-sm text-muted-foreground">No customers found.</CommandEmpty>
-                  <CommandGroup>
-                    {customers?.map((c) => (
-                      <CommandItem
-                        key={c.id}
-                        value={c.name}
-                        onSelect={() => {
-                          setFormCustomerId(c.id.toString());
-                          form.setValue("buildingId", 0);
-                          setFormCustomerOpen(false);
-                        }}
-                      >
-                        <Check className={cn("mr-2 h-4 w-4", formCustomerId === c.id.toString() ? "opacity-100" : "opacity-0")} />
-                        {c.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* ── Step 2: Building picker (RHF field, filtered by selected customer) ── */}
-        <div className="space-y-2">
-          <FormField
-            control={form.control}
-            name="buildingId"
-            render={({ field }) => {
-              const filteredBuildings = (allBuildings ?? []).filter(
-                (b) => formCustomerId === "all" || b.customerId === Number(formCustomerId)
-              );
-              const selectedBuilding = (allBuildings ?? []).find((b) => b.id === field.value);
-              return (
-                <FormItem>
-                  <FormLabel>Building</FormLabel>
-                  <Popover open={formBuildingOpen} onOpenChange={setFormBuildingOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          role="combobox"
-                          disabled={formCustomerId === "all"}
-                          className={cn(
-                            "w-full justify-between font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          <span className="truncate">
-                            {selectedBuilding ? selectedBuilding.name : (formCustomerId === "all" ? "Select a customer first" : "Select a building…")}
-                          </span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search buildings…" className="h-9" />
-                        <CommandList>
-                          <CommandEmpty className="py-4 text-center text-sm text-muted-foreground">No buildings found.</CommandEmpty>
-                          <CommandGroup>
-                            {filteredBuildings.map((b) => (
-                              <CommandItem
-                                key={b.id}
-                                value={b.name}
-                                onSelect={() => {
-                                  field.onChange(b.id);
-                                  setFormBuildingOpen(false);
-                                }}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", field.value === b.id ? "opacity-100" : "opacity-0")} />
-                                {b.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
-        </div>
-
-        <div className="space-y-3">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unit Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Main Lobby Elevator" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="internalId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unit ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. PE-1" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="stateId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>State ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. NY-12345" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="traction">Traction</SelectItem>
-                      <SelectItem value="hydraulic">Hydraulic</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="bank"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bank / Group</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. High Rise" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* ── Unit Profile ── */}
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-4 pt-3 pb-4 space-y-3">
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-1 h-4 rounded-full bg-amber-400 shrink-0" />
-            <span className="text-sm font-semibold text-zinc-700 tracking-tight">Unit Profile</span>
-            <span className="text-xs text-zinc-400 font-normal">— all fields optional</span>
-          </div>
-
-          {/* Row 1: Manufacturer (60%) | Elevator Type (40%) */}
-          <div className="grid grid-cols-5 gap-3">
-            <div className="col-span-3">
-              <FormField
-                control={form.control}
-                name="manufacturer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-zinc-600">Manufacturer</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Otis, KONE, Schindler, ThyssenKrupp…" className="bg-white" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="col-span-2">
-              <FormField
-                control={form.control}
-                name="elevatorType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-zinc-600">Elevator Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                      <FormControl>
-                        <SelectTrigger className="bg-white">
-                          <SelectValue placeholder="Passenger / Freight" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="passenger">Passenger</SelectItem>
-                        <SelectItem value="freight">Freight</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Row 2: OEM Serial | Year Installed */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormField
-              control={form.control}
-              name="oemSerialNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs text-zinc-600">OEM Serial Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Manufacturer serial no." className="bg-white" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="yearInstalled"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs text-zinc-600">Year Installed</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g. 2005" className="bg-white" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Row 3: Capacity | Speed */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormField
-              control={form.control}
-              name="capacity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs text-zinc-600">Capacity</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 2500 lbs / 3500 lbs" className="bg-white" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="speed"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs text-zinc-600">Speed</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 150 fpm / 350 fpm" className="bg-white" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Row 4: # Landings | # Openings */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormField
-              control={form.control}
-              name="numLandings"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs text-zinc-600"># Landings</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="Number of landings" className="bg-white" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="numOpenings"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs text-zinc-600"># Openings</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="Number of openings" className="bg-white" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Additional details about this unit..."
-                    className="resize-none h-20"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <Button
-          type="submit"
-          className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
-          disabled={createMutation.isPending || updateMutation.isPending}
-        >
-          {(createMutation.isPending || updateMutation.isPending) ? "Saving…" : editingElevator ? "Save Changes" : "Add Unit"}
-        </Button>
-      </form>
-    </Form>
-  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Current Inspections by Unit</h1>
-          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Keeps all current open inspections front and center.<br />Once completed, inspection records move automatically to <span className="font-medium text-zinc-600">Inspection History</span> for tracking.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Current Inspections</h1>
+          <p className="mt-2 mb-4 text-sm text-zinc-500 leading-snug">Open compliance status for all active inspections by unit.<br />Once completed, records move automatically to <span className="font-medium text-zinc-600">Inspection History</span>.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1159,65 +589,38 @@ export default function Elevators() {
             <Download className="mr-2 h-4 w-4" />
             Export Excel
           </Button>
-          <Dialog open={isAddOpen} onOpenChange={(open) => {
-            setIsAddOpen(open);
-            if (!open) {
-              form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
-              setEditingElevator(null);
-              resetInspForm();
-              setFormCustomerId("all");
-              setFormCustomerOpen(false);
-              setFormBuildingOpen(false);
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingElevator(null);
-                resetInspForm();
-                setFormCustomerId("all");
-                form.reset({ name: "", internalId: "", stateId: "", buildingId: 0, description: "", bank: "", type: "traction" });
-              }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Unit
-              </Button>
-            </DialogTrigger>
+          <Link href="/units">
+            <Button variant="outline" className="gap-1.5">
+              Manage Units
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </div>
 
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
-              <DialogHeader className="pb-2 border-b">
-                <DialogTitle className="flex items-center gap-2 text-xl">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                    <ArrowUpSquare className="h-4 w-4" />
-                  </span>
-                  {editingElevator ? editingElevator.name : "Add New Unit"}
-                </DialogTitle>
-                {editingElevator ? (
-                  <p className="text-sm text-muted-foreground pl-10">{editingElevator.buildingName} · {editingElevator.customerName}</p>
-                ) : (
-                  <div className="mt-1 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2">
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
-                    <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-                      Fill in the <span className="font-semibold">Unit Details</span> tab. Optionally switch to the <span className="font-semibold">New Inspection</span> tab to seed CAT 1 and/or CAT 5 records — then click <span className="font-semibold">Add Unit</span> to save everything at once.
-                    </p>
-                  </div>
-                )}
-              </DialogHeader>
+      {/* Inspection editing dialog — opened from row pencil buttons */}
+      <Dialog open={isAddOpen} onOpenChange={(open) => {
+        setIsAddOpen(open);
+        if (!open) {
+          setEditingElevator(null);
+          resetInspForm();
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+          <DialogHeader className="pb-2 border-b">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                <ArrowUpSquare className="h-4 w-4" />
+              </span>
+              {editingElevator?.name ?? "Inspection"}
+            </DialogTitle>
+            {editingElevator && (
+              <p className="text-sm text-muted-foreground pl-10">{editingElevator.buildingName} · {editingElevator.customerName}</p>
+            )}
+          </DialogHeader>
 
-              <Tabs key={editingElevator ? `edit-${editingElevator.id}` : "add"} defaultValue={editingElevator ? "inspection" : "unit"} className="pt-2">
-                  <TabsList className="w-full mb-4">
-                    <TabsTrigger value="unit" className="flex-1">Unit Details</TabsTrigger>
-                    <TabsTrigger value="inspection" className="flex-1">
-                      {editingInspection ? "Current Inspection" : "New Inspection"}
-                    </TabsTrigger>
-                  </TabsList>
-
-                  {/* ── Tab 1: Unit Details ── */}
-                  <TabsContent value="unit">
-                    {elevatorFormFields}
-                  </TabsContent>
-
-                  {/* ── Tab 2: Inspection ── */}
-                  <TabsContent value="inspection">
-                    {editingInspection ? (
+          <div className="pt-2">
+            {editingInspection ? (
                       /* ── EDIT MODE: single form ── */
                       <Form {...inspForm}>
                         <form onSubmit={inspForm.handleSubmit(onSubmitInsp)} className="space-y-5">
@@ -1444,12 +847,9 @@ export default function Elevators() {
                         </Button>
                       </div>
                     )}
-                  </TabsContent>
-                </Tabs>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Filters ── */}
       {(() => {
@@ -1845,26 +1245,16 @@ export default function Elevators() {
                                               </span>
                                             ) : <span className="text-xs text-zinc-300">—</span>}
                                           </div>
-                                          {/* Actions — 100px */}
+                                          {/* Actions */}
                                           <div className="flex items-center justify-center border-l border-zinc-200 gap-0.5">
                                             <TooltipProvider>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEdit(elevator); setIsAddOpen(true); }}>
+                                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openInspDialog(elevator); setIsAddOpen(true); }}>
                                                     <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                                                   </Button>
                                                 </TooltipTrigger>
-                                                <TooltipContent>Edit</TooltipContent>
-                                              </Tooltip>
-                                            </TooltipProvider>
-                                            <TooltipProvider>
-                                              <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(elevator.id)} disabled={deleteMutation.isPending}>
-                                                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                                  </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>Delete</TooltipContent>
+                                                <TooltipContent>Edit Inspection</TooltipContent>
                                               </Tooltip>
                                             </TooltipProvider>
                                           </div>
@@ -1886,24 +1276,6 @@ export default function Elevators() {
           })}
         </div>
       )}
-
-      {/* Elevator delete confirmation */}
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Unit</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this elevator? This action cannot be undone and will also remove all associated inspection records.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Inspection delete confirmation */}
       <AlertDialog open={inspDeleteId !== null} onOpenChange={(open) => { if (!open) setInspDeleteId(null); }}>

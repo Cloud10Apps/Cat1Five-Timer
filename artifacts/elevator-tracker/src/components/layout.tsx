@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Users,
   Building,
+  Layers,
   ArrowUpSquare,
   ClipboardCheck,
   Calendar,
@@ -46,12 +47,13 @@ export function Layout({ children }: LayoutProps) {
   const overdueCount = (attentionItems ?? []).filter((i: any) => i.status === "OVERDUE").length;
 
   const mainNav = [
-    { name: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
-    { name: "Customers",   href: "/customers",   icon: Users },
-    { name: "Buildings",   href: "/buildings",   icon: Building },
+    { name: "Dashboard",            href: "/dashboard",   icon: LayoutDashboard },
+    { name: "Customers",            href: "/customers",   icon: Users },
+    { name: "Buildings",            href: "/buildings",   icon: Building },
+    { name: "Units",                href: "/units",       icon: Layers },
     { name: "Current Inspections",  href: "/elevators",   icon: ArrowUpSquare },
     { name: "Inspection History",   href: "/inspections", icon: ClipboardCheck },
-    { name: "Calendar",    href: "/calendar",    icon: Calendar },
+    { name: "Calendar",             href: "/calendar",    icon: Calendar },
   ];
 
   const bottomNav: { name: string; href: string; icon: typeof Settings }[] = [];

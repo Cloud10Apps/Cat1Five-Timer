@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import Customers from "@/pages/customers";
 import Buildings from "@/pages/buildings";
 import Elevators from "@/pages/elevators";
+import Units from "@/pages/units";
 import Inspections from "@/pages/inspections";
 import CalendarView from "@/pages/calendar";
 import Admin from "@/pages/admin";
@@ -48,6 +49,9 @@ function Router() {
       </Route>
       <Route path="/elevators">
         <ProtectedRoute><Elevators /></ProtectedRoute>
+      </Route>
+      <Route path="/units">
+        <ProtectedRoute><Units /></ProtectedRoute>
       </Route>
       <Route path="/inspections">
         <ProtectedRoute><Inspections /></ProtectedRoute>
