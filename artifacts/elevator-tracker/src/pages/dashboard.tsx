@@ -286,7 +286,7 @@ export default function Dashboard() {
                     </span>
                     {(totalUnits - compliantUnits) > 0 && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
-                        ⚠️ {totalUnits - compliantUnits} Need Attention
+                        ⚠️ {totalUnits - compliantUnits} {(totalUnits - compliantUnits) === 1 ? "Unit Needs Attention" : "Units Need Attention"}
                       </span>
                     )}
                   </>}
@@ -295,15 +295,15 @@ export default function Dashboard() {
                   title="Inspection Completion (90 Days)"
                   subtitle="How prepared am I for what's coming next?"
                   score={comp90Score}
-                  statLine={`${relevantCompleted} of ${relevantTotal} upcoming inspections due in the next 90 days are complete`}
+                  statLine={`${relevantCompleted} of ${relevantTotal} inspections due in the next 90 days are complete`}
                   tooltipText="Percentage of inspections due in the next 90 days that are already completed. This measures how prepared you are for upcoming inspections. Overdue inspections are excluded — those are tracked separately in Unit Compliance."
                   pills={<>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
-                      ✅ {relevantCompleted} Complete
+                      ✅ {relevantCompleted} Inspections Complete
                     </span>
                     {(relevantTotal - relevantCompleted) > 0 && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                        📅 {relevantTotal - relevantCompleted} Not Yet Complete
+                        📅 {relevantTotal - relevantCompleted} Inspections Not Yet Complete
                       </span>
                     )}
                   </>}
@@ -322,11 +322,11 @@ export default function Dashboard() {
                   }
                   pills={<>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
-                      ✅ {annualCompleted} Completed
+                      ✅ {annualCompleted} Inspections Completed
                     </span>
                     {(annualTotal - annualCompleted) > 0 && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
-                        ⚠️ {annualTotal - annualCompleted} Past Due This Year
+                        ⚠️ {annualTotal - annualCompleted} Inspections Past Due This Year
                       </span>
                     )}
                   </>}
