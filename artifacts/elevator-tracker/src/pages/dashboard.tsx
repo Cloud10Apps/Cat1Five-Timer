@@ -103,7 +103,7 @@ function ExportBtn({ onClick }: { onClick: () => void }) {
 }
 
 const LIVE_OPTS = { staleTime: 0, refetchInterval: 2*60*1000, refetchOnWindowFocus: true } as const;
-const DASH_KEYS = ["/api/customers","/api/dashboard/summary","/api/dashboard/attention","/api/inspections/upcoming-30"];
+const DASH_KEYS = ["/api/customers","/api/dashboard/summary","/api/dashboard/attention","/api/inspections/upcoming-90"];
 
 function apiFetch(path: string, cid?: number | null) {
   const token = localStorage.getItem("token");
@@ -151,12 +151,13 @@ export default function Dashboard() {
 
   const todayStr = dayjs().format("YYYY-MM-DD");
   const in30Days = dayjs().add(30, "day").format("YYYY-MM-DD");
+  const in90Days = dayjs().add(90, "day").format("YYYY-MM-DD");
   const in3Days  = dayjs().add(3,  "day").format("YYYY-MM-DD");
 
   const { data: customers }                                  = useQuery({ queryKey:["/api/customers"],                      queryFn: customersFetch,                        ...LIVE_OPTS });
   const { data: summary,  isLoading:l1, dataUpdatedAt:t1 }  = useQuery({ queryKey:["/api/dashboard/summary",  cid], queryFn:()=>apiFetch("summary",  cid), ...LIVE_OPTS });
   const { data: attention, isLoading:l2 }                    = useQuery({ queryKey:["/api/dashboard/attention", cid], queryFn:()=>apiFetch("attention", cid), ...LIVE_OPTS });
-  const { data: upcomingRaw, isLoading: l3 }                 = useQuery({ queryKey:["/api/inspections/upcoming-30", cid, todayStr, in30Days], queryFn:()=>upcomingFetch(cid, todayStr, in30Days), ...LIVE_OPTS });
+  const { data: upcomingRaw, isLoading: l3 }                 = useQuery({ queryKey:["/api/inspections/upcoming-90", cid, todayStr, in90Days], queryFn:()=>upcomingFetch(cid, todayStr, in90Days), ...LIVE_OPTS });
 
   useEffect(() => { if (t1) { setLastUpdated(new Date(t1)); setSecsAgo(0); } }, [t1]);
 
@@ -164,8 +165,13 @@ export default function Dashboard() {
     .filter(i => i.status==="OVERDUE")
     .sort((a,b)=>(a.nextDueDate??"").localeCompare(b.nextDueDate??""));
 
-  const upcoming = ((upcomingRaw ?? []) as any[])
-    .filter((i: any) => !i.completionDate && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in30Days)
+  // All non-completed upcoming items within 90 days — used for compliance score
+  const upcomingSoon = ((upcomingRaw ?? []) as any[])
+    .filter((i: any) => !i.completionDate && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in90Days);
+
+  // Subset for the "Coming Up" table: next 30 days only
+  const upcoming = upcomingSoon
+    .filter((i: any) => i.nextDueDate <= in30Days)
     .sort((a: any, b: any) => a.nextDueDate.localeCompare(b.nextDueDate));
 
   const customerList = (customers ?? []) as any[];
@@ -197,16 +203,9 @@ export default function Dashboard() {
         </div>
 
         {/* ══ COMPLIANCE SCORE BANNER ══ */}
-        {!l1 && !l2 && (() => {
-          const in90 = dayjs().add(90, "day").format("YYYY-MM-DD");
-
+        {!l1 && !l2 && !l3 && (() => {
           const overdueCount = overdueItems.length;
-          const dueSoonCount = ((attention ?? []) as any[]).filter(
-            (i: any) => i.status !== "OVERDUE" &&
-              i.nextDueDate &&
-              i.nextDueDate >= todayStr &&
-              i.nextDueDate <= in90
-          ).length;
+          const dueSoonCount = upcomingSoon.length;
           const completedCount = summary?.completedCount ?? 0;
 
           const relevantTotal = completedCount + overdueCount + dueSoonCount;
