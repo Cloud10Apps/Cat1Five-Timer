@@ -794,118 +794,125 @@ export default function Units() {
                                       </span>
                                     </button>
 
-                                    {!isBankCollapsed && bank.elevators.map((elevator) => (
-                                      <div
-                                        key={elevator.id}
-                                        className="group relative flex items-center justify-between px-4 py-3 pl-20 border-b border-zinc-100 transition-colors hover:bg-amber-50/30"
-                                        style={{ minHeight: "72px" }}
-                                      >
-                                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+                                    {!isBankCollapsed && (
+                                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 p-3 bg-zinc-50/50">
+                                        {bank.elevators.map((elevator) => (
+                                          <div
+                                            key={elevator.id}
+                                            className="bg-white rounded-lg border border-zinc-200 shadow-sm hover:shadow-md hover:border-amber-300 transition-all duration-150 overflow-hidden"
+                                          >
+                                            {/* Top accent bar */}
+                                            <div className="h-1 bg-amber-400 w-full" />
 
-                                        {/* Left: name + badges + data row */}
-                                        <div className="flex flex-col min-w-0 flex-1 mr-4">
+                                            {/* Card header: name + actions */}
+                                            <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-2">
+                                              <div className="min-w-0">
+                                                <p className="font-bold text-base text-zinc-900 leading-tight truncate">
+                                                  {elevator.name}
+                                                </p>
+                                              </div>
+                                              <div className="flex items-center gap-1 shrink-0 -mt-1">
+                                                <TooltipProvider>
+                                                  <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEdit(elevator); setIsAddOpen(true); }}>
+                                                        <Pencil className="h-3.5 w-3.5 text-zinc-400" />
+                                                      </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Edit Unit</TooltipContent>
+                                                  </Tooltip>
+                                                </TooltipProvider>
+                                                <TooltipProvider>
+                                                  <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(elevator.id)} disabled={deleteMutation.isPending}>
+                                                        <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                                                      </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Delete Unit</TooltipContent>
+                                                  </Tooltip>
+                                                </TooltipProvider>
+                                              </div>
+                                            </div>
 
-                                          {/* LINE 1 — name + badges */}
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="font-bold text-base text-zinc-900 mr-1">{elevator.name}</span>
-                                            {elevator.type && (
-                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold capitalize">
-                                                {elevator.type}
-                                              </span>
-                                            )}
-                                            {elevator.elevatorType && (
-                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold capitalize">
-                                                {elevator.elevatorType}
-                                              </span>
-                                            )}
-                                            {elevator.bank && (
-                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200 text-xs font-medium">
-                                                {elevator.bank}
-                                              </span>
-                                            )}
-                                            {elevator.manufacturer && (
-                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200 text-xs font-medium">
-                                                {elevator.manufacturer}
-                                              </span>
-                                            )}
+                                            {/* Badges row */}
+                                            <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+                                              {elevator.type && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold capitalize">
+                                                  {elevator.type}
+                                                </span>
+                                              )}
+                                              {elevator.elevatorType && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold capitalize">
+                                                  {elevator.elevatorType}
+                                                </span>
+                                              )}
+                                              {elevator.bank && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200 text-xs font-medium">
+                                                  {elevator.bank}
+                                                </span>
+                                              )}
+                                              {elevator.manufacturer && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200 text-xs font-medium">
+                                                  {elevator.manufacturer}
+                                                </span>
+                                              )}
+                                            </div>
+
+                                            {/* Divider */}
+                                            <div className="border-t border-zinc-100 mx-4" />
+
+                                            {/* Data grid */}
+                                            <div className="px-4 py-3 grid grid-cols-3 gap-x-4 gap-y-3">
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Unit ID</span>
+                                                <span className="text-sm font-semibold text-zinc-800 font-mono mt-0.5">
+                                                  {elevator.internalId || <span className="text-zinc-300">—</span>}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">State ID</span>
+                                                <span className="text-sm font-semibold text-zinc-800 font-mono mt-0.5">
+                                                  {elevator.stateId || <span className="text-zinc-300">—</span>}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">OEM Serial</span>
+                                                <span className="text-sm font-semibold text-zinc-800 font-mono mt-0.5">
+                                                  {elevator.oemSerialNumber || <span className="text-zinc-300">—</span>}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Year</span>
+                                                <span className="text-sm font-semibold text-zinc-800 mt-0.5">
+                                                  {elevator.yearInstalled || <span className="text-zinc-300">—</span>}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Capacity</span>
+                                                <span className="text-sm font-semibold text-zinc-800 mt-0.5">
+                                                  {elevator.capacity || <span className="text-zinc-300">—</span>}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Speed</span>
+                                                <span className="text-sm font-semibold text-zinc-800 mt-0.5">
+                                                  {elevator.speed || <span className="text-zinc-300">—</span>}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col col-span-3 border-t border-zinc-100 pt-2 mt-1">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Landings / Openings</span>
+                                                <span className="text-sm font-semibold text-zinc-800 mt-0.5">
+                                                  {(elevator.numLandings || elevator.numOpenings)
+                                                    ? `${elevator.numLandings ?? "—"} landings · ${elevator.numOpenings ?? "—"} openings`
+                                                    : <span className="text-zinc-300">—</span>}
+                                                </span>
+                                              </div>
+                                            </div>
                                           </div>
-
-                                          {/* LINE 2 — all data fields */}
-                                          <div className="flex items-end gap-6 mt-2">
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Unit ID</span>
-                                              <span className="text-sm font-semibold font-mono mt-0.5 text-zinc-800">
-                                                {elevator.internalId || <span className="text-zinc-300">—</span>}
-                                              </span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">State ID</span>
-                                              <span className="text-sm font-semibold font-mono mt-0.5 text-zinc-800">
-                                                {elevator.stateId || <span className="text-zinc-300">—</span>}
-                                              </span>
-                                            </div>
-                                            <div className="w-px h-8 bg-zinc-200 self-center" />
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">OEM Serial</span>
-                                              <span className="text-sm font-semibold font-mono mt-0.5 text-zinc-800">
-                                                {elevator.oemSerialNumber || <span className="text-zinc-300">—</span>}
-                                              </span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Year</span>
-                                              <span className="text-sm font-semibold mt-0.5 text-zinc-800">
-                                                {elevator.yearInstalled || <span className="text-zinc-300">—</span>}
-                                              </span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Capacity</span>
-                                              <span className="text-sm font-semibold mt-0.5 text-zinc-800">
-                                                {elevator.capacity || <span className="text-zinc-300">—</span>}
-                                              </span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Speed</span>
-                                              <span className="text-sm font-semibold mt-0.5 text-zinc-800">
-                                                {elevator.speed || <span className="text-zinc-300">—</span>}
-                                              </span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Lands / Opens</span>
-                                              <span className="text-sm font-semibold mt-0.5 text-zinc-800">
-                                                {(elevator.numLandings || elevator.numOpenings)
-                                                  ? `${elevator.numLandings ?? "—"} / ${elevator.numOpenings ?? "—"}`
-                                                  : <span className="text-zinc-300">—</span>}
-                                              </span>
-                                            </div>
-                                          </div>
-
-                                        </div>
-
-                                        {/* Right: action buttons */}
-                                        <div className="flex items-center gap-1 shrink-0">
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { openEdit(elevator); setIsAddOpen(true); }}>
-                                                  <Pencil className="h-3.5 w-3.5 text-zinc-500" />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>Edit Unit</TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setDeleteId(elevator.id)} disabled={deleteMutation.isPending}>
-                                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>Delete Unit</TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        </div>
+                                        ))}
                                       </div>
-                                    ))}
+                                    )}
                                   </div>
                                 );
                               })}
