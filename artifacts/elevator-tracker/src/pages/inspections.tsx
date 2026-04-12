@@ -26,7 +26,7 @@ import {
 import {
   Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays,
   X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  ChevronsUpDown, Check, SlidersHorizontal, Building2, Layers, AlertTriangle,
+  ChevronsUpDown, Check, SlidersHorizontal, Building2, Layers, AlertTriangle, Search,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -48,6 +48,7 @@ import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import dayjs from "dayjs";
 import { useSearch, useLocation } from "wouter";
 import { isValidDateStr, getAgingBucketValue, MONTH_OPTIONS, AGING_BUCKET_OPTIONS } from "@/lib/inspection-utils";
+import { useDebounce } from "@/hooks/use-debounce";
 
 /* ─── Constants ─────────────────────────────────────────────── */
 const PAGE_GROUPS = 20; // elevator cards per page
@@ -151,6 +152,10 @@ export default function Inspections() {
     navigate(qs ? `/inspections?${qs}` : "/inspections", { replace: true });
   }, [selectedStatuses, selectedInspTypes, selectedCustomerIds, selectedBuildingIds]);
 
+  const [searchQuery,        setSearchQuery]        = useState("");
+  const [showMeFilter,       setShowMeFilter]       = useState("all");
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
   /* ── Date range panel ── */
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [lastInspFrom,   setLastInspFrom]   = useState("");
@@ -187,7 +192,7 @@ export default function Inspections() {
     setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedElevatorIds([]);
     setSelectedBanks([]); setSelectedStatuses([]); setSelectedInspTypes([]);
     setSelectedUnitTypes([]); setFilterDueMonths([]); setFilterDueYears([]);
-    setFilterAgingBuckets([]); clearDateFilters();
+    setFilterAgingBuckets([]); clearDateFilters(); setSearchQuery(""); setShowMeFilter("all");
   }, [clearDateFilters]);
 
   const handleCustomerChange = (val: string[]) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedElevatorIds([]); setCurrentPage(1); };
@@ -214,6 +219,13 @@ export default function Inspections() {
 
   /* ── Client-side filtering ── */
   const inspections = useMemo(() => {
+    const q = debouncedSearch.toLowerCase().trim();
+    const today = dayjs().format("YYYY-MM-DD");
+    const in7   = dayjs().add(7,  "day").format("YYYY-MM-DD");
+    const in30  = dayjs().add(30, "day").format("YYYY-MM-DD");
+    const thisYear = dayjs().format("YYYY");
+    const nextYear = String(Number(thisYear) + 1);
+
     return (allInspections ?? []).filter(insp => {
       const meta = elevatorMeta.get(insp.elevatorId);
       if (selectedCustomerIds.length  > 0 && (!meta || !selectedCustomerIds.includes(String(meta.customerId))))  return false;
@@ -226,9 +238,33 @@ export default function Inspections() {
       if (filterDueMonths.length      > 0) { const m = insp.nextDueDate ? dayjs(insp.nextDueDate).format("MM") : null; if (!m || !filterDueMonths.includes(m)) return false; }
       if (filterDueYears.length       > 0) { const y = insp.nextDueDate ? dayjs(insp.nextDueDate).format("YYYY") : null; if (!y || !filterDueYears.includes(y)) return false; }
       if (filterAgingBuckets.length   > 0) { const b = getAgingBucketValue(insp.nextDueDate, insp.status); if (!b || !filterAgingBuckets.includes(b)) return false; }
+
+      // Search
+      if (q) {
+        const haystack = [insp.elevatorName, insp.buildingName, insp.customerName, meta?.bank].filter(Boolean).join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      // Show Me
+      if (showMeFilter !== "all") {
+        const trueStatus = (insp as any).trueStatus ?? insp.status;
+        const due = insp.nextDueDate?.slice(0, 10);
+        switch (showMeFilter) {
+          case "overdue":            if (trueStatus !== "OVERDUE") return false; break;
+          case "due-7-days":         if (!due || due > in7  || due < today) return false; break;
+          case "due-30-days":        if (!due || due > in30 || due < today) return false; break;
+          case "due-this-year":      if (!due || due.slice(0, 4) !== thisYear) return false; break;
+          case "due-next-year":      if (!due || due.slice(0, 4) !== nextYear) return false; break;
+          case "completed":          if (trueStatus !== "COMPLETED") return false; break;
+          case "completed-30-days":  { const cd = insp.completionDate?.slice(0, 10); if (!cd || cd < dayjs().subtract(30, "day").format("YYYY-MM-DD")) return false; break; }
+          case "completed-90-days":  { const cd = insp.completionDate?.slice(0, 10); if (!cd || cd < dayjs().subtract(90, "day").format("YYYY-MM-DD")) return false; break; }
+          case "not-completed":      if (trueStatus === "COMPLETED") return false; break;
+        }
+      }
+
       return true;
     });
-  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears, filterAgingBuckets]);
+  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears, filterAgingBuckets, debouncedSearch, showMeFilter]);
 
   /* ── Cascade filter options ── */
   const customerOptions = useMemo(() => (customers ?? []).map(c => ({ value: String(c.id), label: c.name })), [customers]);
@@ -441,9 +477,9 @@ export default function Inspections() {
     selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds,
     selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears,
     selectedStatuses, filterAgingBuckets,
-  ].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
-  const advancedFilterCount = [selectedBanks, selectedElevatorIds, selectedUnitTypes, selectedInspTypes, filterDueMonths].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
-  const clearAdvancedFilters = () => { setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedUnitTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); clearDateFilters(); setCurrentPage(1); };
+  ].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0) + (showMeFilter !== "all" ? 1 : 0) + (searchQuery ? 1 : 0);
+  const advancedFilterCount = [selectedBanks, selectedElevatorIds, selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses, filterAgingBuckets].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
+  const clearAdvancedFilters = () => { setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedUnitTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setSelectedStatuses([]); setFilterAgingBuckets([]); clearDateFilters(); setCurrentPage(1); };
 
   const chipLabel = (arr: string[], opts: { value: string; label: string }[], single: string) =>
     arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
@@ -666,12 +702,49 @@ export default function Inspections() {
         <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
           <div className="flex items-center gap-1.5 px-3 py-2 min-h-[48px]">
 
-            {/* Tier 1: Customer, Building, Due Year, Insp Status, Due Status */}
+            {/* Search */}
+            <div className="relative shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                placeholder="Search..."
+                className="h-8 pl-8 pr-3 w-[160px] text-xs border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+              />
+            </div>
+
             <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[155px]" />
             <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[140px]" />
-            <FilterCombobox value={filterDueYears} onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }} options={yearFilterOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
-            <FilterCombobox value={selectedStatuses} onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }} options={STATUS_OPTIONS} placeholder="Insp. Status" searchPlaceholder="Search statuses..." width="w-[150px]" />
-            <FilterCombobox value={filterAgingBuckets} onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }} options={AGING_BUCKET_OPTIONS} placeholder="Due Status" searchPlaceholder="Search buckets..." width="w-[150px]" />
+
+            {/* Show Me */}
+            <select
+              value={showMeFilter}
+              onChange={e => { setShowMeFilter(e.target.value); setCurrentPage(1); }}
+              className={cn(
+                "h-8 px-2 pr-7 text-xs rounded-md border appearance-none focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 bg-white shrink-0",
+                showMeFilter !== "all" ? "border-blue-300 text-blue-700 bg-blue-50" : "border-zinc-200 text-zinc-600"
+              )}
+            >
+              <option value="all">Show Me: All</option>
+              <optgroup label="By Status">
+                <option value="overdue">Overdue</option>
+                <option value="not-completed">Not completed</option>
+                <option value="completed">Completed</option>
+              </optgroup>
+              <optgroup label="By Completion Date">
+                <option value="completed-30-days">Completed last 30 days</option>
+                <option value="completed-90-days">Completed last 90 days</option>
+              </optgroup>
+              <optgroup label="By Due Date">
+                <option value="due-7-days">Due in 7 days</option>
+                <option value="due-30-days">Due in 30 days</option>
+                <option value="due-this-year">Due this year</option>
+                <option value="due-next-year">Due next year</option>
+              </optgroup>
+            </select>
+
+            <FilterCombobox value={selectedInspTypes} onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS} placeholder="CAT1 / CAT5" searchPlaceholder="Search..." width="w-[130px]" />
 
             <div className="h-5 w-px bg-zinc-200 mx-1 shrink-0" />
 
@@ -679,13 +752,13 @@ export default function Inspections() {
             <button
               onClick={() => setShowAdvancedFilters(v => !v)}
               className={cn(
-                "h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0",
+                "h-10 px-3 flex items-center gap-1.5 text-sm font-medium rounded-md border transition-colors whitespace-nowrap shrink-0",
                 showAdvancedFilters || advancedFilterCount > 0
                   ? "bg-blue-50 border-blue-300 text-blue-700"
                   : "bg-white border-zinc-200 hover:border-zinc-300 hover:text-zinc-700 text-zinc-600"
               )}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+              <SlidersHorizontal className="h-4 w-4 shrink-0" />
               More Filters
               {advancedFilterCount > 0 && (
                 <span className="inline-flex items-center justify-center h-[16px] min-w-[16px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
@@ -729,9 +802,9 @@ export default function Inspections() {
 
         {/* Advanced filter panel (Tier 2) */}
         {showAdvancedFilters && (
-          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm px-4 py-4 space-y-4">
+          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Advanced Filters</span>
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">More Filters</span>
               {advancedFilterCount > 0 && (
                 <button onClick={clearAdvancedFilters} className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
                   <X className="h-3 w-3" /> Clear advanced
@@ -741,7 +814,7 @@ export default function Inspections() {
 
             {/* Location */}
             <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Location</p>
+              <p className="text-sm font-medium text-zinc-500">Location</p>
               <div className="flex flex-wrap gap-1.5">
                 <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setSelectedElevatorIds([]); setCurrentPage(1); }} options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankOptions.length === 0} width="w-[145px]" />
                 <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }} options={elevatorOptions} placeholder="All Units" searchPlaceholder="Search units..." disabled={elevatorOptions.length === 0} width="w-[155px]" />
@@ -750,17 +823,19 @@ export default function Inspections() {
 
             {/* Inspection Details */}
             <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Inspection Details</p>
+              <p className="text-sm font-medium text-zinc-500">Inspection Details</p>
               <div className="flex flex-wrap gap-1.5">
                 <FilterCombobox value={selectedUnitTypes} onValueChange={(v) => { setSelectedUnitTypes(v); setCurrentPage(1); }} options={UNIT_TYPE_OPTIONS} placeholder="All Unit Types" searchPlaceholder="Search unit types..." width="w-[165px]" />
-                <FilterCombobox value={selectedInspTypes} onValueChange={(v) => { setSelectedInspTypes(v); setCurrentPage(1); }} options={INSP_TYPE_OPTIONS} placeholder="All Insp Types" searchPlaceholder="Search insp types..." width="w-[160px]" />
                 <FilterCombobox value={filterDueMonths} onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }} options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[140px]" />
+                <FilterCombobox value={filterDueYears} onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }} options={yearFilterOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
+                <FilterCombobox value={selectedStatuses} onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }} options={STATUS_OPTIONS} placeholder="Insp. Status" searchPlaceholder="Search statuses..." width="w-[150px]" />
+                <FilterCombobox value={filterAgingBuckets} onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }} options={AGING_BUCKET_OPTIONS} placeholder="Due Status" searchPlaceholder="Search buckets..." width="w-[150px]" />
               </div>
             </div>
 
             {/* Date Ranges */}
             <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Date Ranges</p>
+              <p className="text-sm font-medium text-zinc-500">Date Ranges</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { label: "Last Inspection", from: lastInspFrom,   to: lastInspTo,    setFrom: setLastInspFrom,   setTo: setLastInspTo },
@@ -769,11 +844,11 @@ export default function Inspections() {
                   { label: "Completion Date", from: completionFrom, to: completionTo,  setFrom: setCompletionFrom, setTo: setCompletionTo },
                 ].map(({ label, from, to, setFrom, setTo }) => (
                   <div key={label} className="space-y-1.5">
-                    <p className="text-xs font-medium text-zinc-400">{label}</p>
+                    <p className="text-sm font-medium text-zinc-400">{label}</p>
                     <div className="flex gap-1.5 items-center">
-                      <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
+                      <input type="date" className="h-10 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
                       <span className="text-zinc-300 text-xs shrink-0">–</span>
-                      <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to} onChange={e => setTo(e.target.value)} />
+                      <input type="date" className="h-10 text-sm border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to} onChange={e => setTo(e.target.value)} />
                     </div>
                   </div>
                 ))}
@@ -805,7 +880,7 @@ export default function Inspections() {
             <ClipboardList className="h-6 w-6 text-zinc-400" />
           </div>
           <p className="text-sm font-semibold text-zinc-600">No inspections found</p>
-          {(selectedStatuses.length > 0 || selectedInspTypes.length > 0 || selectedUnitTypes.length > 0 || selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedElevatorIds.length > 0 || selectedBanks.length > 0 || filterDueMonths.length > 0 || filterDueYears.length > 0 || filterAgingBuckets.length > 0 || lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo) ? (
+          {(selectedStatuses.length > 0 || selectedInspTypes.length > 0 || selectedUnitTypes.length > 0 || selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedElevatorIds.length > 0 || selectedBanks.length > 0 || filterDueMonths.length > 0 || filterDueYears.length > 0 || filterAgingBuckets.length > 0 || lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo || searchQuery || showMeFilter !== "all") ? (
             <button
               onClick={clearAllFilters}
               className="text-sm text-amber-600 hover:text-amber-700 font-semibold underline-offset-2 hover:underline"

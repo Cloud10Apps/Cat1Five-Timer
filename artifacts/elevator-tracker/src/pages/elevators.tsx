@@ -45,9 +45,10 @@ import {
 } from "@/components/ui/select";
 
 import { Link } from "wouter";
-import { Pencil, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, SlidersHorizontal, AlertTriangle, ClipboardList, ArrowRight } from "lucide-react";
+import { Pencil, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, AlertTriangle, ClipboardList, ArrowRight, Search } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,7 +71,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { fireCompletionConfetti } from "@/lib/confetti";
-import { isValidDateStr, getAgingBucketValue, MONTH_OPTIONS, AGING_BUCKET_OPTIONS } from "@/lib/inspection-utils";
+import { isValidDateStr, getAgingBucketValue, AGING_BUCKET_OPTIONS } from "@/lib/inspection-utils";
 
 
 const inspectionSchema = z.object({
@@ -113,28 +114,10 @@ function AgingBucketPill({ due, status }: { due: string | null | undefined; stat
 export default function Elevators() {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>([]);
-  const [selectedTypes,       setSelectedTypes]       = useState<string[]>([]);
-  const [selectedBanks,       setSelectedBanks]       = useState<string[]>([]);
-  const [selectedElevatorIds, setSelectedElevatorIds] = useState<string[]>([]);
   const [selectedInspTypes,   setSelectedInspTypes]   = useState<string[]>([]);
-  const [filterDueMonths,     setFilterDueMonths]     = useState<string[]>([]);
-  const [filterDueYears,      setFilterDueYears]      = useState<string[]>([]);
-  const [filterAgingBuckets,  setFilterAgingBuckets]  = useState<string[]>([]);
-  const [selectedStatuses,    setSelectedStatuses]    = useState<string[]>([]);
-
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [lastInspFrom,    setLastInspFrom]    = useState("");
-  const [lastInspTo,      setLastInspTo]      = useState("");
-  const [nextDueFrom,     setNextDueFrom]     = useState("");
-  const [nextDueTo,       setNextDueTo]       = useState("");
-  const [scheduledFrom,   setScheduledFrom]   = useState("");
-  const [scheduledTo,     setScheduledTo]     = useState("");
-
-  const clearDateFilters = useCallback(() => {
-    setLastInspFrom(""); setLastInspTo("");
-    setNextDueFrom(""); setNextDueTo("");
-    setScheduledFrom(""); setScheduledTo("");
-  }, []);
+  const [searchQuery,         setSearchQuery]         = useState("");
+  const [showMeFilter,        setShowMeFilter]        = useState("all");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
@@ -176,25 +159,6 @@ export default function Elevators() {
     return list.map(b => ({ value: b.id.toString(), label: b.name }));
   }, [allBuildings, selectedCustomerIds]);
 
-  // Banks cascade: from elevators matching selected customers + buildings
-  const bankFilterOptions = useMemo(() => {
-    let src = elevators ?? [];
-    if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
-    if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
-    const banks = Array.from(new Set(src.map(e => e.bank).filter(Boolean) as string[])).sort();
-    return banks.map(b => ({ value: b, label: b }));
-  }, [elevators, selectedCustomerIds, selectedBuildingIds]);
-
-  // Elevator filter options cascade from customer + building + bank selections
-  const elevatorFilterOptions = useMemo(() => {
-    let src = elevators ?? [];
-    if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
-    if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
-    if (selectedBanks.length > 0)       src = src.filter(e => selectedBanks.includes(e.bank ?? ""));
-    return [...src]
-      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
-      .map(el => ({ value: el.id.toString(), label: el.name + (el.buildingName ? ` – ${el.buildingName}` : "") }));
-  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks]);
   // Inspections for the currently-edited elevator
   const { data: elevatorInspections, isLoading: inspLoading } = useListInspections(
     { elevatorId: editingElevator?.id },
@@ -240,65 +204,58 @@ export default function Elevators() {
     return openMap;
   }, [allInspections]);
 
-  // Map: elevatorId → lastInspectionDate from the same top-one record in latestInspByElevator.
-  // Uses identical selection logic so the filter and the column always agree.
+  // Map: elevatorId → lastInspectionDate (for display in the table row)
   const lastCompletedByElevator = useMemo(() => {
     const map = new Map<number, string>();
     for (const [elevatorId, insp] of latestInspByElevator.entries()) {
-      if (insp.lastInspectionDate) {
-        map.set(elevatorId, insp.lastInspectionDate.slice(0, 10));
-      }
+      if (insp.lastInspectionDate) map.set(elevatorId, insp.lastInspectionDate.slice(0, 10));
     }
     return map;
   }, [latestInspByElevator]);
 
-  // Derive available years from the displayed next-due date per elevator (matches what the column and filters show)
-  const dueYearOptions = useMemo(() => {
-    const years = new Set<string>();
-    for (const insp of latestInspByElevator.values()) {
-      if (insp.nextDueDate) years.add(insp.nextDueDate.slice(0, 4));
-    }
-    return Array.from(years).sort();
-  }, [latestInspByElevator]);
-
-  const yearFilterOptions = useMemo(() =>
-    dueYearOptions.map((y) => ({ value: y, label: y })),
-    [dueYearOptions]);
-
-  // Client-side multi-select filtering
+  // Client-side filtering
   const filteredElevators = useMemo(() => {
+    const q = debouncedSearch.toLowerCase().trim();
+    const today = dayjs().format("YYYY-MM-DD");
+    const in7   = dayjs().add(7,  "day").format("YYYY-MM-DD");
+    const in30  = dayjs().add(30, "day").format("YYYY-MM-DD");
+    const thisYear = dayjs().format("YYYY");
+    const nextYear = String(Number(thisYear) + 1);
+
     return (elevators ?? []).filter((el) => {
       if (selectedCustomerIds.length > 0 && !selectedCustomerIds.includes(String(el.customerId))) return false;
       if (selectedBuildingIds.length > 0 && !selectedBuildingIds.includes(String(el.buildingId))) return false;
-      if (selectedBanks.length > 0       && !selectedBanks.includes(el.bank ?? ""))               return false;
-      if (selectedElevatorIds.length > 0 && !selectedElevatorIds.includes(el.id.toString()))       return false;
-      if (selectedTypes.length > 0       && !selectedTypes.includes(el.type ?? ""))                return false;
 
       const rowInsp = latestInspByElevator.get(el.id);
       const rowDue  = rowInsp?.nextDueDate?.slice(0, 10);
 
-      if (filterDueYears.length > 0  && (!rowDue || !filterDueYears.includes(rowDue.slice(0, 4))))   return false;
-      if (filterDueMonths.length > 0 && (!rowDue || !filterDueMonths.includes(rowDue.slice(5, 7))))  return false;
+      // CAT1/CAT5
       if (selectedInspTypes.length > 0 && (!rowInsp || !selectedInspTypes.includes(rowInsp.inspectionType))) return false;
-      if (filterAgingBuckets.length > 0 && !filterAgingBuckets.includes(getAgingBucketValue(rowDue) ?? ""))  return false;
-      if (selectedStatuses.length > 0) {
-        const trueStatus = rowInsp ? ((rowInsp as any).trueStatus ?? rowInsp.status) : "NOT_STARTED";
-        if (!selectedStatuses.includes(trueStatus)) return false;
+
+      // Search
+      if (q) {
+        const haystack = [el.name, el.buildingName, el.customerName, el.bank].filter(Boolean).join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
       }
 
-      // Date range filters
-      const lastInsp = lastCompletedByElevator.get(el.id) ?? null;
-      const rowSched = rowInsp?.scheduledDate?.slice(0, 10) ?? null;
-      if (lastInspFrom && (!lastInsp || lastInsp < lastInspFrom)) return false;
-      if (lastInspTo   && (!lastInsp || lastInsp > lastInspTo))   return false;
-      if (nextDueFrom  && (!rowDue   || rowDue   < nextDueFrom))  return false;
-      if (nextDueTo    && (!rowDue   || rowDue   > nextDueTo))    return false;
-      if (scheduledFrom && (!rowSched || rowSched < scheduledFrom)) return false;
-      if (scheduledTo   && (!rowSched || rowSched > scheduledTo))   return false;
+      // Show Me
+      if (showMeFilter !== "all") {
+        const trueStatus = rowInsp ? ((rowInsp as any).trueStatus ?? rowInsp.status) : "NOT_STARTED";
+        switch (showMeFilter) {
+          case "overdue":          if (trueStatus !== "OVERDUE") return false; break;
+          case "due-7-days":       if (!rowDue || rowDue > in7  || rowDue < today) return false; break;
+          case "due-30-days":      if (!rowDue || rowDue > in30 || rowDue < today) return false; break;
+          case "due-this-year":    if (!rowDue || rowDue.slice(0, 4) !== thisYear) return false; break;
+          case "due-next-year":    if (!rowDue || rowDue.slice(0, 4) !== nextYear) return false; break;
+          case "scheduled":        if (!rowInsp?.scheduledDate) return false; break;
+          case "not-scheduled":    if (rowInsp?.scheduledDate) return false; break;
+          case "in-progress":      if (trueStatus !== "IN_PROGRESS") return false; break;
+        }
+      }
 
       return true;
     });
-  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, latestInspByElevator, lastCompletedByElevator, filterDueMonths, filterDueYears, selectedInspTypes, filterAgingBuckets, selectedStatuses, lastInspFrom, lastInspTo, nextDueFrom, nextDueTo, scheduledFrom, scheduledTo]);
+  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedInspTypes, debouncedSearch, showMeFilter, latestInspByElevator]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -853,75 +810,59 @@ export default function Elevators() {
 
       {/* ── Filters ── */}
       {(() => {
-        const hasDateFilters = !!(lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo);
-        const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses, filterAgingBuckets].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
-        const advancedFilterCount = [selectedBanks, selectedElevatorIds, selectedTypes, selectedInspTypes, filterDueMonths].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
-        const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setFilterAgingBuckets([]); setSelectedStatuses([]); clearDateFilters(); };
-        const clearAdvancedFilters = () => { setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); clearDateFilters(); };
-        const unitTypeOpts = [
-          { value: "traction",  label: "Traction" },
-          { value: "hydraulic", label: "Hydraulic" },
-          { value: "other",     label: "Other" },
-        ];
-        const inspTypeOpts = [
-          { value: "CAT1", label: "CAT 1" },
-          { value: "CAT5", label: "CAT 5" },
-        ];
-        const statusOpts = [
-          { value: "NOT_STARTED", label: "Not Scheduled" },
-          { value: "SCHEDULED",   label: "Scheduled" },
-          { value: "IN_PROGRESS", label: "In Progress" },
-        ];
-        const chipLabel = (arr: string[], opts: {value:string;label:string}[], single: string) =>
-          arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
-        const activeChips: { label: string; value: string; onRemove: () => void }[] = [];
-        if (selectedCustomerIds.length > 0) activeChips.push({ label: "Customer", value: chipLabel(selectedCustomerIds, customerOptions, "customers"), onRemove: () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
-        if (selectedBuildingIds.length > 0) activeChips.push({ label: "Building", value: chipLabel(selectedBuildingIds, buildingOptions, "buildings"), onRemove: () => { setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
-        if (selectedBanks.length > 0)       activeChips.push({ label: "Bank",      value: chipLabel(selectedBanks, bankFilterOptions, "banks"),   onRemove: () => { setSelectedBanks([]); setSelectedElevatorIds([]); } });
-        if (selectedElevatorIds.length > 0) activeChips.push({ label: "Elevator",  value: chipLabel(selectedElevatorIds, elevatorFilterOptions, "elevators"), onRemove: () => setSelectedElevatorIds([]) });
-        if (selectedTypes.length > 0)       activeChips.push({ label: "Unit Type", value: chipLabel(selectedTypes, unitTypeOpts, "types"),         onRemove: () => setSelectedTypes([]) });
-        if (selectedInspTypes.length > 0)   activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes, inspTypeOpts, "types"),     onRemove: () => setSelectedInspTypes([]) });
-        if (filterDueMonths.length > 0)     activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths, MONTH_OPTIONS, "months"),     onRemove: () => setFilterDueMonths([]) });
-        if (filterDueYears.length > 0)      activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears, yearFilterOptions, "years"),   onRemove: () => setFilterDueYears([]) });
-        if (selectedStatuses.length > 0)    activeChips.push({ label: "Inspection Status", value: chipLabel(selectedStatuses, statusOpts, "statuses"), onRemove: () => setSelectedStatuses([]) });
-        if (filterAgingBuckets.length > 0)  activeChips.push({ label: "Due Status", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"), onRemove: () => setFilterAgingBuckets([]) });
-        if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
+        const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedInspTypes].filter(v => v.length > 0).length + (showMeFilter !== "all" ? 1 : 0) + (searchQuery ? 1 : 0);
+        const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedInspTypes([]); setShowMeFilter("all"); setSearchQuery(""); };
 
         return (
       <div className="flex flex-col gap-2 sticky top-0 z-10 bg-zinc-100 pb-2 pt-1 -mx-4 px-4">
 
-        {/* ── Quick filter row (Tier 1 — single row, no-wrap) ── */}
+        {/* Filter row */}
         <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
           <div className="flex items-center gap-1.5 px-3 py-2 min-h-[48px]">
 
-            {/* Tier 1: Customer, Building, Due Year, Insp Status, Due Status */}
-            <FilterCombobox value={selectedCustomerIds} onValueChange={(val) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); }} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[155px]" />
-            <FilterCombobox value={selectedBuildingIds} onValueChange={(val) => { setSelectedBuildingIds(val); setSelectedBanks([]); setSelectedElevatorIds([]); }} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[140px]" />
-            <FilterCombobox value={filterDueYears} onValueChange={setFilterDueYears} options={yearFilterOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
-            <FilterCombobox value={selectedStatuses} onValueChange={setSelectedStatuses} options={statusOpts} placeholder="Insp. Status" searchPlaceholder="Search statuses..." width="w-[150px]" />
-            <FilterCombobox value={filterAgingBuckets} onValueChange={setFilterAgingBuckets} options={AGING_BUCKET_OPTIONS} placeholder="Due Status" searchPlaceholder="Search buckets..." width="w-[150px]" />
+            {/* Search */}
+            <div className="relative shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search units..."
+                className="h-8 pl-8 pr-3 w-[180px] text-xs border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+              />
+            </div>
 
-            <div className="h-5 w-px bg-zinc-200 mx-1 shrink-0" />
+            <FilterCombobox value={selectedCustomerIds} onValueChange={(val) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); }} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[155px]" />
+            <FilterCombobox value={selectedBuildingIds} onValueChange={(val) => setSelectedBuildingIds(val)} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[140px]" />
 
-            {/* More Filters button */}
-            <button
-              onClick={() => setShowAdvancedFilters(v => !v)}
+            {/* Show Me */}
+            <select
+              value={showMeFilter}
+              onChange={e => setShowMeFilter(e.target.value)}
               className={cn(
-                "h-8 px-3 flex items-center gap-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0",
-                showAdvancedFilters || advancedFilterCount > 0
-                  ? "bg-blue-50 border-blue-300 text-blue-700"
-                  : "bg-white border-zinc-200 hover:border-zinc-300 hover:text-zinc-700 text-zinc-600"
+                "h-8 px-2 pr-7 text-xs rounded-md border appearance-none focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 bg-white shrink-0",
+                showMeFilter !== "all" ? "border-blue-300 text-blue-700 bg-blue-50" : "border-zinc-200 text-zinc-600"
               )}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-              More Filters
-              {advancedFilterCount > 0 && (
-                <span className="inline-flex items-center justify-center h-[16px] min-w-[16px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
-                  {advancedFilterCount}
-                </span>
-              )}
-              {showAdvancedFilters ? <ChevronUp className="h-3 w-3 shrink-0" /> : <ChevronDown className="h-3 w-3 shrink-0" />}
-            </button>
+              <option value="all">Show Me: All</option>
+              <optgroup label="By Due Date">
+                <option value="overdue">Overdue</option>
+                <option value="due-7-days">Due in 7 days</option>
+                <option value="due-30-days">Due in 30 days</option>
+                <option value="due-this-year">Due this year</option>
+                <option value="due-next-year">Due next year</option>
+              </optgroup>
+              <optgroup label="By Appointment">
+                <option value="scheduled">Scheduled</option>
+                <option value="not-scheduled">Not scheduled</option>
+              </optgroup>
+              <optgroup label="By Status">
+                <option value="in-progress">In progress</option>
+              </optgroup>
+            </select>
+
+            {/* CAT1 / CAT5 */}
+            <FilterCombobox value={selectedInspTypes} onValueChange={setSelectedInspTypes} options={[{ value: "CAT1", label: "CAT 1" }, { value: "CAT5", label: "CAT 5" }]} placeholder="CAT1 / CAT5" searchPlaceholder="Search..." width="w-[130px]" />
 
             <div className="flex-1 min-w-0" />
 
@@ -938,77 +879,7 @@ export default function Elevators() {
               )}
             </div>
           </div>
-
-          {/* Active filter chips */}
-          {activeChips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2 pt-0 border-t border-zinc-100">
-              <span className="text-xs font-medium text-zinc-400 mr-0.5 mt-2">Active:</span>
-              {activeChips.map((chip) => (
-                <span key={chip.label} className="inline-flex items-center gap-1 mt-2 pl-2 pr-1 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 leading-none whitespace-nowrap">
-                  <span className="text-blue-400 font-normal">{chip.label}:</span>
-                  {chip.value}
-                  <button onClick={chip.onRemove} className="ml-0.5 flex items-center justify-center h-[14px] w-[14px] rounded-full hover:bg-red-100 hover:text-red-500 text-blue-400 transition-colors">
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
-
-        {/* ── Advanced filter panel (Tier 2) ── */}
-        {showAdvancedFilters && (
-          <div className="bg-white border border-zinc-200 rounded-lg shadow-sm px-4 py-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Advanced Filters</span>
-              {advancedFilterCount > 0 && (
-                <button onClick={clearAdvancedFilters} className="flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 border border-zinc-200 hover:border-red-200 px-2.5 py-[5px] rounded-md transition-colors">
-                  <X className="h-3 w-3" /> Clear advanced
-                </button>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Location</p>
-              <div className="flex flex-wrap gap-1.5">
-                <FilterCombobox value={selectedBanks} onValueChange={(val) => { setSelectedBanks(val); setSelectedElevatorIds([]); }} options={bankFilterOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankFilterOptions.length === 0} width="w-[145px]" />
-                <FilterCombobox value={selectedElevatorIds} onValueChange={setSelectedElevatorIds} options={elevatorFilterOptions} placeholder="All Units" searchPlaceholder="Search units..." disabled={elevatorFilterOptions.length === 0} width="w-[155px]" />
-              </div>
-            </div>
-
-            {/* Inspection Details */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Inspection Details</p>
-              <div className="flex flex-wrap gap-1.5">
-                <FilterCombobox value={selectedTypes} onValueChange={setSelectedTypes} options={unitTypeOpts} placeholder="All Unit Types" searchPlaceholder="Search unit types..." width="w-[165px]" />
-                <FilterCombobox value={selectedInspTypes} onValueChange={setSelectedInspTypes} options={inspTypeOpts} placeholder="All Insp Types" searchPlaceholder="Search insp types..." width="w-[160px]" />
-                <FilterCombobox value={filterDueMonths} onValueChange={setFilterDueMonths} options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[140px]" />
-              </div>
-            </div>
-
-            {/* Date Ranges */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Date Ranges</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { label: "Last Inspection", from: lastInspFrom,  to: lastInspTo,   setFrom: setLastInspFrom,  setTo: setLastInspTo },
-                  { label: "Next Due",        from: nextDueFrom,   to: nextDueTo,    setFrom: setNextDueFrom,   setTo: setNextDueTo },
-                  { label: "Scheduled Date",  from: scheduledFrom, to: scheduledTo,  setFrom: setScheduledFrom, setTo: setScheduledTo },
-                ].map(({ label, from, to, setFrom, setTo }) => (
-                  <div key={label} className="space-y-1.5">
-                    <p className="text-xs font-medium text-zinc-400">{label}</p>
-                    <div className="flex gap-1.5 items-center">
-                      <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={from} onChange={e => setFrom(e.target.value)} />
-                      <span className="text-zinc-300 text-xs shrink-0">–</span>
-                      <input type="date" className="h-8 text-xs border border-zinc-200 rounded-md px-2 bg-white flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 min-w-0" value={to} onChange={e => setTo(e.target.value)} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Expand/collapse depth selector */}
         {!isLoading && grouped.length > 0 && (
@@ -1053,9 +924,9 @@ export default function Elevators() {
             <ClipboardList className="h-6 w-6 text-zinc-400" />
           </div>
           <p className="text-sm font-semibold text-zinc-600">No units found</p>
-          {(selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedBanks.length > 0 || selectedTypes.length > 0 || selectedElevatorIds.length > 0 || selectedInspTypes.length > 0 || filterDueMonths.length > 0 || filterDueYears.length > 0 || filterAgingBuckets.length > 0 || selectedStatuses.length > 0 || lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo) ? (
+          {(selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedInspTypes.length > 0 || showMeFilter !== "all" || searchQuery) ? (
             <button
-              onClick={() => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedTypes([]); setSelectedElevatorIds([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setFilterAgingBuckets([]); setSelectedStatuses([]); setLastInspFrom(""); setLastInspTo(""); setNextDueFrom(""); setNextDueTo(""); setScheduledFrom(""); setScheduledTo(""); }}
+              onClick={() => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedInspTypes([]); setShowMeFilter("all"); setSearchQuery(""); }}
               className="text-sm text-amber-600 hover:text-amber-700 font-semibold underline-offset-2 hover:underline"
             >
               Clear all filters
