@@ -5,11 +5,7 @@ import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid,
-} from "recharts";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshCw, AlertTriangle, Clock, CalendarDays, CheckCircle2 } from "lucide-react";
+import { RefreshCw, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import dayjs from "dayjs";
 
 /* ─── label helper ─── */
@@ -17,32 +13,6 @@ function toLabel(s: string) {
   if (s === "NOT_STARTED" || s === "NOT STARTED") return "Not Scheduled";
   return s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
-
-/* ─── Upcoming / Overdue bucket colours ─── */
-const UPCOMING_COLORS: Record<string, string> = {
-  "due-today":  "#dc2626",
-  "due-1-7":    "#ea580c",
-  "due-8-14":   "#ca8a04",
-  "due-15-30":  "#2563eb",
-  "due-31-60":  "#4f46e5",
-  "due-61-90":  "#94a3b8",
-};
-const OVERDUE_COLORS: Record<string, string> = {
-  "overdue-1-30":  "#fb923c",
-  "overdue-31-60": "#f97316",
-  "overdue-61-90": "#dc2626",
-  "overdue-91+":   "#7f1d1d",
-};
-
-/* ─── Status colours — single source of truth ─── */
-const STATUS_COLORS: Record<string, string> = {
-  COMPLETED:   "#16a34a",
-  OVERDUE:     "#dc2626",
-  IN_PROGRESS: "#d97706",
-  SCHEDULED:   "#2563eb",
-  NOT_STARTED: "#a1a1aa",
-};
-const getStatusColor = (s: string) => STATUS_COLORS[s] ?? "#a1a1aa";
 
 /* ─── Overdue aging badge ─── */
 function OverdueBadge({ days }: { days: number }) {
@@ -92,33 +62,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/* ─── Skeleton loaders ─── */
-function StatSkeleton() {
-  return (
-    <div className="bg-white border border-t-4 border-zinc-200 border-t-zinc-300 rounded-lg shadow-sm overflow-hidden animate-pulse">
-      <div className="p-4 h-6 bg-zinc-100 rounded w-2/3 mb-4" />
-      <div className="flex items-center justify-center py-6">
-        <div className="h-16 w-20 bg-zinc-100 rounded" />
-      </div>
-    </div>
-  );
-}
-
-function ChartSkeleton() {
-  return (
-    <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden animate-pulse" style={{ height: 360 }}>
-      <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50">
-        <div className="h-4 bg-zinc-200 rounded w-1/3" />
-      </div>
-      <div className="p-6 flex items-end gap-3 h-[300px]">
-        {[40,70,30,90,55,75,45].map((h,i) => (
-          <div key={i} className="flex-1 bg-zinc-100 rounded" style={{ height: `${h}%` }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
+/* ─── Table skeleton ─── */
 function TableSkeleton() {
   return (
     <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden animate-pulse">
@@ -132,54 +76,6 @@ function TableSkeleton() {
           <div className="w-24 h-4 bg-zinc-100 rounded" />
         </div>
       ))}
-    </div>
-  );
-}
-
-/* ─── Section label with divider line ─── */
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 mb-4">
-      <p className="text-xs font-black text-zinc-500 uppercase tracking-[0.14em] whitespace-nowrap">{children}</p>
-      <div className="flex-1 h-px bg-zinc-200" />
-    </div>
-  );
-}
-
-/* ─── Uniform card header — same font size, UPPERCASE title ─── */
-function CardHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50/60 flex items-center gap-2">
-      <div className="flex-1" />
-      <div className="flex items-center gap-2">
-        <h3 className="text-xs font-black text-zinc-700 uppercase tracking-[0.09em] text-center">{title}</h3>
-        {badge}
-      </div>
-      <div className="flex-1 flex justify-end">{action}</div>
-    </div>
-  );
-}
-
-/* ─── Overdue card header — same size, red tint ─── */
-function OverdueCardHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="px-5 py-3 border-b border-red-200 bg-red-50 flex items-center gap-2">
-      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-      <h3 className="text-xs font-black text-red-700 uppercase tracking-[0.09em] flex-1 text-center">{title}</h3>
-      {badge}
-      <div className="flex justify-end">{action}</div>
-    </div>
-  );
-}
-
-/* ─── Upcoming card header ─── */
-function UpcomingCardHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="px-5 py-3 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
-      <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
-      <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1 text-center">{title}</h3>
-      {badge}
-      <div className="flex justify-end">{action}</div>
     </div>
   );
 }
@@ -206,50 +102,8 @@ function ExportBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
-/* ─── In-bar value label (white) ─── */
-function BarValueLabel(props: any) {
-  const { x, y, width, height, value } = props;
-  if (!value || Number(value) === 0 || Number(width) < 22) return null;
-  return (
-    <text x={Number(x)+Number(width)/2} y={Number(y)+Number(height)/2+5}
-      fill="#fff" fontSize={16} fontWeight={700} textAnchor="middle">{value}</text>
-  );
-}
-
-/* ─── External total label at right of stacked horizontal bar ─── */
-function TotalLabel(data: any[]) {
-  return function Inner(props: any) {
-    const { x, y, width, height, index } = props;
-    if (index == null) return null;
-    const d = data[index];
-    if (!d) return null;
-    const total = (Number(d.notStarted)||0) + (Number(d.scheduled)||0) + (Number(d.inProgress)||0);
-    if (!total) return null;
-    return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={16} fontWeight={900} textAnchor="start">{total}</text>;
-  };
-}
-
-/* ─── Total label above stacked vertical bar ─── */
-function TotalLabelVertical(data: any[]) {
-  return function Inner(props: any) {
-    const { x, y, width, index } = props;
-    const d = data[index];
-    if (!d || d._total === 0) return null;
-    return <text x={Number(x)+Number(width)/2} y={Number(y)-7} fill="#18181b" fontSize={16} fontWeight={900} textAnchor="middle">{d._total}</text>;
-  };
-}
-
-/* ─── Shared tooltip style ─── */
-const TT = {
-  contentStyle: { backgroundColor:"#fff", borderColor:"#e4e4e7", borderRadius:"8px", boxShadow:"0 4px 20px rgb(0 0 0/0.12)", fontSize:"13px", padding:"10px 16px" },
-  itemStyle:    { fontSize:"13px", fontWeight:600 },
-  labelStyle:   { fontSize:"13px", fontWeight:800, color:"#18181b", marginBottom:"4px" },
-  cursor:       { fill:"#f4f4f5" },
-};
-const tickStyle = { fill:"#52525b", fontSize:12, fontWeight:500 as const };
-
 const LIVE_OPTS = { staleTime: 0, refetchInterval: 2*60*1000, refetchOnWindowFocus: true } as const;
-const DASH_KEYS = ["/api/customers","/api/dashboard/summary","/api/dashboard/attention","/api/dashboard/status-breakdown","monthly-forecast","/api/dashboard/aging/v2"];
+const DASH_KEYS = ["/api/customers","/api/dashboard/summary","/api/dashboard/attention","/api/inspections/upcoming-30"];
 
 function apiFetch(path: string, cid?: number | null) {
   const token = localStorage.getItem("token");
@@ -259,6 +113,12 @@ function apiFetch(path: string, cid?: number | null) {
 function customersFetch() {
   const token = localStorage.getItem("token");
   return fetch("/api/customers", { headers: { Authorization:`Bearer ${token}` } }).then(r => r.json());
+}
+function upcomingFetch(cid: number | null, from: string, to: string) {
+  const token = localStorage.getItem("token");
+  const params = new URLSearchParams({ nextDueDateFrom: from, nextDueDateTo: to });
+  if (cid) params.set("customerId", String(cid));
+  return fetch(`/api/inspections?${params}`, { headers: { Authorization:`Bearer ${token}` } }).then(r => r.json());
 }
 
 export default function Dashboard() {
@@ -289,35 +149,26 @@ export default function Dashboard() {
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
 
-  const { data: customers }                             = useQuery({ queryKey:["/api/customers"],                      queryFn: customersFetch,                        ...LIVE_OPTS });
-  const { data: summary,  isLoading:l1, dataUpdatedAt:t1 } = useQuery({ queryKey:["/api/dashboard/summary",         cid], queryFn:()=>apiFetch("summary",         cid), ...LIVE_OPTS });
-  const { data: attention, isLoading:l2 }                  = useQuery({ queryKey:["/api/dashboard/attention",        cid], queryFn:()=>apiFetch("attention",        cid), ...LIVE_OPTS });
-  const { data: breakdown, isLoading:l3 }                  = useQuery({ queryKey:["/api/dashboard/status-breakdown", cid], queryFn:()=>apiFetch("status-breakdown", cid), ...LIVE_OPTS });
-  const { data: forecast,  isLoading:l4 }                  = useQuery({ queryKey:["monthly-forecast",                cid], queryFn:()=>apiFetch("monthly-forecast", cid), ...LIVE_OPTS });
-  const { data: aging,     isLoading:l5 }                  = useQuery({ queryKey:["/api/dashboard/aging/v2",         cid], queryFn:()=>apiFetch("aging",            cid), ...LIVE_OPTS });
+  const todayStr = dayjs().format("YYYY-MM-DD");
+  const in30Days = dayjs().add(30, "day").format("YYYY-MM-DD");
+  const in3Days  = dayjs().add(3,  "day").format("YYYY-MM-DD");
+
+  const { data: customers }                                  = useQuery({ queryKey:["/api/customers"],                      queryFn: customersFetch,                        ...LIVE_OPTS });
+  const { data: summary,  isLoading:l1, dataUpdatedAt:t1 }  = useQuery({ queryKey:["/api/dashboard/summary",  cid], queryFn:()=>apiFetch("summary",  cid), ...LIVE_OPTS });
+  const { data: attention, isLoading:l2 }                    = useQuery({ queryKey:["/api/dashboard/attention", cid], queryFn:()=>apiFetch("attention", cid), ...LIVE_OPTS });
+  const { data: upcomingRaw, isLoading: l3 }                 = useQuery({ queryKey:["/api/inspections/upcoming-30", cid, todayStr, in30Days], queryFn:()=>upcomingFetch(cid, todayStr, in30Days), ...LIVE_OPTS });
 
   useEffect(() => { if (t1) { setLastUpdated(new Date(t1)); setSecsAgo(0); } }, [t1]);
-
-  const todayStr = dayjs().format("YYYY-MM-DD");
-  const in14Days = dayjs().add(14,"day").format("YYYY-MM-DD");
-  const in3Days  = dayjs().add(3, "day").format("YYYY-MM-DD");
 
   const overdueItems = ((attention??[]) as any[])
     .filter(i => i.status==="OVERDUE")
     .sort((a,b)=>(a.nextDueDate??"").localeCompare(b.nextDueDate??""));
-  const upcoming = ((attention??[]) as any[]).filter(
-    i=>i.status!=="OVERDUE"&&i.nextDueDate&&i.nextDueDate>=todayStr&&i.nextDueDate<=in14Days
-  ).sort((a,b)=>a.nextDueDate.localeCompare(b.nextDueDate));
 
-  const statusChartData = ((breakdown??[]) as any[])
-    .filter(b => b.status !== "OVERDUE")
-    .map(b=>({ name:toLabel(b.status), value:b.count, color:getStatusColor(b.status) }));
-  const agingData       = ((aging??[]) as any[]).map(b=>({ ...b, _total:(b.notStarted??0)+(b.scheduled??0)+(b.inProgress??0) }));
-  const upcomingData    = agingData.filter((b:any) => ["due-today","due-1-7","due-8-14","due-15-30","due-31-60","due-61-90"].includes(b.bucket) && b._total > 0);
-  const overdueData     = agingData.filter((b:any) => ["overdue-1-30","overdue-31-60","overdue-61-90","overdue-91+"].includes(b.bucket) && b._total > 0);
-  const forecastData    = ((forecast??[]) as any[]).map(b=>({ ...b, _total:(b.scheduled??0)+(b.completed??0) }));
-  const year            = dayjs().year();
-  const customerList    = (customers??[]) as any[];
+  const upcoming = ((upcomingRaw ?? []) as any[])
+    .filter((i: any) => !i.completionDate && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in30Days)
+    .sort((a: any, b: any) => a.nextDueDate.localeCompare(b.nextDueDate));
+
+  const customerList = (customers ?? []) as any[];
 
   return (
     <div className="flex flex-col min-h-full -m-4 bg-zinc-100 text-zinc-900 font-sans">
@@ -352,9 +203,8 @@ export default function Dashboard() {
           const scheduled    = summary?.scheduledCount    ?? 0;
           const inProgress   = summary?.inProgressCount   ?? 0;
           const overdue      = overdueItems.length;
-          const dueThisMonth = ((attention ?? []) as any[]).filter(
-            (i: any) => i.status !== "OVERDUE" && i.nextDueDate &&
-              i.nextDueDate >= todayStr && i.nextDueDate <= dayjs().add(30, "day").format("YYYY-MM-DD")
+          const dueThisMonth = upcoming.filter(
+            (i: any) => i.nextDueDate && i.nextDueDate.slice(0, 7) === dayjs().format("YYYY-MM")
           ).length;
           const totalActive  = completed + notStarted + scheduled + inProgress + overdue;
           if (totalActive === 0) return null;
@@ -415,46 +265,9 @@ export default function Dashboard() {
           );
         })()}
 
-        {/* ══ KPI CARDS ══ */}
-        {(() => {
-          const overdueCnt = overdueItems.length;
-          const in90Days = dayjs().add(90, "day").format("YYYY-MM-DD");
-          const dueThisMonthCnt = ((attention ?? []) as any[]).filter(
-            (i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate.slice(0, 7) === dayjs().format("YYYY-MM")
-          ).length;
-          const dueNext90Cnt = ((attention ?? []) as any[]).filter(
-            (i: any) => i.status !== "OVERDUE" && i.nextDueDate && i.nextDueDate >= todayStr && i.nextDueDate <= in90Days
-          ).length;
-          const completedCnt = summary?.completedCount ?? 0;
-          const kpiCards = [
-            { label: "Overdue Now",        value: overdueCnt,    numCls: "text-red-700",   topCls: "border-t-red-500",   icon: <AlertTriangle className="w-5 h-5" />,  iconCls: "text-red-400"   },
-            { label: "Due This Month",     value: dueThisMonthCnt, numCls: "text-amber-600", topCls: "border-t-amber-500", icon: <CalendarDays className="w-5 h-5" />,  iconCls: "text-amber-400" },
-            { label: "Due Next 90 Days",   value: dueNext90Cnt,  numCls: "text-blue-700",  topCls: "border-t-blue-500",  icon: <Clock className="w-5 h-5" />,          iconCls: "text-blue-400"  },
-            { label: "Completed This Year",value: completedCnt,  numCls: "text-green-700", topCls: "border-t-green-500", icon: <CheckCircle2 className="w-5 h-5" />,   iconCls: "text-green-500" },
-          ];
-          return (
-            <section>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(l1 || l2) ? [1,2,3,4].map(i => <StatSkeleton key={i} />) : kpiCards.map(({ label, value, numCls, topCls, icon, iconCls }) => (
-                  <div key={label} className={`bg-white border border-t-4 border-zinc-200 ${topCls} rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
-                    <div className="px-6 pt-5 pb-1 flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-[0.1em] text-zinc-500 leading-tight">{label}</span>
-                      <span className={`${iconCls} opacity-60`}>{icon}</span>
-                    </div>
-                    <div className="flex-1 flex items-end px-6 pb-5 pt-1">
-                      <div className={`text-[4.5rem] leading-none font-black tabular-nums tracking-tight ${numCls}`}>{value}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          );
-        })()}
-
-        {/* ══ ACTION TABLES — needs attention ══ */}
+        {/* ══ ACTION TABLES ══ */}
         <section>
-          <SectionLabel>Needs Attention</SectionLabel>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-5">
 
             {/* Overdue Inspections */}
             {l2 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -471,13 +284,14 @@ export default function Dashboard() {
                       <TableHead className="text-zinc-500 text-xs font-semibold h-9 pl-6">Unit / Building</TableHead>
                       <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Type</TableHead>
                       <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Status</TableHead>
-                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center pr-6">Was Due</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 text-center">Was Due</TableHead>
+                      <TableHead className="text-zinc-500 text-xs font-semibold h-9 pr-6">How Long Overdue</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {overdueItems.length===0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-12">
+                        <TableCell colSpan={5} className="text-center py-12">
                           <div className="flex flex-col items-center gap-2">
                             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                               <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -487,7 +301,7 @@ export default function Dashboard() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ) : overdueItems.map((insp:any) => (
+                    ) : overdueItems.slice(0, 10).map((insp:any) => (
                       <TableRow key={insp.id} className="border-l-4 border-l-red-400 hover:bg-red-50/40 border-b border-red-100/60 transition-colors">
                         <TableCell className="py-4 pl-6">
                           <div className="font-bold text-[15px] text-zinc-900 leading-snug">{insp.elevatorName}</div>
@@ -495,10 +309,13 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell className="py-4 text-center"><InspectionTypeBadge type={insp.inspectionType} /></TableCell>
                         <TableCell className="py-4 text-center"><StatusBadge status={insp.rawStatus} /></TableCell>
-                        <TableCell className="py-4 text-center pr-6">
+                        <TableCell className="py-4 text-center">
                           <span className="text-[14px] font-semibold text-red-700">
                             {insp.nextDueDate?dayjs(insp.nextDueDate).format("MMM D, YYYY"):"N/A"}
                           </span>
+                        </TableCell>
+                        <TableCell className="py-4 pr-6">
+                          {insp.nextDueDate && <OverdueBadge days={dayjs(todayStr).diff(dayjs(insp.nextDueDate), "day")} />}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -514,11 +331,11 @@ export default function Dashboard() {
               )}
             </div>}
 
-            {/* Upcoming — Next 14 Days */}
-            {l2 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+            {/* Coming Up — Next 30 Days */}
+            {l3 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
               <div className="px-5 py-3.5 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
-                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1">Upcoming — Next 14 Days</h3>
+                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1">Coming Up — Next 30 Days</h3>
                 <CountBadge n={upcoming.length} />
                 <ExportBtn onClick={()=>dlXlsx("upcoming",`upcoming_${new Date().toISOString().slice(0,10)}.xlsx`)} />
               </div>
@@ -539,9 +356,9 @@ export default function Dashboard() {
                         <TableCell colSpan={5} className="text-center py-12">
                           <div className="flex flex-col items-center gap-2">
                             <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center">
-                              <CalendarDays className="w-5 h-5 text-zinc-400" />
+                              <Clock className="w-5 h-5 text-zinc-400" />
                             </div>
-                            <span className="font-semibold text-zinc-500 text-sm">No inspections due in 14 days</span>
+                            <span className="font-semibold text-zinc-500 text-sm">No inspections due in 30 days</span>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -581,134 +398,6 @@ export default function Dashboard() {
                   </Link>
                 </div>
               )}
-            </div>}
-
-          </div>
-        </section>
-
-        {/* ══ TRENDS & INSIGHTS ══ */}
-        <section>
-          <SectionLabel>Trends &amp; Insights</SectionLabel>
-
-          {/* Row 1: Upcoming + Overdue aging charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-
-            {(l2 || l5) ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <div className="px-5 py-3 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
-                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1 text-center">Upcoming Inspections by Due Status</h3>
-              </div>
-              <div className="p-5 h-[300px] flex items-center">
-                {upcomingData.length === 0 ? (
-                  <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
-                    <CheckCircle2 className="w-8 h-8 opacity-30" />
-                    <span className="text-sm font-medium">No upcoming inspections</span>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={upcomingData} layout="vertical" margin={{ top:6, right:52, left:8, bottom:6 }} barCategoryGap="20%">
-                      <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="label" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={148} />
-                      <Tooltip {...TT} />
-                      <Bar dataKey="_total" name="Count" barSize={52} radius={[0,6,6,0]}>
-                        {upcomingData.map((entry:any, i:number) => (
-                          <Cell key={i} fill={UPCOMING_COLORS[entry.bucket] ?? "#3b82f6"} />
-                        ))}
-                        <LabelList content={(props:any) => {
-                          const { x,y,width,height,value } = props;
-                          if (!value) return null;
-                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={14} fontWeight={800} textAnchor="start">{value}</text>;
-                        }} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>}
-
-            {l5 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <div className="px-5 py-3 border-b border-red-200 bg-red-50 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-                <h3 className="text-xs font-black text-red-700 uppercase tracking-[0.09em] flex-1 text-center">Overdue Inspections by Aging</h3>
-              </div>
-              <div className="p-5 h-[300px] flex items-center">
-                {overdueData.length === 0 ? (
-                  <div className="w-full flex flex-col items-center justify-center gap-2 text-zinc-400">
-                    <CheckCircle2 className="w-8 h-8 opacity-30" />
-                    <span className="text-sm font-medium">No overdue inspections</span>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={overdueData} layout="vertical" margin={{ top:6, right:52, left:8, bottom:6 }} barCategoryGap="20%">
-                      <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} width={130}
-                        tick={(props:any) => {
-                          const { x, y, payload } = props;
-                          const short = (payload.value as string).replace("Overdue ", "");
-                          return <text x={x} y={y} dy={5} textAnchor="end" fill="#18181b" fontSize={13} fontWeight={700}>{short}</text>;
-                        }}
-                      />
-                      <Tooltip {...TT} />
-                      <Bar dataKey="_total" name="Count" barSize={52} radius={[0,6,6,0]}>
-                        {overdueData.map((entry:any, i:number) => (
-                          <Cell key={i} fill={OVERDUE_COLORS[entry.bucket] ?? "#f97316"} />
-                        ))}
-                        <LabelList content={(props:any) => {
-                          const { x,y,width,height,value } = props;
-                          if (!value) return null;
-                          return <text x={Number(x)+Number(width)+10} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={14} fontWeight={800} textAnchor="start">{value}</text>;
-                        }} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>}
-
-          </div>
-
-          {/* Row 2: Status distribution + Monthly activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            {l3 ? <ChartSkeleton /> : (
-            <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <CardHeader title={`${year} Inspection Status Breakdown`} />
-              <div className="p-4 h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={statusChartData} layout="vertical" margin={{ top:5, right:64, left:8, bottom:5 }} barCategoryGap="18%">
-                    <XAxis type="number" allowDecimals={false} tick={false} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} width={155} />
-                    <Tooltip {...TT} />
-                    <Bar dataKey="value" barSize={48} radius={[0,5,5,0]}>
-                      {statusChartData.map((e,i)=><Cell key={i} fill={e.color} />)}
-                      <LabelList content={(props:any) => {
-                        const { x,y,width,height,value } = props;
-                        if (!value) return null;
-                        return <text x={Number(x)+Number(width)+12} y={Number(y)+Number(height)/2+5} fill="#18181b" fontSize={13} fontWeight={900} textAnchor="start">{value}</text>;
-                      }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            )}
-
-            {l4 ? <ChartSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <CardHeader title={`${year} Monthly Inspection Activity`} />
-              <div className="p-4 h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={forecastData} margin={{ top:26, right:8, left:-16, bottom:0 }} barCategoryGap="20%">
-                    <CartesianGrid strokeDasharray="0" vertical={false} stroke="#e4e4e7" strokeWidth={1} />
-                    <XAxis dataKey="label" tick={{ fill:"#18181b", fontSize:13, fontWeight:700 }} axisLine={false} tickLine={false} height={32} />
-                    <YAxis tick={{ fill:"#71717a", fontSize:13, fontWeight:500 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip {...TT} />
-                    <Bar dataKey="scheduled"  name="Scheduled"  stackId="s" fill={STATUS_COLORS.SCHEDULED}  radius={[0,0,0,0]} />
-                    <Bar dataKey="completed"  name="Completed"  stackId="s" fill={STATUS_COLORS.COMPLETED}  radius={[5,5,0,0]}>
-                      <LabelList content={TotalLabelVertical(forecastData)} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
             </div>}
 
           </div>
