@@ -216,6 +216,7 @@ export default function Units() {
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
+            queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
             setEditingElevator(null);
             setIsAddOpen(false);
             form.reset();
@@ -228,6 +229,7 @@ export default function Units() {
       try {
         await createMutation.mutateAsync({ data });
         queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
         setIsAddOpen(false);
         form.reset();
         toast({ title: "Unit added" });
@@ -244,6 +246,7 @@ export default function Units() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListElevatorsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
           toast({ title: "Unit deleted" });
           setDeleteId(null);
         },

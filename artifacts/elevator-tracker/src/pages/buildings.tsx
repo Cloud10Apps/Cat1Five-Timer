@@ -254,6 +254,7 @@ export default function Buildings() {
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListBuildingsQueryKey() });
+            queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
             setEditingBuilding(null);
             setIsAddOpen(false);
             form.reset();
@@ -270,6 +271,7 @@ export default function Buildings() {
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListBuildingsQueryKey() });
+            queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
             setIsAddOpen(false);
             form.reset();
             toast({ title: "Building added successfully" });
@@ -289,6 +291,7 @@ export default function Buildings() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListBuildingsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
           toast({ title: "Building deleted successfully" });
           setDeleteId(null);
         },

@@ -296,6 +296,7 @@ export default function Customers() {
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListCustomersQueryKey() });
+            queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
             setEditingCustomer(null);
             form.reset();
             toast({ title: "Customer updated successfully" });
@@ -311,6 +312,7 @@ export default function Customers() {
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListCustomersQueryKey() });
+            queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
             setIsAddOpen(false);
             form.reset();
             toast({ title: "Customer added successfully" });
@@ -330,6 +332,7 @@ export default function Customers() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListCustomersQueryKey() });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
           toast({ title: "Customer deleted successfully" });
           setDeleteId(null);
         },
