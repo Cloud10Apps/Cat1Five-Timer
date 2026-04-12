@@ -250,9 +250,9 @@ export default function Inspections() {
         const trueStatus = (insp as any).trueStatus ?? insp.status;
         const due = insp.nextDueDate?.slice(0, 10);
         switch (showMeFilter) {
-          case "overdue":            if (trueStatus !== "OVERDUE") return false; break;
-          case "due-7-days":         if (!due || due > in7  || due < today) return false; break;
-          case "due-30-days":        if (!due || due > in30 || due < today) return false; break;
+          case "overdue":            if (insp.status === "COMPLETED" || !due || due >= today) return false; break;
+          case "due-7-days":         if (!due || due > in7  || due < today || insp.status === "COMPLETED") return false; break;
+          case "due-30-days":        if (!due || due > in30 || due < today || insp.status === "COMPLETED") return false; break;
           case "due-this-year":      if (!due || due.slice(0, 4) !== thisYear) return false; break;
           case "due-next-year":      if (!due || due.slice(0, 4) !== nextYear) return false; break;
           case "completed":          if (trueStatus !== "COMPLETED") return false; break;

@@ -217,10 +217,6 @@ export default function Elevators() {
   const filteredElevators = useMemo(() => {
     const q = debouncedSearch.toLowerCase().trim();
     const today = dayjs().format("YYYY-MM-DD");
-    const in7   = dayjs().add(7,  "day").format("YYYY-MM-DD");
-    const in30  = dayjs().add(30, "day").format("YYYY-MM-DD");
-    const thisYear = dayjs().format("YYYY");
-    const nextYear = String(Number(thisYear) + 1);
 
     return (elevators ?? []).filter((el) => {
       if (selectedCustomerIds.length > 0 && !selectedCustomerIds.includes(String(el.customerId))) return false;
@@ -240,16 +236,61 @@ export default function Elevators() {
 
       // Show Me
       if (showMeFilter !== "all") {
-        const trueStatus = rowInsp ? ((rowInsp as any).trueStatus ?? rowInsp.status) : "NOT_STARTED";
         switch (showMeFilter) {
-          case "overdue":          if (trueStatus !== "OVERDUE") return false; break;
-          case "due-7-days":       if (!rowDue || rowDue > in7  || rowDue < today) return false; break;
-          case "due-30-days":      if (!rowDue || rowDue > in30 || rowDue < today) return false; break;
-          case "due-this-year":    if (!rowDue || rowDue.slice(0, 4) !== thisYear) return false; break;
-          case "due-next-year":    if (!rowDue || rowDue.slice(0, 4) !== nextYear) return false; break;
-          case "scheduled":        if (!rowInsp?.scheduledDate) return false; break;
-          case "not-scheduled":    if (rowInsp?.scheduledDate) return false; break;
-          case "in-progress":      if (trueStatus !== "IN_PROGRESS") return false; break;
+          case "overdue": {
+            if (!rowDue || rowDue >= today) return false; break;
+          }
+          case "due-7": {
+            const in7d = dayjs().add(7, "day").format("YYYY-MM-DD");
+            if (!rowDue || rowDue < today || rowDue > in7d) return false; break;
+          }
+          case "due-14": {
+            const in14 = dayjs().add(14, "day").format("YYYY-MM-DD");
+            if (!rowDue || rowDue < today || rowDue > in14) return false; break;
+          }
+          case "due-30": {
+            const in30d = dayjs().add(30, "day").format("YYYY-MM-DD");
+            if (!rowDue || rowDue < today || rowDue > in30d) return false; break;
+          }
+          case "due-60": {
+            const in60 = dayjs().add(60, "day").format("YYYY-MM-DD");
+            if (!rowDue || rowDue < today || rowDue > in60) return false; break;
+          }
+          case "due-90": {
+            const in90 = dayjs().add(90, "day").format("YYYY-MM-DD");
+            if (!rowDue || rowDue < today || rowDue > in90) return false; break;
+          }
+          case "appt-7": {
+            const appt7 = dayjs().add(7, "day").format("YYYY-MM-DD");
+            const sched7 = rowInsp?.scheduledDate?.slice(0, 10);
+            if (!sched7 || sched7 < today || sched7 > appt7) return false; break;
+          }
+          case "appt-14": {
+            const appt14 = dayjs().add(14, "day").format("YYYY-MM-DD");
+            const sched14 = rowInsp?.scheduledDate?.slice(0, 10);
+            if (!sched14 || sched14 < today || sched14 > appt14) return false; break;
+          }
+          case "appt-30": {
+            const appt30 = dayjs().add(30, "day").format("YYYY-MM-DD");
+            const sched30 = rowInsp?.scheduledDate?.slice(0, 10);
+            if (!sched30 || sched30 < today || sched30 > appt30) return false; break;
+          }
+          case "appt-60": {
+            const appt60 = dayjs().add(60, "day").format("YYYY-MM-DD");
+            const sched60 = rowInsp?.scheduledDate?.slice(0, 10);
+            if (!sched60 || sched60 < today || sched60 > appt60) return false; break;
+          }
+          case "appt-90": {
+            const appt90 = dayjs().add(90, "day").format("YYYY-MM-DD");
+            const sched90 = rowInsp?.scheduledDate?.slice(0, 10);
+            if (!sched90 || sched90 < today || sched90 > appt90) return false; break;
+          }
+          case "not-scheduled": {
+            if (rowInsp?.status === "SCHEDULED" || rowInsp?.status === "IN_PROGRESS") return false; break;
+          }
+          case "scheduled": {
+            if (!rowInsp?.scheduledDate) return false; break;
+          }
         }
       }
 
@@ -845,19 +886,24 @@ export default function Elevators() {
               )}
             >
               <option value="all">Show Me: All</option>
-              <optgroup label="By Due Date">
-                <option value="overdue">Overdue</option>
-                <option value="due-7-days">Due in 7 days</option>
-                <option value="due-30-days">Due in 30 days</option>
-                <option value="due-this-year">Due this year</option>
-                <option value="due-next-year">Due next year</option>
+              <optgroup label="BY DUE DATE">
+                <option value="overdue">Overdue (past due date)</option>
+                <option value="due-7">Due in Next 7 Days</option>
+                <option value="due-14">Due in Next 14 Days</option>
+                <option value="due-30">Due in Next 30 Days</option>
+                <option value="due-60">Due in Next 60 Days</option>
+                <option value="due-90">Due in Next 90 Days</option>
               </optgroup>
-              <optgroup label="By Appointment">
+              <optgroup label="BY SCHEDULED APPOINTMENT">
+                <option value="appt-7">Appointment in Next 7 Days</option>
+                <option value="appt-14">Appointment in Next 14 Days</option>
+                <option value="appt-30">Appointment in Next 30 Days</option>
+                <option value="appt-60">Appointment in Next 60 Days</option>
+                <option value="appt-90">Appointment in Next 90 Days</option>
+              </optgroup>
+              <optgroup label="BY STATUS">
+                <option value="not-scheduled">Not Yet Scheduled</option>
                 <option value="scheduled">Scheduled</option>
-                <option value="not-scheduled">Not scheduled</option>
-              </optgroup>
-              <optgroup label="By Status">
-                <option value="in-progress">In progress</option>
               </optgroup>
             </select>
 
