@@ -137,7 +137,6 @@ export default function Inspections() {
   const [selectedUnitTypes,    setSelectedUnitTypes]    = useState<string[]>([]);
   const [selectedCustomerIds,  setSelectedCustomerIds]  = useState<string[]>(() => getParamArray("customer"));
   const [selectedBuildingIds,  setSelectedBuildingIds]  = useState<string[]>(() => getParamArray("building"));
-  const [selectedElevatorIds,  setSelectedElevatorIds]  = useState<string[]>([]);
   const [selectedBanks,        setSelectedBanks]        = useState<string[]>([]);
   const [filterDueMonths,      setFilterDueMonths]      = useState<string[]>([]);
   const [filterDueYears,       setFilterDueYears]       = useState<string[]>([]);
@@ -191,14 +190,14 @@ export default function Inspections() {
   }, []);
 
   const clearAllFilters = useCallback(() => {
-    setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedElevatorIds([]);
+    setSelectedCustomerIds([]); setSelectedBuildingIds([]);
     setSelectedBanks([]); setSelectedStatuses([]); setSelectedInspTypes([]);
     setSelectedUnitTypes([]); setFilterDueMonths([]); setFilterDueYears([]);
     setFilterAgingBuckets([]); clearDateFilters(); setSearchQuery(""); setShowMeFilter("all");
   }, [clearDateFilters]);
 
-  const handleCustomerChange = (val: string[]) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedElevatorIds([]); setCurrentPage(1); };
-  const handleBuildingChange = (val: string[]) => { setSelectedBuildingIds(val); setSelectedElevatorIds([]); setCurrentPage(1); };
+  const handleCustomerChange = (val: string[]) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setCurrentPage(1); };
+  const handleBuildingChange = (val: string[]) => { setSelectedBuildingIds(val); setCurrentPage(1); };
 
   /* ── Data fetching ── */
   const dateQueryParams = {
@@ -233,7 +232,6 @@ export default function Inspections() {
       if (selectedCustomerIds.length  > 0 && (!meta || !selectedCustomerIds.includes(String(meta.customerId))))  return false;
       if (selectedBuildingIds.length  > 0 && (!meta || !selectedBuildingIds.includes(String(meta.buildingId))))  return false;
       if (selectedBanks.length        > 0 && (!meta || !selectedBanks.includes(meta.bank)))                      return false;
-      if (selectedElevatorIds.length  > 0 && !selectedElevatorIds.includes(String(insp.elevatorId)))             return false;
       if (selectedStatuses.length     > 0 && !selectedStatuses.includes((insp as any).trueStatus ?? insp.status)) return false;
       if (selectedInspTypes.length    > 0 && !selectedInspTypes.includes(insp.inspectionType))                   return false;
       if (selectedUnitTypes.length    > 0 && (!meta || !selectedUnitTypes.includes(meta.type)))                  return false;
@@ -266,7 +264,7 @@ export default function Inspections() {
 
       return true;
     });
-  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears, filterAgingBuckets, debouncedSearch, showMeFilter]);
+  }, [allInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedStatuses, selectedInspTypes, selectedUnitTypes, filterDueMonths, filterDueYears, filterAgingBuckets, debouncedSearch, showMeFilter]);
 
   /* ── Cascade filter options ── */
   const customerOptions = useMemo(() => (customers ?? []).map(c => ({ value: String(c.id), label: c.name })), [customers]);
@@ -280,13 +278,6 @@ export default function Inspections() {
     if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
     return Array.from(new Set(src.map(e => e.bank).filter(Boolean) as string[])).sort().map(b => ({ value: b, label: b }));
   }, [elevators, selectedCustomerIds, selectedBuildingIds]);
-  const elevatorOptions = useMemo(() => {
-    let src = elevators ?? [];
-    if (selectedCustomerIds.length > 0) src = src.filter(e => selectedCustomerIds.includes(String(e.customerId)));
-    if (selectedBuildingIds.length > 0) src = src.filter(e => selectedBuildingIds.includes(String(e.buildingId)));
-    if (selectedBanks.length       > 0) src = src.filter(e => selectedBanks.includes(e.bank ?? ""));
-    return [...src].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")).map(e => ({ value: String(e.id), label: e.name + (e.buildingName ? ` – ${e.buildingName}` : "") }));
-  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks]);
   const yearFilterOptions = useMemo(() => {
     const years = new Set<string>();
     for (const insp of allInspections ?? []) { if (insp.nextDueDate) years.add(dayjs(insp.nextDueDate).format("YYYY")); }
@@ -430,7 +421,6 @@ export default function Inspections() {
     selectedInspTypes.forEach(t    => params.append("inspectionType", t));
     selectedCustomerIds.forEach(id => params.append("customerId",     id));
     selectedBuildingIds.forEach(id => params.append("buildingId",     id));
-    selectedElevatorIds.forEach(id => params.append("elevatorId",     id));
     selectedBanks.forEach(b        => params.append("bank",           b));
     selectedUnitTypes.forEach(t    => params.append("elevatorType",   t));
     filterDueMonths.forEach(m      => params.append("dueMonth",       m));
@@ -476,26 +466,26 @@ export default function Inspections() {
 
   /* ── Filter bar chips ── */
   const activeFilterCount = [
-    selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedElevatorIds,
+    selectedCustomerIds, selectedBuildingIds, selectedBanks,
     selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears,
     selectedStatuses, filterAgingBuckets,
   ].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0) + (showMeFilter !== "all" ? 1 : 0) + (searchQuery ? 1 : 0);
-  const advancedFilterCount = [selectedBanks, selectedElevatorIds, selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses, filterAgingBuckets].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
-  const clearAdvancedFilters = () => { setSelectedBanks([]); setSelectedElevatorIds([]); setSelectedUnitTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setSelectedStatuses([]); setFilterAgingBuckets([]); clearDateFilters(); setCurrentPage(1); };
+  const advancedFilterCount = [selectedBanks, selectedUnitTypes, selectedInspTypes, filterDueMonths, filterDueYears, selectedStatuses, filterAgingBuckets].filter(v => v.length > 0).length + (hasDateFilters ? 1 : 0);
+  const clearAdvancedFilters = () => { setSelectedBanks([]); setSelectedUnitTypes([]); setSelectedInspTypes([]); setFilterDueMonths([]); setFilterDueYears([]); setSelectedStatuses([]); setFilterAgingBuckets([]); clearDateFilters(); setCurrentPage(1); };
 
   const chipLabel = (arr: string[], opts: { value: string; label: string }[], single: string) =>
     arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
 
   const activeChips: { label: string; value: string; onRemove: () => void }[] = [];
-  if (selectedCustomerIds.length  > 0) activeChips.push({ label: "Customer",  value: chipLabel(selectedCustomerIds, customerOptions,      "customers"), onRemove: () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
-  if (selectedBuildingIds.length  > 0) activeChips.push({ label: "Building",  value: chipLabel(selectedBuildingIds, buildingOptions,      "buildings"), onRemove: () => { setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedElevatorIds([]); } });
-  if (selectedBanks.length        > 0) activeChips.push({ label: "Bank",      value: chipLabel(selectedBanks,       bankOptions,          "banks"),     onRemove: () => { setSelectedBanks([]); setSelectedElevatorIds([]); } });
+  if (selectedCustomerIds.length  > 0) activeChips.push({ label: "Customer",  value: chipLabel(selectedCustomerIds, customerOptions,      "customers"), onRemove: () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); } });
+  if (selectedBuildingIds.length  > 0) activeChips.push({ label: "Building",  value: chipLabel(selectedBuildingIds, buildingOptions,      "buildings"), onRemove: () => { setSelectedBuildingIds([]); setSelectedBanks([]); } });
+  if (selectedBanks.length        > 0) activeChips.push({ label: "Bank",      value: chipLabel(selectedBanks,       bankOptions,          "banks"),     onRemove: () => { setSelectedBanks([]); } });
   if (selectedUnitTypes.length    > 0) activeChips.push({ label: "Unit Type", value: chipLabel(selectedUnitTypes,   UNIT_TYPE_OPTIONS,    "types"),     onRemove: () => setSelectedUnitTypes([]) });
   if (selectedInspTypes.length    > 0) activeChips.push({ label: "Insp Type", value: chipLabel(selectedInspTypes,   INSP_TYPE_OPTIONS,    "types"),     onRemove: () => setSelectedInspTypes([]) });
   if (filterDueMonths.length      > 0) activeChips.push({ label: "Due Month", value: chipLabel(filterDueMonths,     MONTH_OPTIONS,        "months"),    onRemove: () => setFilterDueMonths([]) });
   if (filterDueYears.length       > 0) activeChips.push({ label: "Due Year",  value: chipLabel(filterDueYears,      yearFilterOptions,    "years"),     onRemove: () => setFilterDueYears([]) });
   if (selectedStatuses.length     > 0) activeChips.push({ label: "Inspection Status", value: chipLabel(selectedStatuses, STATUS_OPTIONS, "statuses"), onRemove: () => setSelectedStatuses([]) });
-  if (filterAgingBuckets.length   > 0) activeChips.push({ label: "Due Status", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"),   onRemove: () => setFilterAgingBuckets([]) });
+  if (filterAgingBuckets.length   > 0) activeChips.push({ label: "Timeline", value: chipLabel(filterAgingBuckets, AGING_BUCKET_OPTIONS, "buckets"),   onRemove: () => setFilterAgingBuckets([]) });
   if (hasDateFilters)                  activeChips.push({ label: "Date Range", value: "Active",                                                         onRemove: () => clearDateFilters() });
 
   /* ── Section header helpers ── */
@@ -818,8 +808,7 @@ export default function Inspections() {
             <div className="space-y-1.5">
               <p className="text-sm font-medium text-zinc-500">Location</p>
               <div className="flex flex-wrap gap-1.5">
-                <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setSelectedElevatorIds([]); setCurrentPage(1); }} options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankOptions.length === 0} width="w-[145px]" />
-                <FilterCombobox value={selectedElevatorIds} onValueChange={(v) => { setSelectedElevatorIds(v); setCurrentPage(1); }} options={elevatorOptions} placeholder="All Units" searchPlaceholder="Search units..." disabled={elevatorOptions.length === 0} width="w-[155px]" />
+                <FilterCombobox value={selectedBanks} onValueChange={(v) => { setSelectedBanks(v); setCurrentPage(1); }} options={bankOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankOptions.length === 0} width="w-[145px]" />
               </div>
             </div>
 
@@ -831,7 +820,7 @@ export default function Inspections() {
                 <FilterCombobox value={filterDueMonths} onValueChange={(v) => { setFilterDueMonths(v); setCurrentPage(1); }} options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[140px]" />
                 <FilterCombobox value={filterDueYears} onValueChange={(v) => { setFilterDueYears(v); setCurrentPage(1); }} options={yearFilterOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
                 <FilterCombobox value={selectedStatuses} onValueChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }} options={STATUS_OPTIONS} placeholder="Insp. Status" searchPlaceholder="Search statuses..." width="w-[150px]" />
-                <FilterCombobox value={filterAgingBuckets} onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }} options={AGING_BUCKET_OPTIONS} placeholder="Due Status" searchPlaceholder="Search buckets..." width="w-[150px]" />
+                <FilterCombobox value={filterAgingBuckets} onValueChange={(v) => { setFilterAgingBuckets(v); setCurrentPage(1); }} options={AGING_BUCKET_OPTIONS} placeholder="Timeline" searchPlaceholder="Search buckets..." width="w-[150px]" />
               </div>
             </div>
 
@@ -882,7 +871,7 @@ export default function Inspections() {
             <ClipboardList className="h-6 w-6 text-zinc-400" />
           </div>
           <p className="text-sm font-semibold text-zinc-600">No inspections found</p>
-          {(selectedStatuses.length > 0 || selectedInspTypes.length > 0 || selectedUnitTypes.length > 0 || selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedElevatorIds.length > 0 || selectedBanks.length > 0 || filterDueMonths.length > 0 || filterDueYears.length > 0 || filterAgingBuckets.length > 0 || lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo || searchQuery || showMeFilter !== "all") ? (
+          {(selectedStatuses.length > 0 || selectedInspTypes.length > 0 || selectedUnitTypes.length > 0 || selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedBanks.length > 0 || filterDueMonths.length > 0 || filterDueYears.length > 0 || filterAgingBuckets.length > 0 || lastInspFrom || lastInspTo || nextDueFrom || nextDueTo || scheduledFrom || scheduledTo || completionFrom || completionTo || searchQuery || showMeFilter !== "all") ? (
             <button
               onClick={clearAllFilters}
               className="text-sm text-amber-600 hover:text-amber-700 font-semibold underline-offset-2 hover:underline"

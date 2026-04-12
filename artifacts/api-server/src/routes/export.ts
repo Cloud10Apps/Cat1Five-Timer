@@ -346,7 +346,7 @@ router.get("/elevators", asyncHandler(async (req, res) => {
 
   // Most urgent open inspection per elevator
   const elevatorIds = rows.map(r => r.elevatorId);
-  type LatestInsp = { elevatorId: number; status: string; inspection_type: string; nextDueDate: string | null; scheduledDate: string | null; lastInspectionDate: string | null };
+  type LatestInsp = { elevatorId: number; status: string; inspection_type: string; nextDueDate: string | null; scheduledDate: string | null; lastInspectionDate: string | null; notes: string | null };
   let latestInspMap = new Map<number, LatestInsp>();
   if (elevatorIds.length > 0) {
     const allInspRows = await db
@@ -357,6 +357,7 @@ router.get("/elevators", asyncHandler(async (req, res) => {
         nextDueDate:         inspectionsTable.nextDueDate,
         scheduledDate:       inspectionsTable.scheduledDate,
         lastInspectionDate:  inspectionsTable.lastInspectionDate,
+        notes:               inspectionsTable.notes,
       })
       .from(inspectionsTable)
       .where(
@@ -371,7 +372,7 @@ router.get("/elevators", asyncHandler(async (req, res) => {
     const openMap = new Map<number, LatestInsp>();
     const anyMap  = new Map<number, LatestInsp>();
     for (const r of allInspRows) {
-      const row: LatestInsp = { elevatorId: r.elevatorId, status: r.status, inspection_type: r.inspection_type ?? "", nextDueDate: r.nextDueDate ?? null, scheduledDate: r.scheduledDate ?? null, lastInspectionDate: r.lastInspectionDate ?? null };
+      const row: LatestInsp = { elevatorId: r.elevatorId, status: r.status, inspection_type: r.inspection_type ?? "", nextDueDate: r.nextDueDate ?? null, scheduledDate: r.scheduledDate ?? null, lastInspectionDate: r.lastInspectionDate ?? null, notes: r.notes ?? null };
       if (!anyMap.has(r.elevatorId)) anyMap.set(r.elevatorId, row);
       if (r.status !== "COMPLETED" && !openMap.has(r.elevatorId)) openMap.set(r.elevatorId, row);
     }
@@ -409,6 +410,7 @@ router.get("/elevators", asyncHandler(async (req, res) => {
     { header: "Days",               key: "days",               width: 10 },
     { header: "Due Status",         key: "agingBucket",        width: 16 },
     { header: "Scheduled Date",     key: "scheduledDate",      width: 18, style: DATE_STYLE },
+    { header: "Notes",              key: "notes",              width: 45 },
   ];
 
   sheet.getRow(1).font = { bold: true };
@@ -446,6 +448,7 @@ router.get("/elevators", asyncHandler(async (req, res) => {
       days:          daysVal ?? "",
       agingBucket:   agingBucketLabel(insp?.nextDueDate, insp?.status),
       scheduledDate: toDate(insp?.scheduledDate),
+      notes:         insp?.notes ?? "",
     });
   });
 

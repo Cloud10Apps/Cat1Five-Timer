@@ -71,7 +71,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { fireCompletionConfetti } from "@/lib/confetti";
-import { isValidDateStr, getAgingBucketValue, AGING_BUCKET_OPTIONS } from "@/lib/inspection-utils";
+import { isValidDateStr, getAgingBucketValue, AGING_BUCKET_OPTIONS, MONTH_OPTIONS } from "@/lib/inspection-utils";
 
 
 const inspectionSchema = z.object({
@@ -119,6 +119,8 @@ export default function Elevators() {
   const [selectedInspTypes,   setSelectedInspTypes]   = useState<string[]>([]);
   const [searchQuery,         setSearchQuery]         = useState("");
   const [showMeFilter,        setShowMeFilter]        = useState("all");
+  const [filterDueYears,      setFilterDueYears]      = useState<string[]>([]);
+  const [filterDueMonths,     setFilterDueMonths]     = useState<string[]>([]);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -205,6 +207,14 @@ export default function Elevators() {
 
     return openMap;
   }, [allInspections]);
+
+  const dueYearOptions = useMemo(() => {
+    const years = new Set<string>();
+    for (const insp of latestInspByElevator.values()) {
+      if (insp.nextDueDate) years.add(insp.nextDueDate.slice(0, 4));
+    }
+    return Array.from(years).sort().map(y => ({ value: y, label: y }));
+  }, [latestInspByElevator]);
 
   // Map: elevatorId → lastInspectionDate (for display in the table row)
   const lastCompletedByElevator = useMemo(() => {
@@ -301,9 +311,16 @@ export default function Elevators() {
         }
       }
 
+      if (filterDueYears.length > 0) {
+        if (!rowDue || !filterDueYears.includes(rowDue.slice(0, 4))) return false;
+      }
+      if (filterDueMonths.length > 0) {
+        if (!rowDue || !filterDueMonths.includes(rowDue.slice(5, 7))) return false;
+      }
+
       return true;
     });
-  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedInspTypes, debouncedSearch, showMeFilter, latestInspByElevator]);
+  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedInspTypes, debouncedSearch, showMeFilter, filterDueYears, filterDueMonths, latestInspByElevator]);
 
   // Group filtered elevators: customer → building → bank → elevator[]
   const grouped = useMemo(() => {
@@ -858,8 +875,8 @@ export default function Elevators() {
 
       {/* ── Filters ── */}
       {(() => {
-        const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedInspTypes].filter(v => v.length > 0).length + (showMeFilter !== "all" ? 1 : 0) + (searchQuery ? 1 : 0);
-        const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedInspTypes([]); setShowMeFilter("all"); setSearchQuery(""); };
+        const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedInspTypes, filterDueYears, filterDueMonths].filter(v => v.length > 0).length + (showMeFilter !== "all" ? 1 : 0) + (searchQuery ? 1 : 0);
+        const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedInspTypes([]); setShowMeFilter("all"); setSearchQuery(""); setFilterDueYears([]); setFilterDueMonths([]); };
 
         return (
       <div className="flex flex-col gap-2 sticky top-0 z-10 bg-zinc-100 pb-2 pt-1 -mx-4 px-4">
@@ -913,6 +930,9 @@ export default function Elevators() {
                 <option value="scheduled">Scheduled</option>
               </optgroup>
             </select>
+
+            <FilterCombobox value={filterDueYears} onValueChange={setFilterDueYears} options={dueYearOptions} placeholder="Due Year" searchPlaceholder="Search years..." width="w-[115px]" />
+            <FilterCombobox value={filterDueMonths} onValueChange={setFilterDueMonths} options={MONTH_OPTIONS} placeholder="Due Month" searchPlaceholder="Search months..." width="w-[130px]" />
 
             {/* CAT1 / CAT5 */}
             <FilterCombobox value={selectedInspTypes} onValueChange={setSelectedInspTypes} options={[{ value: "CAT1", label: "CAT 1" }, { value: "CAT5", label: "CAT 5" }]} placeholder="CAT1 / CAT5" searchPlaceholder="Search..." width="w-[130px]" />
@@ -977,9 +997,9 @@ export default function Elevators() {
             <ClipboardList className="h-6 w-6 text-zinc-400" />
           </div>
           <p className="text-sm font-semibold text-zinc-600">No units found</p>
-          {(selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedInspTypes.length > 0 || showMeFilter !== "all" || searchQuery) ? (
+          {(selectedCustomerIds.length > 0 || selectedBuildingIds.length > 0 || selectedInspTypes.length > 0 || showMeFilter !== "all" || searchQuery || filterDueYears.length > 0 || filterDueMonths.length > 0) ? (
             <button
-              onClick={() => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedInspTypes([]); setShowMeFilter("all"); setSearchQuery(""); }}
+              onClick={() => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedInspTypes([]); setShowMeFilter("all"); setSearchQuery(""); setFilterDueYears([]); setFilterDueMonths([]); }}
               className="text-sm text-amber-600 hover:text-amber-700 font-semibold underline-offset-2 hover:underline"
             >
               Clear all filters
