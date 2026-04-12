@@ -709,8 +709,8 @@ export default function Inspections() {
                 type="text"
                 value={searchQuery}
                 onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                placeholder="Search..."
-                className="h-8 pl-8 pr-3 w-[160px] text-xs border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                placeholder="Search units..."
+                className="h-8 pl-8 pr-3 w-[160px] text-xs text-zinc-700 placeholder-zinc-400 border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
               />
             </div>
 

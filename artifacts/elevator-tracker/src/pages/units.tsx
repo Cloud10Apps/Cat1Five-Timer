@@ -60,9 +60,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   Plus, Pencil, Trash2, Download, X, ChevronDown, ChevronRight,
-  Building as BuildingIcon, Users, Layers, Check, ChevronsUpDown,
+  Building as BuildingIcon, Users, Layers, Check, ChevronsUpDown, Search,
 } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,8 @@ export default function Units() {
   const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>([]);
   const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [searchQuery,   setSearchQuery]   = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
@@ -144,14 +147,19 @@ export default function Units() {
   }, [elevators, selectedCustomerIds, selectedBuildingIds]);
 
   const filteredElevators = useMemo(() => {
+    const q = debouncedSearch.toLowerCase().trim();
     return (elevators ?? []).filter((el) => {
       if (selectedCustomerIds.length > 0 && !selectedCustomerIds.includes(String(el.customerId))) return false;
       if (selectedBuildingIds.length > 0 && !selectedBuildingIds.includes(String(el.buildingId))) return false;
       if (selectedBanks.length > 0       && !selectedBanks.includes(el.bank ?? ""))               return false;
       if (selectedTypes.length > 0       && !selectedTypes.includes(el.type ?? ""))                return false;
+      if (q) {
+        const haystack = [el.name, el.buildingName, el.customerName, el.bank].filter(Boolean).join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
       return true;
     });
-  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedTypes]);
+  }, [elevators, selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedTypes, debouncedSearch]);
 
   const grouped = useMemo(() => {
     type ElevatorItem = NonNullable<typeof filteredElevators>[number];
@@ -294,8 +302,8 @@ export default function Units() {
     { value: "other",     label: "Other" },
   ];
 
-  const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedTypes([]); };
-  const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedTypes].filter(v => v.length > 0).length;
+  const clearAll = () => { setSelectedCustomerIds([]); setSelectedBuildingIds([]); setSelectedBanks([]); setSelectedTypes([]); setSearchQuery(""); };
+  const activeFilterCount = [selectedCustomerIds, selectedBuildingIds, selectedBanks, selectedTypes].filter(v => v.length > 0).length + (searchQuery ? 1 : 0);
 
   const chipLabel = (arr: string[], opts: {value:string;label:string}[], single: string) =>
     arr.length === 1 ? (opts.find(o => o.value === arr[0])?.label ?? arr[0]) : `${arr.length} ${single}`;
@@ -614,6 +622,18 @@ export default function Units() {
       {/* Filters */}
       <div className="bg-white border border-zinc-200 rounded-lg shadow-sm">
         <div className="flex items-center gap-1.5 px-3 py-2 min-h-[48px]">
+          {/* Search */}
+          <div className="relative shrink-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search units..."
+              className="h-8 pl-8 pr-3 w-[180px] text-xs text-zinc-700 placeholder-zinc-400 border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+            />
+          </div>
+
           <FilterCombobox value={selectedCustomerIds} onValueChange={(val) => { setSelectedCustomerIds(val); setSelectedBuildingIds([]); setSelectedBanks([]); }} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[155px]" />
           <FilterCombobox value={selectedBuildingIds} onValueChange={(val) => { setSelectedBuildingIds(val); setSelectedBanks([]); }} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[140px]" />
           <FilterCombobox value={selectedBanks} onValueChange={setSelectedBanks} options={bankFilterOptions} placeholder="All Banks" searchPlaceholder="Search banks..." disabled={bankFilterOptions.length === 0} width="w-[130px]" />

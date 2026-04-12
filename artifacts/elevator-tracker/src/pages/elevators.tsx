@@ -286,7 +286,12 @@ export default function Elevators() {
             if (!sched90 || sched90 < today || sched90 > appt90) return false; break;
           }
           case "not-scheduled": {
-            if (rowInsp?.status === "SCHEDULED" || rowInsp?.status === "IN_PROGRESS") return false; break;
+            if (rowInsp?.scheduledDate ||
+                rowInsp?.status === "SCHEDULED" ||
+                rowInsp?.status === "IN_PROGRESS" ||
+                rowInsp?.status === "COMPLETED")
+              return false;
+            break;
           }
           case "scheduled": {
             if (!rowInsp?.scheduledDate) return false; break;
@@ -869,7 +874,7 @@ export default function Elevators() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search units..."
-                className="h-8 pl-8 pr-3 w-[180px] text-xs border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                className="h-8 pl-8 pr-3 w-[180px] text-xs text-zinc-700 placeholder-zinc-400 border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
               />
             </div>
 
@@ -902,7 +907,7 @@ export default function Elevators() {
                 <option value="appt-90">Appointment in Next 90 Days</option>
               </optgroup>
               <optgroup label="BY STATUS">
-                <option value="not-scheduled">Not Yet Scheduled</option>
+                <option value="not-scheduled">Not Scheduled</option>
                 <option value="scheduled">Scheduled</option>
               </optgroup>
             </select>

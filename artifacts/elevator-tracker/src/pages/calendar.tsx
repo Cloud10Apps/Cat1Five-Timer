@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/select";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
-  ChevronLeft, ChevronRight, Pencil, Layers, AlertTriangle, X,
+  ChevronLeft, ChevronRight, Pencil, Layers, AlertTriangle, X, Search,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { Spinner } from "@/components/ui/spinner";
@@ -49,6 +49,7 @@ import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { FilterCombobox } from "@/components/filter-combobox";
+import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { fireCompletionConfetti } from "@/lib/confetti";
 import { isValidDateStr } from "@/lib/inspection-utils";
@@ -155,7 +156,8 @@ export default function CalendarView() {
   const [selectedCustomerIds,  setSelectedCustomerIds]  = useState<string[]>([]);
   const [selectedBuildingIds,  setSelectedBuildingIds]  = useState<string[]>([]);
   const [selectedInspTypes,    setSelectedInspTypes]    = useState<string[]>([]);
-  const [statusFilter,         setStatusFilter]         = useState("all");
+  const [searchQuery,          setSearchQuery]          = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const today = dayjs();
   const startOfMonth = currentDate.startOf("month");
@@ -193,20 +195,19 @@ export default function CalendarView() {
 
   /* ── Client-side filtering ── */
   const inspections = useMemo(() => {
+    const q = debouncedSearch.toLowerCase().trim();
     return (rawInspections ?? []).filter(insp => {
       const meta = elevatorMeta.get(insp.elevatorId);
       if (selectedCustomerIds.length > 0 && (!meta || !selectedCustomerIds.includes(String(meta.customerId)))) return false;
       if (selectedBuildingIds.length > 0 && (!meta || !selectedBuildingIds.includes(String(meta.buildingId)))) return false;
       if (selectedInspTypes.length   > 0 && !selectedInspTypes.includes(insp.inspectionType))                  return false;
-      if (statusFilter !== "all") {
-        const trueStatus = (insp as any).trueStatus ?? insp.status;
-        if (statusFilter === "overdue"       && trueStatus !== "OVERDUE")     return false;
-        if (statusFilter === "scheduled"     && trueStatus !== "SCHEDULED")   return false;
-        if (statusFilter === "not-scheduled" && trueStatus !== "NOT_STARTED") return false;
+      if (q) {
+        const name = (meta?.name ?? "").toLowerCase();
+        if (!name.includes(q)) return false;
       }
       return true;
     });
-  }, [rawInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedInspTypes, statusFilter]);
+  }, [rawInspections, elevatorMeta, selectedCustomerIds, selectedBuildingIds, selectedInspTypes, debouncedSearch]);
 
   /* ── Edit form ── */
   const form = useForm<EditFormValues>({
@@ -339,19 +340,16 @@ export default function CalendarView() {
             <FilterCombobox value={selectedCustomerIds} onValueChange={handleCustomerChange} options={customerOptions} placeholder="All Customers" searchPlaceholder="Search customers..." width="w-[155px]" />
             <FilterCombobox value={selectedBuildingIds} onValueChange={handleBuildingChange} options={buildingOptions} placeholder="All Buildings" searchPlaceholder="Search buildings..." width="w-[140px]" />
             <FilterCombobox value={selectedInspTypes} onValueChange={setSelectedInspTypes} options={INSP_TYPE_OPTIONS} placeholder="CAT1 / CAT5" searchPlaceholder="Search..." width="w-[130px]" />
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className={cn(
-                "h-8 px-2 pr-7 text-xs rounded-md border appearance-none focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 bg-white shrink-0",
-                statusFilter !== "all" ? "border-blue-300 text-blue-700 bg-blue-50" : "border-zinc-200 text-zinc-600"
-              )}
-            >
-              <option value="all">All Statuses</option>
-              <option value="overdue">Overdue</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="not-scheduled">Not Scheduled</option>
-            </select>
+            <div className="relative shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search units..."
+                className="h-8 pl-8 pr-3 w-[180px] text-xs text-zinc-700 placeholder-zinc-400 border border-zinc-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+              />
+            </div>
             <div className="flex-1 min-w-0" />
             <span className="text-xs tabular-nums whitespace-nowrap shrink-0">
               <span className="font-bold text-zinc-700">{visibleCount}</span>

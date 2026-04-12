@@ -59,7 +59,7 @@ export function Layout({ children }: LayoutProps) {
   const bottomNav: { name: string; href: string; icon: typeof Settings }[] = [];
   if (user?.role === "ADMIN") {
     bottomNav.push({ name: "Admin",    href: "/admin",   icon: ShieldAlert as typeof Settings });
-    bottomNav.push({ name: "Billing",  href: "/billing", icon: CreditCard as typeof Settings });
+    // Billing nav hidden intentionally — route kept in App.tsx
   }
   bottomNav.push({ name: "Settings", href: "/settings", icon: Settings });
 
@@ -104,10 +104,10 @@ export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider style={{ "--sidebar-width": "15rem" } as React.CSSProperties}>
       <div className="flex min-h-screen w-full bg-background">
-        <Sidebar className="border-r border-white/5">
+        <Sidebar className="border-r border-white/5 bg-zinc-950">
           {/* Logo — centered with symmetric padding */}
-          <SidebarHeader className="pt-8 px-5 pb-6 border-b border-white/5">
-            <img src={logoSrc} alt="Cat1Five Timer" className="w-full max-h-24 object-contain block" />
+          <SidebarHeader className="pt-10 px-5 pb-8 border-b border-white/5">
+            <img src={logoSrc} alt="Cat1Five Timer" className="w-full max-h-28 object-contain block" />
           </SidebarHeader>
 
           <SidebarContent className="px-3 py-3 flex flex-col gap-0 overflow-y-auto">
