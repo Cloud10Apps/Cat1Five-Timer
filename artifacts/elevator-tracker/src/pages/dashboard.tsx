@@ -269,6 +269,8 @@ export default function Dashboard() {
             );
           }
 
+          if (!(totalUnits > 0 || relevantTotal > 0 || annualTotal > 0 || overdueItems.length > 0)) return null;
+
           return (
             <section>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -378,6 +380,9 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* Tables — hidden when portfolio is empty */}
+            {(summary?.totalUnits ?? 0) > 0 || overdueItems.length > 0 || upcoming.length > 0 ? <>
 
             {/* Overdue Inspections */}
             {l2 ? <TableSkeleton /> : <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -509,6 +514,8 @@ export default function Dashboard() {
                 </div>
               )}
             </div>}
+
+            </> : null}
 
           </div>
         </section>
