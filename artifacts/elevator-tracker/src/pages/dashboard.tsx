@@ -234,8 +234,10 @@ export default function Dashboard() {
           type CardProps = {
             title: string; subtitle: string; score: number;
             statLine: string; tooltipText: string; pills: React.ReactNode;
+            statusMsgFn?: (s: number) => string;
           };
-          function ScoreCard({ title, subtitle, score, statLine, tooltipText, pills }: CardProps) {
+          function ScoreCard({ title, subtitle, score, statLine, tooltipText, pills, statusMsgFn }: CardProps) {
+            const msgFn = statusMsgFn ?? statusMsg;
             return (
               <div className={`bg-white rounded-xl border border-zinc-200 border-l-4 ${accentBorder(score)} shadow-sm p-6 flex flex-col gap-3`}>
                 <div className="flex items-start justify-between gap-2">
@@ -260,7 +262,7 @@ export default function Dashboard() {
                 <div className="w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: barColor(score) }} />
                 </div>
-                <p className={`text-sm font-medium ${scoreColor(score)}`}>{statusMsg(score)}</p>
+                <p className={`text-sm font-medium ${scoreColor(score)}`}>{msgFn(score)}</p>
                 <p className="text-xs text-zinc-500">{statLine}</p>
                 <div className="flex flex-wrap gap-2 mt-auto pt-1">{pills}</div>
               </div>
@@ -305,18 +307,24 @@ export default function Dashboard() {
                   </>}
                 />
                 <ScoreCard
-                  title={`Annual Completion Rate (${year})`}
-                  subtitle="How have I performed this calendar year overall?"
+                  title={`Year-to-Date Completion (${year})`}
+                  subtitle="How have I kept up with inspections due so far this year?"
                   score={annualScore}
-                  statLine={`${annualCompleted} of ${annualTotal} inspections due in ${year} are complete`}
-                  tooltipText="Percentage of all inspections due this calendar year that have been completed. Resets on January 1st each year. Use this for annual reporting, audits, and comparing your performance year over year."
+                  statLine={`${annualCompleted} of ${annualTotal} inspections due so far in ${year} are complete`}
+                  tooltipText="Percentage of inspections that were due on or before today this calendar year that have been completed. Future inspections due later this year are not counted until they come due. This score increases throughout the year as inspections are completed on time. Resets on January 1st each year."
+                  statusMsgFn={(s) =>
+                    s === 100 ? "Fully caught up — great work!"
+                    : s >= 80 ? "On track for the year"
+                    : s >= 50 ? "Some inspections past due this year"
+                    : "Significantly behind — action required"
+                  }
                   pills={<>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
                       ✅ {annualCompleted} Completed
                     </span>
                     {(annualTotal - annualCompleted) > 0 && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                        📋 {annualTotal - annualCompleted} Remaining
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                        ⚠️ {annualTotal - annualCompleted} Past Due This Year
                       </span>
                     )}
                   </>}

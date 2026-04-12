@@ -114,14 +114,16 @@ router.get("/summary", asyncHandler(async (req, res) => {
           AND i.completion_date IS NOT NULL
       ) AS relevant_completed,
 
-      -- SCORE 3: Annual Completion Rate
+      -- SCORE 3: Year-to-Date Completion (only inspections due on or before today)
       COUNT(*) FILTER (
         WHERE i.next_due_date IS NOT NULL
           AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND i.next_due_date::date <= ${todayStr}::date
       ) AS annual_total,
       COUNT(*) FILTER (
         WHERE i.next_due_date IS NOT NULL
           AND EXTRACT(YEAR FROM i.next_due_date::date) = ${currentYear}
+          AND i.next_due_date::date <= ${todayStr}::date
           AND i.completion_date IS NOT NULL
       ) AS annual_completed
 
