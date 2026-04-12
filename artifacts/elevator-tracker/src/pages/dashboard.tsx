@@ -22,8 +22,8 @@ function OverdueBadge({ days }: { days: number }) {
   else if (days >= 365) { label = "1+ year overdue"; bg = "bg-red-800"; }
   else if (days > 120)  { label = `${days} days overdue`; bg = "bg-red-700"; }
   else if (days > 60)   { label = `${days} days overdue`; bg = "bg-red-500"; }
-  else if (days > 30)   { label = `${days} days overdue`; bg = "bg-orange-500"; }
-  else                  { label = `${days} days overdue`; bg = "bg-amber-500"; }
+  else if (days > 30)   { label = `${days} days overdue`; bg = "bg-red-500"; }
+  else                  { label = `${days} days overdue`; bg = "bg-red-500"; }
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold whitespace-nowrap text-white ${bg}`}>
       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
