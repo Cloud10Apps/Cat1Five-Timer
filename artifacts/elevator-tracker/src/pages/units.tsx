@@ -755,7 +755,7 @@ export default function Units() {
                       return (
                         <div key={building.buildingId}>
                           <button
-                            className="w-full flex items-center gap-3 px-4 py-3 pl-8 bg-white border-b border-zinc-200 border-l-4 border-l-zinc-400 hover:bg-zinc-50 transition-colors text-left"
+                            className="w-full flex items-center gap-3 px-4 py-3 pl-8 bg-zinc-50 border-b border-zinc-200 border-l-4 border-l-zinc-400 hover:bg-zinc-100 transition-colors text-left"
                             onClick={() => toggleBuilding(building.buildingId)}
                           >
                             {isBuildingCollapsed ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500" /> : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500" />}
@@ -763,10 +763,11 @@ export default function Units() {
                               <div className="flex items-center gap-2">
                                 <BuildingIcon className="h-4 w-4 shrink-0 text-zinc-500" />
                                 <span className="font-bold text-sm text-zinc-800">{building.buildingName}</span>
-                                <span className="text-xs text-zinc-400 font-medium ml-1">
-                                  {building.banks.reduce((sum, bk) => sum + bk.elevators.length, 0)}{" "}
-                                  {building.banks.reduce((sum, bk) => sum + bk.elevators.length, 0) === 1 ? "unit" : "units"}
-                                </span>
+                                {(() => { const n = building.banks.reduce((sum, bk) => sum + bk.elevators.length, 0); return (
+                                  <span className="text-xs text-zinc-400 font-medium bg-zinc-100 px-2 py-0.5 rounded-full ml-1">
+                                    {n} {n === 1 ? "unit" : "units"}
+                                  </span>
+                                ); })()}
                               </div>
                             </div>
                           </button>
@@ -785,7 +786,7 @@ export default function Units() {
                                     >
                                       {isBankCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-300" />}
                                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${bank.bankName !== "" ? "bg-zinc-100 text-zinc-600 border-zinc-200" : "bg-zinc-50 text-zinc-400 border-zinc-100 italic"}`}>
-                                        <Layers className="h-3 w-3 shrink-0" />
+                                        <Layers className="h-3 w-3 shrink-0 text-zinc-400" />
                                         {bankLabel}
                                       </span>
                                     </button>
@@ -793,8 +794,8 @@ export default function Units() {
                                     {!isBankCollapsed && bank.elevators.map((elevator, rowIdx) => (
                                       <div
                                         key={elevator.id}
-                                        className="group relative flex items-center gap-6 px-4 py-3 pl-20 border-b border-zinc-200 transition-colors hover:bg-amber-50/40 hover:shadow-sm"
-                                        style={{ minHeight: "80px" }}
+                                        className="group relative flex items-center gap-6 px-4 py-2.5 pl-20 border-b border-zinc-200 transition-colors hover:bg-amber-50/40 hover:shadow-sm"
+                                        style={{ minHeight: "72px" }}
                                       >
                                         <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-amber-500" />
 
@@ -821,7 +822,7 @@ export default function Units() {
                                               </span>
                                             )}
                                           </div>
-                                          <div className="flex items-center gap-4 mt-1">
+                                          <div className="flex items-center gap-4 mt-0.5">
                                             {elevator.internalId && (
                                               <span className="text-xs text-zinc-500">Unit ID: <span className="font-mono text-sm font-semibold text-zinc-700">{elevator.internalId}</span></span>
                                             )}
@@ -834,39 +835,39 @@ export default function Units() {
                                         {/* RIGHT ZONE — Technical Specs */}
                                         <div className="flex-1 min-w-0 flex flex-wrap gap-2">
                                           {/* OEM Serial */}
-                                          <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[70px]">
-                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">OEM Serial</span>
-                                            <span className="text-sm font-bold text-zinc-800 mt-0.5 font-mono truncate max-w-[90px]">
-                                              {elevator.oemSerialNumber ?? "—"}
-                                            </span>
+                                          <div className="flex flex-col items-center px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[72px]">
+                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold whitespace-nowrap">OEM Serial</span>
+                                            {elevator.oemSerialNumber
+                                              ? <span className="text-sm font-bold text-zinc-800 mt-0.5 font-mono truncate max-w-full">{elevator.oemSerialNumber}</span>
+                                              : <span className="text-sm text-zinc-300 mt-0.5">—</span>}
                                           </div>
                                           {/* Year */}
-                                          <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[70px]">
-                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Year</span>
-                                            <span className="text-sm font-bold text-zinc-800 mt-0.5">
-                                              {elevator.yearInstalled ?? "—"}
-                                            </span>
+                                          <div className="flex flex-col items-center px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[72px]">
+                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold whitespace-nowrap">Year</span>
+                                            {elevator.yearInstalled
+                                              ? <span className="text-sm font-bold text-zinc-800 mt-0.5">{elevator.yearInstalled}</span>
+                                              : <span className="text-sm text-zinc-300 mt-0.5">—</span>}
                                           </div>
                                           {/* Capacity */}
-                                          <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[70px]">
-                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Capacity</span>
-                                            <span className="text-sm font-bold text-zinc-800 mt-0.5 truncate max-w-[90px]">
-                                              {elevator.capacity ?? "—"}
-                                            </span>
+                                          <div className="flex flex-col items-center px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[72px]">
+                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold whitespace-nowrap">Capacity</span>
+                                            {elevator.capacity
+                                              ? <span className="text-sm font-bold text-zinc-800 mt-0.5 truncate max-w-full">{elevator.capacity}</span>
+                                              : <span className="text-sm text-zinc-300 mt-0.5">—</span>}
                                           </div>
                                           {/* Speed */}
-                                          <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[70px]">
-                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Speed</span>
-                                            <span className="text-sm font-bold text-zinc-800 mt-0.5 truncate max-w-[90px]">
-                                              {elevator.speed ?? "—"}
-                                            </span>
+                                          <div className="flex flex-col items-center px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[72px]">
+                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold whitespace-nowrap">Speed</span>
+                                            {elevator.speed
+                                              ? <span className="text-sm font-bold text-zinc-800 mt-0.5 truncate max-w-full">{elevator.speed}</span>
+                                              : <span className="text-sm text-zinc-300 mt-0.5">—</span>}
                                           </div>
                                           {/* Landings/Opens */}
-                                          <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[70px]">
-                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Lands/Opens</span>
-                                            <span className="text-sm font-bold text-zinc-800 mt-0.5">
-                                              {(elevator.numLandings || elevator.numOpenings) ? `${elevator.numLandings ?? "—"} / ${elevator.numOpenings ?? "—"}` : "—"}
-                                            </span>
+                                          <div className="flex flex-col items-center px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-100 min-w-[72px]">
+                                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold whitespace-nowrap">Lands/Opens</span>
+                                            {(elevator.numLandings || elevator.numOpenings)
+                                              ? <span className="text-sm font-bold text-zinc-800 mt-0.5">{elevator.numLandings ?? "—"} / {elevator.numOpenings ?? "—"}</span>
+                                              : <span className="text-sm text-zinc-300 mt-0.5">—</span>}
                                           </div>
                                         </div>
 
