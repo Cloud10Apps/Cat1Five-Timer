@@ -52,8 +52,8 @@ export default function Login() {
       <div className="hidden md:flex md:w-1/2 bg-zinc-950 text-zinc-50 flex-col justify-between p-12 lg:p-24 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-zinc-900/50 to-zinc-950 pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col items-center mt-16 mb-12">
-          <img src={logoSrc} alt="Cat1Five Timer" className="h-28 w-auto" />
+        <div className="relative z-10 flex justify-center items-center mt-12 mb-10">
+          <img src={logoSrc} alt="Cat1Five Timer" className="h-40 w-auto" />
         </div>
 
         <div className="relative z-10 max-w-lg mb-auto md:my-auto">

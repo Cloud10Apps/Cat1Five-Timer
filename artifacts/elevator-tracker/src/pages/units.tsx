@@ -692,7 +692,7 @@ export default function Units() {
               <div key={customer.customerId} className="rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
                 {/* Customer header */}
                 <button
-                  className="w-full flex items-center gap-2 min-w-0 px-4 py-4 bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left"
+                  className="w-full flex items-center gap-2 min-w-0 px-4 py-3 bg-gradient-to-r from-zinc-900 to-zinc-800 text-white border-t border-amber-500/30 cursor-pointer select-none text-left"
                   onClick={() => toggleCustomer(customer.customerId)}
                 >
                   {isCustomerCollapsed ? <ChevronRight className="h-5 w-5 shrink-0 text-zinc-400" /> : <ChevronDown className="h-5 w-5 shrink-0 text-zinc-400" />}
@@ -710,7 +710,7 @@ export default function Units() {
                       return (
                         <div key={building.buildingId}>
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-3.5 pl-8 bg-zinc-100 border-l-[3px] border-zinc-600 hover:bg-zinc-200/60 transition-colors text-left border-b border-zinc-200"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 pl-8 bg-zinc-100 border-l-[3px] border-zinc-600 hover:bg-zinc-200/60 transition-colors text-left border-b border-zinc-200"
                             onClick={() => toggleBuilding(building.buildingId)}
                           >
                             {isBuildingCollapsed ? <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500" /> : <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500" />}
@@ -740,18 +740,18 @@ export default function Units() {
                                     {!isBankCollapsed && bank.elevators.map((elevator, rowIdx) => (
                                       <div
                                         key={elevator.id}
-                                        className={`group relative flex items-center gap-8 px-4 py-5 pl-20 border-b border-zinc-100 transition-colors hover:bg-amber-50/40 ${rowIdx % 2 === 1 ? "bg-zinc-50/20" : ""}`}
-                                        style={{ minHeight: "80px" }}
+                                        className={`group relative flex items-center gap-6 px-4 py-3 pl-20 border-b border-zinc-200 transition-colors hover:bg-amber-50/40 ${rowIdx % 2 === 1 ? "bg-zinc-50/20" : ""}`}
+                                        style={{ minHeight: "70px" }}
                                       >
-                                        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-amber-500 transition-colors" />
+                                        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-amber-500" />
 
                                         {/* LEFT ZONE — Unit Identity (45%) */}
                                         <div className="w-[45%] min-w-0 shrink-0">
-                                          <div className="font-bold text-lg text-zinc-900 leading-snug truncate">{elevator.name}</div>
+                                          <div className="font-bold text-lg text-zinc-900 leading-tight truncate">{elevator.name}</div>
                                           {elevator.manufacturer && (
                                             <div className="text-sm text-zinc-400 italic truncate mt-0.5">{elevator.manufacturer}</div>
                                           )}
-                                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                             {elevator.type && (
                                               <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold capitalize">
                                                 {elevator.type}
@@ -768,7 +768,7 @@ export default function Units() {
                                               </span>
                                             )}
                                           </div>
-                                          <div className="flex items-center gap-4 mt-1.5">
+                                          <div className="flex items-center gap-4 mt-1">
                                             {elevator.internalId && (
                                               <span className="text-xs text-zinc-500">Unit ID: <span className="font-mono text-sm font-semibold text-zinc-700">{elevator.internalId}</span></span>
                                             )}
@@ -779,7 +779,7 @@ export default function Units() {
                                         </div>
 
                                         {/* RIGHT ZONE — Technical Specs */}
-                                        <div className="flex-1 min-w-0 grid grid-cols-5 gap-8">
+                                        <div className="flex-1 min-w-0 grid grid-cols-5 gap-6">
                                           {/* OEM Serial */}
                                           <div className="min-w-0">
                                             <div className="text-xs uppercase text-zinc-400 mb-0.5">OEM Serial</div>
