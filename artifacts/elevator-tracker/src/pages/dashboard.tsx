@@ -276,7 +276,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <ScoreCard
                   title="Unit Compliance"
-                  subtitle="Are my elevators legally compliant right now?"
+                  subtitle="Are my elevators up to date on inspections?"
                   score={unitScore}
                   statLine={`${compliantUnits} of ${totalUnits} elevator units have no overdue inspections`}
                   tooltipText="Percentage of elevator units with no overdue inspections. A unit is compliant when all its CAT1 and CAT5 inspections are either completed or not yet due. This score only changes when an inspection becomes overdue or is completed — it does not fluctuate daily."
