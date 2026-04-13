@@ -67,7 +67,6 @@ const buildingSchema = z.object({
 
 type BuildingFormValues = z.infer<typeof buildingSchema>;
 
-const avatarStyle = { bg: "bg-zinc-800", text: "text-white", border: "border-zinc-700" };
 
 function formatAddress(building: Building): string | null {
   const parts: string[] = [];
@@ -86,7 +85,6 @@ interface BuildingCardProps {
 }
 
 function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCardProps) {
-  const initials = building.name.slice(0, 2).toUpperCase();
   const address = formatAddress(building);
   const elevatorCount = building.elevatorCount ?? 0;
 
@@ -101,6 +99,12 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
   const dueSoonCount = (inspections ?? []).filter(
     (i: any) => i.status !== "OVERDUE" && i.nextDueDate >= today && i.nextDueDate <= in30
   ).length;
+
+  const statusColorClass =
+    elevatorCount === 0 || inspections === undefined ? "bg-zinc-100 text-zinc-400" :
+    overdueCount > 0  ? "bg-red-100 text-red-600" :
+    dueSoonCount > 0  ? "bg-amber-100 text-amber-600" :
+                        "bg-green-100 text-green-600";
 
   let complianceBadge: React.ReactNode = null;
   if (elevatorCount > 0 && inspections !== undefined) {
@@ -133,8 +137,8 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
       <CardHeader className="pb-4 px-6 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-4 min-w-0">
-            <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border-2 text-xl font-black uppercase shrink-0 ${avatarStyle.bg} ${avatarStyle.text} ${avatarStyle.border}`}>
-              {initials}
+            <div className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${statusColorClass}`}>
+              <Building2 className="h-6 w-6" />
             </div>
             <div className="min-w-0 pt-1">
               <CardTitle className="text-xl font-bold leading-snug truncate">{building.name}</CardTitle>
