@@ -165,7 +165,6 @@ export default function Login() {
                 "Sign in"
               )}
             </Button>
-            <p className="text-center text-xs text-zinc-400 mt-4">Elevator compliance tracking for New Mexico building owners</p>
           </form>
         </div>
       </div>
