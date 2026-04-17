@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { organizationsTable } from "./organizations";
@@ -24,7 +24,10 @@ export const elevatorsTable = pgTable("elevators", {
   buildingId: integer("building_id").notNull().references(() => buildingsTable.id, { onDelete: "cascade" }),
   organizationId: integer("organization_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  index("elevators_org_idx").on(t.organizationId),
+  index("elevators_building_idx").on(t.buildingId),
+]);
 
 export const insertElevatorSchema = createInsertSchema(elevatorsTable).omit({ id: true, createdAt: true });
 export type InsertElevator = z.infer<typeof insertElevatorSchema>;

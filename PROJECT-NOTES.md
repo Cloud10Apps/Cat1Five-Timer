@@ -1,5 +1,5 @@
-# Cat1Five Timer — Project Notes
-*Last updated: April 13, 2026*
+# Cat1Five-Timer — Project Notes
+*Last updated: April 17, 2026*
 
 ---
 
@@ -7,8 +7,8 @@
 
 | Resource | URL |
 |---|---|
-| **Live App** | https://cat1five-timer-production.up.railway.app |
-| **Custom Domain** | https://app.cat1fivetimer.com *(DNS setup in progress)* |
+| **Live App** | https://app.cat1fivetimer.com |
+| **Railway URL** | https://cat1five-timer-production.up.railway.app |
 | **GitHub** | https://github.com/Cloud10Apps/Cat1Five-Timer |
 | **Railway Project** | proud-happiness |
 | **Railway Dashboard** | https://railway.app |
@@ -34,6 +34,7 @@
 | Item | Value |
 |---|---|
 | **Local Code Path** | C:\Users\smorr\Downloads\Cat1Five-Timer |
+| **Project Notes Path** | C:\Users\smorr\OneDrive\Desktop\Cat1Five Timer\Cat1Five Timer\Cat1Five-Timer-Project-Notes.md |
 | **Node Package Manager** | pnpm |
 | **Local Install Command** | `pnpm install --ignore-scripts` |
 | **Windows Note** | Use `set VAR=value` not `export VAR=value` |
@@ -94,7 +95,7 @@ Cat1Five-Timer/
 │   │   │   └── export.ts
 │   │   ├── middleware/auth.ts
 │   │   └── lib/
-│   │       ├── email.ts     ← Resend email functions
+│   │       ├── email.ts     ← Resend email functions (built, needs API key)
 │   │       └── user-access.ts
 │   └── elevator-tracker/src/
 │       ├── pages/           ← React pages
@@ -102,14 +103,12 @@ Cat1Five-Timer/
 │       │   ├── customers.tsx
 │       │   ├── buildings.tsx
 │       │   ├── units.tsx
-│       │   ├── elevators.tsx      ← Active Inspections
+│       │   ├── elevators.tsx      ← Active Inspections (route: /elevators)
 │       │   ├── inspections.tsx    ← Inspection History
 │       │   ├── calendar.tsx
 │       │   ├── admin.tsx
 │       │   ├── settings.tsx
-│       │   ├── login.tsx
-│       │   ├── forgot-password.tsx  ← NEW (Session 7)
-│       │   └── setup-password.tsx   ← NEW (Session 7)
+│       │   └── login.tsx
 │       └── components/
 │           ├── layout.tsx   ← Nav, sidebar, header
 │           └── auth-provider.tsx
@@ -121,11 +120,11 @@ Cat1Five-Timer/
 │   │   ├── buildings.ts
 │   │   ├── elevators.ts
 │   │   ├── inspections.ts
-│   │   ├── user-customers.ts
-│   │   └── passwordResetTokens.ts  ← NEW (Session 7)
+│   │   └── user-customers.ts
 │   ├── api-zod/             ← Generated Zod schemas
 │   └── api-client-react/    ← Generated React hooks
 └── lib/api-spec/            ← OpenAPI spec + codegen
+    └── openapi.yaml         ← SOURCE OF TRUTH for all types
 ```
 
 ---
@@ -142,14 +141,21 @@ Cat1Five-Timer/
 | `buildings` | Physical locations belonging to customers |
 | `elevators` | Individual elevator units within buildings |
 | `inspections` | CAT1/CAT5 inspection records per elevator |
-| `password_reset_tokens` | Invite/reset tokens *(NEW — Session 7)* |
+
+### Important Schema Notes
+- Every table has `organization_id` for multi-tenant isolation
+- `OVERDUE` is COMPUTED (nextDueDate < today AND not completed) — never stored
+- `mustChangePassword` boolean exists on users table
+- Database indexes added April 2026 on: organizationId, elevatorId, buildingId, status, nextDueDate
 
 ### Elevator Unit Profile Fields
-`name, description, bank, type (traction/hydraulic/other),
+```
+name, description, bank, type (traction/hydraulic/other),
 manufacturer, elevatorType (passenger/freight),
 oemSerialNumber, capacity, speed, yearInstalled,
 numLandings, numOpenings, locationId,
-internalId (Unit ID), stateId (NM State ID)`
+internalId (Unit ID), stateId (NM State ID)
+```
 
 ---
 
@@ -161,33 +167,14 @@ NAVIGATION
 ├── Customers          /customers
 ├── Buildings          /buildings
 ├── Units              /units
-├── Active Inspections /elevators    "Open records needing attention"
-├── Inspection History /inspections  "Completed inspection records"
+├── Active Inspections /elevators    ← route named /elevators — DO NOT rename
+├── Inspection History /inspections
 └── Calendar           /calendar
 
 SYSTEM
 ├── Admin              /admin        (ADMIN role only)
 └── Settings           /settings
 ```
-*Note: Billing is hidden from nav (not yet configured)*
-
----
-
-## 📊 Dashboard KPI Cards
-
-Three compliance score cards — each measures something different:
-
-| Card | Formula | Answers |
-|---|---|---|
-| **Unit Compliance** | Compliant units / Total units | "Are my elevators legally compliant right now?" |
-| **Inspection Completion (90 Days)** | Completed / Total due in next 90 days (future only, excludes overdue) | "How prepared am I for what's coming next?" |
-| **Year-to-Date Completion** | Completed / Total due up to today this year | "How have I kept up with inspections due so far this year?" |
-
-### Dashboard Layout (top to bottom)
-1. Header (Refresh + title + All Customers filter)
-2. Three KPI compliance score cards
-3. Overdue Inspections table (full width)
-4. Coming Up — Next 90 Days table (full width)
 
 ---
 
@@ -199,26 +186,22 @@ Three compliance score cards — each measures something different:
 
 ### Inspection Statuses (stored)
 `NOT_STARTED → SCHEDULED → IN_PROGRESS → COMPLETED`
-*Note: OVERDUE is COMPUTED (nextDueDate < today AND not completed) — never stored*
 
 ### Auto-Follow-Up
 When an inspection is marked COMPLETED, the system automatically
-creates the next inspection record with the new due date calculated
-from completionDate + recurrenceYears.
+creates the next inspection record:
+`nextDueDate = completionDate + recurrenceYears`
 
-### Next Due Date Calculation
-`nextDueDate = lastInspectionDate + recurrenceYears`
-
-### Compliance Score Logic
-- **Unit Compliance**: unit has NO overdue inspections = compliant
-- **90-Day Completion**: inspections where nextDueDate is between TODAY and TODAY+90 days
-- **YTD Completion**: inspections where nextDueDate <= TODAY within current year
+### How Inspections Are Created
+- Adding a Unit automatically creates both a CAT1 and CAT5 inspection record
+- There is NO manual "Add Inspection" button — records are auto-created
+- Users click the pencil icon to enter Last Inspection Date and seed the record
 
 ---
 
 ## 🎨 Design System
 
-### Status Colors (sacred — never deviate)
+### Status Colors (never deviate)
 | Color | Meaning |
 |---|---|
 | 🔴 Red | Overdue / Action required |
@@ -236,78 +219,58 @@ from completionDate + recurrenceYears.
 
 ## 🔒 Security
 
-### Authentication
 - JWT tokens, 7-day expiry, stored in localStorage
 - bcrypt password hashing (cost factor 12)
 - Rate limiting: 20 login attempts per 15 minutes
 - Multi-tenant: each org completely isolated via organizationId
-
-### Password Requirements
-- Minimum 8 characters (admin reset)
-- Minimum 10 characters (user self-service)
+- Minimum password length: 8 characters
 
 ### Environment Variables (Railway)
 ```
 SESSION_SECRET          JWT signing secret
 DATABASE_URL            PostgreSQL connection string
-ALLOWED_ORIGINS         Comma-separated allowed CORS origins
-RESEND_API_KEY          re_xxxx (from resend.com) — EMAIL NOT WORKING WITHOUT THIS
+ALLOWED_ORIGINS         * (currently allows all origins)
+RESEND_API_KEY          re_xxxx — EMAIL NOT WORKING WITHOUT THIS
 FROM_EMAIL              noreply@cat1fivetimer.com
-APP_URL                 https://cat1fivetimer.com (update after domain setup)
+APP_URL                 https://app.cat1fivetimer.com
 BOOTSTRAP_ADMIN_EMAIL   smorris@cloud10analytics.com
-BOOTSTRAP_ADMIN_PASSWORD Current admin password
 STRIPE_SECRET_KEY       Stripe key (billing not active)
 ```
 
 ---
 
-## 📧 Email (Resend)
+## 📧 Email (Resend) — NOT YET ACTIVE
 
-**Status: Code built, needs Railway env vars to work**
-
-Resend account: cloud10analytics at resend.com
-Domain: cat1fivetimer.com (needs DNS verification in Resend)
+**Status: Code partially built, needs completion + Railway env vars**
 
 ### To activate email:
-1. Go to resend.com → API Keys → Create key named "Cat1Five Timer"
+1. Go to resend.com → API Keys → Create key
 2. Add to Railway: `RESEND_API_KEY=re_xxxxx`
-3. Add domain in Resend → Domains → Add domain → cat1fivetimer.com
-4. Add DNS records at your registrar
-5. Update `FROM_EMAIL` and `APP_URL` in Railway
-
-### Email Functions
-- `sendInviteEmail(to, token)` — new user invitation
-- `sendPasswordResetEmail(to, token)` — forgot password
+3. Add `FROM_EMAIL` and `APP_URL` to Railway variables
 
 ---
 
-## 🌐 Custom Domain Setup
+## 🌐 Custom Domain
 
-**Domain purchased:** cat1fivetimer.com
-**Target URL:** app.cat1fivetimer.com
-
-### Steps to complete:
-1. ✅ Buy domain cat1fivetimer.com
-2. ⏳ Update ALLOWED_ORIGINS in Railway to include new domain
-3. ⏳ Railway → Cat1Five-Timer → Settings → Networking → Add custom domain: `app.cat1fivetimer.com`
-4. ⏳ Copy CNAME record from Railway
-5. ⏳ Add CNAME record at domain registrar (Host: `app`, Value: Railway CNAME)
-6. ⏳ Wait 5-30 min for DNS propagation
-7. ⏳ Railway auto-provisions SSL certificate
+- **cat1fivetimer.com** — purchased via Tailor Brands (managed at Dynadot)
+- **app.cat1fivetimer.com** — LIVE ✅
+- DNS: CNAME `app` → `6defr36u.up.railway.app`
+- TXT verification record configured
+- SSL auto-provisioned by Railway
 
 ---
 
 ## 📤 Excel Exports
 
-| Export | Route | Contents |
-|---|---|---|
-| Units/Elevators | `/api/export/elevators` | Full unit profile + latest inspection status |
-| All Inspections | `/api/export/inspections` | Complete inspection records with all fields |
-| Overdue | `/api/export/overdue` | Overdue inspections with days overdue |
-| Upcoming | `/api/export/upcoming` | Upcoming inspections within 14 days |
+Export buttons exist on: Units, Active Inspections, Inspection History
 
-*Note: "Due Status" column renamed to "Timeline" in all exports*
-*Note: Future inspections show "Due YYYY" not "Due in 90+ Days"*
+| Export | Route | Filter Support |
+|---|---|---|
+| Units/Elevators | `/api/export/elevators` | Customer + Building only |
+| All Inspections | `/api/export/inspections` | Customer + Building only |
+
+*Note: Only Customer and Building filters pass through to exports.
+Status, timeline, date range filters do NOT affect exports.*
 
 ---
 
@@ -315,123 +278,115 @@ Domain: cat1fivetimer.com (needs DNS verification in Resend)
 
 - [x] Multi-tenant SaaS architecture
 - [x] JWT authentication with rate limiting
-- [x] Admin panel (user management, customer access control)
+- [x] Admin panel (user management, customer access control, password reset)
 - [x] Customer → Building → Unit → Inspection hierarchy
 - [x] CAT1 and CAT5 inspection tracking
 - [x] Auto-calculated next due dates
 - [x] Auto-follow-up inspection creation on completion
-- [x] Three compliance KPI score cards
+- [x] Three compliance KPI score cards on dashboard
 - [x] Dashboard with overdue + upcoming tables
-- [x] Active Inspections page with Show Me filters
-- [x] Inspection History with More Filters + date ranges
+- [x] Active Inspections with Show Me filters + advanced filters
+- [x] Inspection History with date range filters
 - [x] Calendar view
 - [x] Units page with card-based layout
-- [x] Buildings page grouped by customer
-- [x] Customers page with compliance badges
-- [x] Excel export (4 export types)
-- [x] Admin password reset for users
-- [x] Onboarding banner for new users
-- [x] "Timeline" column showing "Due YYYY" for future inspections
+- [x] Buildings page with compliance-status Building2 icons (not dark square initials)
+- [x] Excel export (Units, Active Inspections, Inspection History)
 - [x] Confetti on inspection completion 🎉
 - [x] Overdue badge in header linking to Active Inspections
+- [x] Unit ID and State ID columns readable in Active Inspections
+- [x] Database indexes added (org, elevator, building, status, nextDueDate)
+- [x] Custom domain live: app.cat1fivetimer.com
+- [x] mustChangePassword field on users table
+- [x] "New Mexico" and "legally compliant" language removed from UI
+- [x] Database directly accessible via Azure Data Studio
+- [x] User manual created (PDF + Word)
 
 ---
 
-## ⏳ Pending Features
+## ⏳ Pending Features (Priority Order)
 
 | Feature | Priority | Notes |
 |---|---|---|
-| **Email notifications** | HIGH | 30/60/90-day alerts before due dates via Resend |
-| **Forgot password flow** | HIGH | Built in Session 7 — needs Resend API key in Railway |
-| **Invite email flow** | HIGH | Built in Session 7 — needs Resend API key in Railway |
-| **Custom domain** | HIGH | cat1fivetimer.com purchased — DNS setup pending |
+| **Forgot password / email invites** | HIGH | Code partially built — needs Resend API key + completion |
+| **Email notifications 30/60/90 days** | HIGH | Not started — needs Resend + nightly cron job |
+| **Stripe exempt flag** | HIGH | Add `stripeExempt` boolean to organizations table BEFORE activating Stripe |
+| **Document attachments (PDF)** | HIGH | Store inspection certificates — needs Cloudflare R2 or AWS S3 |
+| **Marketing landing page** | HIGH | cat1fivetimer.com should be a landing page, not point to the app |
 | **PDF compliance report** | MEDIUM | One-click PDF per customer for auditors |
-| **Self-service signup** | MEDIUM | Building owners create their own accounts |
-| **Building owner portal** | MEDIUM | Read-only view for building owners |
-| **State inspector view** | LOW | Read-only, filtered by jurisdiction |
-| **Document attachments** | LOW | Attach inspection certificates to records |
+| **Self-service signup + Stripe** | MEDIUM | Building owners create own accounts |
+| **Mobile responsive** | MEDIUM | Currently desktop-only |
+| **Building owner portal** | LOW | Read-only view for building owners |
 | **Global search** | LOW | Search across all data |
-| **Mobile responsive** | LOW | App is desktop-only currently |
 
 ---
 
 ## 🐛 Known Issues / Watch List
 
-- Dashboard cache: after adding new data, click **Refresh** button if 
-  compliance cards don't appear immediately
-- OVERDUE is computed not stored — any filter logic must use 
-  `nextDueDate < today AND status != COMPLETED` not `status === OVERDUE`
-- `internalId` and `stateId` on elevator objects may require 
-  `(elevator as any).internalId` in some places — codegen was updated 
-  but watch for type casting issues
-- Billing tab hidden from nav — `/billing` route still exists but 
-  Stripe not configured
+- **Schema push must happen before deploy** — if DB schema changes without `drizzle-kit push`, API crashes on startup and all users lose login
+- **Export filters limited** — only Customer and Building filter through to Excel exports
+- **Billing hidden** — `/billing` route exists but Stripe not configured. Do NOT activate Stripe without first adding `stripeExempt` to organizations table
+- **Active Inspections route** — named `/elevators` in code. Never rename this route
+- **OpenAPI is source of truth** — never manually edit files in `lib/api-zod/src/generated/` or `lib/api-client-react/src/generated/`
 
 ---
 
 ## 💡 Key Business Context
 
-**The Problem:** New Mexico changed state law requiring building owners 
-to self-manage their CAT1 (annual) and CAT5 (five-year) elevator 
-inspection schedules. They must proactively schedule with state 
-inspectors (no third-party inspectors allowed).
+**The Problem:** New Mexico changed state law requiring building owners
+to self-manage their CAT1 (annual) and CAT5 (five-year) elevator
+inspection schedules with state inspectors.
 
-**The Users:**
-1. **Platform Admin (Stephanie/Cloud10)** — manages the platform
-2. **Consultant** — resells/distributes to building owners
-3. **Building Owners** — primary end users, enter their own data
+**Current Clients / Prospects:**
+- **Charlie** — NM consultant, set up as Admin, first client
+- **Ryan Gressett @ ATIS** — Large national inspection company evaluating the app
 
-**The Workflow:**
+**Pricing Strategy (planned):**
+- Charlie: flat monthly fee (~$299/mo)
+- Direct building owners: per-unit tiered pricing
+  - 1–10 units: $49/mo
+  - 11–25 units: $99/mo
+  - 26–50 units: $179/mo
+  - 50+ units: custom
+
+**Scalability Notes for ATIS conversation:**
+- PostgreSQL scales fine for national use
+- Multi-tenant architecture already correct
+- Indexes added April 2026 — query performance ready
+- Missing: file storage for PDFs (needs R2/S3), Railway plan upgrade for prod load
+
+---
+
+## 🚀 Claude Code Session Starter Prompt
+
+Paste this at the start of each new Claude Code session:
+
 ```
-Building owner adds buildings → adds elevator units →
-enters last inspection dates → app calculates next due dates →
-owner schedules with NM state inspector →
-records scheduled date in app →
-inspection happens →
-owner marks complete → app auto-creates next cycle
+I am working on the Cat1Five-Timer app at C:\Users\smorr\Downloads\Cat1Five-Timer.
+
+Please read this file for full project context before we begin:
+C:\Users\smorr\OneDrive\Desktop\Cat1Five Timer\Cat1Five Timer\Cat1Five-Timer-Project-Notes.md
+
+Key facts:
+- TypeScript monorepo, pnpm workspaces
+- Frontend: artifacts/elevator-tracker (React + Vite, Tailwind, shadcn/ui, TanStack Query, Wouter)
+- Backend: artifacts/api-server (Express 5)
+- Database: PostgreSQL + Drizzle ORM on Railway (project: proud-happiness)
+- Live URL: https://app.cat1fivetimer.com
+- Auto-deploys to Railway on git push
+
+DB migration command:
+cd lib\db && set DATABASE_URL=postgresql://postgres:IXEYvcJxCvdHquHlxoCbpJqRMqoIbuyj@metro.proxy.rlwy.net:56946/railway && npx drizzle-kit push
+
+After any schema or OpenAPI changes always run in order:
+1. drizzle-kit push (with DATABASE_URL above)
+2. cd lib/api-spec && pnpm run generate
+3. pnpm run typecheck
+4. git push
+
+Please confirm you have read the project notes and understand the structure before we begin.
 ```
 
-**Revenue Potential:**
-- Charge per organization/month
-- Consultant resells to building owners
-- NM law change = immediate market need
-- Other states may follow
-
 ---
 
-## 🚀 Session History Summary
-
-| Session | What Was Done |
-|---|---|
-| Early sessions | Initial app build, deployment, core inspection tracking |
-| UI Redesign | All 8 pages redesigned — dashboard, customers, buildings, units, active inspections, inspection history, calendar, login |
-| Nav restructure | Added Units page, renamed Current→Active Inspections, added nav subtitles |
-| Dashboard redesign | 3 KPI cards, overdue table, coming up table, removed charts |
-| Filter redesign | Show Me dropdown, search bars, date range fixes |
-| Compliance fixes | Formula corrected, 90-day window, YTD annualized |
-| Units page | Card-based layout replacing table rows |
-| Security | Admin password reset, Resend email setup |
-| Domain | cat1fivetimer.com purchased |
-
----
-
-## 📋 Demo Data (Test Customers)
-
-Three demo customers set up for consultant demo:
-
-**1. Albuquerque Plaza Properties** — Fully compliant portfolio
-- One Albuquerque Plaza (4 units: ABQ-101 to ABQ-104)
-- Uptown Corporate Center (3 units: ABQ-201 to ABQ-203)
-
-**2. City of Santa Fe Facilities** — Mixed active portfolio
-- Santa Fe City Hall (2 units: SF-101, SF-102)
-- Santa Fe Convention Center (3 units: SF-201 to SF-203)
-- Santa Fe Municipal Court (2 units: SF-301, SF-302)
-
-**3. Sandia Peak Commercial Group** — Has overdue CAT5
-- Sandia Office Plaza (3 units: SPC-101 to SPC-103)
-- Rio Rancho Commerce Park (2 units: SPC-201, SPC-202)
-
----
-
-*This document should be uploaded at the start of each new Claude session to provide full project context.*
+*This file lives at:*
+*C:\Users\smorr\OneDrive\Desktop\Cat1Five Timer\Cat1Five Timer\Cat1Five-Timer-Project-Notes.md*
