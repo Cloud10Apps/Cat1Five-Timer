@@ -513,29 +513,36 @@ export default function Elevators() {
   const onSubmitBothInsp = async () => {
     if (!editingElevator) return;
     const elevatorId = editingElevator.id;
+    const isHydraulic = editingElevator.type === "hydraulic";
 
-    const [cat1Valid, cat5Valid] = await Promise.all([inspForm.trigger(), inspCat5Form.trigger()]);
+    const cat1Valid = await inspForm.trigger();
+    const cat5Valid = isHydraulic ? true : await inspCat5Form.trigger();
     if (!cat1Valid || !cat5Valid) return;
     const cat1Data = inspForm.getValues();
-    const cat5Data = inspCat5Form.getValues();
+    const cat5Data = isHydraulic ? null : inspCat5Form.getValues();
     const deriveStatusBoth = (v: InspectionFormValues): InspectionFormValues["status"] => {
       if (v.completionDate) return "COMPLETED";
       if (v.scheduledDate && (!v.status || v.status === "NOT_STARTED")) return "SCHEDULED";
       return v.status ?? "NOT_STARTED";
     };
     try {
-      const [cat1Result, cat5Result]: any[] = await Promise.all([
+      const mutations: Promise<any>[] = [
         createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } as any }),
-        createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } as any }),
-      ]);
+      ];
+      if (!isHydraulic && cat5Data) {
+        mutations.push(createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } as any }));
+      }
+      const results: any[] = await Promise.all(mutations);
+      const cat1Result = results[0];
+      const cat5Result = isHydraulic ? undefined : results[1];
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
-      toast({ title: editingElevator ? "Both inspections created" : "Unit and inspections created" });
+      toast({ title: isHydraulic ? "Inspection created" : (editingElevator ? "Both inspections created" : "Unit and inspections created") });
       if (cat1Result?._warning) toast({ title: "CAT 1 follow-up not auto-created", description: cat1Result._warning, variant: "destructive", duration: 10000 });
       if (cat5Result?._warning) toast({ title: "CAT 5 follow-up not auto-created", description: cat5Result._warning, variant: "destructive", duration: 10000 });
       setIsAddOpen(false);
     } catch {
-      toast({ title: "Failed to create inspections", variant: "destructive" });
+      toast({ title: isHydraulic ? "Failed to create inspection" : "Failed to create inspections", variant: "destructive" });
     }
   };
 
@@ -800,7 +807,8 @@ export default function Elevators() {
                           </Form>
                         </div>
 
-                        {/* CAT5 section */}
+                        {/* CAT5 section — hidden for hydraulic elevators (no CAT5 required) */}
+                        {editingElevator?.type !== "hydraulic" && (
                         <div className="rounded-lg border border-yellow-300 p-4 space-y-4">
                           <div className="flex items-center gap-2">
                             <InspectionTypeBadge type="CAT5" />
@@ -858,6 +866,7 @@ export default function Elevators() {
                             </div>
                           </Form>
                         </div>
+                        )}
 
                         <Button
                           type="button"
@@ -865,7 +874,11 @@ export default function Elevators() {
                           disabled={createInspMutation.isPending}
                           onClick={onSubmitBothInsp}
                         >
-                          {createInspMutation.isPending ? "Creating..." : "Create Both Inspections"}
+                          {createInspMutation.isPending
+                            ? "Creating..."
+                            : editingElevator?.type === "hydraulic"
+                              ? "Create Inspection"
+                              : "Create Both Inspections"}
                         </Button>
                       </div>
                     )}
