@@ -352,16 +352,7 @@ router.put("/:id", asyncHandler(async (req, res) => {
   const lastInspDateStr = toDateStr(lastInspectionDate);
   const scheduledDateStr = toDateStr(scheduledDate);
   const completionDateStr = toDateStr(completionDate);
-  let nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears);
-  if (!nextDueDate) {
-    const manual = toDateStr(manualNextDueDate);
-    if (manual) {
-      nextDueDate = manual;
-    } else {
-      const existing = await fetchInspection(params.data.id, orgId);
-      nextDueDate = existing?.nextDueDate ?? null;
-    }
-  }
+  const nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears) ?? toDateStr(manualNextDueDate);
   const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
 
   if (nextDueDate) {
