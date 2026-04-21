@@ -78,6 +78,7 @@ const inspectionSchema = z.object({
   inspectionType: z.enum(["CAT1", "CAT5"] as const),
   recurrenceYears: z.coerce.number().min(1, "Recurrence is required"),
   lastInspectionDate: z.string().optional(),
+  nextDueDate: z.string().optional(),
   scheduledDate: z.string().optional(),
   completionDate: z.string().optional(),
   status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"] as const).optional(),
@@ -445,18 +446,20 @@ export default function Elevators() {
   }, [watchCompletionDateCat5]);
 
   const resetInspForm = () => {
-    inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" });
-    inspCat5Form.reset({ inspectionType: "CAT5", recurrenceYears: 5, status: "NOT_STARTED", notes: "" });
+    inspForm.reset({ inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "", nextDueDate: "" });
+    inspCat5Form.reset({ inspectionType: "CAT5", recurrenceYears: 5, status: "NOT_STARTED", notes: "", nextDueDate: "" });
     setEditingInspection(null);
   };
 
   const openEditInsp = (insp: Inspection) => {
     setEditingInspection(insp);
+    const hasLast = !!insp.lastInspectionDate;
     inspForm.reset({
       inspectionType: insp.inspectionType,
       recurrenceYears: insp.recurrenceYears,
       status: insp.status === "OVERDUE" ? "NOT_STARTED" : insp.status,
-      lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      lastInspectionDate: hasLast ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      nextDueDate: !hasLast && insp.nextDueDate ? dayjs(insp.nextDueDate).format("YYYY-MM-DD") : "",
       scheduledDate: insp.scheduledDate ? dayjs(insp.scheduledDate).format("YYYY-MM-DD") : "",
       completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",
       notes: insp.notes || "",
@@ -469,6 +472,7 @@ export default function Elevators() {
       ...data,
       elevatorId: editingElevator.id,
       lastInspectionDate: data.lastInspectionDate || undefined,
+      nextDueDate: data.lastInspectionDate ? undefined : (data.nextDueDate || undefined),
       scheduledDate: data.scheduledDate || undefined,
       completionDate: data.completionDate || undefined,
     };
@@ -527,10 +531,10 @@ export default function Elevators() {
     };
     try {
       const mutations: Promise<any>[] = [
-        createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } as any }),
+        createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, nextDueDate: cat1Data.lastInspectionDate ? undefined : (cat1Data.nextDueDate || undefined), scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } as any }),
       ];
       if (!isHydraulic && cat5Data) {
-        mutations.push(createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } as any }));
+        mutations.push(createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, nextDueDate: cat5Data.lastInspectionDate ? undefined : (cat5Data.nextDueDate || undefined), scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } as any }));
       }
       const results: any[] = await Promise.all(mutations);
       const cat1Result = results[0];
@@ -681,15 +685,24 @@ export default function Elevators() {
                                   <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
                                   <FormMessage /></FormItem>
                               )} />
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium leading-none">Next Due Date</label>
-                                <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
-                                  {nextDuePreview
-                                    ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                                    : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                              {watchLastDate ? (
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-sm font-medium leading-none">Next Due Date</label>
+                                  <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
+                                    {nextDuePreview
+                                      ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                                      : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                                  </div>
+                                  <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
                                 </div>
-                                <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
-                              </div>
+                              ) : (
+                                <FormField control={inspForm.control} name="nextDueDate" render={({ field }) => (
+                                  <FormItem><FormLabel>Next Due Date</FormLabel>
+                                    <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                    <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                                    <FormMessage /></FormItem>
+                                )} />
+                              )}
                             </div>
                           </div>
 
@@ -768,15 +781,24 @@ export default function Elevators() {
                                     <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
                                     <FormMessage /></FormItem>
                                 )} />
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-sm font-medium leading-none">Next Due Date</label>
-                                  <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}>
-                                    {nextDuePreview
-                                      ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                                      : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                                {watchLastDate ? (
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium leading-none">Next Due Date</label>
+                                    <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}>
+                                      {nextDuePreview
+                                        ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                                        : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                                    </div>
+                                    <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
                                   </div>
-                                  <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
-                                </div>
+                                ) : (
+                                  <FormField control={inspForm.control} name="nextDueDate" render={({ field }) => (
+                                    <FormItem><FormLabel>Next Due Date</FormLabel>
+                                      <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                      <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                                      <FormMessage /></FormItem>
+                                  )} />
+                                )}
                               </div>
                               {/* Row 2: Status + Scheduled Date */}
                               <div className="grid grid-cols-2 gap-4">
@@ -828,15 +850,24 @@ export default function Elevators() {
                                     <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
                                     <FormMessage /></FormItem>
                                 )} />
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-sm font-medium leading-none">Next Due Date</label>
-                                  <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums transition-colors ${nextDuePreviewCat5 ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}>
-                                    {nextDuePreviewCat5
-                                      ? new Date(nextDuePreviewCat5 + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                                      : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                                {watchLastDateCat5 ? (
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium leading-none">Next Due Date</label>
+                                    <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums transition-colors ${nextDuePreviewCat5 ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}>
+                                      {nextDuePreviewCat5
+                                        ? new Date(nextDuePreviewCat5 + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                                        : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                                    </div>
+                                    <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
                                   </div>
-                                  <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
-                                </div>
+                                ) : (
+                                  <FormField control={inspCat5Form.control} name="nextDueDate" render={({ field }) => (
+                                    <FormItem><FormLabel>Next Due Date</FormLabel>
+                                      <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                      <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                                      <FormMessage /></FormItem>
+                                  )} />
+                                )}
                               </div>
                               {/* Row 2: Status + Scheduled Date */}
                               <div className="grid grid-cols-2 gap-4">

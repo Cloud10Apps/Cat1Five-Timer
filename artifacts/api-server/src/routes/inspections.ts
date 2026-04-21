@@ -272,7 +272,7 @@ router.get("/", asyncHandler(async (req, res) => {
 }));
 
 function sanitizeDates(body: Record<string, unknown>) {
-  const dateCols = ["lastInspectionDate", "scheduledDate", "completionDate"];
+  const dateCols = ["lastInspectionDate", "nextDueDate", "scheduledDate", "completionDate"];
   const result = { ...body };
   for (const col of dateCols) {
     if (result[col] === "" || result[col] === null) result[col] = undefined;
@@ -287,12 +287,15 @@ router.post("/", asyncHandler(async (req, res) => {
     return;
   }
   const orgId = req.user!.organizationId;
-  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = parsed.data;
+  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, nextDueDate: manualNextDueDate, scheduledDate, completionDate, status, notes } = parsed.data;
   const lastInspDateStr = toDateStr(lastInspectionDate);
   const scheduledDateStr = toDateStr(scheduledDate);
   const completionDateStr = toDateStr(completionDate);
 
-  const nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears);
+  let nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears);
+  if (!nextDueDate) {
+    nextDueDate = toDateStr(manualNextDueDate);
+  }
 
   const dup = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId);
   if (dup) {
@@ -345,14 +348,19 @@ router.put("/:id", asyncHandler(async (req, res) => {
     return;
   }
   const orgId = req.user!.organizationId;
-  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, scheduledDate, completionDate, status, notes } = body.data;
+  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, nextDueDate: manualNextDueDate, scheduledDate, completionDate, status, notes } = body.data;
   const lastInspDateStr = toDateStr(lastInspectionDate);
   const scheduledDateStr = toDateStr(scheduledDate);
   const completionDateStr = toDateStr(completionDate);
   let nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears);
   if (!nextDueDate) {
-    const existing = await fetchInspection(params.data.id, orgId);
-    nextDueDate = existing?.nextDueDate ?? null;
+    const manual = toDateStr(manualNextDueDate);
+    if (manual) {
+      nextDueDate = manual;
+    } else {
+      const existing = await fetchInspection(params.data.id, orgId);
+      nextDueDate = existing?.nextDueDate ?? null;
+    }
   }
   const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
 

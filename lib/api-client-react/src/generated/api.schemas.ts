@@ -244,6 +244,7 @@ export interface CreateInspectionBody {
   inspectionType: CreateInspectionBodyInspectionType;
   recurrenceYears: number;
   lastInspectionDate?: string;
+  nextDueDate?: string;
   scheduledDate?: string;
   completionDate?: string;
   status?: CreateInspectionBodyStatus;

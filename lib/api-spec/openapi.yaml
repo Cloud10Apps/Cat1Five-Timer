@@ -1080,6 +1080,9 @@ components:
         lastInspectionDate:
           type: string
           format: date
+        nextDueDate:
+          type: string
+          format: date
         scheduledDate:
           type: string
           format: date
