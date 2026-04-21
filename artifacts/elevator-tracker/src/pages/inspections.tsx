@@ -97,6 +97,7 @@ const inspectionSchema = z.object({
   inspectionType:    z.enum(["CAT1", "CAT5"] as const),
   recurrenceYears:   z.coerce.number().min(1, "Recurrence is required"),
   lastInspectionDate: z.string().optional(),
+  nextDueDate:       z.string().optional(),
   scheduledDate:     z.string().optional(),
   completionDate:    z.string().optional(),
   status:            z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const).optional(),
@@ -387,17 +388,21 @@ export default function Inspections() {
 
   const form = useForm<InspectionFormValues>({
     resolver: zodResolver(inspectionSchema),
-    defaultValues: { elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" },
+    defaultValues: { elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "", nextDueDate: "" },
   });
 
   const onSubmit = (data: InspectionFormValues) => {
+    const payload: InspectionFormValues = {
+      ...data,
+      nextDueDate: data.lastInspectionDate ? undefined : (data.nextDueDate || undefined),
+    };
     if (editingInspection) {
-      updateMutation.mutate({ id: editingInspection.id, data }, {
+      updateMutation.mutate({ id: editingInspection.id, data: payload }, {
         onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection updated" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
         onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not update inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
     } else {
-      createMutation.mutate({ data }, {
+      createMutation.mutate({ data: payload }, {
         onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection added" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
         onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not add inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
@@ -431,11 +436,13 @@ export default function Inspections() {
     const bldg = buildings?.find(b => b.id === elev?.buildingId);
     setFormCustomerId(bldg?.customerId ? String(bldg.customerId) : "");
     setFormBuildingId(elev?.buildingId ? String(elev.buildingId) : "");
+    const hasLast = !!insp.lastInspectionDate;
     form.reset({
       elevatorId: insp.elevatorId, inspectionType: insp.inspectionType,
       recurrenceYears: insp.recurrenceYears,
       status: (insp as any).trueStatus ?? insp.status,
-      lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      lastInspectionDate: hasLast ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      nextDueDate: !hasLast && insp.nextDueDate ? dayjs(insp.nextDueDate).format("YYYY-MM-DD") : "",
       scheduledDate:  insp.scheduledDate  ? dayjs(insp.scheduledDate).format("YYYY-MM-DD")  : "",
       completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",
       notes: insp.notes || "",
@@ -642,15 +649,25 @@ export default function Inspections() {
                           <FormMessage />
                         </FormItem>
                       )} />
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium leading-none">Next Due Date</label>
-                        <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
-                          {nextDuePreview
-                            ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                            : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                      {watchLastDate ? (
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-medium leading-none">Next Due Date</label>
+                          <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
+                            {nextDuePreview
+                              ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                              : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                          </div>
+                          <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
                         </div>
-                        <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
-                      </div>
+                      ) : (
+                        <FormField control={form.control} name="nextDueDate" render={({ field }) => (
+                          <FormItem><FormLabel>Next Due Date</FormLabel>
+                            <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                            <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      )}
                     </div>
                   </div>
 

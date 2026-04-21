@@ -66,6 +66,7 @@ const editSchema = z.object({
   recurrenceYears: z.coerce.number().min(1),
   status: z.enum(["NOT_STARTED", "SCHEDULED", "IN_PROGRESS", "COMPLETED"] as const),
   lastInspectionDate: z.string().optional(),
+  nextDueDate: z.string().optional(),
   scheduledDate: z.string().optional(),
   completionDate: z.string().optional(),
   notes: z.string().optional(),
@@ -212,7 +213,7 @@ export default function CalendarView() {
   /* ── Edit form ── */
   const form = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
-    defaultValues: { inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "" },
+    defaultValues: { inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "", nextDueDate: "" },
   });
 
   const watchLastDate    = form.watch("lastInspectionDate");
@@ -245,11 +246,13 @@ export default function CalendarView() {
   const openEdit = (insp: Inspection) => {
     setSelectedDate(null);
     setEditingInsp(insp);
+    const hasLast = !!insp.lastInspectionDate;
     form.reset({
       inspectionType: insp.inspectionType,
       recurrenceYears: insp.recurrenceYears,
       status: (insp as any).trueStatus ?? insp.status,
-      lastInspectionDate: insp.lastInspectionDate ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      lastInspectionDate: hasLast ? dayjs(insp.lastInspectionDate).format("YYYY-MM-DD") : "",
+      nextDueDate: !hasLast && insp.nextDueDate ? dayjs(insp.nextDueDate).format("YYYY-MM-DD") : "",
       scheduledDate: insp.scheduledDate ? dayjs(insp.scheduledDate).format("YYYY-MM-DD") : "",
       completionDate: insp.completionDate ? dayjs(insp.completionDate).format("YYYY-MM-DD") : "",
       notes: insp.notes ?? "",
@@ -263,6 +266,7 @@ export default function CalendarView() {
         ...data,
         elevatorId: editingInsp.elevatorId,
         lastInspectionDate: data.lastInspectionDate || undefined,
+        nextDueDate: data.lastInspectionDate ? undefined : (data.nextDueDate || undefined),
         scheduledDate: data.scheduledDate || undefined,
         completionDate: data.completionDate || undefined,
       }},
@@ -494,15 +498,25 @@ export default function CalendarView() {
                         <FormMessage />
                       </FormItem>
                     )} />
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium leading-none">Next Due Date</label>
-                      <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
-                        {nextDuePreview
-                          ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                          : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                    {watchLastDate ? (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium leading-none">Next Due Date</label>
+                        <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums font-semibold transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-zinc-200 text-zinc-400"}`}>
+                          {nextDuePreview
+                            ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                            : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
                       </div>
-                      <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
-                    </div>
+                    ) : (
+                      <FormField control={form.control} name="nextDueDate" render={({ field }) => (
+                        <FormItem><FormLabel>Next Due Date</FormLabel>
+                          <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                          <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    )}
                   </div>
                 </div>
 
