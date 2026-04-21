@@ -511,7 +511,14 @@ export default function CalendarView() {
                     ) : (
                       <FormField control={form.control} name="nextDueDate" render={({ field }) => (
                         <FormItem><FormLabel>Next Due Date</FormLabel>
-                          <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                          <div className="flex items-center gap-1">
+                            <div className="flex-1"><FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl></div>
+                            {field.value && (
+                              <button type="button" onClick={() => form.setValue("nextDueDate", "")} aria-label="Clear next due date" className="h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
                           <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
                           <FormMessage />
                         </FormItem>
