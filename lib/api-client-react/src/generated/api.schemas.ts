@@ -272,6 +272,86 @@ export interface OverdueByBuildingItem {
   overdueCount: number;
 }
 
+export type ContactContactType = typeof ContactContactType[keyof typeof ContactContactType];
+
+
+export const ContactContactType = {
+  elevator_company: 'elevator_company',
+  building_owner: 'building_owner',
+  property_manager: 'property_manager',
+  state_inspector: 'state_inspector',
+  other: 'other',
+} as const;
+
+export interface Contact {
+  id: number;
+  customerId: number;
+  customerName?: string;
+  organizationId: number;
+  contactType: ContactContactType;
+  companyName?: string;
+  contactName?: string;
+  email: string;
+  phone?: string;
+  buildingCount?: number;
+  buildingNamesPreview?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateContactBodyContactType = typeof CreateContactBodyContactType[keyof typeof CreateContactBodyContactType];
+
+
+export const CreateContactBodyContactType = {
+  elevator_company: 'elevator_company',
+  building_owner: 'building_owner',
+  property_manager: 'property_manager',
+  state_inspector: 'state_inspector',
+  other: 'other',
+} as const;
+
+export interface CreateContactBody {
+  customerId: number;
+  contactType: CreateContactBodyContactType;
+  companyName?: string;
+  contactName?: string;
+  email: string;
+  phone?: string;
+}
+
+export type BuildingContactContactType = typeof BuildingContactContactType[keyof typeof BuildingContactContactType];
+
+
+export const BuildingContactContactType = {
+  elevator_company: 'elevator_company',
+  building_owner: 'building_owner',
+  property_manager: 'property_manager',
+  state_inspector: 'state_inspector',
+  other: 'other',
+} as const;
+
+export interface BuildingContact {
+  id: number;
+  buildingId: number;
+  contactId: number;
+  receivesNotifications: boolean;
+  contactType: BuildingContactContactType;
+  companyName?: string;
+  contactName?: string;
+  email: string;
+  phone?: string;
+  createdAt: string;
+}
+
+export interface AssignBuildingContactBody {
+  contactId: number;
+  receivesNotifications?: boolean;
+}
+
+export interface UpdateBuildingContactBody {
+  receivesNotifications: boolean;
+}
+
 export type ListCustomersParams = {
 search?: string;
 };
@@ -349,4 +429,21 @@ export type ExportElevatorsParams = {
 customerId?: number;
 buildingId?: number;
 };
+
+export type ListContactsParams = {
+customerId?: number;
+contactType?: ListContactsContactType;
+search?: string;
+};
+
+export type ListContactsContactType = typeof ListContactsContactType[keyof typeof ListContactsContactType];
+
+
+export const ListContactsContactType = {
+  elevator_company: 'elevator_company',
+  building_owner: 'building_owner',
+  property_manager: 'property_manager',
+  state_inspector: 'state_inspector',
+  other: 'other',
+} as const;
 

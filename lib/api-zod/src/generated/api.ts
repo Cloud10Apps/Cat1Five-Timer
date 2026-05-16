@@ -631,3 +631,178 @@ export const ExportElevatorsQueryParams = zod.object({
 })
 
 
+/**
+ * @summary List contacts
+ */
+export const ListContactsQueryParams = zod.object({
+  "customerId": zod.coerce.number().optional(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']).optional(),
+  "search": zod.coerce.string().optional()
+})
+
+export const ListContactsResponseItem = zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "customerName": zod.string().optional(),
+  "organizationId": zod.number(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
+  "companyName": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "email": zod.string().email(),
+  "phone": zod.string().optional(),
+  "buildingCount": zod.number().optional(),
+  "buildingNamesPreview": zod.array(zod.string()).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListContactsResponse = zod.array(ListContactsResponseItem)
+
+
+/**
+ * @summary Create a contact
+ */
+export const CreateContactBody = zod.object({
+  "customerId": zod.number(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
+  "companyName": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "email": zod.string().email(),
+  "phone": zod.string().optional()
+})
+
+
+/**
+ * @summary Get a contact
+ */
+export const GetContactParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetContactResponse = zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "customerName": zod.string().optional(),
+  "organizationId": zod.number(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
+  "companyName": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "email": zod.string().email(),
+  "phone": zod.string().optional(),
+  "buildingCount": zod.number().optional(),
+  "buildingNamesPreview": zod.array(zod.string()).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a contact
+ */
+export const UpdateContactParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateContactBody = zod.object({
+  "customerId": zod.number(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
+  "companyName": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "email": zod.string().email(),
+  "phone": zod.string().optional()
+})
+
+export const UpdateContactResponse = zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "customerName": zod.string().optional(),
+  "organizationId": zod.number(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
+  "companyName": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "email": zod.string().email(),
+  "phone": zod.string().optional(),
+  "buildingCount": zod.number().optional(),
+  "buildingNamesPreview": zod.array(zod.string()).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a contact
+ */
+export const DeleteContactParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List contacts assigned to a building
+ */
+export const ListBuildingContactsParams = zod.object({
+  "buildingId": zod.coerce.number()
+})
+
+export const ListBuildingContactsResponseItem = zod.object({
+  "id": zod.number(),
+  "buildingId": zod.number(),
+  "contactId": zod.number(),
+  "receivesNotifications": zod.boolean(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
+  "companyName": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "email": zod.string().email(),
+  "phone": zod.string().optional(),
+  "createdAt": zod.coerce.date()
+})
+export const ListBuildingContactsResponse = zod.array(ListBuildingContactsResponseItem)
+
+
+/**
+ * @summary Assign a contact to a building
+ */
+export const AssignBuildingContactParams = zod.object({
+  "buildingId": zod.coerce.number()
+})
+
+export const AssignBuildingContactBody = zod.object({
+  "contactId": zod.number(),
+  "receivesNotifications": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update a building-contact assignment (toggle notifications)
+ */
+export const UpdateBuildingContactParams = zod.object({
+  "buildingId": zod.coerce.number(),
+  "contactId": zod.coerce.number()
+})
+
+export const UpdateBuildingContactBody = zod.object({
+  "receivesNotifications": zod.boolean()
+})
+
+export const UpdateBuildingContactResponse = zod.object({
+  "id": zod.number(),
+  "buildingId": zod.number(),
+  "contactId": zod.number(),
+  "receivesNotifications": zod.boolean(),
+  "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
+  "companyName": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "email": zod.string().email(),
+  "phone": zod.string().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Unassign a contact from a building
+ */
+export const UnassignBuildingContactParams = zod.object({
+  "buildingId": zod.coerce.number(),
+  "contactId": zod.coerce.number()
+})
+
+

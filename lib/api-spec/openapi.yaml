@@ -25,6 +25,10 @@ tags:
     description: User management
   - name: export
     description: Data export
+  - name: contacts
+    description: Customer contact management
+  - name: building-contacts
+    description: Building-contact assignment management
 
 paths:
   /healthz:
@@ -733,6 +737,217 @@ paths:
                 type: string
                 format: binary
 
+  /contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List contacts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: contactType
+          in: query
+          schema:
+            type: string
+            enum: [elevator_company, building_owner, property_manager, state_inspector, other]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contact"
+    post:
+      operationId: createContact
+      tags: [contacts]
+      summary: Create a contact
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContactBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+
+  /contacts/{id}:
+    get:
+      operationId: getContact
+      tags: [contacts]
+      summary: Get a contact
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+    put:
+      operationId: updateContact
+      tags: [contacts]
+      summary: Update a contact
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContactBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+    delete:
+      operationId: deleteContact
+      tags: [contacts]
+      summary: Delete a contact
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /buildings/{buildingId}/contacts:
+    get:
+      operationId: listBuildingContacts
+      tags: [building-contacts]
+      summary: List contacts assigned to a building
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: buildingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of building-contact assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BuildingContact"
+    post:
+      operationId: assignBuildingContact
+      tags: [building-contacts]
+      summary: Assign a contact to a building
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: buildingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignBuildingContactBody"
+      responses:
+        "201":
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildingContact"
+
+  /buildings/{buildingId}/contacts/{contactId}:
+    put:
+      operationId: updateBuildingContact
+      tags: [building-contacts]
+      summary: Update a building-contact assignment (toggle notifications)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: buildingId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBuildingContactBody"
+      responses:
+        "200":
+          description: Updated assignment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildingContact"
+    delete:
+      operationId: unassignBuildingContact
+      tags: [building-contacts]
+      summary: Unassign a contact from a building
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: buildingId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1148,3 +1363,122 @@ components:
         - buildingId
         - buildingName
         - overdueCount
+
+    Contact:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        organizationId:
+          type: integer
+        contactType:
+          type: string
+          enum: [elevator_company, building_owner, property_manager, state_inspector, other]
+        companyName:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        buildingCount:
+          type: integer
+        buildingNamesPreview:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - customerId
+        - organizationId
+        - contactType
+        - email
+        - createdAt
+        - updatedAt
+
+    CreateContactBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        contactType:
+          type: string
+          enum: [elevator_company, building_owner, property_manager, state_inspector, other]
+        companyName:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+      required:
+        - customerId
+        - contactType
+        - email
+
+    BuildingContact:
+      type: object
+      properties:
+        id:
+          type: integer
+        buildingId:
+          type: integer
+        contactId:
+          type: integer
+        receivesNotifications:
+          type: boolean
+        contactType:
+          type: string
+          enum: [elevator_company, building_owner, property_manager, state_inspector, other]
+        companyName:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - buildingId
+        - contactId
+        - receivesNotifications
+        - contactType
+        - email
+        - createdAt
+
+    AssignBuildingContactBody:
+      type: object
+      properties:
+        contactId:
+          type: integer
+        receivesNotifications:
+          type: boolean
+      required:
+        - contactId
+
+    UpdateBuildingContactBody:
+      type: object
+      properties:
+        receivesNotifications:
+          type: boolean
+      required:
+        - receivesNotifications

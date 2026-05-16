@@ -6,8 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './assignBuildingContactBody';
 export * from './building';
+export * from './buildingContact';
+export * from './buildingContactContactType';
+export * from './contact';
+export * from './contactContactType';
 export * from './createBuildingBody';
+export * from './createContactBody';
+export * from './createContactBodyContactType';
 export * from './createCustomerBody';
 export * from './createElevatorBody';
 export * from './createElevatorBodyElevatorType';
@@ -30,6 +37,8 @@ export * from './inspectionStatus';
 export * from './inviteUserBody';
 export * from './inviteUserBodyRole';
 export * from './listBuildingsParams';
+export * from './listContactsContactType';
+export * from './listContactsParams';
 export * from './listCustomersParams';
 export * from './listElevatorsParams';
 export * from './listElevatorsType';
@@ -41,6 +50,7 @@ export * from './loginBody';
 export * from './loginResponse';
 export * from './overdueByBuildingItem';
 export * from './statusBreakdownItem';
+export * from './updateBuildingContactBody';
 export * from './updateUserBody';
 export * from './updateUserBodyRole';
 export * from './user';
