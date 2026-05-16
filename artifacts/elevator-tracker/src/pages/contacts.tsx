@@ -1,12 +1,7 @@
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useListContacts,
   getListContactsQueryKey,
-  useCreateContact,
-  useUpdateContact,
   useDeleteContact,
   useListCustomers,
   getListCustomersQueryKey,
@@ -15,21 +10,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -59,62 +39,19 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Building2,
-  KeyRound,
-  UserCog,
-  ShieldCheck,
-  User,
-  Mail,
-  Phone,
   ContactRound,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
-
-type ContactType = "elevator_company" | "building_owner" | "property_manager" | "state_inspector" | "other";
-
-const CONTACT_TYPE_ORDER: ContactType[] = [
-  "elevator_company",
-  "building_owner",
-  "property_manager",
-  "state_inspector",
-  "other",
-];
-
-const CONTACT_TYPE_META: Record<ContactType, { label: string; singular: string; icon: typeof Building2 }> = {
-  elevator_company: { label: "Elevator Companies", singular: "Elevator Company", icon: Building2 },
-  building_owner:   { label: "Building Owners",    singular: "Building Owner",   icon: KeyRound },
-  property_manager: { label: "Property Managers",  singular: "Property Manager", icon: UserCog },
-  state_inspector:  { label: "State Inspectors",   singular: "State Inspector",  icon: ShieldCheck },
-  other:            { label: "Other",              singular: "Other",            icon: User },
-};
-
-const contactSchema = z
-  .object({
-    customerId: z.coerce.number().min(1, "Customer is required"),
-    contactType: z.enum([
-      "elevator_company",
-      "building_owner",
-      "property_manager",
-      "state_inspector",
-      "other",
-    ]),
-    companyName: z.string().optional(),
-    contactName: z.string().optional(),
-    email: z.string().email("Valid email required"),
-    phone: z.string().optional(),
-  })
-  .refine((d) => !!((d.companyName ?? "").trim() || (d.contactName ?? "").trim()), {
-    message: "Either company name or contact name is required",
-    path: ["companyName"],
-  });
-
-type ContactFormValues = z.infer<typeof contactSchema>;
-
-function contactDisplayName(c: Contact): string {
-  return c.companyName?.trim() || c.contactName?.trim() || c.email;
-}
+import {
+  ContactRow,
+  CONTACT_TYPE_ORDER,
+  CONTACT_TYPE_META,
+  contactDisplayName,
+  type ContactType,
+} from "@/components/contact-row";
+import { ContactFormDialog } from "@/components/contact-form-dialog";
 
 function buildingPreview(c: Contact): string | null {
   const count = c.buildingCount ?? 0;
@@ -124,64 +61,6 @@ function buildingPreview(c: Contact): string | null {
   const extra = count - 1;
   if (extra <= 0) return `${count} building — ${preview}`;
   return `${count} buildings — ${preview}, +${extra} more`;
-}
-
-interface ContactCardProps {
-  contact: Contact;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
-  const meta = CONTACT_TYPE_META[contact.contactType as ContactType] ?? CONTACT_TYPE_META.other;
-  const Icon = meta.icon;
-  const primary = contactDisplayName(contact);
-  const secondaryParts: string[] = [];
-  if (contact.companyName && contact.contactName) secondaryParts.push(contact.contactName);
-  const preview = buildingPreview(contact);
-
-  return (
-    <div className="flex items-center gap-4 rounded-xl border bg-white px-4 py-3 transition-shadow hover:shadow-sm">
-      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600 shrink-0">
-        <Icon className="h-5 w-5" />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-zinc-900 truncate">{primary}</div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500 mt-0.5">
-          {secondaryParts.map((p) => (
-            <span key={p} className="truncate">{p}</span>
-          ))}
-          <span className="inline-flex items-center gap-1 min-w-0 truncate">
-            <Mail className="h-3 w-3 shrink-0" />
-            <span className="truncate">{contact.email}</span>
-          </span>
-          {contact.phone && (
-            <span className="inline-flex items-center gap-1 shrink-0">
-              <Phone className="h-3 w-3" />
-              {contact.phone}
-            </span>
-          )}
-          {contact.customerName && (
-            <span className="text-zinc-400 truncate">· {contact.customerName}</span>
-          )}
-        </div>
-      </div>
-
-      <div className="hidden sm:block text-xs text-zinc-500 text-right shrink-0 max-w-[14rem]">
-        {preview ?? <span className="text-zinc-300">No buildings</span>}
-      </div>
-
-      <div className="flex items-center gap-0.5 shrink-0">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} title="Edit">
-          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onDelete} title="Delete">
-          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-        </Button>
-      </div>
-    </div>
-  );
 }
 
 interface ContactGroupProps {
@@ -211,9 +90,31 @@ function ContactGroup({ type, contacts, defaultOpen, onEdit, onDelete }: Contact
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="flex flex-col gap-2 pl-7 pr-1 pt-2 pb-3">
-          {contacts.map((c) => (
-            <ContactCard key={c.id} contact={c} onEdit={() => onEdit(c)} onDelete={() => onDelete(c)} />
-          ))}
+          {contacts.map((c) => {
+            const preview = buildingPreview(c);
+            return (
+              <ContactRow
+                key={c.id}
+                contactType={c.contactType}
+                companyName={c.companyName}
+                contactName={c.contactName}
+                email={c.email}
+                phone={c.phone}
+                customerName={c.customerName}
+                rightDetail={preview ?? <span className="text-zinc-300">No buildings</span>}
+                trailingActions={
+                  <>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(c)} title="Edit">
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(c)} title="Delete">
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </>
+                }
+              />
+            );
+          })}
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -226,7 +127,7 @@ export default function Contacts() {
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deleteContact, setDeleteContact] = useState<Contact | null>(null);
 
@@ -250,81 +151,16 @@ export default function Contacts() {
     { query: { queryKey: getListCustomersQueryKey() } },
   );
 
-  const createMutation = useCreateContact();
-  const updateMutation = useUpdateContact();
   const deleteMutation = useDeleteContact();
-
-  const form = useForm<ContactFormValues>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: {
-      customerId: 0,
-      contactType: "elevator_company",
-      companyName: "",
-      contactName: "",
-      email: "",
-      phone: "",
-    },
-  });
 
   const openAdd = () => {
     setEditingContact(null);
-    form.reset({
-      customerId: customerFilter !== "all" ? Number(customerFilter) : 0,
-      contactType: "elevator_company",
-      companyName: "",
-      contactName: "",
-      email: "",
-      phone: "",
-    });
-    setIsAddOpen(true);
+    setIsFormOpen(true);
   };
 
   const openEdit = (c: Contact) => {
     setEditingContact(c);
-    form.reset({
-      customerId: c.customerId,
-      contactType: (c.contactType as ContactType),
-      companyName: c.companyName ?? "",
-      contactName: c.contactName ?? "",
-      email: c.email,
-      phone: c.phone ?? "",
-    });
-    setIsAddOpen(true);
-  };
-
-  const onSubmit = (data: ContactFormValues) => {
-    const body = {
-      customerId: data.customerId,
-      contactType: data.contactType,
-      companyName: data.companyName?.trim() || undefined,
-      contactName: data.contactName?.trim() || undefined,
-      email: data.email.trim(),
-      phone: data.phone?.trim() || undefined,
-    };
-    const onDone = (msg: string) => {
-      queryClient.invalidateQueries({ queryKey: getListContactsQueryKey() });
-      setIsAddOpen(false);
-      setEditingContact(null);
-      form.reset();
-      toast({ title: msg });
-    };
-    if (editingContact) {
-      updateMutation.mutate(
-        { id: editingContact.id, data: body },
-        {
-          onSuccess: () => onDone("Contact updated"),
-          onError: () => toast({ title: "Failed to update contact", variant: "destructive" }),
-        },
-      );
-    } else {
-      createMutation.mutate(
-        { data: body },
-        {
-          onSuccess: () => onDone("Contact added"),
-          onError: () => toast({ title: "Failed to add contact", variant: "destructive" }),
-        },
-      );
-    }
+    setIsFormOpen(true);
   };
 
   const confirmDelete = () => {
@@ -357,6 +193,7 @@ export default function Contacts() {
   }, [contacts]);
 
   const totalCount = contacts?.length ?? 0;
+  const defaultCustomerId = customerFilter !== "all" ? Number(customerFilter) : undefined;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -368,150 +205,24 @@ export default function Contacts() {
           </p>
         </div>
 
-        <Dialog
-          open={isAddOpen}
-          onOpenChange={(open) => {
-            setIsAddOpen(open);
-            if (!open) {
-              setEditingContact(null);
-              form.reset();
-            }
-          }}
+        <Button
+          className="bg-amber-500 hover:bg-amber-600 text-zinc-900"
+          onClick={openAdd}
         >
-          <DialogTrigger asChild>
-            <Button
-              className="bg-amber-500 hover:bg-amber-600 text-zinc-900"
-              onClick={openAdd}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Contact
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingContact ? "Edit Contact" : "Add New Contact"}</DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="customerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Customer</FormLabel>
-                      <Select
-                        value={field.value ? String(field.value) : ""}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a customer" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(customers ?? []).map((c) => (
-                            <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contactType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contact Type</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {CONTACT_TYPE_ORDER.map((t) => (
-                            <SelectItem key={t} value={t}>{CONTACT_TYPE_META[t].singular}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="companyName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Schindler Elevator" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contactName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contact Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Marco Trevino" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="dispatch@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(555) 555-0100" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-900"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                >
-                  {createMutation.isPending || updateMutation.isPending
-                    ? "Saving..."
-                    : editingContact ? "Save Changes" : "Save Contact"}
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Contact
+        </Button>
       </div>
+
+      <ContactFormDialog
+        open={isFormOpen}
+        onOpenChange={(o) => {
+          setIsFormOpen(o);
+          if (!o) setEditingContact(null);
+        }}
+        editingContact={editingContact}
+        defaultCustomerId={editingContact ? undefined : defaultCustomerId}
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[14rem] max-w-md">
@@ -588,7 +299,11 @@ export default function Contacts() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {deleteContact ? contactDisplayName(deleteContact) : "contact"}?
+              Delete {deleteContact ? contactDisplayName({
+                companyName: deleteContact.companyName,
+                contactName: deleteContact.contactName,
+                email: deleteContact.email,
+              }) : "contact"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
               This contact will be removed from all assigned buildings. This action cannot be undone.

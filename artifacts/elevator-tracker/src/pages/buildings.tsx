@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,10 +11,9 @@ import {
   useDeleteBuilding,
   useListCustomers,
   getListCustomersQueryKey,
-  useListInspections,
-  getListInspectionsQueryKey,
   Building,
 } from "@workspace/api-client-react";
+import { useBuildingCompliance } from "@/hooks/use-building-compliance";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,55 +85,52 @@ interface BuildingCardProps {
 }
 
 function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCardProps) {
+  const [, navigate] = useLocation();
   const address = formatAddress(building);
   const elevatorCount = building.elevatorCount ?? 0;
 
-  const { data: inspections } = useListInspections(
-    { buildingId: building.id },
-    { query: { queryKey: getListInspectionsQueryKey({ buildingId: building.id }), staleTime: 5 * 60 * 1000 } }
-  );
-
-  const today = new Date().toISOString().slice(0, 10);
-  const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const overdueCount = (inspections ?? []).filter((i: any) => i.status === "OVERDUE").length;
-  const dueSoonCount = (inspections ?? []).filter(
-    (i: any) => i.status !== "OVERDUE" && i.nextDueDate >= today && i.nextDueDate <= in30
-  ).length;
-
-  const statusColorClass =
-    elevatorCount === 0 || inspections === undefined ? "bg-zinc-100 text-zinc-400" :
-    overdueCount > 0  ? "bg-red-100 text-red-600" :
-    dueSoonCount > 0  ? "bg-amber-100 text-amber-600" :
-                        "bg-green-100 text-green-600";
+  const { overdueCount, statusColorClass, level } = useBuildingCompliance(building.id, elevatorCount);
 
   let complianceBadge: React.ReactNode = null;
-  if (elevatorCount > 0 && inspections !== undefined) {
-    if (overdueCount > 0) {
-      complianceBadge = (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-red-500 inline-block shrink-0" />
-          {overdueCount} Overdue
-        </span>
-      );
-    } else if (dueSoonCount > 0) {
-      complianceBadge = (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-amber-400 inline-block shrink-0" />
-          Due Soon
-        </span>
-      );
-    } else {
-      complianceBadge = (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-green-50 text-green-700 border border-green-200 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-green-500 inline-block shrink-0" />
-          Compliant
-        </span>
-      );
-    }
+  if (level === "overdue") {
+    complianceBadge = (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
+        <span className="w-2 h-2 rounded-full bg-red-500 inline-block shrink-0" />
+        {overdueCount} Overdue
+      </span>
+    );
+  } else if (level === "due-soon") {
+    complianceBadge = (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+        <span className="w-2 h-2 rounded-full bg-amber-400 inline-block shrink-0" />
+        Due Soon
+      </span>
+    );
+  } else if (level === "compliant") {
+    complianceBadge = (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-green-50 text-green-700 border border-green-200 shrink-0">
+        <span className="w-2 h-2 rounded-full bg-green-500 inline-block shrink-0" />
+        Compliant
+      </span>
+    );
   }
 
+  const handleCardClick = () => navigate(`/buildings/${building.id}`);
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleCardClick();
+    }
+  };
+
   return (
-    <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      className="flex flex-col overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+    >
       <CardHeader className="pb-4 px-6 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-4 min-w-0">
@@ -159,10 +156,20 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
           <div className="flex flex-col items-end gap-2 shrink-0">
             {complianceBadge && <div>{complianceBadge}</div>}
             <div className="flex items-center gap-0.5 -mr-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              >
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onDelete}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             </div>

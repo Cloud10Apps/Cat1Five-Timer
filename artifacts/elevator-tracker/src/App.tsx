@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import Customers from "@/pages/customers";
 import Contacts from "@/pages/contacts";
 import Buildings from "@/pages/buildings";
+import BuildingDetail from "@/pages/building-detail";
 import Elevators from "@/pages/elevators";
 import Units from "@/pages/units";
 import Inspections from "@/pages/inspections";
@@ -47,6 +48,9 @@ function Router() {
       </Route>
       <Route path="/contacts">
         <ProtectedRoute><Contacts /></ProtectedRoute>
+      </Route>
+      <Route path="/buildings/:id">
+        <ProtectedRoute><BuildingDetail /></ProtectedRoute>
       </Route>
       <Route path="/buildings">
         <ProtectedRoute><Buildings /></ProtectedRoute>
