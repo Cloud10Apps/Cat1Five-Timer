@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   CreditCard,
   AlertTriangle,
+  ContactRound,
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ export function Layout({ children }: LayoutProps) {
   const mainNav: { name: string; href: string; icon: typeof Settings; subtitle?: string }[] = [
     { name: "Dashboard",           href: "/dashboard",   icon: LayoutDashboard as typeof Settings },
     { name: "Customers",           href: "/customers",   icon: Users as typeof Settings },
+    { name: "Contacts",            href: "/contacts",    icon: ContactRound as typeof Settings },
     { name: "Buildings",           href: "/buildings",   icon: Building as typeof Settings },
     { name: "Units",               href: "/units",       icon: Layers as typeof Settings },
     { name: "Active Inspections",  href: "/elevators",   icon: ArrowUpSquare as typeof Settings,  subtitle: "Open records needing attention" },
