@@ -7,3 +7,4 @@ export * from "./elevators";
 export * from "./inspections";
 export * from "./contacts";
 export * from "./building-contacts";
+export * from "./contact-customers";

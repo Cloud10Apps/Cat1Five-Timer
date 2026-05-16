@@ -9,6 +9,8 @@ import type { ListContactsContactType } from './listContactsContactType';
 
 export type ListContactsParams = {
 customerId?: number;
+buildingId?: number;
+unitId?: number;
 contactType?: ListContactsContactType;
 search?: string;
 };

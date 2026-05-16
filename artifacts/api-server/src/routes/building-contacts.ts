@@ -12,18 +12,19 @@ import {
   UpdateBuildingContactBody,
 } from "@workspace/api-zod";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { writeContactCustomers } from "../lib/contact-customers.js";
 
 const router = Router({ mergeParams: true });
 
 router.use(requireAuth);
 
-async function loadOrgBuildingId(buildingId: number, orgId: number): Promise<number | null> {
+async function loadOrgBuilding(buildingId: number, orgId: number): Promise<{ id: number; customerId: number } | null> {
   const rows = await db
-    .select({ id: buildingsTable.id })
+    .select({ id: buildingsTable.id, customerId: buildingsTable.customerId })
     .from(buildingsTable)
     .where(and(eq(buildingsTable.id, buildingId), eq(buildingsTable.organizationId, orgId)))
     .limit(1);
-  return rows[0]?.id ?? null;
+  return rows[0] ?? null;
 }
 
 function parseId(value: unknown): number | null {
@@ -55,8 +56,8 @@ router.get("/", asyncHandler(async (req, res) => {
   if (buildingId === null) { res.status(400).json({ error: "Invalid buildingId" }); return; }
   const orgId = req.user!.organizationId;
 
-  const buildingOk = await loadOrgBuildingId(buildingId, orgId);
-  if (!buildingOk) { res.status(404).json({ error: "Building not found" }); return; }
+  const buildingRow = await loadOrgBuilding(buildingId, orgId);
+  if (!buildingRow) { res.status(404).json({ error: "Building not found" }); return; }
 
   const rows = await db
     .select({
@@ -81,8 +82,8 @@ router.post("/", asyncHandler(async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: "Invalid request body" }); return; }
   const orgId = req.user!.organizationId;
 
-  const buildingOk = await loadOrgBuildingId(buildingId, orgId);
-  if (!buildingOk) { res.status(404).json({ error: "Building not found" }); return; }
+  const buildingRow = await loadOrgBuilding(buildingId, orgId);
+  if (!buildingRow) { res.status(404).json({ error: "Building not found" }); return; }
 
   const contactRows = await db
     .select()
@@ -92,12 +93,20 @@ router.post("/", asyncHandler(async (req, res) => {
   if (!contactRows[0]) { res.status(404).json({ error: "Contact not found" }); return; }
 
   try {
-    const inserted = await db.insert(buildingContactsTable).values({
-      buildingId,
-      contactId: parsed.data.contactId,
-      receivesNotifications: parsed.data.receivesNotifications ?? true,
-    }).returning();
-    res.status(201).json(serializeAssignment(inserted[0], contactRows[0]));
+    const inserted = await db.transaction(async (tx) => {
+      const ins = await tx.insert(buildingContactsTable).values({
+        buildingId,
+        contactId: parsed.data.contactId,
+        receivesNotifications: parsed.data.receivesNotifications ?? true,
+      }).returning();
+
+      // Auto-link: ensure the contact is associated with this building's customer
+      // without disturbing other existing associations or the legacy customer_id.
+      await writeContactCustomers(tx, parsed.data.contactId, [buildingRow.customerId], { mode: "add" });
+
+      return ins[0];
+    });
+    res.status(201).json(serializeAssignment(inserted, contactRows[0]));
   } catch (err: any) {
     if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505") {
       res.status(409).json({ error: "Contact already assigned to this building" });
@@ -118,8 +127,8 @@ router.put("/:contactId", asyncHandler(async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: "Invalid request body" }); return; }
   const orgId = req.user!.organizationId;
 
-  const buildingOk = await loadOrgBuildingId(buildingId, orgId);
-  if (!buildingOk) { res.status(404).json({ error: "Building not found" }); return; }
+  const buildingRow = await loadOrgBuilding(buildingId, orgId);
+  if (!buildingRow) { res.status(404).json({ error: "Building not found" }); return; }
 
   const contactRows = await db
     .select()
@@ -150,8 +159,8 @@ router.delete("/:contactId", asyncHandler(async (req, res) => {
   }
   const orgId = req.user!.organizationId;
 
-  const buildingOk = await loadOrgBuildingId(buildingId, orgId);
-  if (!buildingOk) { res.status(404).json({ error: "Building not found" }); return; }
+  const buildingRow = await loadOrgBuilding(buildingId, orgId);
+  if (!buildingRow) { res.status(404).json({ error: "Building not found" }); return; }
 
   await db.delete(buildingContactsTable)
     .where(and(

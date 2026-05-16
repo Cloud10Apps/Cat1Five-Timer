@@ -5,6 +5,10 @@ import {
   useDeleteContact,
   useListCustomers,
   getListCustomersQueryKey,
+  useListBuildings,
+  getListBuildingsQueryKey,
+  useListElevators,
+  getListElevatorsQueryKey,
   Contact,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -40,6 +44,7 @@ import {
   ChevronDown,
   ChevronRight,
   ContactRound,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
@@ -100,7 +105,7 @@ function ContactGroup({ type, contacts, defaultOpen, onEdit, onDelete }: Contact
                 contactName={c.contactName}
                 email={c.email}
                 phone={c.phone}
-                customerName={c.customerName}
+                customers={c.customers}
                 rightDetail={preview ?? <span className="text-zinc-300">No buildings</span>}
                 trailingActions={
                   <>
@@ -125,6 +130,8 @@ export default function Contacts() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [customerFilter, setCustomerFilter] = useState<string>("all");
+  const [buildingFilter, setBuildingFilter] = useState<string>("all");
+  const [unitFilter, setUnitFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -135,12 +142,14 @@ export default function Contacts() {
   const { toast } = useToast();
 
   const listParams = useMemo(() => {
-    const p: { customerId?: number; contactType?: ContactType; search?: string } = {};
+    const p: { customerId?: number; buildingId?: number; unitId?: number; contactType?: ContactType; search?: string } = {};
     if (customerFilter !== "all") p.customerId = Number(customerFilter);
+    if (buildingFilter !== "all") p.buildingId = Number(buildingFilter);
+    if (unitFilter !== "all") p.unitId = Number(unitFilter);
     if (typeFilter !== "all") p.contactType = typeFilter as ContactType;
     if (debouncedSearch) p.search = debouncedSearch;
     return p;
-  }, [customerFilter, typeFilter, debouncedSearch]);
+  }, [customerFilter, buildingFilter, unitFilter, typeFilter, debouncedSearch]);
 
   const { data: contacts, isLoading } = useListContacts(listParams, {
     query: { queryKey: getListContactsQueryKey(listParams) },
@@ -149,6 +158,25 @@ export default function Contacts() {
   const { data: customers } = useListCustomers(
     {},
     { query: { queryKey: getListCustomersQueryKey() } },
+  );
+
+  const buildingsParams = useMemo(() => {
+    return customerFilter !== "all" ? { customerId: Number(customerFilter) } : {};
+  }, [customerFilter]);
+  const { data: buildings } = useListBuildings(
+    buildingsParams,
+    { query: { queryKey: getListBuildingsQueryKey(buildingsParams) } },
+  );
+
+  const elevatorsParams = useMemo(() => {
+    const p: { customerId?: number; buildingId?: number } = {};
+    if (customerFilter !== "all") p.customerId = Number(customerFilter);
+    if (buildingFilter !== "all") p.buildingId = Number(buildingFilter);
+    return p;
+  }, [customerFilter, buildingFilter]);
+  const { data: elevators } = useListElevators(
+    elevatorsParams,
+    { query: { queryKey: getListElevatorsQueryKey(elevatorsParams) } },
   );
 
   const deleteMutation = useDeleteContact();
@@ -193,7 +221,22 @@ export default function Contacts() {
   }, [contacts]);
 
   const totalCount = contacts?.length ?? 0;
-  const defaultCustomerId = customerFilter !== "all" ? Number(customerFilter) : undefined;
+  const defaultCustomerIds = customerFilter !== "all" ? [Number(customerFilter)] : undefined;
+
+  const hasActiveFilters =
+    search !== "" ||
+    customerFilter !== "all" ||
+    buildingFilter !== "all" ||
+    unitFilter !== "all" ||
+    typeFilter !== "all";
+
+  const clearFilters = () => {
+    setSearch("");
+    setCustomerFilter("all");
+    setBuildingFilter("all");
+    setUnitFilter("all");
+    setTypeFilter("all");
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -221,7 +264,7 @@ export default function Contacts() {
           if (!o) setEditingContact(null);
         }}
         editingContact={editingContact}
-        defaultCustomerId={editingContact ? undefined : defaultCustomerId}
+        defaultCustomerIds={editingContact ? undefined : defaultCustomerIds}
       />
 
       <div className="flex flex-wrap items-center gap-3">
@@ -235,8 +278,8 @@ export default function Contacts() {
           />
         </div>
 
-        <Select value={customerFilter} onValueChange={setCustomerFilter}>
-          <SelectTrigger className="w-[14rem]">
+        <Select value={customerFilter} onValueChange={(v) => { setCustomerFilter(v); setBuildingFilter("all"); setUnitFilter("all"); }}>
+          <SelectTrigger className="w-[12rem]">
             <SelectValue placeholder="All Customers" />
           </SelectTrigger>
           <SelectContent>
@@ -247,8 +290,32 @@ export default function Contacts() {
           </SelectContent>
         </Select>
 
+        <Select value={buildingFilter} onValueChange={(v) => { setBuildingFilter(v); setUnitFilter("all"); }}>
+          <SelectTrigger className="w-[12rem]">
+            <SelectValue placeholder="All Buildings" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Buildings</SelectItem>
+            {(buildings ?? []).map((b) => (
+              <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={unitFilter} onValueChange={setUnitFilter}>
+          <SelectTrigger className="w-[12rem]">
+            <SelectValue placeholder="All Units" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Units</SelectItem>
+            {(elevators ?? []).map((u) => (
+              <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[14rem]">
+          <SelectTrigger className="w-[12rem]">
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent>
@@ -259,8 +326,15 @@ export default function Contacts() {
           </SelectContent>
         </Select>
 
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-zinc-600">
+            <X className="mr-1 h-3.5 w-3.5" />
+            Clear filters
+          </Button>
+        )}
+
         {totalCount > 0 && (
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap ml-auto">
             {totalCount} contact{totalCount === 1 ? "" : "s"}
           </span>
         )}
@@ -273,8 +347,10 @@ export default function Contacts() {
       ) : totalCount === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <ContactRound className="h-12 w-12 mb-3 opacity-20" />
-          <p className="text-sm">No contacts found.</p>
-          <p className="text-xs text-zinc-400 mt-1">Click <span className="font-medium">Add Contact</span> to create your first one.</p>
+          <p className="text-sm">{hasActiveFilters ? "No contacts match your filters." : "No contacts found."}</p>
+          {!hasActiveFilters && (
+            <p className="text-xs text-zinc-400 mt-1">Click <span className="font-medium">Add Contact</span> to create your first one.</p>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -306,7 +382,7 @@ export default function Contacts() {
               }) : "contact"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This contact will be removed from all assigned buildings. This action cannot be undone.
+              This contact will be removed from all assigned buildings and customer associations. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

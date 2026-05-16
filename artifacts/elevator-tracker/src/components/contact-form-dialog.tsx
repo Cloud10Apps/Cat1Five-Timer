@@ -36,10 +36,11 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { CONTACT_TYPE_ORDER, CONTACT_TYPE_META, type ContactType } from "./contact-row";
+import { MultiCustomerSelect } from "./multi-customer-select";
 
 const contactSchema = z
   .object({
-    customerId: z.coerce.number().min(1, "Customer is required"),
+    customerIds: z.array(z.coerce.number()).min(1, "At least one customer is required"),
     contactType: z.enum([
       "elevator_company",
       "building_owner",
@@ -63,8 +64,7 @@ interface ContactFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingContact?: Contact | null;
-  defaultCustomerId?: number;
-  lockCustomer?: boolean;
+  defaultCustomerIds?: number[];
   onSuccess?: (contact: Contact) => void;
 }
 
@@ -72,8 +72,7 @@ export function ContactFormDialog({
   open,
   onOpenChange,
   editingContact,
-  defaultCustomerId,
-  lockCustomer,
+  defaultCustomerIds,
   onSuccess,
 }: ContactFormDialogProps) {
   const queryClient = useQueryClient();
@@ -90,7 +89,7 @@ export function ContactFormDialog({
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
-      customerId: defaultCustomerId ?? 0,
+      customerIds: defaultCustomerIds ?? [],
       contactType: "elevator_company",
       companyName: "",
       contactName: "",
@@ -103,7 +102,7 @@ export function ContactFormDialog({
     if (!open) return;
     if (editingContact) {
       form.reset({
-        customerId: editingContact.customerId,
+        customerIds: (editingContact.customers ?? []).map((c) => c.id),
         contactType: editingContact.contactType as ContactType,
         companyName: editingContact.companyName ?? "",
         contactName: editingContact.contactName ?? "",
@@ -112,7 +111,7 @@ export function ContactFormDialog({
       });
     } else {
       form.reset({
-        customerId: defaultCustomerId ?? 0,
+        customerIds: defaultCustomerIds ?? [],
         contactType: "elevator_company",
         companyName: "",
         contactName: "",
@@ -120,11 +119,11 @@ export function ContactFormDialog({
         phone: "",
       });
     }
-  }, [open, editingContact, defaultCustomerId, form]);
+  }, [open, editingContact, defaultCustomerIds, form]);
 
   const onSubmit = (data: ContactFormValues) => {
     const body = {
-      customerId: data.customerId,
+      customerIds: data.customerIds,
       contactType: data.contactType,
       companyName: data.companyName?.trim() || undefined,
       contactName: data.contactName?.trim() || undefined,
@@ -158,6 +157,7 @@ export function ContactFormDialog({
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const customerOptions = (customers ?? []).map((c) => ({ id: c.id, name: c.name }));
 
   return (
     <Dialog
@@ -175,26 +175,18 @@ export function ContactFormDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="customerId"
+              name="customerIds"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer</FormLabel>
-                  <Select
-                    value={field.value ? String(field.value) : ""}
-                    onValueChange={(v) => field.onChange(Number(v))}
-                    disabled={lockCustomer}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {(customers ?? []).map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Customers</FormLabel>
+                  <FormControl>
+                    <MultiCustomerSelect
+                      options={customerOptions}
+                      value={field.value ?? []}
+                      onChange={field.onChange}
+                      placeholder="Select one or more customers..."
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

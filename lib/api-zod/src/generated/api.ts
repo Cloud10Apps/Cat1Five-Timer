@@ -636,14 +636,18 @@ export const ExportElevatorsQueryParams = zod.object({
  */
 export const ListContactsQueryParams = zod.object({
   "customerId": zod.coerce.number().optional(),
+  "buildingId": zod.coerce.number().optional(),
+  "unitId": zod.coerce.number().optional(),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']).optional(),
   "search": zod.coerce.string().optional()
 })
 
 export const ListContactsResponseItem = zod.object({
   "id": zod.number(),
-  "customerId": zod.number(),
-  "customerName": zod.string().optional(),
+  "customers": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string()
+})),
   "organizationId": zod.number(),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
   "companyName": zod.string().optional(),
@@ -661,8 +665,11 @@ export const ListContactsResponse = zod.array(ListContactsResponseItem)
 /**
  * @summary Create a contact
  */
+
+
+
 export const CreateContactBody = zod.object({
-  "customerId": zod.number(),
+  "customerIds": zod.array(zod.number()).min(1),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
   "companyName": zod.string().optional(),
   "contactName": zod.string().optional(),
@@ -680,8 +687,10 @@ export const GetContactParams = zod.object({
 
 export const GetContactResponse = zod.object({
   "id": zod.number(),
-  "customerId": zod.number(),
-  "customerName": zod.string().optional(),
+  "customers": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string()
+})),
   "organizationId": zod.number(),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
   "companyName": zod.string().optional(),
@@ -702,8 +711,11 @@ export const UpdateContactParams = zod.object({
   "id": zod.coerce.number()
 })
 
+
+
+
 export const UpdateContactBody = zod.object({
-  "customerId": zod.number(),
+  "customerIds": zod.array(zod.number()).min(1),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
   "companyName": zod.string().optional(),
   "contactName": zod.string().optional(),
@@ -713,8 +725,10 @@ export const UpdateContactBody = zod.object({
 
 export const UpdateContactResponse = zod.object({
   "id": zod.number(),
-  "customerId": zod.number(),
-  "customerName": zod.string().optional(),
+  "customers": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string()
+})),
   "organizationId": zod.number(),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
   "companyName": zod.string().optional(),
@@ -733,6 +747,27 @@ export const UpdateContactResponse = zod.object({
  */
 export const DeleteContactParams = zod.object({
   "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Associate a customer with a contact
+ */
+export const AddContactCustomerParams = zod.object({
+  "contactId": zod.coerce.number()
+})
+
+export const AddContactCustomerBody = zod.object({
+  "customerId": zod.number()
+})
+
+
+/**
+ * @summary Remove a customer-contact association
+ */
+export const RemoveContactCustomerParams = zod.object({
+  "contactId": zod.coerce.number(),
+  "customerId": zod.coerce.number()
 })
 
 

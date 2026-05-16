@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ContactContactType } from './contactContactType';
+import type { ContactCustomerSummary } from './contactCustomerSummary';
 
 export interface Contact {
   id: number;
-  customerId: number;
-  customerName?: string;
+  customers: ContactCustomerSummary[];
   organizationId: number;
   contactType: ContactContactType;
   companyName?: string;

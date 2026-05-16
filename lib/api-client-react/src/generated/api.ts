@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AddContactCustomerBody,
   AssignBuildingContactBody,
   Building,
   BuildingContact,
@@ -2853,6 +2854,150 @@ export const useDeleteContact = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteContactMutationOptions(options));
+    }
+
+/**
+ * @summary Associate a customer with a contact
+ */
+export const getAddContactCustomerUrl = (contactId: number,) => {
+
+
+
+
+  return `/api/contacts/${contactId}/customers`
+}
+
+export const addContactCustomer = async (contactId: number,
+    addContactCustomerBody: AddContactCustomerBody, options?: RequestInit): Promise<Contact> => {
+
+  return customFetch<Contact>(getAddContactCustomerUrl(contactId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      addContactCustomerBody,)
+  }
+);}
+
+
+
+
+export const getAddContactCustomerMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactCustomer>>, TError,{contactId: number;data: BodyType<AddContactCustomerBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addContactCustomer>>, TError,{contactId: number;data: BodyType<AddContactCustomerBody>}, TContext> => {
+
+const mutationKey = ['addContactCustomer'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addContactCustomer>>, {contactId: number;data: BodyType<AddContactCustomerBody>}> = (props) => {
+          const {contactId,data} = props ?? {};
+
+          return  addContactCustomer(contactId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddContactCustomerMutationResult = NonNullable<Awaited<ReturnType<typeof addContactCustomer>>>
+    export type AddContactCustomerMutationBody = BodyType<AddContactCustomerBody>
+    export type AddContactCustomerMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Associate a customer with a contact
+ */
+export const useAddContactCustomer = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactCustomer>>, TError,{contactId: number;data: BodyType<AddContactCustomerBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addContactCustomer>>,
+        TError,
+        {contactId: number;data: BodyType<AddContactCustomerBody>},
+        TContext
+      > => {
+      return useMutation(getAddContactCustomerMutationOptions(options));
+    }
+
+/**
+ * @summary Remove a customer-contact association
+ */
+export const getRemoveContactCustomerUrl = (contactId: number,
+    customerId: number,) => {
+
+
+
+
+  return `/api/contacts/${contactId}/customers/${customerId}`
+}
+
+export const removeContactCustomer = async (contactId: number,
+    customerId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemoveContactCustomerUrl(contactId,customerId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveContactCustomerMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactCustomer>>, TError,{contactId: number;customerId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeContactCustomer>>, TError,{contactId: number;customerId: number}, TContext> => {
+
+const mutationKey = ['removeContactCustomer'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeContactCustomer>>, {contactId: number;customerId: number}> = (props) => {
+          const {contactId,customerId} = props ?? {};
+
+          return  removeContactCustomer(contactId,customerId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveContactCustomerMutationResult = NonNullable<Awaited<ReturnType<typeof removeContactCustomer>>>
+
+    export type RemoveContactCustomerMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove a customer-contact association
+ */
+export const useRemoveContactCustomer = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactCustomer>>, TError,{contactId: number;customerId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeContactCustomer>>,
+        TError,
+        {contactId: number;customerId: number},
+        TContext
+      > => {
+      return useMutation(getRemoveContactCustomerMutationOptions(options));
     }
 
 /**

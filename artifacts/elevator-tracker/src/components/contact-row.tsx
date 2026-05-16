@@ -8,6 +8,12 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
 export type ContactType =
   | "elevator_company"
@@ -43,13 +49,16 @@ export function contactDisplayName(args: {
   return args.companyName?.trim() || args.contactName?.trim() || args.email;
 }
 
+const VISIBLE_CUSTOMER_CHIPS = 2;
+
 interface ContactRowProps {
   contactType: ContactType | string;
   companyName?: string | null;
   contactName?: string | null;
   email: string;
   phone?: string | null;
-  customerName?: string | null;
+  customers?: { id: number; name: string }[];
+  hideCustomers?: boolean;
   rightDetail?: ReactNode;
   trailingActions: ReactNode;
 }
@@ -60,7 +69,8 @@ export function ContactRow({
   contactName,
   email,
   phone,
-  customerName,
+  customers,
+  hideCustomers,
   rightDetail,
   trailingActions,
 }: ContactRowProps) {
@@ -70,6 +80,11 @@ export function ContactRow({
   const secondaryParts: string[] = [];
   if (companyName && contactName) secondaryParts.push(contactName);
 
+  const visibleCustomers = customers?.slice(0, VISIBLE_CUSTOMER_CHIPS) ?? [];
+  const extraCustomers = customers && customers.length > VISIBLE_CUSTOMER_CHIPS
+    ? customers.slice(VISIBLE_CUSTOMER_CHIPS)
+    : [];
+
   return (
     <div className="flex items-center gap-4 rounded-xl border bg-white px-4 py-3 transition-shadow hover:shadow-sm">
       <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600 shrink-0">
@@ -77,11 +92,44 @@ export function ContactRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="text-sm font-semibold text-zinc-900 truncate">{primary}</div>
           <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-bold uppercase tracking-wide shrink-0">
             {meta.singular}
           </span>
+          {!hideCustomers && visibleCustomers.length > 0 && (
+            <TooltipProvider>
+              <div className="flex items-center gap-1 flex-wrap">
+                {visibleCustomers.map((c) => (
+                  <span
+                    key={c.id}
+                    className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[10px] font-semibold max-w-[10rem] truncate"
+                  >
+                    {c.name}
+                  </span>
+                ))}
+                {extraCustomers.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        tabIndex={0}
+                        className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-bold cursor-default"
+                      >
+                        +{extraCustomers.length} more
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-xs">
+                        {extraCustomers.map((c) => (
+                          <div key={c.id}>{c.name}</div>
+                        ))}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </TooltipProvider>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500 mt-0.5">
           {secondaryParts.map((p) => (
@@ -96,9 +144,6 @@ export function ContactRow({
               <Phone className="h-3 w-3" />
               {phone}
             </span>
-          )}
-          {customerName && (
-            <span className="text-zinc-400 truncate">· {customerName}</span>
           )}
         </div>
       </div>

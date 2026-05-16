@@ -6,12 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './addContactCustomerBody';
 export * from './assignBuildingContactBody';
 export * from './building';
 export * from './buildingContact';
 export * from './buildingContactContactType';
 export * from './contact';
 export * from './contactContactType';
+export * from './contactCustomerSummary';
 export * from './createBuildingBody';
 export * from './createContactBody';
 export * from './createContactBodyContactType';

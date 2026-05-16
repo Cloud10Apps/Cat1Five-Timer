@@ -29,6 +29,8 @@ tags:
     description: Customer contact management
   - name: building-contacts
     description: Building-contact assignment management
+  - name: contact-customers
+    description: Contact-to-customer association management
 
 paths:
   /healthz:
@@ -749,6 +751,14 @@ paths:
           in: query
           schema:
             type: integer
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+        - name: unitId
+          in: query
+          schema:
+            type: integer
         - name: contactType
           in: query
           schema:
@@ -847,6 +857,63 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /contacts/{contactId}/customers:
+    post:
+      operationId: addContactCustomer
+      tags: [contact-customers]
+      summary: Associate a customer with a contact
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddContactCustomerBody"
+      responses:
+        "204":
+          description: Association created
+        "409":
+          description: Association already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /contacts/{contactId}/customers/{customerId}:
+    delete:
+      operationId: removeContactCustomer
+      tags: [contact-customers]
+      summary: Remove a customer-contact association
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+        "404":
+          description: Association not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /buildings/{buildingId}/contacts:
     get:
@@ -1364,15 +1431,26 @@ components:
         - buildingName
         - overdueCount
 
+    ContactCustomerSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+
     Contact:
       type: object
       properties:
         id:
           type: integer
-        customerId:
-          type: integer
-        customerName:
-          type: string
+        customers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContactCustomerSummary"
         organizationId:
           type: integer
         contactType:
@@ -1401,7 +1479,7 @@ components:
           format: date-time
       required:
         - id
-        - customerId
+        - customers
         - organizationId
         - contactType
         - email
@@ -1411,8 +1489,11 @@ components:
     CreateContactBody:
       type: object
       properties:
-        customerId:
-          type: integer
+        customerIds:
+          type: array
+          items:
+            type: integer
+          minItems: 1
         contactType:
           type: string
           enum: [elevator_company, building_owner, property_manager, state_inspector, other]
@@ -1426,9 +1507,17 @@ components:
         phone:
           type: string
       required:
-        - customerId
+        - customerIds
         - contactType
         - email
+
+    AddContactCustomerBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+      required:
+        - customerId
 
     BuildingContact:
       type: object

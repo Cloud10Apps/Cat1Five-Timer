@@ -272,6 +272,11 @@ export interface OverdueByBuildingItem {
   overdueCount: number;
 }
 
+export interface ContactCustomerSummary {
+  id: number;
+  name: string;
+}
+
 export type ContactContactType = typeof ContactContactType[keyof typeof ContactContactType];
 
 
@@ -285,8 +290,7 @@ export const ContactContactType = {
 
 export interface Contact {
   id: number;
-  customerId: number;
-  customerName?: string;
+  customers: ContactCustomerSummary[];
   organizationId: number;
   contactType: ContactContactType;
   companyName?: string;
@@ -311,12 +315,17 @@ export const CreateContactBodyContactType = {
 } as const;
 
 export interface CreateContactBody {
-  customerId: number;
+  /** @minItems 1 */
+  customerIds: number[];
   contactType: CreateContactBodyContactType;
   companyName?: string;
   contactName?: string;
   email: string;
   phone?: string;
+}
+
+export interface AddContactCustomerBody {
+  customerId: number;
 }
 
 export type BuildingContactContactType = typeof BuildingContactContactType[keyof typeof BuildingContactContactType];
@@ -432,6 +441,8 @@ buildingId?: number;
 
 export type ListContactsParams = {
 customerId?: number;
+buildingId?: number;
+unitId?: number;
 contactType?: ListContactsContactType;
 search?: string;
 };

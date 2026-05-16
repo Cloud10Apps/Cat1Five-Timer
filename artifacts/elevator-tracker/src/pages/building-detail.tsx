@@ -67,44 +67,108 @@ interface AssignPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customerId: number;
+  customerName: string;
   alreadyAssignedContactIds: Set<number>;
-  onSelect: (contactId: number) => void;
+  onSelect: (contactId: number, source: "customer" | "org") => void;
   onAddNew: () => void;
+}
+
+interface PickerSectionProps {
+  title: string;
+  subtitle?: string;
+  contacts: Contact[];
+  emptyText: string;
+  onSelect: (contactId: number) => void;
+}
+
+function PickerSection({ title, subtitle, contacts, emptyText, onSelect }: PickerSectionProps) {
+  return (
+    <div>
+      <div className="px-1 pb-2">
+        <div className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-700">{title}</div>
+        {subtitle && <div className="text-[11px] text-zinc-500 mt-0.5">{subtitle}</div>}
+      </div>
+      {contacts.length === 0 ? (
+        <div className="px-3 py-4 text-xs text-zinc-400 italic">{emptyText}</div>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {contacts.map((c) => {
+            const meta = CONTACT_TYPE_META[c.contactType as ContactType] ?? CONTACT_TYPE_META.other;
+            const Icon = meta.icon;
+            return (
+              <button
+                key={c.id}
+                onClick={() => onSelect(c.id)}
+                className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md border bg-white hover:bg-amber-50/40 hover:border-amber-200 transition-colors"
+              >
+                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 text-amber-600 shrink-0">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 truncate">
+                      {contactDisplayName(c)}
+                    </span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-bold uppercase tracking-wide shrink-0">
+                      {meta.singular}
+                    </span>
+                  </div>
+                  <div className="text-xs text-zinc-500 truncate">
+                    {c.contactName && c.companyName ? `${c.contactName} · ` : ""}{c.email}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AssignContactPicker({
   open,
   onOpenChange,
   customerId,
+  customerName,
   alreadyAssignedContactIds,
   onSelect,
   onAddNew,
 }: AssignPickerProps) {
   const [search, setSearch] = useState("");
 
-  const { data: allCustomerContacts, isLoading } = useListContacts(
-    { customerId },
+  const { data: allOrgContacts, isLoading } = useListContacts(
+    {},
     {
       query: {
-        queryKey: getListContactsQueryKey({ customerId }),
+        queryKey: getListContactsQueryKey({}),
         enabled: open,
       },
     },
   );
 
-  const available = useMemo(() => {
-    const list = (allCustomerContacts ?? []).filter((c) => !alreadyAssignedContactIds.has(c.id));
-    if (!search.trim()) return list;
+  const { customerContacts, otherContacts } = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return list.filter((c) => {
-      const haystack = [c.companyName, c.contactName, c.email].filter(Boolean).join(" ").toLowerCase();
-      return haystack.includes(term);
-    });
-  }, [allCustomerContacts, alreadyAssignedContactIds, search]);
+    const matchesSearch = (c: Contact) => {
+      if (!term) return true;
+      const hay = [c.companyName, c.contactName, c.email].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(term);
+    };
+    const customerSet: Contact[] = [];
+    const otherSet: Contact[] = [];
+    for (const c of allOrgContacts ?? []) {
+      if (alreadyAssignedContactIds.has(c.id)) continue;
+      if (!matchesSearch(c)) continue;
+      const inCustomer = (c.customers ?? []).some((cu) => cu.id === customerId);
+      if (inCustomer) customerSet.push(c);
+      else otherSet.push(c);
+    }
+    return { customerContacts: customerSet, otherContacts: otherSet };
+  }, [allOrgContacts, alreadyAssignedContactIds, customerId, search]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Assign Contact</DialogTitle>
         </DialogHeader>
@@ -112,55 +176,42 @@ function AssignContactPicker({
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search this customer's contacts..."
+            placeholder="Search contacts..."
             className="pl-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="max-h-[24rem] overflow-y-auto -mx-1 px-1">
+        <div className="max-h-[26rem] overflow-y-auto -mx-1 px-1 space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-10">
               <Spinner />
             </div>
-          ) : available.length === 0 ? (
-            <div className="py-8 text-center text-sm text-zinc-500">
-              {(allCustomerContacts ?? []).length === 0
-                ? "This customer has no contacts yet."
-                : "All this customer's contacts are already assigned."}
-            </div>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              {available.map((c) => {
-                const meta = CONTACT_TYPE_META[c.contactType as ContactType] ?? CONTACT_TYPE_META.other;
-                const Icon = meta.icon;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => onSelect(c.id)}
-                    className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md border bg-white hover:bg-amber-50/40 hover:border-amber-200 transition-colors"
-                  >
-                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 text-amber-600 shrink-0">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-zinc-900 truncate">
-                          {contactDisplayName(c)}
-                        </span>
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-bold uppercase tracking-wide shrink-0">
-                          {meta.singular}
-                        </span>
-                      </div>
-                      <div className="text-xs text-zinc-500 truncate">
-                        {c.contactName && c.companyName ? `${c.contactName} · ` : ""}{c.email}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <>
+              <PickerSection
+                title={`Contacts for ${customerName}`}
+                contacts={customerContacts}
+                emptyText="No contacts for this customer yet."
+                onSelect={(id) => onSelect(id, "customer")}
+              />
+              {otherContacts.length > 0 && <div className="border-t" />}
+              {otherContacts.length > 0 && (
+                <PickerSection
+                  title="Other contacts in your organization"
+                  subtitle={`Picking one will also associate it with ${customerName}.`}
+                  contacts={otherContacts}
+                  emptyText=""
+                  onSelect={(id) => onSelect(id, "org")}
+                />
+              )}
+              {customerContacts.length === 0 && otherContacts.length === 0 && (allOrgContacts ?? []).length > 0 && (
+                <div className="py-6 text-center text-sm text-zinc-500">
+                  All matching contacts are already assigned to this building.
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -219,13 +270,20 @@ export default function BuildingDetail() {
     queryClient.invalidateQueries({ queryKey: getListContactsQueryKey() });
   };
 
-  const assignExisting = (contactId: number) => {
+  const assignExisting = (contactId: number, source: "customer" | "org" = "customer", contactName?: string) => {
     assignMutation.mutate(
       { buildingId, data: { contactId, receivesNotifications: true } },
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Contact assigned" });
+          if (source === "org" && building?.customerName) {
+            toast({
+              title: "Contact assigned",
+              description: `${contactName ?? "Contact"} is now associated with ${building.customerName}.`,
+            });
+          } else {
+            toast({ title: "Contact assigned" });
+          }
           setPickerOpen(false);
         },
         onError: () => toast({ title: "Failed to assign contact", variant: "destructive" }),
@@ -235,7 +293,9 @@ export default function BuildingDetail() {
 
   const handleNewContactCreated = (c: Contact) => {
     setFormDialogOpen(false);
-    assignExisting(c.id);
+    // New contact path always pre-fills the building's customer in the form,
+    // so it's already "for this customer" — use the simple toast.
+    assignExisting(c.id, "customer");
   };
 
   const handleToggle = (bc: BuildingContact, next: boolean) => {
@@ -413,6 +473,7 @@ export default function BuildingDetail() {
                   contactName={bc.contactName}
                   email={bc.email}
                   phone={bc.phone}
+                  hideCustomers
                   trailingActions={
                     <>
                       <div className="flex items-center gap-2 mr-2">
@@ -445,8 +506,9 @@ export default function BuildingDetail() {
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         customerId={building.customerId}
+        customerName={building.customerName ?? "this customer"}
         alreadyAssignedContactIds={assignedIds}
-        onSelect={assignExisting}
+        onSelect={(contactId, source) => assignExisting(contactId, source)}
         onAddNew={() => {
           setPickerOpen(false);
           setFormDialogOpen(true);
@@ -456,8 +518,7 @@ export default function BuildingDetail() {
       <ContactFormDialog
         open={formDialogOpen}
         onOpenChange={setFormDialogOpen}
-        defaultCustomerId={building.customerId}
-        lockCustomer
+        defaultCustomerIds={[building.customerId]}
         onSuccess={handleNewContactCreated}
       />
 
