@@ -3,7 +3,7 @@ import { db, inspectionsTable, elevatorsTable, buildingsTable, customersTable } 
 import { eq, and, or, ilike, gte, lte, inArray, ne, isNotNull } from "drizzle-orm";
 import dayjs from "dayjs";
 import { requireAuth } from "../middleware/auth.js";
-import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams } from "@workspace/api-zod";
+import { CreateInspectionBody, ListInspectionsQueryParams, GetInspectionParams, UpdateInspectionParams, DeleteInspectionParams, PreviewNextDueBody } from "@workspace/api-zod";
 import { getAccessibleCustomerIds } from "../lib/user-access.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 
@@ -20,6 +20,83 @@ function toDateStr(d: Date | string | null | undefined): string | null {
 function computeNextDueDate(lastDate: string | null | undefined, recurrenceYears: number): string | null {
   if (!lastDate) return null;
   return dayjs(lastDate).add(recurrenceYears, "year").format("YYYY-MM-DD");
+}
+
+type ResolveResult = {
+  nextDueDate: string | null;
+  wasAdjusted: boolean;
+  originalDate?: string;
+  adjustedDate?: string;
+  reason?: "cat5_year_collision";
+};
+
+/**
+ * Single source of truth for an inspection's resolved next_due_date.
+ *
+ * Step 1 — Resolve the candidate date:
+ *   - If lastInspectionDate is provided, candidate = lastInspectionDate + recurrenceYears.
+ *   - Else, candidate = manualNextDueDate (whatever the user typed).
+ *
+ * Step 2 — Apply the cross-type rule:
+ *   - Only for CAT1 inspections on traction units.
+ *   - If candidate year matches any sibling CAT5's next_due_date year on the same unit,
+ *     push candidate forward by exactly one year.
+ *   - Otherwise return candidate unchanged.
+ *
+ * recurrence_years is NEVER modified by this function — only the returned date.
+ */
+async function resolveNextDueDate(args: {
+  elevatorId: number;
+  inspectionType: "CAT1" | "CAT5";
+  recurrenceYears: number;
+  lastInspectionDate: string | null;
+  manualNextDueDate: string | null;
+  excludeInspectionId?: number;
+  orgId: number;
+}): Promise<ResolveResult> {
+  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, manualNextDueDate, excludeInspectionId, orgId } = args;
+
+  const computed = computeNextDueDate(lastInspectionDate, recurrenceYears);
+  const candidate = computed ?? manualNextDueDate ?? null;
+
+  if (!candidate) return { nextDueDate: null, wasAdjusted: false };
+  if (inspectionType !== "CAT1") return { nextDueDate: candidate, wasAdjusted: false };
+
+  const elevatorRow = await db
+    .select({ type: elevatorsTable.type })
+    .from(elevatorsTable)
+    .where(and(eq(elevatorsTable.id, elevatorId), eq(elevatorsTable.organizationId, orgId)))
+    .limit(1);
+  if (elevatorRow.length === 0 || elevatorRow[0].type !== "traction") {
+    return { nextDueDate: candidate, wasAdjusted: false };
+  }
+
+  const candidateYear = candidate.slice(0, 4);
+  const conds: any[] = [
+    eq(inspectionsTable.elevatorId, elevatorId),
+    eq(inspectionsTable.inspectionType, "CAT5"),
+    eq(inspectionsTable.organizationId, orgId),
+    gte(inspectionsTable.nextDueDate, `${candidateYear}-01-01`),
+    lte(inspectionsTable.nextDueDate, `${candidateYear}-12-31`),
+  ];
+  if (excludeInspectionId !== undefined) conds.push(ne(inspectionsTable.id, excludeInspectionId));
+
+  const collision = await db
+    .select({ id: inspectionsTable.id })
+    .from(inspectionsTable)
+    .where(and(...conds))
+    .limit(1);
+
+  if (collision.length === 0) return { nextDueDate: candidate, wasAdjusted: false };
+
+  const adjusted = dayjs(candidate).add(1, "year").format("YYYY-MM-DD");
+  return {
+    nextDueDate: adjusted,
+    wasAdjusted: true,
+    originalDate: candidate,
+    adjustedDate: adjusted,
+    reason: "cat5_year_collision",
+  };
 }
 
 function computeStatus(status: string, nextDueDate: string | null | undefined, completionDate: string | null | undefined): string {
@@ -116,7 +193,10 @@ async function checkDuplicate(
   return { elevatorName: rows[0].elevatorName ?? `Unit ${elevatorId}`, dueYear };
 }
 
-type FollowUpResult = { created: true } | { created: false; reason: "already_exists" | "duplicate_year"; dueYear?: string } | { created: false; reason: "not_applicable" };
+type FollowUpResult =
+  | { created: true; adjusted?: { originalDate: string; adjustedDate: string } }
+  | { created: false; reason: "already_exists" | "duplicate_year"; dueYear?: string }
+  | { created: false; reason: "not_applicable" };
 
 async function maybeCreateFollowUp(
   completedInspection: { id: number; elevatorId: number; inspectionType: string; recurrenceYears: number; completionDate: string | null | undefined; nextDueDate: string | null | undefined; status: string },
@@ -131,7 +211,16 @@ async function maybeCreateFollowUp(
     completedInspection.nextDueDate && completedInspection.completionDate < completedInspection.nextDueDate
       ? completedInspection.nextDueDate
       : completedInspection.completionDate;
-  const newNextDue = computeNextDueDate(cycleBase, completedInspection.recurrenceYears);
+
+  const resolved = await resolveNextDueDate({
+    elevatorId: completedInspection.elevatorId,
+    inspectionType: completedInspection.inspectionType as "CAT1" | "CAT5",
+    recurrenceYears: completedInspection.recurrenceYears,
+    lastInspectionDate: cycleBase,
+    manualNextDueDate: null,
+    orgId,
+  });
+  const newNextDue = resolved.nextDueDate;
   if (!newNextDue) return { created: false, reason: "not_applicable" };
 
   const existing = await db
@@ -165,7 +254,12 @@ async function maybeCreateFollowUp(
     status: "NOT_STARTED",
     notes: null,
   });
-  return { created: true };
+  return {
+    created: true,
+    adjusted: resolved.wasAdjusted
+      ? { originalDate: resolved.originalDate!, adjustedDate: resolved.adjustedDate! }
+      : undefined,
+  };
 }
 
 router.get("/", asyncHandler(async (req, res) => {
@@ -280,6 +374,25 @@ function sanitizeDates(body: Record<string, unknown>) {
   return result;
 }
 
+router.post("/preview-next-due", asyncHandler(async (req, res) => {
+  const parsed = PreviewNextDueBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+  const orgId = req.user!.organizationId;
+  const result = await resolveNextDueDate({
+    elevatorId: parsed.data.elevatorId,
+    inspectionType: parsed.data.inspectionType,
+    recurrenceYears: parsed.data.recurrenceYears,
+    lastInspectionDate: toDateStr(parsed.data.lastInspectionDate),
+    manualNextDueDate: toDateStr(parsed.data.manualNextDueDate),
+    excludeInspectionId: parsed.data.excludeInspectionId,
+    orgId,
+  });
+  res.json(result);
+}));
+
 router.post("/", asyncHandler(async (req, res) => {
   const parsed = CreateInspectionBody.safeParse(sanitizeDates(req.body));
   if (!parsed.success) {
@@ -292,10 +405,15 @@ router.post("/", asyncHandler(async (req, res) => {
   const scheduledDateStr = toDateStr(scheduledDate);
   const completionDateStr = toDateStr(completionDate);
 
-  let nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears);
-  if (!nextDueDate) {
-    nextDueDate = toDateStr(manualNextDueDate);
-  }
+  const resolved = await resolveNextDueDate({
+    elevatorId,
+    inspectionType,
+    recurrenceYears,
+    lastInspectionDate: lastInspDateStr,
+    manualNextDueDate: toDateStr(manualNextDueDate),
+    orgId,
+  });
+  const nextDueDate = resolved.nextDueDate;
 
   const dup = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId);
   if (dup) {
@@ -319,11 +437,24 @@ router.post("/", asyncHandler(async (req, res) => {
 
   const row = await fetchInspection(inserted[0].id, orgId);
   const formatted = formatInspection(row);
+
+  const warnings: string[] = [];
+  if (resolved.wasAdjusted) {
+    warnings.push(
+      `Next due date adjusted from ${resolved.originalDate} to ${resolved.adjustedDate}. A CAT 5 is already due in ${resolved.originalDate!.slice(0, 4)} on this unit, and a traction unit cannot have a CAT 1 and CAT 5 due in the same calendar year.`
+    );
+  }
   const followUp = await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
-  const warning = (followUp.created === false && followUp.reason === "duplicate_year")
-    ? `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
-    : undefined;
-  res.status(201).json({ ...formatted, _warning: warning });
+  if (followUp.created === false && followUp.reason === "duplicate_year") {
+    warnings.push(
+      `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
+    );
+  } else if (followUp.created === true && followUp.adjusted) {
+    warnings.push(
+      `The follow-up CAT 1 record was created with a next due date of ${followUp.adjusted.adjustedDate} (one year later than the normal cycle) to avoid overlap with the CAT 5 due in ${followUp.adjusted.originalDate.slice(0, 4)}.`
+    );
+  }
+  res.status(201).json({ ...formatted, _warning: warnings.length > 0 ? warnings.join(" ") : undefined });
 }));
 
 router.get("/:id", asyncHandler(async (req, res) => {
@@ -352,7 +483,16 @@ router.put("/:id", asyncHandler(async (req, res) => {
   const lastInspDateStr = toDateStr(lastInspectionDate);
   const scheduledDateStr = toDateStr(scheduledDate);
   const completionDateStr = toDateStr(completionDate);
-  const nextDueDate = computeNextDueDate(lastInspDateStr, recurrenceYears) ?? toDateStr(manualNextDueDate);
+  const resolved = await resolveNextDueDate({
+    elevatorId,
+    inspectionType,
+    recurrenceYears,
+    lastInspectionDate: lastInspDateStr,
+    manualNextDueDate: toDateStr(manualNextDueDate),
+    excludeInspectionId: params.data.id,
+    orgId,
+  });
+  const nextDueDate = resolved.nextDueDate;
   const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
 
   if (nextDueDate) {
@@ -377,10 +517,22 @@ router.put("/:id", asyncHandler(async (req, res) => {
   const formatted = formatInspection(row);
   const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
 
-  const warning = (followUp.created === false && followUp.reason === "duplicate_year")
-    ? `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
-    : undefined;
-  res.json({ ...formatted, _warning: warning });
+  const warnings: string[] = [];
+  if (resolved.wasAdjusted) {
+    warnings.push(
+      `Next due date adjusted from ${resolved.originalDate} to ${resolved.adjustedDate}. A CAT 5 is already due in ${resolved.originalDate!.slice(0, 4)} on this unit, and a traction unit cannot have a CAT 1 and CAT 5 due in the same calendar year.`
+    );
+  }
+  if (followUp.created === false && followUp.reason === "duplicate_year") {
+    warnings.push(
+      `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
+    );
+  } else if (followUp.created === true && followUp.adjusted) {
+    warnings.push(
+      `The follow-up CAT 1 record was created with a next due date of ${followUp.adjusted.adjustedDate} (one year later than the normal cycle) to avoid overlap with the CAT 5 due in ${followUp.adjusted.originalDate.slice(0, 4)}.`
+    );
+  }
+  res.json({ ...formatted, _warning: warnings.length > 0 ? warnings.join(" ") : undefined });
 }));
 
 router.delete("/:id", asyncHandler(async (req, res) => {

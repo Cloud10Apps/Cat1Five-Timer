@@ -8,7 +8,9 @@ import {
   useListElevators, getListElevatorsQueryKey,
   useListBuildings, getListBuildingsQueryKey,
   useListCustomers, getListCustomersQueryKey,
+  previewNextDue,
   Inspection,
+  PreviewNextDueResponse,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,7 @@ import {
 import {
   Plus, Pencil, Trash2, ClipboardList, Download, CalendarDays,
   X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  ChevronsUpDown, Check, SlidersHorizontal, Building2, Layers, AlertTriangle, Search,
+  ChevronsUpDown, Check, SlidersHorizontal, Building2, Layers, AlertTriangle, Search, Info,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -483,8 +485,41 @@ export default function Inspections() {
   const watchStatus        = form.watch("status");
   const watchScheduled     = form.watch("scheduledDate");
   const watchCompletion    = form.watch("completionDate");
-  const nextDuePreview = watchLastDate && watchRecurrence
-    ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD") : null;
+  const watchElevatorId    = form.watch("elevatorId");
+  const watchInspType      = form.watch("inspectionType");
+  const watchManualNextDue = form.watch("nextDueDate");
+
+  const [preview, setPreview] = useState<PreviewNextDueResponse | null>(null);
+
+  useEffect(() => {
+    const hasInputs =
+      !!watchElevatorId &&
+      !!watchInspType &&
+      (!!watchLastDate || !!watchManualNextDue);
+    if (!hasInputs) {
+      setPreview(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await previewNextDue({
+          elevatorId: Number(watchElevatorId),
+          inspectionType: watchInspType as "CAT1" | "CAT5",
+          recurrenceYears: Number(watchRecurrence ?? 1),
+          lastInspectionDate: watchLastDate || null,
+          manualNextDueDate: watchManualNextDue || null,
+          excludeInspectionId: editingInspection?.id,
+        });
+        if (!cancelled) setPreview(result);
+      } catch {
+        if (!cancelled) setPreview(null);
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [watchElevatorId, watchInspType, watchLastDate, watchRecurrence, watchManualNextDue, editingInspection?.id]);
+
+  const nextDuePreview = preview?.nextDueDate ?? null;
 
   const completionYearMismatch = !!(
     isValidDateStr(watchCompletion) && nextDuePreview &&
@@ -657,7 +692,16 @@ export default function Inspections() {
                               ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
                               : <span className="italic font-normal text-sm">Auto-calculated</span>}
                           </div>
-                          <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
+                          {preview?.wasAdjusted ? (
+                            <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5">
+                              <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                              <span>
+                                Adjusted from {dayjs(preview.originalDate).format("MM/DD/YYYY")} — a CAT 5 is already due in {preview.originalDate?.slice(0, 4)} on this unit.
+                              </span>
+                            </p>
+                          ) : (
+                            <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
+                          )}
                         </div>
                       ) : (
                         <FormField control={form.control} name="nextDueDate" render={({ field }) => (
@@ -670,7 +714,16 @@ export default function Inspections() {
                                 </button>
                               )}
                             </div>
-                            <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                            {preview?.wasAdjusted ? (
+                              <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5">
+                                <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                <span>
+                                  Will be saved as {dayjs(preview.adjustedDate).format("MM/DD/YYYY")} — a CAT 5 is already due in {preview.originalDate?.slice(0, 4)} on this unit.
+                                </span>
+                              </p>
+                            ) : (
+                              <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )} />

@@ -251,6 +251,39 @@ export interface CreateInspectionBody {
   notes?: string;
 }
 
+export type PreviewNextDueBodyInspectionType = typeof PreviewNextDueBodyInspectionType[keyof typeof PreviewNextDueBodyInspectionType];
+
+
+export const PreviewNextDueBodyInspectionType = {
+  CAT1: 'CAT1',
+  CAT5: 'CAT5',
+} as const;
+
+export interface PreviewNextDueBody {
+  elevatorId: number;
+  inspectionType: PreviewNextDueBodyInspectionType;
+  /** @minimum 1 */
+  recurrenceYears: number;
+  lastInspectionDate?: string | null;
+  manualNextDueDate?: string | null;
+  excludeInspectionId?: number;
+}
+
+export type PreviewNextDueResponseReason = typeof PreviewNextDueResponseReason[keyof typeof PreviewNextDueResponseReason];
+
+
+export const PreviewNextDueResponseReason = {
+  cat5_year_collision: 'cat5_year_collision',
+} as const;
+
+export interface PreviewNextDueResponse {
+  nextDueDate: string | null;
+  wasAdjusted: boolean;
+  originalDate?: string;
+  adjustedDate?: string;
+  reason?: PreviewNextDueResponseReason;
+}
+
 export interface DashboardSummary {
   notStartedCount: number;
   scheduledCount: number;

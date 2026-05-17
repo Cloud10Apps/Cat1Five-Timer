@@ -489,6 +489,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Inspection"
 
+  /inspections/preview-next-due:
+    post:
+      operationId: previewNextDue
+      tags: [inspections]
+      summary: Preview the resolved next_due_date for an inspection without writing to the DB
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewNextDueBody"
+      responses:
+        "200":
+          description: Resolved next due date (possibly adjusted)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewNextDueResponse"
+
   /inspections/{id}:
     get:
       operationId: getInspection
@@ -1380,6 +1401,54 @@ components:
         - elevatorId
         - inspectionType
         - recurrenceYears
+
+    PreviewNextDueBody:
+      type: object
+      properties:
+        elevatorId:
+          type: integer
+        inspectionType:
+          type: string
+          enum: [CAT1, CAT5]
+        recurrenceYears:
+          type: integer
+          minimum: 1
+        lastInspectionDate:
+          type: string
+          format: date
+          nullable: true
+        manualNextDueDate:
+          type: string
+          format: date
+          nullable: true
+        excludeInspectionId:
+          type: integer
+      required:
+        - elevatorId
+        - inspectionType
+        - recurrenceYears
+
+    PreviewNextDueResponse:
+      type: object
+      properties:
+        nextDueDate:
+          type: string
+          format: date
+          nullable: true
+        wasAdjusted:
+          type: boolean
+        originalDate:
+          type: string
+          format: date
+        adjustedDate:
+          type: string
+          format: date
+        reason:
+          type: string
+          enum: [cat5_year_collision]
+      required:
+        - nextDueDate
+        - wasAdjusted
 
     DashboardSummary:
       type: object

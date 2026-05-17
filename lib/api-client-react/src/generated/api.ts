@@ -47,6 +47,8 @@ import type {
   LoginBody,
   LoginResponse,
   OverdueByBuildingItem,
+  PreviewNextDueBody,
+  PreviewNextDueResponse,
   StatusBreakdownItem,
   UpdateBuildingContactBody,
   UpdateContactBody,
@@ -1566,6 +1568,77 @@ export const useCreateInspection = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateInspectionMutationOptions(options));
+    }
+
+/**
+ * @summary Preview the resolved next_due_date for an inspection without writing to the DB
+ */
+export const getPreviewNextDueUrl = () => {
+
+
+
+
+  return `/api/inspections/preview-next-due`
+}
+
+export const previewNextDue = async (previewNextDueBody: PreviewNextDueBody, options?: RequestInit): Promise<PreviewNextDueResponse> => {
+
+  return customFetch<PreviewNextDueResponse>(getPreviewNextDueUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      previewNextDueBody,)
+  }
+);}
+
+
+
+
+export const getPreviewNextDueMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewNextDue>>, TError,{data: BodyType<PreviewNextDueBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewNextDue>>, TError,{data: BodyType<PreviewNextDueBody>}, TContext> => {
+
+const mutationKey = ['previewNextDue'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewNextDue>>, {data: BodyType<PreviewNextDueBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  previewNextDue(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewNextDueMutationResult = NonNullable<Awaited<ReturnType<typeof previewNextDue>>>
+    export type PreviewNextDueMutationBody = BodyType<PreviewNextDueBody>
+    export type PreviewNextDueMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Preview the resolved next_due_date for an inspection without writing to the DB
+ */
+export const usePreviewNextDue = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewNextDue>>, TError,{data: BodyType<PreviewNextDueBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewNextDue>>,
+        TError,
+        {data: BodyType<PreviewNextDueBody>},
+        TContext
+      > => {
+      return useMutation(getPreviewNextDueMutationOptions(options));
     }
 
 /**

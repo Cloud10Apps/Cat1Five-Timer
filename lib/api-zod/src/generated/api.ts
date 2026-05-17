@@ -430,6 +430,30 @@ export const CreateInspectionBody = zod.object({
 
 
 /**
+ * @summary Preview the resolved next_due_date for an inspection without writing to the DB
+ */
+
+
+
+export const PreviewNextDueBody = zod.object({
+  "elevatorId": zod.number(),
+  "inspectionType": zod.enum(['CAT1', 'CAT5']),
+  "recurrenceYears": zod.number().min(1),
+  "lastInspectionDate": zod.coerce.date().nullish(),
+  "manualNextDueDate": zod.coerce.date().nullish(),
+  "excludeInspectionId": zod.number().optional()
+})
+
+export const PreviewNextDueResponse = zod.object({
+  "nextDueDate": zod.coerce.date().nullable(),
+  "wasAdjusted": zod.boolean(),
+  "originalDate": zod.coerce.date().optional(),
+  "adjustedDate": zod.coerce.date().optional(),
+  "reason": zod.enum(['cat5_year_collision']).optional()
+})
+
+
+/**
  * @summary Get an inspection
  */
 export const GetInspectionParams = zod.object({
