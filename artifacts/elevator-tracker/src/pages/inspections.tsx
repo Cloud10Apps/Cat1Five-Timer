@@ -393,6 +393,17 @@ export default function Inspections() {
     defaultValues: { elevatorId: 0, inspectionType: "CAT1", recurrenceYears: 1, status: "NOT_STARTED", notes: "", nextDueDate: "" },
   });
 
+  // Classify the server-composed _warning string into the right toast.
+  // - "not created" phrase → real follow-up failure (destructive).
+  // - Any other warning text is informational (date or year was adjusted by the
+  //   traction CAT1/CAT5 collision rule); use a neutral toast titled "Year skipped".
+  const warningToast = (warning: string): { title: string; description: string; variant?: "destructive" } => {
+    if (warning.includes("follow-up inspection record was not created")) {
+      return { title: "Follow-up not auto-created", description: warning, variant: "destructive" };
+    }
+    return { title: "Year skipped", description: warning };
+  };
+
   const onSubmit = (data: InspectionFormValues) => {
     const payload: InspectionFormValues = {
       ...data,
@@ -400,12 +411,12 @@ export default function Inspections() {
     };
     if (editingInspection) {
       updateMutation.mutate({ id: editingInspection.id, data: payload }, {
-        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection updated" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
+        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setEditingInspection(null); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection updated" }); if (res?._warning) toast({ ...warningToast(res._warning), duration: 10000 }); },
         onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not update inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
     } else {
       createMutation.mutate({ data: payload }, {
-        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection added" }); if (res?._warning) toast({ title: "Follow-up not auto-created", description: res._warning, variant: "destructive", duration: 10000 }); },
+        onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() }); setIsAddOpen(false); form.reset(); if (data.status === "COMPLETED") fireCompletionConfetti(); toast({ title: "Inspection added" }); if (res?._warning) toast({ ...warningToast(res._warning), duration: 10000 }); },
         onError:   (err: any)  => { const msg = err?.data?.error; toast({ title: "Could not add inspection", description: msg ? msg + (msg.includes("already exists") ? " Delete the conflicting record first." : "") : undefined, variant: "destructive" }); },
       });
     }
