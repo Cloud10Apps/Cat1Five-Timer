@@ -8,8 +8,7 @@
 import type { CreateContactBodyContactType } from './createContactBodyContactType';
 
 export interface CreateContactBody {
-  /** @minItems 1 */
-  customerIds: number[];
+  customerIds?: number[];
   contactType: CreateContactBodyContactType;
   companyName?: string;
   contactName?: string;

@@ -323,8 +323,7 @@ export const CreateContactBodyContactType = {
 } as const;
 
 export interface CreateContactBody {
-  /** @minItems 1 */
-  customerIds: number[];
+  customerIds?: number[];
   contactType: CreateContactBodyContactType;
   companyName?: string;
   contactName?: string;

@@ -1,4 +1,4 @@
-import { contactsTable, contactCustomersTable, db } from "@workspace/db";
+import { contactCustomersTable, db } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -6,26 +6,18 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export interface WriteContactCustomersOptions {
   /**
    * "replace": treat customerIds as the COMPLETE desired set; remove any
-   *            existing associations not in the list. Also keeps the legacy
-   *            contacts.customer_id column in sync with customerIds[0].
-   * "add":     only insert missing associations; do not remove any existing,
-   *            and do not touch the legacy customer_id column.
+   *            existing associations not in the list.
+   * "add":     only insert missing associations; do not remove any existing.
    */
   mode: "replace" | "add";
 }
 
 /**
  * Single source of truth for writing contact↔customer associations.
- * All three endpoints that change associations call this helper inside a tx:
+ * Called inside a tx from:
  *   - POST /api/contacts            (mode: "replace")
  *   - PUT  /api/contacts/:id        (mode: "replace")
  *   - POST /api/buildings/:bid/contacts auto-link (mode: "add")
- *
- * SESSION 5.7 CLEANUP — when contacts.customer_id is dropped, delete the
- * single DUAL-WRITE block below. (Also remove the explicit `customerId:` on
- * the POST /api/contacts INSERT — TypeScript will flag it as the column
- * disappears from the Drizzle schema.) All other logic in this function
- * remains correct.
  */
 export async function writeContactCustomers(
   tx: Tx,
@@ -59,14 +51,5 @@ export async function writeContactCustomers(
           inArray(contactCustomersTable.customerId, toRemove),
         ));
     }
-
-    // --- DUAL-WRITE: Session 5.7 deletes this block ---
-    if (desiredCustomerIds.length > 0) {
-      await tx
-        .update(contactsTable)
-        .set({ customerId: desiredCustomerIds[0] })
-        .where(eq(contactsTable.id, contactId));
-    }
-    // --- end dual-write ---
   }
 }

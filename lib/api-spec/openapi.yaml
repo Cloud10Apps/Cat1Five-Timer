@@ -1514,7 +1514,6 @@ components:
           type: array
           items:
             type: integer
-          minItems: 1
         contactType:
           type: string
           enum: [elevator_company, building_owner, property_manager, state_inspector, other]
@@ -1528,7 +1527,6 @@ components:
         phone:
           type: string
       required:
-        - customerIds
         - contactType
         - email
 

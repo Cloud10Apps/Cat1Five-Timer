@@ -517,7 +517,6 @@ export default function BuildingDetail() {
       <CreateContactDialog
         open={formDialogOpen}
         onOpenChange={setFormDialogOpen}
-        defaultCustomerId={building.customerId}
         onSuccess={handleNewContactCreated}
       />
 

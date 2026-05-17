@@ -5,8 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useCreateContact,
   useUpdateContact,
-  useListCustomers,
-  getListCustomersQueryKey,
   getListContactsQueryKey,
   Contact,
 } from "@workspace/api-client-react";
@@ -56,10 +54,7 @@ const requireOneName = (
 ) => !!((d.companyName ?? "").trim() || (d.contactName ?? "").trim());
 
 const createContactSchema = z
-  .object({
-    customerId: z.coerce.number().min(1, "Customer is required"),
-    ...basicFields,
-  })
+  .object(basicFields)
   .refine(requireOneName, {
     message: "Either company name or contact name is required",
     path: ["companyName"],
@@ -83,8 +78,6 @@ type EditContactValues = z.infer<typeof editContactSchema>;
 interface CreateContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Pre-fill the Customer field. User can still change it before save. */
-  defaultCustomerId?: number;
   /** Called with the newly-created contact after a successful save. */
   onSuccess?: (contact: Contact) => void;
 }
@@ -92,23 +85,16 @@ interface CreateContactDialogProps {
 export function CreateContactDialog({
   open,
   onOpenChange,
-  defaultCustomerId,
   onSuccess,
 }: CreateContactDialogProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
-  const { data: customers } = useListCustomers(
-    {},
-    { query: { queryKey: getListCustomersQueryKey() } },
-  );
 
   const createMutation = useCreateContact();
 
   const form = useForm<CreateContactValues>({
     resolver: zodResolver(createContactSchema),
     defaultValues: {
-      customerId: defaultCustomerId ?? 0,
       contactType: "elevator_company",
       companyName: "",
       contactName: "",
@@ -120,20 +106,18 @@ export function CreateContactDialog({
   useEffect(() => {
     if (!open) return;
     form.reset({
-      customerId: defaultCustomerId ?? 0,
       contactType: "elevator_company",
       companyName: "",
       contactName: "",
       email: "",
       phone: "",
     });
-  }, [open, defaultCustomerId, form]);
+  }, [open, form]);
 
   const onSubmit = (data: CreateContactValues) => {
     createMutation.mutate(
       {
         data: {
-          customerIds: [data.customerId],
           contactType: data.contactType,
           companyName: data.companyName?.trim() || undefined,
           contactName: data.contactName?.trim() || undefined,
@@ -168,32 +152,6 @@ export function CreateContactDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="customerId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Customer</FormLabel>
-                  <Select
-                    value={field.value ? String(field.value) : ""}
-                    onValueChange={(v) => field.onChange(Number(v))}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {(customers ?? []).map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <ContactTypeField form={form} />
             <NameAndContactFields form={form} />
             <Button

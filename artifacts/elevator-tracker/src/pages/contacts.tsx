@@ -224,7 +224,6 @@ export default function Contacts() {
 
   const totalShown = contacts?.length ?? 0;
   const totalAll = allContacts?.length ?? 0;
-  const defaultCustomerId = customerFilter !== "all" ? Number(customerFilter) : undefined;
 
   const hasActiveFilters =
     search !== "" ||
@@ -263,7 +262,6 @@ export default function Contacts() {
       <CreateContactDialog
         open={isAddOpen}
         onOpenChange={setIsAddOpen}
-        defaultCustomerId={defaultCustomerId}
         onSuccess={(c) => navigate(`/contacts/${c.id}`)}
       />
 

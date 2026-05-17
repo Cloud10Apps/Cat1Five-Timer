@@ -671,11 +671,8 @@ export const ListContactsResponse = zod.array(ListContactsResponseItem)
 /**
  * @summary Create a contact
  */
-
-
-
 export const CreateContactBody = zod.object({
-  "customerIds": zod.array(zod.number()).min(1),
+  "customerIds": zod.array(zod.number()).optional(),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
   "companyName": zod.string().optional(),
   "contactName": zod.string().optional(),

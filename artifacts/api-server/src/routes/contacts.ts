@@ -217,23 +217,20 @@ router.post("/", asyncHandler(async (req, res) => {
     return;
   }
   const orgId = req.user!.organizationId;
-  const customerIds = Array.from(new Set(parsed.data.customerIds));
-  if (customerIds.length === 0) {
-    res.status(400).json({ error: "At least one customer is required" });
-    return;
-  }
+  const customerIds = parsed.data.customerIds
+    ? Array.from(new Set(parsed.data.customerIds))
+    : [];
 
-  const ok = await validateCustomerIdsForOrg(customerIds, orgId);
-  if (!ok) {
-    res.status(400).json({ error: "One or more customers not found in your organization" });
-    return;
+  if (customerIds.length > 0) {
+    const ok = await validateCustomerIdsForOrg(customerIds, orgId);
+    if (!ok) {
+      res.status(400).json({ error: "One or more customers not found in your organization" });
+      return;
+    }
   }
 
   const inserted = await db.transaction(async (tx) => {
     const ins = await tx.insert(contactsTable).values({
-      // customer_id is NOT NULL in step 1; must provide on insert. Helper keeps
-      // it in sync afterward. Session 5.7 removes this line when the column drops.
-      customerId: customerIds[0],
       organizationId: orgId,
       contactType: parsed.data.contactType,
       companyName: parsed.data.companyName,
@@ -241,7 +238,9 @@ router.post("/", asyncHandler(async (req, res) => {
       email: parsed.data.email,
       phone: parsed.data.phone,
     }).returning();
-    await writeContactCustomers(tx, ins[0].id, customerIds, { mode: "replace" });
+    if (customerIds.length > 0) {
+      await writeContactCustomers(tx, ins[0].id, customerIds, { mode: "replace" });
+    }
     return ins[0];
   });
 
