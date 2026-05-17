@@ -296,11 +296,13 @@ export default function Dashboard() {
             title: string; subtitle: string; score: number;
             statLine: string; tooltipText: string; pills: React.ReactNode;
             statusMsgFn?: (s: number) => string;
+            isEmpty?: boolean;
+            emptyMessage?: string;
           };
-          function ScoreCard({ title, subtitle, score, statLine, tooltipText, pills, statusMsgFn }: CardProps) {
+          function ScoreCard({ title, subtitle, score, statLine, tooltipText, pills, statusMsgFn, isEmpty, emptyMessage }: CardProps) {
             const msgFn = statusMsgFn ?? statusMsg;
             return (
-              <div className={`bg-white rounded-xl border border-zinc-200 border-l-4 ${accentBorder(score)} shadow-sm p-6 flex flex-col gap-3`}>
+              <div className={`bg-white rounded-xl border border-zinc-200 border-l-4 ${isEmpty ? "border-l-zinc-300" : accentBorder(score)} shadow-sm p-6 flex flex-col gap-3`}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">{title}</p>
@@ -317,15 +319,26 @@ export default function Dashboard() {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <div className={`text-5xl font-black tabular-nums leading-none ${scoreColor(score)}`}>
-                  {score}%
-                </div>
-                <div className="w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: barColor(score) }} />
-                </div>
-                <p className={`text-sm font-medium ${scoreColor(score)}`}>{msgFn(score)}</p>
-                <p className="text-xs text-zinc-500">{statLine}</p>
-                <div className="flex flex-wrap gap-2 mt-auto pt-1">{pills}</div>
+                {isEmpty ? (
+                  <div className="flex flex-col items-center justify-center text-center flex-1 py-6 gap-1">
+                    <p className="text-sm font-medium text-zinc-600">
+                      {emptyMessage ?? "No data in this window"}
+                    </p>
+                    <p className="text-xs text-zinc-400">Nothing to track right now.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className={`text-5xl font-black tabular-nums leading-none ${scoreColor(score)}`}>
+                      {score}%
+                    </div>
+                    <div className="w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: barColor(score) }} />
+                    </div>
+                    <p className={`text-sm font-medium ${scoreColor(score)}`}>{msgFn(score)}</p>
+                    <p className="text-xs text-zinc-500">{statLine}</p>
+                    <div className="flex flex-wrap gap-2 mt-auto pt-1">{pills}</div>
+                  </>
+                )}
               </div>
             );
           }
@@ -358,6 +371,8 @@ export default function Dashboard() {
                   score={comp90Score}
                   statLine={`${relevantCompleted} of ${relevantTotal} inspections due in the next 90 days are complete`}
                   tooltipText="Percentage of inspections due in the next 90 days that are already completed. This measures how prepared you are for upcoming inspections. Overdue inspections are excluded — those are tracked separately in Unit Compliance."
+                  isEmpty={relevantTotal === 0}
+                  emptyMessage="No inspections due in the next 90 days"
                   pills={<>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
                       ✅ {relevantCompleted} Inspections Complete
