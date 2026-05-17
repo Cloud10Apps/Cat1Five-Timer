@@ -91,11 +91,13 @@ function ListPager({
   page,
   totalPages,
   totalItems,
+  unitCount,
   onChange,
 }: {
   page: number;
   totalPages: number;
   totalItems: number;
+  unitCount?: number;
   onChange: (next: number) => void;
 }) {
   if (totalItems === 0) return null;
@@ -103,7 +105,12 @@ function ListPager({
   const canNext = page < totalPages;
   return (
     <div className="flex items-center gap-2 text-xs text-zinc-600">
-      <span className="font-medium">{totalItems} total</span>
+      <span className="font-medium">
+        {unitCount !== undefined
+          ? <>{unitCount} elevator{unitCount === 1 ? "" : "s"} · {totalItems} inspection{totalItems === 1 ? "" : "s"}</>
+          : <>{totalItems} total</>
+        }
+      </span>
       <span className="text-zinc-300" aria-hidden="true">·</span>
       <button
         type="button"
@@ -217,6 +224,7 @@ export default function Dashboard() {
     (overduePage - 1) * OVERDUE_PAGE_SIZE,
     overduePage * OVERDUE_PAGE_SIZE,
   );
+  const overdueUnitCount = new Set(overdueItems.map((i: any) => i.elevatorId)).size;
 
   // All non-completed upcoming items within 90 days — used for compliance score
   const upcomingSoon = ((upcomingRaw ?? []) as any[])
@@ -469,6 +477,7 @@ export default function Dashboard() {
                   page={overduePage}
                   totalPages={overdueTotalPages}
                   totalItems={overdueItems.length}
+                  unitCount={overdueUnitCount}
                   onChange={setOverduePage}
                 />
                 <ExportBtn onClick={()=>dlXlsx("overdue",`overdue_${new Date().toISOString().slice(0,10)}.xlsx`)} />
