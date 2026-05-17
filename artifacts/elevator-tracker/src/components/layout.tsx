@@ -21,15 +21,10 @@ import {
   LogOut,
   ShieldAlert,
   CreditCard,
-  AlertTriangle,
   ContactRound,
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
-import {
-  useGetAttentionInspections,
-  getGetAttentionInspectionsQueryKey,
-} from "@workspace/api-client-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -38,14 +33,6 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-
-  const { data: attentionItems } = useGetAttentionInspections({
-    query: {
-      queryKey: getGetAttentionInspectionsQueryKey(),
-      staleTime: 5 * 60 * 1000,
-    },
-  });
-  const overdueCount = (attentionItems ?? []).filter((i: any) => i.status === "OVERDUE").length;
 
   const mainNav: { name: string; href: string; icon: typeof Settings; subtitle?: string }[] = [
     { name: "Dashboard",           href: "/dashboard",   icon: LayoutDashboard as typeof Settings },
@@ -164,17 +151,6 @@ export function Layout({ children }: LayoutProps) {
           <header className="flex h-12 items-center gap-4 border-b bg-card px-4">
             <SidebarTrigger />
             <div className="w-full flex-1" />
-            {overdueCount > 0 && (
-              <Link
-                href="/elevators"
-                className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm shrink-0"
-              >
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-xs font-bold whitespace-nowrap">
-                  {overdueCount} Overdue
-                </span>
-              </Link>
-            )}
           </header>
           <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 bg-background">
             {children}

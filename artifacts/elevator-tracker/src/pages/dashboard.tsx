@@ -5,7 +5,7 @@ import { InspectionTypeBadge } from "@/components/inspection-type-badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { RefreshCw, AlertTriangle, Clock, CheckCircle2, Info } from "lucide-react";
+import { RefreshCw, AlertTriangle, Clock, CheckCircle2, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -86,11 +86,45 @@ function TableSkeleton() {
   );
 }
 
-/* ─── Count badge ─── */
-function CountBadge({ n, variant = "neutral" }: { n: number; variant?: "neutral" | "danger" }) {
-  const cls = variant === "danger" ? "bg-red-600 text-white" : "bg-zinc-200 text-zinc-700";
+/* ─── Overdue pager ─── */
+function OverduePager({
+  page,
+  totalPages,
+  totalItems,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  totalItems: number;
+  onChange: (next: number) => void;
+}) {
+  if (totalItems === 0) return null;
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-black tabular-nums ${cls}`}>{n}</span>
+    <div className="flex items-center gap-2 text-xs text-zinc-600">
+      <span className="font-medium">{totalItems} total</span>
+      <span className="text-zinc-300" aria-hidden="true">·</span>
+      <button
+        type="button"
+        onClick={() => canPrev && onChange(page - 1)}
+        disabled={!canPrev}
+        aria-label="Previous page"
+        className="p-1 rounded hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+      </button>
+      <span className="tabular-nums">Page {page} of {totalPages}</span>
+      <button
+        type="button"
+        onClick={() => canNext && onChange(page + 1)}
+        disabled={!canNext}
+        aria-label="Next page"
+        className="p-1 rounded hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
+    </div>
   );
 }
 
@@ -169,6 +203,20 @@ export default function Dashboard() {
   const overdueItems = ((attention??[]) as any[])
     .filter(i => i.status==="OVERDUE")
     .sort((a,b)=>(a.nextDueDate??"").localeCompare(b.nextDueDate??""));
+
+  const OVERDUE_PAGE_SIZE = 10;
+  const [overduePage, setOverduePage] = useState(1);
+  const overdueTotalPages = Math.max(1, Math.ceil(overdueItems.length / OVERDUE_PAGE_SIZE));
+
+  // Clamp page if the dataset shrinks (e.g. an inspection just got marked complete).
+  useEffect(() => {
+    if (overduePage > overdueTotalPages) setOverduePage(overdueTotalPages);
+  }, [overdueTotalPages, overduePage]);
+
+  const overduePageItems = overdueItems.slice(
+    (overduePage - 1) * OVERDUE_PAGE_SIZE,
+    overduePage * OVERDUE_PAGE_SIZE,
+  );
 
   // All non-completed upcoming items within 90 days — used for compliance score
   const upcomingSoon = ((upcomingRaw ?? []) as any[])
@@ -389,7 +437,12 @@ export default function Dashboard() {
               <div className="px-5 py-3.5 border-b border-red-200 bg-red-50 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                 <h3 className="text-xs font-black text-red-700 uppercase tracking-[0.09em] flex-1">Overdue Inspections</h3>
-                <CountBadge n={overdueItems.length} variant="danger" />
+                <OverduePager
+                  page={overduePage}
+                  totalPages={overdueTotalPages}
+                  totalItems={overdueItems.length}
+                  onChange={setOverduePage}
+                />
                 <ExportBtn onClick={()=>dlXlsx("overdue",`overdue_${new Date().toISOString().slice(0,10)}.xlsx`)} />
               </div>
               <div className="overflow-x-auto flex-1">
@@ -416,7 +469,7 @@ export default function Dashboard() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ) : overdueItems.slice(0, 10).map((insp:any) => (
+                    ) : overduePageItems.map((insp:any) => (
                       <TableRow key={insp.id} className="border-l-4 border-l-red-400 hover:bg-red-50/40 border-b border-red-100/60 transition-colors">
                         <TableCell className="py-4 pl-6">
                           <div className="font-bold text-[15px] text-zinc-900 leading-snug">{insp.elevatorName}</div>
@@ -440,7 +493,7 @@ export default function Dashboard() {
               {overdueItems.length > 0 && (
                 <div className="px-6 py-3 border-t border-zinc-100 flex justify-end">
                   <Link href="/elevators" className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
-                    View all in Active Inspections →
+                    Open in Active Inspections for full filters →
                   </Link>
                 </div>
               )}
@@ -451,7 +504,6 @@ export default function Dashboard() {
               <div className="px-5 py-3.5 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
                 <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1">Coming Up — Next 90 Days</h3>
-                <CountBadge n={upcoming.length} />
                 <ExportBtn onClick={()=>dlXlsx("upcoming",`upcoming_${new Date().toISOString().slice(0,10)}.xlsx`)} />
               </div>
               <div className="overflow-x-auto flex-1">
