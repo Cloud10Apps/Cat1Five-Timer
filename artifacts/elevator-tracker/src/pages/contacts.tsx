@@ -268,19 +268,19 @@ export default function Contacts() {
         onSuccess={(c) => navigate(`/contacts/${c.id}`)}
       />
 
-      <div className="flex items-baseline gap-6 text-[13px] text-zinc-500">
+      <div className="flex items-baseline gap-7 text-[15px] text-zinc-500">
         <span>
-          <span className="text-[16px] font-medium text-zinc-900">{contactCount}</span>{" "}
+          <span className="text-[22px] font-medium text-zinc-900">{contactCount}</span>{" "}
           contact{contactCount === 1 ? "" : "s"}
         </span>
         <span className="text-zinc-300" aria-hidden="true">·</span>
         <span>
-          <span className="text-[16px] font-medium text-zinc-900">{customersServed}</span>{" "}
+          <span className="text-[22px] font-medium text-zinc-900">{customersServed}</span>{" "}
           customer{customersServed === 1 ? "" : "s"} served
         </span>
         <span className="text-zinc-300" aria-hidden="true">·</span>
         <span>
-          <span className="text-[16px] font-medium text-zinc-900">{buildingAssignments}</span>{" "}
+          <span className="text-[22px] font-medium text-zinc-900">{buildingAssignments}</span>{" "}
           building assignment{buildingAssignments === 1 ? "" : "s"}
         </span>
       </div>
