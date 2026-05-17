@@ -575,8 +575,12 @@ export default function Elevators() {
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
       toast({ title: isHydraulic ? "Inspection created" : (editingElevator ? "Both inspections created" : "Unit and inspections created") });
-      if (cat5Result?._warning) toast(warningToast("CAT 5", cat5Result._warning));
-      if (cat1Result?._warning) toast(warningToast("CAT 1", cat1Result._warning));
+      // _warning is appended ad-hoc by the API and isn't part of the generated
+      // Inspection type, so the access goes through `any`.
+      const cat5Warning = (cat5Result as any)?._warning as string | undefined;
+      const cat1Warning = (cat1Result as any)?._warning as string | undefined;
+      if (cat5Warning) toast(warningToast("CAT 5", cat5Warning));
+      if (cat1Warning) toast(warningToast("CAT 1", cat1Warning));
       setIsAddOpen(false);
     } catch {
       toast({ title: isHydraulic ? "Failed to create inspection" : "Failed to create inspections", variant: "destructive" });
