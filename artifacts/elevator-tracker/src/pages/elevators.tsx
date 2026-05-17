@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -417,9 +417,33 @@ export default function Elevators() {
   const watchCompletionDateCat5 = inspCat5Form.watch("completionDate");
   const watchScheduledDateCat5 = inspCat5Form.watch("scheduledDate");
   const watchInspStatusCat5 = inspCat5Form.watch("status");
+  const watchManualNextDueCat5 = inspCat5Form.watch("nextDueDate");
   const nextDuePreviewCat5 = watchLastDateCat5 && watchRecurrenceCat5
     ? dayjs(watchLastDateCat5).add(Number(watchRecurrenceCat5), "year").format("YYYY-MM-DD")
     : null;
+
+  // Effective CAT5 next-due used to suggest a CAT1 date. Prefers the auto-calc
+  // from Last+5y when CAT5 has a Last Date; otherwise falls back to the manual
+  // CAT5 nextDueDate field. Null when neither is set.
+  const cat5EffectiveNextDue = watchLastDateCat5
+    ? nextDuePreviewCat5
+    : (watchManualNextDueCat5 || null);
+
+  // Auto-suggest CAT1's nextDueDate = CAT5 next-due + 1 year, but only when:
+  //  - elevator is traction (no CAT5 on hydraulic)
+  //  - CAT1's Last Inspection Date is empty (otherwise auto-calc takes over)
+  //  - the CAT1 manual field is empty OR still holds the last value we set
+  //    (so the user's manual edits are preserved across CAT5 changes).
+  const cat1AutoSuggestRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (editingElevator?.type === "hydraulic") return;
+    if (!cat5EffectiveNextDue || watchLastDate) return;
+    const current = inspForm.getValues("nextDueDate") || "";
+    if (current && current !== cat1AutoSuggestRef.current) return;
+    const suggested = dayjs(cat5EffectiveNextDue).add(1, "year").format("YYYY-MM-DD");
+    inspForm.setValue("nextDueDate", suggested, { shouldDirty: false });
+    cat1AutoSuggestRef.current = suggested;
+  }, [cat5EffectiveNextDue, watchLastDate, editingElevator?.type]);
 
   useEffect(() => {
     if (watchScheduledDate && watchInspStatus === "NOT_STARTED") {
@@ -529,21 +553,30 @@ export default function Elevators() {
       if (v.scheduledDate && (!v.status || v.status === "NOT_STARTED")) return "SCHEDULED";
       return v.status ?? "NOT_STARTED";
     };
-    try {
-      const mutations: Promise<any>[] = [
-        createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, nextDueDate: cat1Data.lastInspectionDate ? undefined : (cat1Data.nextDueDate || undefined), scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } as any }),
-      ];
-      if (!isHydraulic && cat5Data) {
-        mutations.push(createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, nextDueDate: cat5Data.lastInspectionDate ? undefined : (cat5Data.nextDueDate || undefined), scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } as any }));
+    // Classify the backend's composed _warning string for toast presentation.
+    // - "follow-up inspection record was not created" → real failure, destructive.
+    // - Otherwise (cross-type same-year adjustment from the CAT1/CAT5 rule) →
+    //   neutral toast: the record WAS created, just with a shifted date.
+    const warningToast = (which: "CAT 1" | "CAT 5", warning: string) => {
+      if (warning.includes("follow-up inspection record was not created")) {
+        return { title: `${which} follow-up not auto-created`, description: warning, variant: "destructive" as const, duration: 10000 };
       }
-      const results: any[] = await Promise.all(mutations);
-      const cat1Result = results[0];
-      const cat5Result = isHydraulic ? undefined : results[1];
+      return { title: "Year skipped", description: warning, duration: 10000 };
+    };
+    try {
+      // Sequence CAT5 before CAT1 so CAT1's backend resolveNextDueDate sees the
+      // just-committed CAT5 row and applies the same-year collision adjustment
+      // if needed. Promise.all would let CAT1's resolver run before CAT5's
+      // INSERT lands, missing the collision entirely.
+      const cat5Result = !isHydraulic && cat5Data
+        ? await createInspMutation.mutateAsync({ data: { ...cat5Data, status: deriveStatusBoth(cat5Data), elevatorId, recurrenceYears: Number(cat5Data.recurrenceYears), lastInspectionDate: cat5Data.lastInspectionDate || undefined, nextDueDate: cat5Data.lastInspectionDate ? undefined : (cat5Data.nextDueDate || undefined), scheduledDate: cat5Data.scheduledDate || undefined, completionDate: cat5Data.completionDate || undefined } as any })
+        : undefined;
+      const cat1Result = await createInspMutation.mutateAsync({ data: { ...cat1Data, status: deriveStatusBoth(cat1Data), elevatorId, recurrenceYears: Number(cat1Data.recurrenceYears), lastInspectionDate: cat1Data.lastInspectionDate || undefined, nextDueDate: cat1Data.lastInspectionDate ? undefined : (cat1Data.nextDueDate || undefined), scheduledDate: cat1Data.scheduledDate || undefined, completionDate: cat1Data.completionDate || undefined } as any });
       queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey() });
       if (editingElevator) queryClient.invalidateQueries({ queryKey: getListInspectionsQueryKey({ elevatorId }), exact: false });
       toast({ title: isHydraulic ? "Inspection created" : (editingElevator ? "Both inspections created" : "Unit and inspections created") });
-      if (cat1Result?._warning) toast({ title: "CAT 1 follow-up not auto-created", description: cat1Result._warning, variant: "destructive", duration: 10000 });
-      if (cat5Result?._warning) toast({ title: "CAT 5 follow-up not auto-created", description: cat5Result._warning, variant: "destructive", duration: 10000 });
+      if (cat5Result?._warning) toast(warningToast("CAT 5", cat5Result._warning));
+      if (cat1Result?._warning) toast(warningToast("CAT 1", cat1Result._warning));
       setIsAddOpen(false);
     } catch {
       toast({ title: isHydraulic ? "Failed to create inspection" : "Failed to create inspections", variant: "destructive" });
@@ -766,84 +799,11 @@ export default function Elevators() {
                         </form>
                       </Form>
                     ) : (
-                      /* ── CREATE MODE: two forms — CAT1 + CAT5 ── */
+                      /* ── CREATE MODE: two forms — CAT5 first (anchor), then CAT1 ── */
                       <div className="space-y-6">
-                        {/* CAT1 section */}
-                        <div className="rounded-lg border border-zinc-200 p-4 space-y-4">
-                          <div className="flex items-center gap-2">
-                            <InspectionTypeBadge type="CAT1" />
-                            <span className="text-sm font-medium text-zinc-700">Annual Inspection</span>
-                          </div>
-                          <Form {...inspForm}>
-                            <div className="space-y-4">
-                              {/* Row 1: Recurrence → Last Inspection Date → Next Due */}
-                              <div className="grid grid-cols-3 gap-4">
-                                <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
-                                  <FormItem><FormLabel>Recurrence (Years)</FormLabel>
-                                    <FormControl><Input type="number" min="1" {...field} /></FormControl>
-                                    <FormMessage /></FormItem>
-                                )} />
-                                <FormField control={inspForm.control} name="lastInspectionDate" render={({ field }) => (
-                                  <FormItem><FormLabel>Last Inspection Date</FormLabel>
-                                    <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
-                                    <FormMessage /></FormItem>
-                                )} />
-                                {watchLastDate ? (
-                                  <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-medium leading-none">Next Due Date</label>
-                                    <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}>
-                                      {nextDuePreview
-                                        ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                                        : <span className="italic font-normal text-sm">Auto-calculated</span>}
-                                    </div>
-                                    <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
-                                  </div>
-                                ) : (
-                                  <FormField control={inspForm.control} name="nextDueDate" render={({ field }) => (
-                                    <FormItem><FormLabel>Next Due Date</FormLabel>
-                                      <div className="flex items-center gap-1">
-                                        <div className="flex-1"><FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl></div>
-                                        {field.value && (
-                                          <button type="button" onClick={() => inspForm.setValue("nextDueDate", "")} aria-label="Clear next due date" className="h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                                            <X className="h-4 w-4" />
-                                          </button>
-                                        )}
-                                      </div>
-                                      <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
-                                      <FormMessage /></FormItem>
-                                  )} />
-                                )}
-                              </div>
-                              {/* Row 2: Status + Scheduled Date */}
-                              <div className="grid grid-cols-2 gap-4">
-                                <FormField control={inspForm.control} name="status" render={({ field }) => (
-                                  <FormItem><FormLabel>Inspection Status</FormLabel>
-                                    <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else { inspForm.setValue("completionDate", ""); } }}>
-                                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
-                                        <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                      </SelectContent>
-                                    </Select><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
-                                  <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
-                                    <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
-                                    <FormMessage /></FormItem>
-                                )} />
-                              </div>
-                              {/* Notes */}
-                              <FormField control={inspForm.control} name="notes" render={({ field }) => (
-                                <FormItem><FormLabel>Notes</FormLabel>
-                                  <FormControl><Textarea placeholder="Inspector notes, compliance details..." className="resize-none h-16" {...field} /></FormControl>
-                                  <FormMessage /></FormItem>
-                              )} />
-                            </div>
-                          </Form>
-                        </div>
-
-                        {/* CAT5 section — hidden for hydraulic elevators (no CAT5 required) */}
+                        {/* CAT5 section — rendered FIRST so the user sets the anchor date.
+                            The CAT1 nextDueDate auto-suggests CAT5+1y once this is set.
+                            Hidden for hydraulic elevators (no CAT5 required). */}
                         {editingElevator?.type !== "hydraulic" && (
                         <div className="rounded-lg border border-yellow-300 p-4 space-y-4">
                           <div className="flex items-center gap-2">
@@ -919,6 +879,85 @@ export default function Elevators() {
                           </Form>
                         </div>
                         )}
+
+                        {/* CAT1 section */}
+                        <div className="rounded-lg border border-zinc-200 p-4 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <InspectionTypeBadge type="CAT1" />
+                            <span className="text-sm font-medium text-zinc-700">Annual Inspection</span>
+                          </div>
+                          <Form {...inspForm}>
+                            <div className="space-y-4">
+                              {/* Row 1: Recurrence → Last Inspection Date → Next Due */}
+                              <div className="grid grid-cols-3 gap-4">
+                                <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
+                                  <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                    <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                                    <FormMessage /></FormItem>
+                                )} />
+                                <FormField control={inspForm.control} name="lastInspectionDate" render={({ field }) => (
+                                  <FormItem><FormLabel>Last Inspection Date</FormLabel>
+                                    <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                    <FormMessage /></FormItem>
+                                )} />
+                                {watchLastDate ? (
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium leading-none">Next Due Date</label>
+                                    <div className={`flex items-center h-9 px-3 rounded-md border text-sm tabular-nums transition-colors ${nextDuePreview ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}>
+                                      {nextDuePreview
+                                        ? new Date(nextDuePreview + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                                        : <span className="italic font-normal text-sm">Auto-calculated</span>}
+                                    </div>
+                                    <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
+                                  </div>
+                                ) : (
+                                  <FormField control={inspForm.control} name="nextDueDate" render={({ field }) => (
+                                    <FormItem><FormLabel>Next Due Date</FormLabel>
+                                      <div className="flex items-center gap-1">
+                                        <div className="flex-1"><FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl></div>
+                                        {field.value && (
+                                          <button type="button" onClick={() => { inspForm.setValue("nextDueDate", ""); cat1AutoSuggestRef.current = null; }} aria-label="Clear next due date" className="h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                            <X className="h-4 w-4" />
+                                          </button>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-zinc-400 leading-none">
+                                        {editingElevator?.type !== "hydraulic" && cat5EffectiveNextDue
+                                          ? "Suggested as one year after the CAT 5. Override anytime."
+                                          : "Enter manually or add Last Inspection Date to auto-calculate"}
+                                      </p>
+                                      <FormMessage /></FormItem>
+                                  )} />
+                                )}
+                              </div>
+                              {/* Row 2: Status + Scheduled Date */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField control={inspForm.control} name="status" render={({ field }) => (
+                                  <FormItem><FormLabel>Inspection Status</FormLabel>
+                                    <Select value={field.value} onValueChange={(val) => { field.onChange(val); if (val === "SCHEDULED") { inspForm.setValue("scheduledDate", dayjs().format("YYYY-MM-DD")); inspForm.setValue("completionDate", ""); } else { inspForm.setValue("completionDate", ""); } }}>
+                                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="NOT_STARTED">Not Scheduled</SelectItem>
+                                        <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                      </SelectContent>
+                                    </Select><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={inspForm.control} name="scheduledDate" render={({ field }) => (
+                                  <FormItem><FormLabel>Scheduled Date <span className="font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                                    <FormControl><DatePickerField value={field.value} onChange={field.onChange} placeholder="Pick a date" /></FormControl>
+                                    <FormMessage /></FormItem>
+                                )} />
+                              </div>
+                              {/* Notes */}
+                              <FormField control={inspForm.control} name="notes" render={({ field }) => (
+                                <FormItem><FormLabel>Notes</FormLabel>
+                                  <FormControl><Textarea placeholder="Inspector notes, compliance details..." className="resize-none h-16" {...field} /></FormControl>
+                                  <FormMessage /></FormItem>
+                              )} />
+                            </div>
+                          </Form>
+                        </div>
 
                         <Button
                           type="button"
