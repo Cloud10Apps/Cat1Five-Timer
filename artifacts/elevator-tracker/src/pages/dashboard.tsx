@@ -86,8 +86,8 @@ function TableSkeleton() {
   );
 }
 
-/* ─── Overdue pager ─── */
-function OverduePager({
+/* ─── List pager ─── */
+function ListPager({
   page,
   totalPages,
   totalItems,
@@ -226,6 +226,19 @@ export default function Dashboard() {
   const upcoming = upcomingSoon
     .filter((i: any) => i.nextDueDate <= in90Days)
     .sort((a: any, b: any) => a.nextDueDate.localeCompare(b.nextDueDate));
+
+  const UPCOMING_PAGE_SIZE = 10;
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const upcomingTotalPages = Math.max(1, Math.ceil(upcoming.length / UPCOMING_PAGE_SIZE));
+
+  useEffect(() => {
+    if (upcomingPage > upcomingTotalPages) setUpcomingPage(upcomingTotalPages);
+  }, [upcomingTotalPages, upcomingPage]);
+
+  const upcomingPageItems = upcoming.slice(
+    (upcomingPage - 1) * UPCOMING_PAGE_SIZE,
+    upcomingPage * UPCOMING_PAGE_SIZE,
+  );
 
   const customerList = (customers ?? []) as any[];
 
@@ -437,7 +450,7 @@ export default function Dashboard() {
               <div className="px-5 py-3.5 border-b border-red-200 bg-red-50 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                 <h3 className="text-xs font-black text-red-700 uppercase tracking-[0.09em] flex-1">Overdue Inspections</h3>
-                <OverduePager
+                <ListPager
                   page={overduePage}
                   totalPages={overdueTotalPages}
                   totalItems={overdueItems.length}
@@ -504,6 +517,12 @@ export default function Dashboard() {
               <div className="px-5 py-3.5 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
                 <h3 className="text-xs font-black text-indigo-700 uppercase tracking-[0.09em] flex-1">Coming Up — Next 90 Days</h3>
+                <ListPager
+                  page={upcomingPage}
+                  totalPages={upcomingTotalPages}
+                  totalItems={upcoming.length}
+                  onChange={setUpcomingPage}
+                />
                 <ExportBtn onClick={()=>dlXlsx("upcoming",`upcoming_${new Date().toISOString().slice(0,10)}.xlsx`)} />
               </div>
               <div className="overflow-x-auto flex-1">
@@ -529,7 +548,7 @@ export default function Dashboard() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ) : upcoming.map((insp:any) => {
+                    ) : upcomingPageItems.map((insp:any) => {
                       const daysUntil = insp.nextDueDate ? dayjs(insp.nextDueDate).diff(dayjs(),"day") : null;
                       const isToday   = insp.nextDueDate===todayStr;
                       const isUrgent  = !isToday && insp.nextDueDate<=in3Days;
@@ -561,7 +580,7 @@ export default function Dashboard() {
               {upcoming.length > 0 && (
                 <div className="px-6 py-3 border-t border-zinc-100 flex justify-end">
                   <Link href="/elevators" className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
-                    View all in Active Inspections →
+                    Open in Active Inspections for full filters →
                   </Link>
                 </div>
               )}
