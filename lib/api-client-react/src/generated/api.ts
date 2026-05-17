@@ -49,6 +49,7 @@ import type {
   OverdueByBuildingItem,
   StatusBreakdownItem,
   UpdateBuildingContactBody,
+  UpdateContactBody,
   UpdateUserBody,
   User
 } from './api.schemas';
@@ -2726,7 +2727,7 @@ export const getUpdateContactUrl = (id: number,) => {
 }
 
 export const updateContact = async (id: number,
-    createContactBody: CreateContactBody, options?: RequestInit): Promise<Contact> => {
+    updateContactBody: UpdateContactBody, options?: RequestInit): Promise<Contact> => {
 
   return customFetch<Contact>(getUpdateContactUrl(id),
   {
@@ -2734,7 +2735,7 @@ export const updateContact = async (id: number,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      createContactBody,)
+      updateContactBody,)
   }
 );}
 
@@ -2742,8 +2743,8 @@ export const updateContact = async (id: number,
 
 
 export const getUpdateContactMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContact>>, TError,{id: number;data: BodyType<CreateContactBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateContact>>, TError,{id: number;data: BodyType<CreateContactBody>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContact>>, TError,{id: number;data: BodyType<UpdateContactBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateContact>>, TError,{id: number;data: BodyType<UpdateContactBody>}, TContext> => {
 
 const mutationKey = ['updateContact'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -2755,7 +2756,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateContact>>, {id: number;data: BodyType<CreateContactBody>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateContact>>, {id: number;data: BodyType<UpdateContactBody>}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateContact(id,data,requestOptions)
@@ -2769,18 +2770,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateContactMutationResult = NonNullable<Awaited<ReturnType<typeof updateContact>>>
-    export type UpdateContactMutationBody = BodyType<CreateContactBody>
+    export type UpdateContactMutationBody = BodyType<UpdateContactBody>
     export type UpdateContactMutationError = ErrorType<unknown>
 
     /**
  * @summary Update a contact
  */
 export const useUpdateContact = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContact>>, TError,{id: number;data: BodyType<CreateContactBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContact>>, TError,{id: number;data: BodyType<UpdateContactBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateContact>>,
         TError,
-        {id: number;data: BodyType<CreateContactBody>},
+        {id: number;data: BodyType<UpdateContactBody>},
         TContext
       > => {
       return useMutation(getUpdateContactMutationOptions(options));
@@ -2868,9 +2869,9 @@ export const getAddContactCustomerUrl = (contactId: number,) => {
 }
 
 export const addContactCustomer = async (contactId: number,
-    addContactCustomerBody: AddContactCustomerBody, options?: RequestInit): Promise<Contact> => {
+    addContactCustomerBody: AddContactCustomerBody, options?: RequestInit): Promise<void> => {
 
-  return customFetch<Contact>(getAddContactCustomerUrl(contactId),
+  return customFetch<void>(getAddContactCustomerUrl(contactId),
   {
     ...options,
     method: 'POST',

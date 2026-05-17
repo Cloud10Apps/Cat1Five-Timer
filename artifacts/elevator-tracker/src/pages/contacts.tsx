@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import {
   useListContacts,
   getListContactsQueryKey,
@@ -39,7 +40,6 @@ import {
 import {
   Plus,
   Search,
-  Pencil,
   Trash2,
   ChevronDown,
   ChevronRight,
@@ -49,6 +49,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
+import { cn } from "@/lib/utils";
 import {
   ContactRow,
   CONTACT_TYPE_ORDER,
@@ -56,27 +57,17 @@ import {
   contactDisplayName,
   type ContactType,
 } from "@/components/contact-row";
-import { ContactFormDialog } from "@/components/contact-form-dialog";
-
-function buildingPreview(c: Contact): string | null {
-  const count = c.buildingCount ?? 0;
-  if (count === 0) return null;
-  const preview = c.buildingNamesPreview?.[0];
-  if (!preview) return `${count} building${count === 1 ? "" : "s"}`;
-  const extra = count - 1;
-  if (extra <= 0) return `${count} building — ${preview}`;
-  return `${count} buildings — ${preview}, +${extra} more`;
-}
+import { CreateContactDialog } from "@/components/contact-form-dialog";
 
 interface ContactGroupProps {
   type: ContactType;
   contacts: Contact[];
   defaultOpen: boolean;
-  onEdit: (c: Contact) => void;
+  onRowClick: (c: Contact) => void;
   onDelete: (c: Contact) => void;
 }
 
-function ContactGroup({ type, contacts, defaultOpen, onEdit, onDelete }: ContactGroupProps) {
+function ContactGroup({ type, contacts, defaultOpen, onRowClick, onDelete }: ContactGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
   const meta = CONTACT_TYPE_META[type];
   const Icon = meta.icon;
@@ -86,9 +77,9 @@ function ContactGroup({ type, contacts, defaultOpen, onEdit, onDelete }: Contact
       <CollapsibleTrigger className="w-full">
         <div className="flex items-center gap-3 px-1 py-2 hover:bg-zinc-50 rounded-md transition-colors">
           {open ? <ChevronDown className="h-4 w-4 text-zinc-500" /> : <ChevronRight className="h-4 w-4 text-zinc-500" />}
-          <Icon className="h-4 w-4 text-zinc-500" />
-          <span className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-700">{meta.label}</span>
-          <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-zinc-100 text-zinc-600 text-xs font-bold">
+          <Icon className={cn("h-[18px] w-[18px]", meta.iconColorClass)} />
+          <span className="text-xs font-medium uppercase tracking-[0.06em] text-zinc-700">{meta.label}</span>
+          <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-[9px] rounded-full bg-zinc-100 text-zinc-600 text-xs font-medium">
             {contacts.length}
           </span>
         </div>
@@ -96,7 +87,8 @@ function ContactGroup({ type, contacts, defaultOpen, onEdit, onDelete }: Contact
       <CollapsibleContent>
         <div className="flex flex-col gap-2 pl-7 pr-1 pt-2 pb-3">
           {contacts.map((c) => {
-            const preview = buildingPreview(c);
+            const cCount = c.customers?.length ?? 0;
+            const bCount = c.buildingCount ?? c.buildings?.length ?? 0;
             return (
               <ContactRow
                 key={c.id}
@@ -105,16 +97,30 @@ function ContactGroup({ type, contacts, defaultOpen, onEdit, onDelete }: Contact
                 contactName={c.contactName}
                 email={c.email}
                 phone={c.phone}
-                customers={c.customers}
-                rightDetail={preview ?? <span className="text-zinc-300">No buildings</span>}
+                size="lg"
+                onClick={() => onRowClick(c)}
+                rightDetail={
+                  <div className="flex flex-col items-end gap-0.5 text-[12px] text-zinc-500 leading-tight">
+                    <div>
+                      <span className="font-medium text-zinc-900">{cCount}</span> customer{cCount === 1 ? "" : "s"}
+                    </div>
+                    <div>
+                      <span className="font-medium text-zinc-900">{bCount}</span> building{bCount === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                }
                 trailingActions={
                   <>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(c)} title="Edit">
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => { e.stopPropagation(); onDelete(c); }}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-zinc-400" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(c)} title="Delete">
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
+                    <ChevronRight className="h-[18px] w-[18px] text-zinc-300 ml-1" />
                   </>
                 }
               />
@@ -127,6 +133,7 @@ function ContactGroup({ type, contacts, defaultOpen, onEdit, onDelete }: Contact
 }
 
 export default function Contacts() {
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [customerFilter, setCustomerFilter] = useState<string>("all");
@@ -134,8 +141,7 @@ export default function Contacts() {
   const [unitFilter, setUnitFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteContact, setDeleteContact] = useState<Contact | null>(null);
 
   const queryClient = useQueryClient();
@@ -154,6 +160,12 @@ export default function Contacts() {
   const { data: contacts, isLoading } = useListContacts(listParams, {
     query: { queryKey: getListContactsQueryKey(listParams) },
   });
+
+  // Unfiltered count for the "Showing X of Y" line.
+  const { data: allContacts } = useListContacts(
+    {},
+    { query: { queryKey: getListContactsQueryKey({}) } },
+  );
 
   const { data: customers } = useListCustomers(
     {},
@@ -180,16 +192,6 @@ export default function Contacts() {
   );
 
   const deleteMutation = useDeleteContact();
-
-  const openAdd = () => {
-    setEditingContact(null);
-    setIsFormOpen(true);
-  };
-
-  const openEdit = (c: Contact) => {
-    setEditingContact(c);
-    setIsFormOpen(true);
-  };
 
   const confirmDelete = () => {
     if (!deleteContact) return;
@@ -220,8 +222,9 @@ export default function Contacts() {
     return map;
   }, [contacts]);
 
-  const totalCount = contacts?.length ?? 0;
-  const defaultCustomerIds = customerFilter !== "all" ? [Number(customerFilter)] : undefined;
+  const totalShown = contacts?.length ?? 0;
+  const totalAll = allContacts?.length ?? 0;
+  const defaultCustomerId = customerFilter !== "all" ? Number(customerFilter) : undefined;
 
   const hasActiveFilters =
     search !== "" ||
@@ -242,48 +245,45 @@ export default function Contacts() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
-          <p className="text-sm text-zinc-500 mt-1 max-w-2xl">
+          <h1 className="text-[24px] font-medium tracking-tight">Contacts</h1>
+          <p className="text-[14px] text-zinc-500 mt-1 max-w-[480px]">
             Manage elevator companies, property managers, and other contacts. Assign them to buildings to receive inspection notifications.
           </p>
         </div>
 
         <Button
-          className="bg-amber-500 hover:bg-amber-600 text-zinc-900"
-          onClick={openAdd}
+          className="h-10 px-[18px] bg-[#EF9F27] hover:bg-amber-600 text-[#412402] font-medium"
+          onClick={() => setIsAddOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Contact
         </Button>
       </div>
 
-      <ContactFormDialog
-        open={isFormOpen}
-        onOpenChange={(o) => {
-          setIsFormOpen(o);
-          if (!o) setEditingContact(null);
-        }}
-        editingContact={editingContact}
-        defaultCustomerIds={editingContact ? undefined : defaultCustomerIds}
+      <CreateContactDialog
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        defaultCustomerId={defaultCustomerId}
+        onSuccess={(c) => navigate(`/contacts/${c.id}`)}
       />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[14rem] max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-[10px] h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or company..."
-            className="pl-8"
+            className="pl-8 h-10 text-[14px]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         <Select value={customerFilter} onValueChange={(v) => { setCustomerFilter(v); setBuildingFilter("all"); setUnitFilter("all"); }}>
-          <SelectTrigger className="w-[12rem]">
-            <SelectValue placeholder="All Customers" />
+          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
+            <SelectValue placeholder="All customers" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Customers</SelectItem>
+            <SelectItem value="all">All customers</SelectItem>
             {(customers ?? []).map((c) => (
               <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
             ))}
@@ -291,11 +291,11 @@ export default function Contacts() {
         </Select>
 
         <Select value={buildingFilter} onValueChange={(v) => { setBuildingFilter(v); setUnitFilter("all"); }}>
-          <SelectTrigger className="w-[12rem]">
-            <SelectValue placeholder="All Buildings" />
+          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
+            <SelectValue placeholder="All buildings" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Buildings</SelectItem>
+            <SelectItem value="all">All buildings</SelectItem>
             {(buildings ?? []).map((b) => (
               <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
             ))}
@@ -303,11 +303,11 @@ export default function Contacts() {
         </Select>
 
         <Select value={unitFilter} onValueChange={setUnitFilter}>
-          <SelectTrigger className="w-[12rem]">
-            <SelectValue placeholder="All Units" />
+          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
+            <SelectValue placeholder="All units" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Units</SelectItem>
+            <SelectItem value="all">All units</SelectItem>
             {(elevators ?? []).map((u) => (
               <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
             ))}
@@ -315,28 +315,34 @@ export default function Contacts() {
         </Select>
 
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[12rem]">
-            <SelectValue placeholder="All Types" />
+          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
+            <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
             {CONTACT_TYPE_ORDER.map((t) => (
               <SelectItem key={t} value={t}>{CONTACT_TYPE_META[t].singular}</SelectItem>
             ))}
           </SelectContent>
         </Select>
+      </div>
 
+      <div className="flex items-center justify-between text-[13px]">
+        <span className="text-zinc-500">
+          {hasActiveFilters
+            ? <>Showing <span className="font-medium text-zinc-700">{totalShown}</span> of {totalAll} contact{totalAll === 1 ? "" : "s"}</>
+            : <>{totalAll} contact{totalAll === 1 ? "" : "s"}</>
+          }
+        </span>
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-zinc-600">
-            <X className="mr-1 h-3.5 w-3.5" />
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-zinc-500 hover:text-zinc-900 inline-flex items-center gap-1"
+          >
+            <X className="h-3.5 w-3.5" />
             Clear filters
-          </Button>
-        )}
-
-        {totalCount > 0 && (
-          <span className="text-sm text-muted-foreground whitespace-nowrap ml-auto">
-            {totalCount} contact{totalCount === 1 ? "" : "s"}
-          </span>
+          </button>
         )}
       </div>
 
@@ -344,7 +350,7 @@ export default function Contacts() {
         <div className="flex items-center justify-center py-16">
           <Spinner />
         </div>
-      ) : totalCount === 0 ? (
+      ) : totalShown === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <ContactRound className="h-12 w-12 mb-3 opacity-20" />
           <p className="text-sm">{hasActiveFilters ? "No contacts match your filters." : "No contacts found."}</p>
@@ -363,7 +369,7 @@ export default function Contacts() {
                 type={t}
                 contacts={list}
                 defaultOpen
-                onEdit={openEdit}
+                onRowClick={(c) => navigate(`/contacts/${c.id}`)}
                 onDelete={(c) => setDeleteContact(c)}
               />
             );

@@ -10,6 +10,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Customers from "@/pages/customers";
 import Contacts from "@/pages/contacts";
+import ContactDetail from "@/pages/contact-detail";
 import Buildings from "@/pages/buildings";
 import BuildingDetail from "@/pages/building-detail";
 import Elevators from "@/pages/elevators";
@@ -45,6 +46,9 @@ function Router() {
       </Route>
       <Route path="/customers">
         <ProtectedRoute><Customers /></ProtectedRoute>
+      </Route>
+      <Route path="/contacts/:id">
+        <ProtectedRoute><ContactDetail /></ProtectedRoute>
       </Route>
       <Route path="/contacts">
         <ProtectedRoute><Contacts /></ProtectedRoute>

@@ -655,7 +655,13 @@ export const ListContactsResponseItem = zod.object({
   "email": zod.string().email(),
   "phone": zod.string().optional(),
   "buildingCount": zod.number().optional(),
-  "buildingNamesPreview": zod.array(zod.string()).optional(),
+  "buildings": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "customerId": zod.number(),
+  "customerName": zod.string(),
+  "receivesNotifications": zod.boolean()
+})),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -698,7 +704,13 @@ export const GetContactResponse = zod.object({
   "email": zod.string().email(),
   "phone": zod.string().optional(),
   "buildingCount": zod.number().optional(),
-  "buildingNamesPreview": zod.array(zod.string()).optional(),
+  "buildings": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "customerId": zod.number(),
+  "customerName": zod.string(),
+  "receivesNotifications": zod.boolean()
+})),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -715,7 +727,7 @@ export const UpdateContactParams = zod.object({
 
 
 export const UpdateContactBody = zod.object({
-  "customerIds": zod.array(zod.number()).min(1),
+  "customerIds": zod.array(zod.number()).min(1).optional(),
   "contactType": zod.enum(['elevator_company', 'building_owner', 'property_manager', 'state_inspector', 'other']),
   "companyName": zod.string().optional(),
   "contactName": zod.string().optional(),
@@ -736,7 +748,13 @@ export const UpdateContactResponse = zod.object({
   "email": zod.string().email(),
   "phone": zod.string().optional(),
   "buildingCount": zod.number().optional(),
-  "buildingNamesPreview": zod.array(zod.string()).optional(),
+  "buildings": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "customerId": zod.number(),
+  "customerName": zod.string(),
+  "receivesNotifications": zod.boolean()
+})),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })

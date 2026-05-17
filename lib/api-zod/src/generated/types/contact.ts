@@ -5,6 +5,7 @@
  * Elevator Inspection Tracker API
  * OpenAPI spec version: 0.1.0
  */
+import type { ContactBuildingAssignment } from './contactBuildingAssignment';
 import type { ContactContactType } from './contactContactType';
 import type { ContactCustomerSummary } from './contactCustomerSummary';
 
@@ -18,7 +19,7 @@ export interface Contact {
   email: string;
   phone?: string;
   buildingCount?: number;
-  buildingNamesPreview?: string[];
+  buildings: ContactBuildingAssignment[];
   createdAt: Date;
   updatedAt: Date;
 }

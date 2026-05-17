@@ -2,18 +2,13 @@ import type { ReactNode } from "react";
 import {
   Building2,
   KeyRound,
-  UserCog,
+  UsersRound,
   ShieldCheck,
   User,
   Mail,
   Phone,
 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export type ContactType =
   | "elevator_company"
@@ -30,15 +25,70 @@ export const CONTACT_TYPE_ORDER: ContactType[] = [
   "other",
 ];
 
-export const CONTACT_TYPE_META: Record<
-  ContactType,
-  { label: string; singular: string; icon: typeof Building2 }
-> = {
-  elevator_company: { label: "Elevator Companies", singular: "Elevator Company", icon: Building2 },
-  building_owner:   { label: "Building Owners",    singular: "Building Owner",   icon: KeyRound },
-  property_manager: { label: "Property Managers",  singular: "Property Manager", icon: UserCog },
-  state_inspector:  { label: "State Inspectors",   singular: "State Inspector",  icon: ShieldCheck },
-  other:            { label: "Other",              singular: "Other",            icon: User },
+/**
+ * Per-type visual config. Tailwind classes must be literal strings here so the
+ * compiler keeps them in the final CSS bundle.
+ */
+export interface ContactTypeMeta {
+  label: string;
+  singular: string;
+  icon: typeof Building2;
+  /** Background class for the icon container (50 stop). */
+  iconBgClass: string;
+  /** Text/stroke class for the icon (700 stop). */
+  iconColorClass: string;
+  /** Background class for the inline type badge (50 stop). */
+  badgeBgClass: string;
+  /** Text class for the inline type badge (800 stop). */
+  badgeTextClass: string;
+}
+
+export const CONTACT_TYPE_META: Record<ContactType, ContactTypeMeta> = {
+  elevator_company: {
+    label: "Elevator Companies",
+    singular: "Elevator Company",
+    icon: Building2,
+    iconBgClass: "bg-amber-50",
+    iconColorClass: "text-amber-700",
+    badgeBgClass: "bg-amber-50",
+    badgeTextClass: "text-amber-800",
+  },
+  building_owner: {
+    label: "Building Owners",
+    singular: "Building Owner",
+    icon: KeyRound,
+    iconBgClass: "bg-blue-50",
+    iconColorClass: "text-blue-700",
+    badgeBgClass: "bg-blue-50",
+    badgeTextClass: "text-blue-800",
+  },
+  property_manager: {
+    label: "Property Managers",
+    singular: "Property Manager",
+    icon: UsersRound,
+    iconBgClass: "bg-purple-50",
+    iconColorClass: "text-purple-700",
+    badgeBgClass: "bg-purple-50",
+    badgeTextClass: "text-purple-800",
+  },
+  state_inspector: {
+    label: "State Inspectors",
+    singular: "State Inspector",
+    icon: ShieldCheck,
+    iconBgClass: "bg-green-50",
+    iconColorClass: "text-green-700",
+    badgeBgClass: "bg-green-50",
+    badgeTextClass: "text-green-800",
+  },
+  other: {
+    label: "Other",
+    singular: "Other",
+    icon: User,
+    iconBgClass: "bg-zinc-100",
+    iconColorClass: "text-zinc-600",
+    badgeBgClass: "bg-zinc-100",
+    badgeTextClass: "text-zinc-700",
+  },
 };
 
 export function contactDisplayName(args: {
@@ -49,18 +99,20 @@ export function contactDisplayName(args: {
   return args.companyName?.trim() || args.contactName?.trim() || args.email;
 }
 
-const VISIBLE_CUSTOMER_CHIPS = 2;
-
 interface ContactRowProps {
   contactType: ContactType | string;
   companyName?: string | null;
   contactName?: string | null;
   email: string;
   phone?: string | null;
-  customers?: { id: number; name: string }[];
-  hideCustomers?: boolean;
+  /** Right-side detail column (e.g. stat counts on master list). */
   rightDetail?: ReactNode;
+  /** Trailing actions (trash, switch, chevron, etc.). Consumers handle stopPropagation. */
   trailingActions: ReactNode;
+  /** When provided, the row becomes a clickable navigation surface (button). */
+  onClick?: () => void;
+  /** Size variant: master list is denser; default for detail page. */
+  size?: "default" | "lg";
 }
 
 export function ContactRow({
@@ -69,10 +121,10 @@ export function ContactRow({
   contactName,
   email,
   phone,
-  customers,
-  hideCustomers,
   rightDetail,
   trailingActions,
+  onClick,
+  size = "default",
 }: ContactRowProps) {
   const meta = CONTACT_TYPE_META[contactType as ContactType] ?? CONTACT_TYPE_META.other;
   const Icon = meta.icon;
@@ -80,58 +132,46 @@ export function ContactRow({
   const secondaryParts: string[] = [];
   if (companyName && contactName) secondaryParts.push(contactName);
 
-  const visibleCustomers = customers?.slice(0, VISIBLE_CUSTOMER_CHIPS) ?? [];
-  const extraCustomers = customers && customers.length > VISIBLE_CUSTOMER_CHIPS
-    ? customers.slice(VISIBLE_CUSTOMER_CHIPS)
-    : [];
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
+  const iconSize = size === "lg" ? "w-11 h-11" : "w-10 h-10";
+  const padding = size === "lg" ? "px-[18px] py-4" : "px-4 py-3";
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border bg-white px-4 py-3 transition-shadow hover:shadow-sm">
-      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600 shrink-0">
+    <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        "flex items-center gap-4 rounded-xl border bg-white transition-all",
+        padding,
+        onClick && "cursor-pointer hover:shadow-sm hover:border-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400",
+        !onClick && "hover:shadow-sm",
+      )}
+    >
+      <div className={cn("flex items-center justify-center rounded-lg shrink-0", iconSize, meta.iconBgClass, meta.iconColorClass)}>
         <Icon className="h-5 w-5" />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="text-sm font-semibold text-zinc-900 truncate">{primary}</div>
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-bold uppercase tracking-wide shrink-0">
+          <div className="text-[15px] font-medium text-zinc-900 truncate">{primary}</div>
+          <span className={cn(
+            "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide shrink-0",
+            meta.badgeBgClass,
+            meta.badgeTextClass,
+          )}>
             {meta.singular}
           </span>
-          {!hideCustomers && visibleCustomers.length > 0 && (
-            <TooltipProvider>
-              <div className="flex items-center gap-1 flex-wrap">
-                {visibleCustomers.map((c) => (
-                  <span
-                    key={c.id}
-                    className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[10px] font-semibold max-w-[10rem] truncate"
-                  >
-                    {c.name}
-                  </span>
-                ))}
-                {extraCustomers.length > 0 && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span
-                        tabIndex={0}
-                        className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-bold cursor-default"
-                      >
-                        +{extraCustomers.length} more
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="text-xs">
-                        {extraCustomers.map((c) => (
-                          <div key={c.id}>{c.name}</div>
-                        ))}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </TooltipProvider>
-          )}
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500 mt-0.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-zinc-500 mt-0.5">
           {secondaryParts.map((p) => (
             <span key={p} className="truncate">{p}</span>
           ))}
@@ -149,7 +189,7 @@ export function ContactRow({
       </div>
 
       {rightDetail !== undefined && (
-        <div className="hidden sm:block text-xs text-zinc-500 text-right shrink-0 max-w-[14rem]">
+        <div className="shrink-0 text-right max-w-[14rem]">
           {rightDetail}
         </div>
       )}

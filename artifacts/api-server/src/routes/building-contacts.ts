@@ -4,8 +4,9 @@ import {
   buildingsTable,
   contactsTable,
   buildingContactsTable,
+  contactCustomersTable,
 } from "@workspace/db";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import {
   AssignBuildingContactBody,
@@ -161,12 +162,37 @@ router.delete("/:contactId", asyncHandler(async (req, res) => {
 
   const buildingRow = await loadOrgBuilding(buildingId, orgId);
   if (!buildingRow) { res.status(404).json({ error: "Building not found" }); return; }
+  const customerId = buildingRow.customerId;
 
-  await db.delete(buildingContactsTable)
-    .where(and(
-      eq(buildingContactsTable.buildingId, buildingId),
-      eq(buildingContactsTable.contactId, contactId),
-    ));
+  await db.transaction(async (tx) => {
+    await tx.delete(buildingContactsTable)
+      .where(and(
+        eq(buildingContactsTable.buildingId, buildingId),
+        eq(buildingContactsTable.contactId, contactId),
+      ));
+
+    // Auto-remove: if no other building_contacts row remains for this contact
+    // tied to a building belonging to the same customer, drop the matching
+    // contact_customers association so it stays in sync with reality.
+    const stillLinked = await tx
+      .select({ one: sql<number>`1` })
+      .from(buildingContactsTable)
+      .innerJoin(buildingsTable, eq(buildingContactsTable.buildingId, buildingsTable.id))
+      .where(and(
+        eq(buildingContactsTable.contactId, contactId),
+        eq(buildingsTable.customerId, customerId),
+      ))
+      .limit(1);
+
+    if (stillLinked.length === 0) {
+      await tx.delete(contactCustomersTable)
+        .where(and(
+          eq(contactCustomersTable.contactId, contactId),
+          eq(contactCustomersTable.customerId, customerId),
+        ));
+    }
+  });
+
   res.status(204).send();
 }));
 

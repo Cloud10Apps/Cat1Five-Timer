@@ -277,6 +277,14 @@ export interface ContactCustomerSummary {
   name: string;
 }
 
+export interface ContactBuildingAssignment {
+  id: number;
+  name: string;
+  customerId: number;
+  customerName: string;
+  receivesNotifications: boolean;
+}
+
 export type ContactContactType = typeof ContactContactType[keyof typeof ContactContactType];
 
 
@@ -298,7 +306,7 @@ export interface Contact {
   email: string;
   phone?: string;
   buildingCount?: number;
-  buildingNamesPreview?: string[];
+  buildings: ContactBuildingAssignment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -318,6 +326,27 @@ export interface CreateContactBody {
   /** @minItems 1 */
   customerIds: number[];
   contactType: CreateContactBodyContactType;
+  companyName?: string;
+  contactName?: string;
+  email: string;
+  phone?: string;
+}
+
+export type UpdateContactBodyContactType = typeof UpdateContactBodyContactType[keyof typeof UpdateContactBodyContactType];
+
+
+export const UpdateContactBodyContactType = {
+  elevator_company: 'elevator_company',
+  building_owner: 'building_owner',
+  property_manager: 'property_manager',
+  state_inspector: 'state_inspector',
+  other: 'other',
+} as const;
+
+export interface UpdateContactBody {
+  /** @minItems 1 */
+  customerIds?: number[];
+  contactType: UpdateContactBodyContactType;
   companyName?: string;
   contactName?: string;
   email: string;

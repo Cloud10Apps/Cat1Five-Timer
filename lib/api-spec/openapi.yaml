@@ -834,7 +834,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateContactBody"
+              $ref: "#/components/schemas/UpdateContactBody"
       responses:
         "200":
           description: Updated
@@ -1442,6 +1442,26 @@ components:
         - id
         - name
 
+    ContactBuildingAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        receivesNotifications:
+          type: boolean
+      required:
+        - id
+        - name
+        - customerId
+        - customerName
+        - receivesNotifications
+
     Contact:
       type: object
       properties:
@@ -1467,10 +1487,10 @@ components:
           type: string
         buildingCount:
           type: integer
-        buildingNamesPreview:
+        buildings:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/ContactBuildingAssignment"
         createdAt:
           type: string
           format: date-time
@@ -1483,6 +1503,7 @@ components:
         - organizationId
         - contactType
         - email
+        - buildings
         - createdAt
         - updatedAt
 
@@ -1508,6 +1529,30 @@ components:
           type: string
       required:
         - customerIds
+        - contactType
+        - email
+
+    UpdateContactBody:
+      type: object
+      properties:
+        customerIds:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+        contactType:
+          type: string
+          enum: [elevator_company, building_owner, property_manager, state_inspector, other]
+        companyName:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+      required:
         - contactType
         - email
 

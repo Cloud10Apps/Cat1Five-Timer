@@ -8,10 +8,11 @@ import {
   elevatorsTable,
   contactCustomersTable,
 } from "@workspace/db";
-import { eq, and, ilike, inArray, or, count, asc } from "drizzle-orm";
+import { eq, and, ilike, inArray, or, asc } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import {
   CreateContactBody,
+  UpdateContactBody,
   ListContactsQueryParams,
   GetContactParams,
   UpdateContactParams,
@@ -25,9 +26,15 @@ const router = Router();
 
 router.use(requireAuth);
 
-const BUILDING_PREVIEW_COUNT = 1;
-
 type ContactRow = typeof contactsTable.$inferSelect;
+
+type BuildingAssignment = {
+  id: number;
+  name: string;
+  customerId: number;
+  customerName: string;
+  receivesNotifications: boolean;
+};
 
 async function serializeContacts(rows: ContactRow[]) {
   if (rows.length === 0) return [];
@@ -50,43 +57,50 @@ async function serializeContacts(rows: ContactRow[]) {
     customersMap.set(r.contactId, arr);
   }
 
-  const counts = await db
-    .select({ contactId: buildingContactsTable.contactId, cnt: count().as("cnt") })
-    .from(buildingContactsTable)
-    .where(inArray(buildingContactsTable.contactId, ids))
-    .groupBy(buildingContactsTable.contactId);
-  const countMap = new Map(counts.map((c) => [c.contactId, Number(c.cnt)]));
-
-  const assignments = await db
+  const buildingRows = await db
     .select({
       contactId: buildingContactsTable.contactId,
+      buildingId: buildingsTable.id,
       buildingName: buildingsTable.name,
+      customerId: buildingsTable.customerId,
+      customerName: customersTable.name,
+      receivesNotifications: buildingContactsTable.receivesNotifications,
     })
     .from(buildingContactsTable)
     .innerJoin(buildingsTable, eq(buildingContactsTable.buildingId, buildingsTable.id))
+    .innerJoin(customersTable, eq(buildingsTable.customerId, customersTable.id))
     .where(inArray(buildingContactsTable.contactId, ids))
-    .orderBy(asc(buildingsTable.name));
-  const previewMap = new Map<number, string[]>();
-  for (const a of assignments) {
-    const list = previewMap.get(a.contactId) ?? [];
-    if (list.length < BUILDING_PREVIEW_COUNT) list.push(a.buildingName);
-    previewMap.set(a.contactId, list);
+    .orderBy(asc(customersTable.name), asc(buildingsTable.name));
+  const buildingsMap = new Map<number, BuildingAssignment[]>();
+  for (const b of buildingRows) {
+    const list = buildingsMap.get(b.contactId) ?? [];
+    list.push({
+      id: b.buildingId,
+      name: b.buildingName,
+      customerId: b.customerId,
+      customerName: b.customerName,
+      receivesNotifications: b.receivesNotifications,
+    });
+    buildingsMap.set(b.contactId, list);
   }
 
-  return rows.map((r) => ({
-    id: r.id,
-    customers: customersMap.get(r.id) ?? [],
-    organizationId: r.organizationId,
-    contactType: r.contactType,
-    companyName: r.companyName ?? undefined,
-    contactName: r.contactName ?? undefined,
-    email: r.email,
-    phone: r.phone ?? undefined,
-    buildingCount: countMap.get(r.id) ?? 0,
-    buildingNamesPreview: previewMap.get(r.id) ?? [],
-    createdAt: r.createdAt.toISOString(),
-    updatedAt: r.updatedAt.toISOString(),
-  }));
+  return rows.map((r) => {
+    const buildings = buildingsMap.get(r.id) ?? [];
+    return {
+      id: r.id,
+      customers: customersMap.get(r.id) ?? [],
+      organizationId: r.organizationId,
+      contactType: r.contactType,
+      companyName: r.companyName ?? undefined,
+      contactName: r.contactName ?? undefined,
+      email: r.email,
+      phone: r.phone ?? undefined,
+      buildingCount: buildings.length,
+      buildings,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    };
+  });
 }
 
 async function loadOrgContactById(id: number, orgId: number): Promise<ContactRow | null> {
@@ -250,7 +264,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
 
 router.put("/:id", asyncHandler(async (req, res) => {
   const params = UpdateContactParams.safeParse({ id: Number(req.params.id) });
-  const body = CreateContactBody.safeParse(req.body);
+  const body = UpdateContactBody.safeParse(req.body);
   if (!params.success || !body.success) {
     res.status(400).json({ error: "Invalid request" });
     return;
@@ -260,16 +274,23 @@ router.put("/:id", asyncHandler(async (req, res) => {
     return;
   }
   const orgId = req.user!.organizationId;
-  const customerIds = Array.from(new Set(body.data.customerIds));
-  if (customerIds.length === 0) {
-    res.status(400).json({ error: "At least one customer is required" });
-    return;
-  }
 
-  const ok = await validateCustomerIdsForOrg(customerIds, orgId);
-  if (!ok) {
-    res.status(400).json({ error: "One or more customers not found in your organization" });
-    return;
+  // customerIds is optional on update. If omitted, only basic fields are updated
+  // and existing associations are left untouched.
+  const customerIds = body.data.customerIds
+    ? Array.from(new Set(body.data.customerIds))
+    : undefined;
+
+  if (customerIds !== undefined) {
+    if (customerIds.length === 0) {
+      res.status(400).json({ error: "At least one customer is required" });
+      return;
+    }
+    const ok = await validateCustomerIdsForOrg(customerIds, orgId);
+    if (!ok) {
+      res.status(400).json({ error: "One or more customers not found in your organization" });
+      return;
+    }
   }
 
   const existing = await loadOrgContactById(params.data.id, orgId);
@@ -288,7 +309,9 @@ router.put("/:id", asyncHandler(async (req, res) => {
       })
       .where(and(eq(contactsTable.id, params.data.id), eq(contactsTable.organizationId, orgId)))
       .returning();
-    await writeContactCustomers(tx, params.data.id, customerIds, { mode: "replace" });
+    if (customerIds !== undefined) {
+      await writeContactCustomers(tx, params.data.id, customerIds, { mode: "replace" });
+    }
     return upd[0];
   });
 

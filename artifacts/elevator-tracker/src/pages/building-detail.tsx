@@ -52,7 +52,7 @@ import {
   contactDisplayName,
   type ContactType,
 } from "@/components/contact-row";
-import { ContactFormDialog } from "@/components/contact-form-dialog";
+import { CreateContactDialog } from "@/components/contact-form-dialog";
 
 function formatAddress(b: { address?: string; city?: string; state?: string; zip?: string }): string | null {
   const parts: string[] = [];
@@ -473,7 +473,6 @@ export default function BuildingDetail() {
                   contactName={bc.contactName}
                   email={bc.email}
                   phone={bc.phone}
-                  hideCustomers
                   trailingActions={
                     <>
                       <div className="flex items-center gap-2 mr-2">
@@ -515,10 +514,10 @@ export default function BuildingDetail() {
         }}
       />
 
-      <ContactFormDialog
+      <CreateContactDialog
         open={formDialogOpen}
         onOpenChange={setFormDialogOpen}
-        defaultCustomerIds={[building.customerId]}
+        defaultCustomerId={building.customerId}
         onSuccess={handleNewContactCreated}
       />
 
