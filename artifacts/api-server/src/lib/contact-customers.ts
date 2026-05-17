@@ -34,9 +34,17 @@ export async function writeContactCustomers(
 
   const toAdd = desiredCustomerIds.filter((id) => !currentSet.has(id));
   if (toAdd.length > 0) {
-    await tx.insert(contactCustomersTable).values(
-      toAdd.map((cid) => ({ contactId, customerId: cid })),
-    );
+    // ON CONFLICT DO NOTHING because parallel POST /buildings/:bid/contacts
+    // requests for the same (contact, customer) race on this insert. Without
+    // it, the second tx hits the unique constraint, rolls back, and the
+    // building_contacts insert is lost too. Idempotent: safe in both add and
+    // replace modes since we only ever want each row to exist once.
+    await tx
+      .insert(contactCustomersTable)
+      .values(toAdd.map((cid) => ({ contactId, customerId: cid })))
+      .onConflictDoNothing({
+        target: [contactCustomersTable.contactId, contactCustomersTable.customerId],
+      });
   }
 
   if (options.mode === "replace") {

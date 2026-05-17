@@ -128,9 +128,9 @@ export function AssignBuildingPicker({ open, onOpenChange, contact }: AssignBuil
     });
   };
 
-  const groupState = (group: CustomerGroup): "empty" | "indeterminate" | "checked" => {
+  const groupState = (group: CustomerGroup): "disabled" | "empty" | "indeterminate" | "checked" => {
     const assignable = group.buildings.filter(isAssignable);
-    if (assignable.length === 0) return "empty";
+    if (assignable.length === 0) return "disabled";
     const sel = assignable.filter((b) => selected.has(b.id)).length;
     if (sel === 0) return "empty";
     if (sel === assignable.length) return "checked";
@@ -139,6 +139,7 @@ export function AssignBuildingPicker({ open, onOpenChange, contact }: AssignBuil
 
   const toggleGroup = (group: CustomerGroup) => {
     const state = groupState(group);
+    if (state === "disabled") return;
     const assignableIds = group.buildings.filter(isAssignable).map((b) => b.id);
     setSelected((prev) => {
       const next = new Set(prev);
@@ -205,10 +206,10 @@ export function AssignBuildingPicker({ open, onOpenChange, contact }: AssignBuil
         <div className="flex items-center gap-2">
           <div
             role="button"
-            tabIndex={state === "empty" ? -1 : 0}
-            onClick={() => { if (state !== "empty") toggleGroup(group); }}
+            tabIndex={state === "disabled" ? -1 : 0}
+            onClick={() => { if (state !== "disabled") toggleGroup(group); }}
             onKeyDown={(e) => {
-              if ((e.key === "Enter" || e.key === " ") && state !== "empty") {
+              if ((e.key === "Enter" || e.key === " ") && state !== "disabled") {
                 e.preventDefault();
                 toggleGroup(group);
               }
@@ -216,14 +217,14 @@ export function AssignBuildingPicker({ open, onOpenChange, contact }: AssignBuil
             aria-label={`Toggle all buildings under ${group.customerName}`}
             className={cn(
               "flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md transition-colors",
-              state === "empty"
+              state === "disabled"
                 ? "cursor-not-allowed opacity-50"
                 : "cursor-pointer hover:bg-zinc-50",
             )}
           >
             <Checkbox
               checked={state === "checked" ? true : state === "indeterminate" ? "indeterminate" : false}
-              disabled={state === "empty"}
+              disabled={state === "disabled"}
               tabIndex={-1}
               className="pointer-events-none"
               aria-hidden="true"
