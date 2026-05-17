@@ -281,8 +281,12 @@ export default function ContactDetail() {
                               checked={b.receivesNotifications}
                               onCheckedChange={(next) => toggleNotifications(b, next)}
                               aria-label="Receives notifications"
+                              className="data-[state=checked]:bg-emerald-500"
                             />
-                            <span className="text-[12px] text-zinc-500 hidden md:inline">
+                            <span className={cn(
+                              "text-[12px] hidden md:inline",
+                              b.receivesNotifications ? "text-emerald-700 font-medium" : "text-zinc-500",
+                            )}>
                               {b.receivesNotifications ? "Notifications on" : "Notifications off"}
                             </span>
                             <Button

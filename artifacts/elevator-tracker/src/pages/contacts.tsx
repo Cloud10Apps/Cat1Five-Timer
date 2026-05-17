@@ -8,8 +8,6 @@ import {
   getListCustomersQueryKey,
   useListBuildings,
   getListBuildingsQueryKey,
-  useListElevators,
-  getListElevatorsQueryKey,
   Contact,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -100,12 +98,14 @@ function ContactGroup({ type, contacts, defaultOpen, onRowClick, onDelete }: Con
                 size="lg"
                 onClick={() => onRowClick(c)}
                 rightDetail={
-                  <div className="flex flex-col items-end gap-0.5 text-[12px] text-zinc-500 leading-tight">
+                  <div className="flex flex-col items-end gap-0.5 text-zinc-500 leading-tight">
                     <div>
-                      <span className="font-medium text-zinc-900">{cCount}</span> customer{cCount === 1 ? "" : "s"}
+                      <span className="text-[14px] font-medium text-zinc-900">{cCount}</span>{" "}
+                      <span className="text-[12px]">customer{cCount === 1 ? "" : "s"}</span>
                     </div>
                     <div>
-                      <span className="font-medium text-zinc-900">{bCount}</span> building{bCount === 1 ? "" : "s"}
+                      <span className="text-[14px] font-medium text-zinc-900">{bCount}</span>{" "}
+                      <span className="text-[12px]">building{bCount === 1 ? "" : "s"}</span>
                     </div>
                   </div>
                 }
@@ -132,13 +132,21 @@ function ContactGroup({ type, contacts, defaultOpen, onRowClick, onDelete }: Con
   );
 }
 
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-zinc-50 border border-zinc-200 rounded-md px-[18px] py-[14px]">
+      <div className="text-[11px] uppercase tracking-[0.06em] text-zinc-500">{label}</div>
+      <div className="text-[24px] font-medium text-zinc-900 mt-1">{value}</div>
+    </div>
+  );
+}
+
 export default function Contacts() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [buildingFilter, setBuildingFilter] = useState<string>("all");
-  const [unitFilter, setUnitFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -148,14 +156,13 @@ export default function Contacts() {
   const { toast } = useToast();
 
   const listParams = useMemo(() => {
-    const p: { customerId?: number; buildingId?: number; unitId?: number; contactType?: ContactType; search?: string } = {};
+    const p: { customerId?: number; buildingId?: number; contactType?: ContactType; search?: string } = {};
     if (customerFilter !== "all") p.customerId = Number(customerFilter);
     if (buildingFilter !== "all") p.buildingId = Number(buildingFilter);
-    if (unitFilter !== "all") p.unitId = Number(unitFilter);
     if (typeFilter !== "all") p.contactType = typeFilter as ContactType;
     if (debouncedSearch) p.search = debouncedSearch;
     return p;
-  }, [customerFilter, buildingFilter, unitFilter, typeFilter, debouncedSearch]);
+  }, [customerFilter, buildingFilter, typeFilter, debouncedSearch]);
 
   const { data: contacts, isLoading } = useListContacts(listParams, {
     query: { queryKey: getListContactsQueryKey(listParams) },
@@ -178,17 +185,6 @@ export default function Contacts() {
   const { data: buildings } = useListBuildings(
     buildingsParams,
     { query: { queryKey: getListBuildingsQueryKey(buildingsParams) } },
-  );
-
-  const elevatorsParams = useMemo(() => {
-    const p: { customerId?: number; buildingId?: number } = {};
-    if (customerFilter !== "all") p.customerId = Number(customerFilter);
-    if (buildingFilter !== "all") p.buildingId = Number(buildingFilter);
-    return p;
-  }, [customerFilter, buildingFilter]);
-  const { data: elevators } = useListElevators(
-    elevatorsParams,
-    { query: { queryKey: getListElevatorsQueryKey(elevatorsParams) } },
   );
 
   const deleteMutation = useDeleteContact();
@@ -225,18 +221,34 @@ export default function Contacts() {
   const totalShown = contacts?.length ?? 0;
   const totalAll = allContacts?.length ?? 0;
 
+  // Portfolio-wide stats (filter-agnostic).
+  const contactCount = allContacts?.length ?? 0;
+  const customersServed = useMemo(() => {
+    const set = new Set<number>();
+    for (const c of allContacts ?? []) {
+      for (const x of c.customers ?? []) set.add(x.id);
+    }
+    return set.size;
+  }, [allContacts]);
+  const buildingAssignments = useMemo(
+    () =>
+      (allContacts ?? []).reduce(
+        (sum, c) => sum + (c.buildingCount ?? c.buildings?.length ?? 0),
+        0,
+      ),
+    [allContacts],
+  );
+
   const hasActiveFilters =
     search !== "" ||
     customerFilter !== "all" ||
     buildingFilter !== "all" ||
-    unitFilter !== "all" ||
     typeFilter !== "all";
 
   const clearFilters = () => {
     setSearch("");
     setCustomerFilter("all");
     setBuildingFilter("all");
-    setUnitFilter("all");
     setTypeFilter("all");
   };
 
@@ -265,64 +277,73 @@ export default function Contacts() {
         onSuccess={(c) => navigate(`/contacts/${c.id}`)}
       />
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard label="Contacts" value={contactCount} />
+        <StatCard label="Customers served" value={customersServed} />
+        <StatCard label="Building assignments" value={buildingAssignments} />
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
         <div className="relative flex-1 min-w-[14rem] max-w-md">
-          <Search className="absolute left-2.5 top-[10px] h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-[9px] h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or company..."
-            className="pl-8 h-10 text-[14px]"
+            className="pl-8 h-9 text-[14px]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <Select value={customerFilter} onValueChange={(v) => { setCustomerFilter(v); setBuildingFilter("all"); setUnitFilter("all"); }}>
-          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
-            <SelectValue placeholder="All customers" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All customers</SelectItem>
-            {(customers ?? []).map((c) => (
-              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+            Customer
+          </label>
+          <Select value={customerFilter} onValueChange={(v) => { setCustomerFilter(v); setBuildingFilter("all"); }}>
+            <SelectTrigger className="w-[12rem] h-9 text-[14px]">
+              <SelectValue placeholder="All customers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All customers</SelectItem>
+              {(customers ?? []).map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={buildingFilter} onValueChange={(v) => { setBuildingFilter(v); setUnitFilter("all"); }}>
-          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
-            <SelectValue placeholder="All buildings" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All buildings</SelectItem>
-            {(buildings ?? []).map((b) => (
-              <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+            Building
+          </label>
+          <Select value={buildingFilter} onValueChange={setBuildingFilter}>
+            <SelectTrigger className="w-[12rem] h-9 text-[14px]">
+              <SelectValue placeholder="All buildings" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All buildings</SelectItem>
+              {(buildings ?? []).map((b) => (
+                <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={unitFilter} onValueChange={setUnitFilter}>
-          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
-            <SelectValue placeholder="All units" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All units</SelectItem>
-            {(elevators ?? []).map((u) => (
-              <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[12rem] h-10 text-[14px]">
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {CONTACT_TYPE_ORDER.map((t) => (
-              <SelectItem key={t} value={t}>{CONTACT_TYPE_META[t].singular}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+            Type
+          </label>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[12rem] h-9 text-[14px]">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              {CONTACT_TYPE_ORDER.map((t) => (
+                <SelectItem key={t} value={t}>{CONTACT_TYPE_META[t].singular}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-[13px]">

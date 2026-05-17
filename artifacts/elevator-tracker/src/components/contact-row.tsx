@@ -150,9 +150,9 @@ export function ContactRow({
       onClick={onClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "flex items-center gap-4 rounded-xl border bg-white transition-all",
+        "flex items-center gap-4 rounded-xl border bg-white transition-all transition-colors duration-150",
         padding,
-        onClick && "cursor-pointer hover:shadow-sm hover:border-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400",
+        onClick && "cursor-pointer hover:shadow-sm hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400",
         !onClick && "hover:shadow-sm",
       )}
     >
@@ -162,7 +162,7 @@ export function ContactRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="text-[15px] font-medium text-zinc-900 truncate">{primary}</div>
+          <div className="text-[16px] font-medium text-zinc-900 truncate">{primary}</div>
           <span className={cn(
             "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide shrink-0",
             meta.badgeBgClass,
@@ -171,18 +171,18 @@ export function ContactRow({
             {meta.singular}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-zinc-500 mt-0.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] mt-0.5">
           {secondaryParts.map((p) => (
-            <span key={p} className="truncate">{p}</span>
+            <span key={p} className="truncate text-zinc-700">{p}</span>
           ))}
           <span className="inline-flex items-center gap-1 min-w-0 truncate">
-            <Mail className="h-3 w-3 shrink-0" />
-            <span className="truncate">{email}</span>
+            <Mail className="h-3 w-3 shrink-0 text-zinc-400" />
+            <span className="truncate text-zinc-500">{email}</span>
           </span>
           {phone && (
             <span className="inline-flex items-center gap-1 shrink-0">
-              <Phone className="h-3 w-3" />
-              {phone}
+              <Phone className="h-3 w-3 text-zinc-400" />
+              <span className="text-zinc-500">{phone}</span>
             </span>
           )}
         </div>
