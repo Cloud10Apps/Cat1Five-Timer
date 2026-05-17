@@ -334,6 +334,13 @@ export default function Inspections() {
       const bkA = elevatorMeta.get(a.elevatorId)?.bank ?? "", bkB = elevatorMeta.get(b.elevatorId)?.bank ?? "";
       const c3 = bkA.localeCompare(bkB); if (c3 !== 0) return c3;
       const c4 = (a.elevatorName ?? "").localeCompare(b.elevatorName ?? ""); if (c4 !== 0) return c4;
+      // Within an elevator, sort by Next Due Date. With the CAT1/CAT5 same-year
+      // collision rule there's at most one inspection due per calendar year,
+      // so this gives a clean chronological read. Rows missing nextDueDate sink
+      // to the end; ties fall back to inspectionType for determinism.
+      const dA = a.nextDueDate ?? "9999-99-99";
+      const dB = b.nextDueDate ?? "9999-99-99";
+      const c5 = dA.localeCompare(dB); if (c5 !== 0) return c5;
       return a.inspectionType.localeCompare(b.inspectionType);
     });
     for (const insp of sorted) {
