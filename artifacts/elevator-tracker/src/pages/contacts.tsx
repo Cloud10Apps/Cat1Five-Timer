@@ -132,15 +132,6 @@ function ContactGroup({ type, contacts, defaultOpen, onRowClick, onDelete }: Con
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="bg-zinc-50 border border-zinc-200 rounded-md px-[18px] py-[14px]">
-      <div className="text-[11px] uppercase tracking-[0.06em] text-zinc-500">{label}</div>
-      <div className="text-[24px] font-medium text-zinc-900 mt-1">{value}</div>
-    </div>
-  );
-}
-
 export default function Contacts() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
@@ -277,10 +268,21 @@ export default function Contacts() {
         onSuccess={(c) => navigate(`/contacts/${c.id}`)}
       />
 
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Contacts" value={contactCount} />
-        <StatCard label="Customers served" value={customersServed} />
-        <StatCard label="Building assignments" value={buildingAssignments} />
+      <div className="flex items-baseline gap-6 text-[13px] text-zinc-500">
+        <span>
+          <span className="text-[16px] font-medium text-zinc-900">{contactCount}</span>{" "}
+          contact{contactCount === 1 ? "" : "s"}
+        </span>
+        <span className="text-zinc-300" aria-hidden="true">·</span>
+        <span>
+          <span className="text-[16px] font-medium text-zinc-900">{customersServed}</span>{" "}
+          customer{customersServed === 1 ? "" : "s"} served
+        </span>
+        <span className="text-zinc-300" aria-hidden="true">·</span>
+        <span>
+          <span className="text-[16px] font-medium text-zinc-900">{buildingAssignments}</span>{" "}
+          building assignment{buildingAssignments === 1 ? "" : "s"}
+        </span>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">

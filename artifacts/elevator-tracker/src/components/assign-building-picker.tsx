@@ -202,20 +202,50 @@ export function AssignBuildingPicker({ open, onOpenChange, contact }: AssignBuil
     const open = !isCollapsed(group.customerId);
     return (
       <div key={group.customerId} className="space-y-1">
-        <div className="flex items-center gap-2 px-1">
-          <Checkbox
-            checked={state === "checked" ? true : state === "indeterminate" ? "indeterminate" : false}
-            disabled={state === "empty"}
-            onCheckedChange={() => toggleGroup(group)}
-            aria-label={`Toggle all in ${group.customerName}`}
-          />
+        <div className="flex items-center gap-2">
+          <div
+            role="button"
+            tabIndex={state === "empty" ? -1 : 0}
+            onClick={() => { if (state !== "empty") toggleGroup(group); }}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === " ") && state !== "empty") {
+                e.preventDefault();
+                toggleGroup(group);
+              }
+            }}
+            aria-label={`Toggle all buildings under ${group.customerName}`}
+            className={cn(
+              "flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md transition-colors",
+              state === "empty"
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer hover:bg-zinc-50",
+            )}
+          >
+            <Checkbox
+              checked={state === "checked" ? true : state === "indeterminate" ? "indeterminate" : false}
+              disabled={state === "empty"}
+              tabIndex={-1}
+              className="pointer-events-none"
+              aria-hidden="true"
+            />
+            <span className="text-[13px] font-medium text-zinc-700">
+              {group.customerName}
+            </span>
+            <span className="text-[11px] text-zinc-400 font-normal">
+              ({group.buildings.length} building{group.buildings.length === 1 ? "" : "s"})
+            </span>
+          </div>
           <button
             type="button"
             onClick={() => toggleCollapse(group.customerId)}
-            className="flex items-center gap-1 text-[12px] font-medium text-zinc-700 hover:text-zinc-900"
+            aria-label={open ? `Collapse ${group.customerName}` : `Expand ${group.customerName}`}
+            className="p-1.5 rounded hover:bg-zinc-100 shrink-0"
           >
-            {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-            <span>{group.customerName}</span>
+            {open ? (
+              <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 text-zinc-500" />
+            )}
           </button>
         </div>
         {open && (
