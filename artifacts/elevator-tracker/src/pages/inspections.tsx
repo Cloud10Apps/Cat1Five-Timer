@@ -452,6 +452,7 @@ export default function Inspections() {
 
   const openEdit = (insp: Inspection) => {
     setEditingInspection(insp);
+    setPreview(insp.nextDueDate ? { nextDueDate: insp.nextDueDate, wasAdjusted: false } : null);
     const elev = elevators?.find(e => e.id === insp.elevatorId);
     const bldg = buildings?.find(b => b.id === elev?.buildingId);
     setFormCustomerId(bldg?.customerId ? String(bldg.customerId) : "");
@@ -507,7 +508,14 @@ export default function Inspections() {
   const watchInspType      = form.watch("inspectionType");
   const watchManualNextDue = form.watch("nextDueDate");
 
-  const [preview, setPreview] = useState<PreviewNextDueResponse | null>(null);
+  // Seed the preview from the editing record so the next-due box shows the saved
+  // date immediately on open instead of flickering to "Auto-calculated" during
+  // the 300ms debounce before the API preview returns.
+  const [preview, setPreview] = useState<PreviewNextDueResponse | null>(() =>
+    editingInspection?.nextDueDate
+      ? { nextDueDate: editingInspection.nextDueDate, wasAdjusted: false }
+      : null
+  );
 
   useEffect(() => {
     const hasInputs =
@@ -689,7 +697,7 @@ export default function Inspections() {
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="recurrenceYears" render={({ field }) => (
-                        <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                        <FormItem><FormLabel>Years</FormLabel>
                           <FormControl><Input type="number" min="1" className="bg-white" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>

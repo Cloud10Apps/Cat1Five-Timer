@@ -15,8 +15,10 @@ import {
   useCreateInspection,
   useUpdateInspection,
   useDeleteInspection,
+  previewNextDue,
   Elevator,
   Inspection,
+  PreviewNextDueResponse,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -45,7 +47,7 @@ import {
 } from "@/components/ui/select";
 
 import { Link } from "wouter";
-import { Pencil, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, AlertTriangle, ClipboardList, ArrowRight, Search } from "lucide-react";
+import { Pencil, ArrowUpSquare, Download, X, ChevronDown, ChevronUp, ChevronRight, Building as BuildingIcon, Users, Layers, AlertTriangle, ClipboardList, ArrowRight, Search, Info } from "lucide-react";
 import { FilterCombobox } from "@/components/filter-combobox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -403,14 +405,8 @@ export default function Elevators() {
   const watchCompletionDate = inspForm.watch("completionDate");
   const watchScheduledDate = inspForm.watch("scheduledDate");
   const watchInspStatus = inspForm.watch("status");
-  const nextDuePreview = watchLastDate && watchRecurrence
-    ? dayjs(watchLastDate).add(Number(watchRecurrence), "year").format("YYYY-MM-DD")
-    : null;
-
-  const completionYearMismatch = !!(
-    isValidDateStr(watchCompletionDate) && nextDuePreview &&
-    dayjs(watchCompletionDate, "YYYY-MM-DD", true).year() !== dayjs(nextDuePreview).year()
-  );
+  const watchInspType = inspForm.watch("inspectionType");
+  const watchManualNextDueCat1 = inspForm.watch("nextDueDate");
 
   const watchLastDateCat5 = inspCat5Form.watch("lastInspectionDate");
   const watchRecurrenceCat5 = inspCat5Form.watch("recurrenceYears");
@@ -418,16 +414,87 @@ export default function Elevators() {
   const watchScheduledDateCat5 = inspCat5Form.watch("scheduledDate");
   const watchInspStatusCat5 = inspCat5Form.watch("status");
   const watchManualNextDueCat5 = inspCat5Form.watch("nextDueDate");
-  const nextDuePreviewCat5 = watchLastDateCat5 && watchRecurrenceCat5
+
+  // Client-side CAT5 effective next-due — used ONLY to (a) seed the CAT1
+  // auto-suggest ref instantly and (b) pass as companionCat5NextDueDate when
+  // previewing the CAT1 form in create-mode (where the CAT5 isn't saved yet).
+  // The DISPLAYED CAT5 date comes from previewCat5 (API-driven), not this.
+  const cat5ClientSideNextDue = watchLastDateCat5 && watchRecurrenceCat5
     ? dayjs(watchLastDateCat5).add(Number(watchRecurrenceCat5), "year").format("YYYY-MM-DD")
     : null;
-
-  // Effective CAT5 next-due used to suggest a CAT1 date. Prefers the auto-calc
-  // from Last+5y when CAT5 has a Last Date; otherwise falls back to the manual
-  // CAT5 nextDueDate field. Null when neither is set.
   const cat5EffectiveNextDue = watchLastDateCat5
-    ? nextDuePreviewCat5
+    ? cat5ClientSideNextDue
     : (watchManualNextDueCat5 || null);
+
+  // Authoritative previews from the backend resolver — see notes on inspections.tsx
+  // for the pattern. Two separate states because the dual-form create flow shows
+  // both. In edit mode, only previewCat1 is meaningful (inspForm carries whichever
+  // type is being edited).
+  const [previewCat1, setPreviewCat1] = useState<PreviewNextDueResponse | null>(null);
+  const [previewCat5, setPreviewCat5] = useState<PreviewNextDueResponse | null>(null);
+
+  useEffect(() => {
+    const elevatorId = editingElevator?.id;
+    if (!elevatorId || !watchInspType) { setPreviewCat1(null); return; }
+    const hasInputs = !!watchLastDate || !!watchManualNextDueCat1;
+    if (!hasInputs) { setPreviewCat1(null); return; }
+    const isCreatingForTraction = !editingInspection && editingElevator?.type === "traction";
+    const companion = isCreatingForTraction && watchInspType === "CAT1"
+      ? cat5EffectiveNextDue
+      : null;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await previewNextDue({
+          elevatorId,
+          inspectionType: watchInspType as "CAT1" | "CAT5",
+          recurrenceYears: Number(watchRecurrence ?? 1),
+          lastInspectionDate: watchLastDate || null,
+          manualNextDueDate: watchManualNextDueCat1 || null,
+          excludeInspectionId: editingInspection?.id,
+          companionCat5NextDueDate: companion,
+        });
+        if (!cancelled) setPreviewCat1(result);
+      } catch {
+        if (!cancelled) setPreviewCat1(null);
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [editingElevator?.id, editingElevator?.type, editingInspection?.id, watchInspType, watchRecurrence, watchLastDate, watchManualNextDueCat1, cat5EffectiveNextDue]);
+
+  useEffect(() => {
+    const elevatorId = editingElevator?.id;
+    if (!elevatorId || editingInspection || editingElevator?.type === "hydraulic") {
+      setPreviewCat5(null);
+      return;
+    }
+    const hasInputs = !!watchLastDateCat5 || !!watchManualNextDueCat5;
+    if (!hasInputs) { setPreviewCat5(null); return; }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await previewNextDue({
+          elevatorId,
+          inspectionType: "CAT5",
+          recurrenceYears: Number(watchRecurrenceCat5 ?? 5),
+          lastInspectionDate: watchLastDateCat5 || null,
+          manualNextDueDate: watchManualNextDueCat5 || null,
+        });
+        if (!cancelled) setPreviewCat5(result);
+      } catch {
+        if (!cancelled) setPreviewCat5(null);
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [editingElevator?.id, editingElevator?.type, editingInspection?.id, watchLastDateCat5, watchRecurrenceCat5, watchManualNextDueCat5]);
+
+  const nextDuePreview = previewCat1?.nextDueDate ?? null;
+  const nextDuePreviewCat5 = previewCat5?.nextDueDate ?? null;
+
+  const completionYearMismatch = !!(
+    isValidDateStr(watchCompletionDate) && nextDuePreview &&
+    dayjs(watchCompletionDate, "YYYY-MM-DD", true).year() !== dayjs(nextDuePreview).year()
+  );
 
   // Auto-suggest CAT1's nextDueDate = CAT5 next-due + 1 year, but only when:
   //  - elevator is traction (no CAT5 on hydraulic)
@@ -710,7 +777,7 @@ export default function Elevators() {
                                   </Select><FormMessage /></FormItem>
                               )} />
                               <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
-                                <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                <FormItem><FormLabel>Years</FormLabel>
                                   <FormControl><Input type="number" min="1" className="bg-white" {...field} /></FormControl>
                                   <FormMessage /></FormItem>
                               )} />
@@ -731,6 +798,24 @@ export default function Elevators() {
                                       : <span className="italic font-normal text-sm">Auto-calculated</span>}
                                   </div>
                                   <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
+                                  {previewCat1?.wasAdjusted && (
+                                    <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                      <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                      <span>Adjusted from {dayjs(previewCat1.originalDate).format("MM/DD/YYYY")} — a CAT 5 is already due in {previewCat1.originalDate?.slice(0, 4)} on this unit.</span>
+                                    </p>
+                                  )}
+                                  {previewCat1?.cascadingCat1Adjustments && previewCat1.cascadingCat1Adjustments.length > 0 && (
+                                    <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                      <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                      <span>Saving this CAT 5 will shift {previewCat1.cascadingCat1Adjustments.length} existing CAT 1 record{previewCat1.cascadingCat1Adjustments.length === 1 ? "" : "s"} forward by one year to avoid sharing a calendar year.</span>
+                                    </p>
+                                  )}
+                                  {previewCat1?.blocked && (
+                                    <p className="text-xs text-red-700 leading-snug flex items-start gap-1.5 mt-1">
+                                      <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                      <span>A CAT 1 is already due in {previewCat1.blocked.cat1OriginalYear}, and shifting it to {previewCat1.blocked.cat1WouldBeYear} would collide with another CAT 1. Resolve the CAT 1 records manually before saving.</span>
+                                    </p>
+                                  )}
                                 </div>
                               ) : (
                                 <FormField control={inspForm.control} name="nextDueDate" render={({ field }) => (
@@ -837,6 +922,18 @@ export default function Elevators() {
                                         : <span className="italic font-normal text-sm">Auto-calculated</span>}
                                     </div>
                                     <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
+                                    {previewCat5?.cascadingCat1Adjustments && previewCat5.cascadingCat1Adjustments.length > 0 && (
+                                      <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                        <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                        <span>Saving this CAT 5 will shift {previewCat5.cascadingCat1Adjustments.length} existing CAT 1 record{previewCat5.cascadingCat1Adjustments.length === 1 ? "" : "s"} forward by one year to avoid sharing a calendar year.</span>
+                                      </p>
+                                    )}
+                                    {previewCat5?.blocked && (
+                                      <p className="text-xs text-red-700 leading-snug flex items-start gap-1.5 mt-1">
+                                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                        <span>A CAT 1 is already due in {previewCat5.blocked.cat1OriginalYear}, and shifting it to {previewCat5.blocked.cat1WouldBeYear} would collide with another CAT 1. Resolve the CAT 1 records manually before saving.</span>
+                                      </p>
+                                    )}
                                   </div>
                                 ) : (
                                   <FormField control={inspCat5Form.control} name="nextDueDate" render={({ field }) => (
@@ -913,6 +1010,12 @@ export default function Elevators() {
                                         : <span className="italic font-normal text-sm">Auto-calculated</span>}
                                     </div>
                                     <p className="text-xs text-zinc-400 leading-none">From last date + recurrence</p>
+                                    {previewCat1?.wasAdjusted && (
+                                      <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                        <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                        <span>Adjusted from {dayjs(previewCat1.originalDate).format("MM/DD/YYYY")} — a CAT 5 is already due in {previewCat1.originalDate?.slice(0, 4)} on this unit.</span>
+                                      </p>
+                                    )}
                                   </div>
                                 ) : (
                                   <FormField control={inspForm.control} name="nextDueDate" render={({ field }) => (

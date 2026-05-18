@@ -267,6 +267,7 @@ export interface PreviewNextDueBody {
   lastInspectionDate?: string | null;
   manualNextDueDate?: string | null;
   excludeInspectionId?: number;
+  companionCat5NextDueDate?: string | null;
 }
 
 export type PreviewNextDueResponseReason = typeof PreviewNextDueResponseReason[keyof typeof PreviewNextDueResponseReason];
@@ -276,12 +277,33 @@ export const PreviewNextDueResponseReason = {
   cat5_year_collision: 'cat5_year_collision',
 } as const;
 
+export type PreviewNextDueResponseCascadingCat1AdjustmentsItem = {
+  inspectionId: number;
+  originalDate: string;
+  adjustedDate: string;
+};
+
+export type PreviewNextDueResponseBlockedReason = typeof PreviewNextDueResponseBlockedReason[keyof typeof PreviewNextDueResponseBlockedReason];
+
+
+export const PreviewNextDueResponseBlockedReason = {
+  cat1_chain_collision: 'cat1_chain_collision',
+} as const;
+
+export type PreviewNextDueResponseBlocked = {
+  reason: PreviewNextDueResponseBlockedReason;
+  cat1OriginalYear: string;
+  cat1WouldBeYear: string;
+};
+
 export interface PreviewNextDueResponse {
   nextDueDate: string | null;
   wasAdjusted: boolean;
   originalDate?: string;
   adjustedDate?: string;
   reason?: PreviewNextDueResponseReason;
+  cascadingCat1Adjustments?: PreviewNextDueResponseCascadingCat1AdjustmentsItem[];
+  blocked?: PreviewNextDueResponseBlocked;
 }
 
 export interface DashboardSummary {

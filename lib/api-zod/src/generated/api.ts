@@ -441,7 +441,8 @@ export const PreviewNextDueBody = zod.object({
   "recurrenceYears": zod.number().min(1),
   "lastInspectionDate": zod.coerce.date().nullish(),
   "manualNextDueDate": zod.coerce.date().nullish(),
-  "excludeInspectionId": zod.number().optional()
+  "excludeInspectionId": zod.number().optional(),
+  "companionCat5NextDueDate": zod.coerce.date().nullish()
 })
 
 export const PreviewNextDueResponse = zod.object({
@@ -449,7 +450,17 @@ export const PreviewNextDueResponse = zod.object({
   "wasAdjusted": zod.boolean(),
   "originalDate": zod.coerce.date().optional(),
   "adjustedDate": zod.coerce.date().optional(),
-  "reason": zod.enum(['cat5_year_collision']).optional()
+  "reason": zod.enum(['cat5_year_collision']).optional(),
+  "cascadingCat1Adjustments": zod.array(zod.object({
+  "inspectionId": zod.number(),
+  "originalDate": zod.coerce.date(),
+  "adjustedDate": zod.coerce.date()
+})).optional(),
+  "blocked": zod.object({
+  "reason": zod.enum(['cat1_chain_collision']),
+  "cat1OriginalYear": zod.string(),
+  "cat1WouldBeYear": zod.string()
+}).optional()
 })
 
 

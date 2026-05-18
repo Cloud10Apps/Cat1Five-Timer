@@ -1423,6 +1423,10 @@ components:
           nullable: true
         excludeInspectionId:
           type: integer
+        companionCat5NextDueDate:
+          type: string
+          format: date
+          nullable: true
       required:
         - elevatorId
         - inspectionType
@@ -1446,6 +1450,37 @@ components:
         reason:
           type: string
           enum: [cat5_year_collision]
+        cascadingCat1Adjustments:
+          type: array
+          items:
+            type: object
+            properties:
+              inspectionId:
+                type: integer
+              originalDate:
+                type: string
+                format: date
+              adjustedDate:
+                type: string
+                format: date
+            required:
+              - inspectionId
+              - originalDate
+              - adjustedDate
+        blocked:
+          type: object
+          properties:
+            reason:
+              type: string
+              enum: [cat1_chain_collision]
+            cat1OriginalYear:
+              type: string
+            cat1WouldBeYear:
+              type: string
+          required:
+            - reason
+            - cat1OriginalYear
+            - cat1WouldBeYear
       required:
         - nextDueDate
         - wasAdjusted

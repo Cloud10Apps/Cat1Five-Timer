@@ -11,6 +11,8 @@ const router = Router();
 
 router.use(requireAuth);
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 function toDateStr(d: Date | string | null | undefined): string | null {
   if (!d) return null;
   if (typeof d === "string") return d;
@@ -24,10 +26,26 @@ function computeNextDueDate(lastDate: string | null | undefined, recurrenceYears
 
 type ResolveResult = {
   nextDueDate: string | null;
-  wasAdjusted: boolean;
+  wasAdjusted: boolean;                  // CAT1 self-adjustment
   originalDate?: string;
   adjustedDate?: string;
   reason?: "cat5_year_collision";
+  // CAT5 → CAT1 cascade. Populated only for CAT5 inspections that would
+  // collide with one or more non-completed CAT1s. The handler executes these
+  // UPDATEs in a transaction after saving the CAT5.
+  cascadingCat1Adjustments?: Array<{
+    inspectionId: number;
+    originalDate: string;
+    adjustedDate: string;
+  }>;
+  // Populated when the CAT5 cascade cannot complete because a CAT1 bump
+  // would collide with another existing CAT1 (chain collision). The handler
+  // rejects with 409 and surfaces this in the error message.
+  blocked?: {
+    reason: "cat1_chain_collision";
+    cat1OriginalYear: string;
+    cat1WouldBeYear: string;
+  };
 };
 
 /**
@@ -37,11 +55,15 @@ type ResolveResult = {
  *   - If lastInspectionDate is provided, candidate = lastInspectionDate + recurrenceYears.
  *   - Else, candidate = manualNextDueDate (whatever the user typed).
  *
- * Step 2 — Apply the cross-type rule:
- *   - Only for CAT1 inspections on traction units.
- *   - If candidate year matches any sibling CAT5's next_due_date year on the same unit,
- *     push candidate forward by exactly one year.
- *   - Otherwise return candidate unchanged.
+ * Step 2 — Apply the cross-type rule (traction units only):
+ *   - CAT1: if candidate year matches any sibling CAT5's next_due_date year
+ *     on the same unit (or matches companionCat5NextDueDate, for the dual-
+ *     create flow where the CAT5 hasn't been saved yet), push CAT1 forward
+ *     by one year.
+ *   - CAT5: if candidate year matches any non-completed sibling CAT1's
+ *     next_due_date year, plan a cascade-bump of each colliding CAT1 by one
+ *     year. If a bump would chain into another existing CAT1, return a
+ *     blocked result instead — handler will 409.
  *
  * recurrence_years is NEVER modified by this function — only the returned date.
  */
@@ -52,15 +74,15 @@ async function resolveNextDueDate(args: {
   lastInspectionDate: string | null;
   manualNextDueDate: string | null;
   excludeInspectionId?: number;
+  companionCat5NextDueDate?: string | null;
   orgId: number;
 }): Promise<ResolveResult> {
-  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, manualNextDueDate, excludeInspectionId, orgId } = args;
+  const { elevatorId, inspectionType, recurrenceYears, lastInspectionDate, manualNextDueDate, excludeInspectionId, companionCat5NextDueDate, orgId } = args;
 
   const computed = computeNextDueDate(lastInspectionDate, recurrenceYears);
   const candidate = computed ?? manualNextDueDate ?? null;
 
   if (!candidate) return { nextDueDate: null, wasAdjusted: false };
-  if (inspectionType !== "CAT1") return { nextDueDate: candidate, wasAdjusted: false };
 
   const elevatorRow = await db
     .select({ type: elevatorsTable.type })
@@ -72,30 +94,95 @@ async function resolveNextDueDate(args: {
   }
 
   const candidateYear = candidate.slice(0, 4);
-  const conds: any[] = [
+
+  if (inspectionType === "CAT1") {
+    const conds: any[] = [
+      eq(inspectionsTable.elevatorId, elevatorId),
+      eq(inspectionsTable.inspectionType, "CAT5"),
+      eq(inspectionsTable.organizationId, orgId),
+      gte(inspectionsTable.nextDueDate, `${candidateYear}-01-01`),
+      lte(inspectionsTable.nextDueDate, `${candidateYear}-12-31`),
+    ];
+    if (excludeInspectionId !== undefined) conds.push(ne(inspectionsTable.id, excludeInspectionId));
+
+    const collision = await db
+      .select({ id: inspectionsTable.id })
+      .from(inspectionsTable)
+      .where(and(...conds))
+      .limit(1);
+
+    const companionHit =
+      !!companionCat5NextDueDate &&
+      companionCat5NextDueDate.slice(0, 4) === candidateYear;
+
+    if (collision.length === 0 && !companionHit) return { nextDueDate: candidate, wasAdjusted: false };
+
+    const adjusted = dayjs(candidate).add(1, "year").format("YYYY-MM-DD");
+    return {
+      nextDueDate: adjusted,
+      wasAdjusted: true,
+      originalDate: candidate,
+      adjustedDate: adjusted,
+      reason: "cat5_year_collision",
+    };
+  }
+
+  // CAT5 branch — find sibling non-completed CAT1s in the same year on this unit.
+  const cat1Conds: any[] = [
     eq(inspectionsTable.elevatorId, elevatorId),
-    eq(inspectionsTable.inspectionType, "CAT5"),
+    eq(inspectionsTable.inspectionType, "CAT1"),
     eq(inspectionsTable.organizationId, orgId),
+    ne(inspectionsTable.status, "COMPLETED"),
     gte(inspectionsTable.nextDueDate, `${candidateYear}-01-01`),
     lte(inspectionsTable.nextDueDate, `${candidateYear}-12-31`),
   ];
-  if (excludeInspectionId !== undefined) conds.push(ne(inspectionsTable.id, excludeInspectionId));
-
-  const collision = await db
-    .select({ id: inspectionsTable.id })
+  const collidingCat1s = await db
+    .select({ id: inspectionsTable.id, nextDueDate: inspectionsTable.nextDueDate })
     .from(inspectionsTable)
-    .where(and(...conds))
-    .limit(1);
+    .where(and(...cat1Conds));
 
-  if (collision.length === 0) return { nextDueDate: candidate, wasAdjusted: false };
+  if (collidingCat1s.length === 0) return { nextDueDate: candidate, wasAdjusted: false };
 
-  const adjusted = dayjs(candidate).add(1, "year").format("YYYY-MM-DD");
+  const planned = collidingCat1s.map((c) => ({
+    inspectionId: c.id,
+    originalDate: c.nextDueDate!,
+    adjustedDate: dayjs(c.nextDueDate!).add(1, "year").format("YYYY-MM-DD"),
+  }));
+
+  // Chain-collision: would any planned bump land on another existing CAT1 we
+  // aren't already bumping?
+  const bumpingIds = new Set(planned.map((p) => p.inspectionId));
+  for (const p of planned) {
+    const bumpYear = p.adjustedDate.slice(0, 4);
+    const chainConds: any[] = [
+      eq(inspectionsTable.elevatorId, elevatorId),
+      eq(inspectionsTable.inspectionType, "CAT1"),
+      eq(inspectionsTable.organizationId, orgId),
+      gte(inspectionsTable.nextDueDate, `${bumpYear}-01-01`),
+      lte(inspectionsTable.nextDueDate, `${bumpYear}-12-31`),
+    ];
+    const chainHit = await db
+      .select({ id: inspectionsTable.id })
+      .from(inspectionsTable)
+      .where(and(...chainConds));
+    const blockedBy = chainHit.find((row) => !bumpingIds.has(row.id));
+    if (blockedBy) {
+      return {
+        nextDueDate: candidate,
+        wasAdjusted: false,
+        blocked: {
+          reason: "cat1_chain_collision",
+          cat1OriginalYear: p.originalDate.slice(0, 4),
+          cat1WouldBeYear: bumpYear,
+        },
+      };
+    }
+  }
+
   return {
-    nextDueDate: adjusted,
-    wasAdjusted: true,
-    originalDate: candidate,
-    adjustedDate: adjusted,
-    reason: "cat5_year_collision",
+    nextDueDate: candidate,
+    wasAdjusted: false,
+    cascadingCat1Adjustments: planned,
   };
 }
 
@@ -194,14 +281,22 @@ async function checkDuplicate(
 }
 
 type FollowUpResult =
-  | { created: true; adjusted?: { originalDate: string; adjustedDate: string } }
-  | { created: false; reason: "already_exists" | "duplicate_year"; dueYear?: string }
+  | { created: true; adjusted?: { originalDate: string; adjustedDate: string }; cascadedCat1s?: number }
+  | { created: false; reason: "already_exists" | "duplicate_year" | "cat1_chain_collision"; dueYear?: string }
   | { created: false; reason: "not_applicable" };
 
+/**
+ * Auto-create the next-cycle follow-up record when an inspection is marked
+ * completed. Participates in the caller's transaction when `tx` is supplied,
+ * so cascade UPDATEs from the parent operation and the follow-up's own
+ * cascade UPDATEs commit atomically.
+ */
 async function maybeCreateFollowUp(
   completedInspection: { id: number; elevatorId: number; inspectionType: string; recurrenceYears: number; completionDate: string | null | undefined; nextDueDate: string | null | undefined; status: string },
-  orgId: number
+  orgId: number,
+  tx?: Tx
 ): Promise<FollowUpResult> {
+  const dbi = tx ?? db;
   if (completedInspection.status !== "COMPLETED" || !completedInspection.completionDate) {
     return { created: false, reason: "not_applicable" };
   }
@@ -220,10 +315,13 @@ async function maybeCreateFollowUp(
     manualNextDueDate: null,
     orgId,
   });
+
+  if (resolved.blocked) return { created: false, reason: "cat1_chain_collision" };
+
   const newNextDue = resolved.nextDueDate;
   if (!newNextDue) return { created: false, reason: "not_applicable" };
 
-  const existing = await db
+  const existing = await dbi
     .select({ id: inspectionsTable.id })
     .from(inspectionsTable)
     .where(
@@ -242,7 +340,7 @@ async function maybeCreateFollowUp(
   const dupCheck = await checkDuplicate(completedInspection.elevatorId, completedInspection.inspectionType, newNextDue, orgId);
   if (dupCheck) return { created: false, reason: "duplicate_year", dueYear: dupCheck.dueYear };
 
-  await db.insert(inspectionsTable).values({
+  await dbi.insert(inspectionsTable).values({
     elevatorId: completedInspection.elevatorId,
     organizationId: orgId,
     inspectionType: completedInspection.inspectionType as any,
@@ -254,11 +352,22 @@ async function maybeCreateFollowUp(
     status: "NOT_STARTED",
     notes: null,
   });
+
+  if (resolved.cascadingCat1Adjustments && resolved.cascadingCat1Adjustments.length > 0) {
+    for (const adj of resolved.cascadingCat1Adjustments) {
+      await dbi
+        .update(inspectionsTable)
+        .set({ nextDueDate: adj.adjustedDate })
+        .where(and(eq(inspectionsTable.id, adj.inspectionId), eq(inspectionsTable.organizationId, orgId)));
+    }
+  }
+
   return {
     created: true,
     adjusted: resolved.wasAdjusted
       ? { originalDate: resolved.originalDate!, adjustedDate: resolved.adjustedDate! }
       : undefined,
+    cascadedCat1s: resolved.cascadingCat1Adjustments?.length || undefined,
   };
 }
 
@@ -388,6 +497,7 @@ router.post("/preview-next-due", asyncHandler(async (req, res) => {
     lastInspectionDate: toDateStr(parsed.data.lastInspectionDate),
     manualNextDueDate: toDateStr(parsed.data.manualNextDueDate),
     excludeInspectionId: parsed.data.excludeInspectionId,
+    companionCat5NextDueDate: toDateStr(parsed.data.companionCat5NextDueDate),
     orgId,
   });
   res.json(result);
@@ -413,6 +523,14 @@ router.post("/", asyncHandler(async (req, res) => {
     manualNextDueDate: toDateStr(manualNextDueDate),
     orgId,
   });
+
+  if (resolved.blocked) {
+    res.status(409).json({
+      error: `Cannot save this CAT 5 with a next due date in ${resolved.blocked.cat1OriginalYear}. A CAT 1 is already due in ${resolved.blocked.cat1OriginalYear} on this unit, and shifting it to ${resolved.blocked.cat1WouldBeYear} would collide with another existing CAT 1. Resolve the CAT 1 records manually first.`,
+    });
+    return;
+  }
+
   const nextDueDate = resolved.nextDueDate;
 
   const dup = await checkDuplicate(elevatorId, inspectionType, nextDueDate, orgId);
@@ -422,18 +540,37 @@ router.post("/", asyncHandler(async (req, res) => {
     return;
   }
 
-  const inserted = await db.insert(inspectionsTable).values({
-    elevatorId,
-    organizationId: orgId,
-    inspectionType,
-    recurrenceYears,
-    lastInspectionDate: lastInspDateStr,
-    nextDueDate,
-    scheduledDate: scheduledDateStr,
-    completionDate: completionDateStr,
-    status: status ?? "NOT_STARTED",
-    notes: notes ?? null,
-  }).returning();
+  const { inserted, followUp } = await db.transaction(async (tx) => {
+    const ins = await tx.insert(inspectionsTable).values({
+      elevatorId,
+      organizationId: orgId,
+      inspectionType,
+      recurrenceYears,
+      lastInspectionDate: lastInspDateStr,
+      nextDueDate,
+      scheduledDate: scheduledDateStr,
+      completionDate: completionDateStr,
+      status: status ?? "NOT_STARTED",
+      notes: notes ?? null,
+    }).returning();
+
+    if (resolved.cascadingCat1Adjustments && resolved.cascadingCat1Adjustments.length > 0) {
+      for (const adj of resolved.cascadingCat1Adjustments) {
+        await tx
+          .update(inspectionsTable)
+          .set({ nextDueDate: adj.adjustedDate })
+          .where(and(eq(inspectionsTable.id, adj.inspectionId), eq(inspectionsTable.organizationId, orgId)));
+      }
+    }
+
+    const fu = await maybeCreateFollowUp(
+      { id: ins[0].id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" },
+      orgId,
+      tx,
+    );
+
+    return { inserted: ins, followUp: fu };
+  });
 
   const row = await fetchInspection(inserted[0].id, orgId);
   const formatted = formatInspection(row);
@@ -444,14 +581,32 @@ router.post("/", asyncHandler(async (req, res) => {
       `Next due date adjusted from ${resolved.originalDate} to ${resolved.adjustedDate}. A CAT 5 is already due in ${resolved.originalDate!.slice(0, 4)} on this unit, and a traction unit cannot have a CAT 1 and CAT 5 due in the same calendar year.`
     );
   }
-  const followUp = await maybeCreateFollowUp({ id: inserted[0].id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
+  if (resolved.cascadingCat1Adjustments && resolved.cascadingCat1Adjustments.length > 0) {
+    const n = resolved.cascadingCat1Adjustments.length;
+    const years = resolved.cascadingCat1Adjustments
+      .map((a) => `${a.originalDate.slice(0, 4)} → ${a.adjustedDate.slice(0, 4)}`)
+      .join(", ");
+    warnings.push(
+      `${n} existing CAT 1 record${n === 1 ? "" : "s"} on this unit ${n === 1 ? "was" : "were"} bumped forward by one year (${years}) to avoid sharing a calendar year with this CAT 5. A traction unit cannot have a CAT 1 and CAT 5 due in the same calendar year.`
+    );
+  }
   if (followUp.created === false && followUp.reason === "duplicate_year") {
     warnings.push(
       `A ${followUp.dueYear} ${inspectionType === "CAT5" ? "CAT 5" : "CAT 1"} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
     );
+  } else if (followUp.created === false && followUp.reason === "cat1_chain_collision") {
+    warnings.push(
+      `The CAT 5 follow-up was not auto-created because it would collide with a CAT 1 that can't be bumped cleanly. Verify the inspection schedule manually.`
+    );
   } else if (followUp.created === true && followUp.adjusted) {
     warnings.push(
       `The follow-up CAT 1 record was created with a next due date of ${followUp.adjusted.adjustedDate} (one year later than the normal cycle) to avoid overlap with the CAT 5 due in ${followUp.adjusted.originalDate.slice(0, 4)}.`
+    );
+  }
+  if (followUp.created === true && followUp.cascadedCat1s) {
+    const n = followUp.cascadedCat1s;
+    warnings.push(
+      `${n} existing CAT 1 record${n === 1 ? "" : "s"} on this unit ${n === 1 ? "was" : "were"} bumped forward by one year to avoid colliding with the new CAT 5 follow-up record.`
     );
   }
   res.status(201).json({ ...formatted, _warning: warnings.length > 0 ? warnings.join(" ") : undefined });
@@ -492,6 +647,14 @@ router.put("/:id", asyncHandler(async (req, res) => {
     excludeInspectionId: params.data.id,
     orgId,
   });
+
+  if (resolved.blocked) {
+    res.status(409).json({
+      error: `Cannot save this CAT 5 with a next due date in ${resolved.blocked.cat1OriginalYear}. A CAT 1 is already due in ${resolved.blocked.cat1OriginalYear} on this unit, and shifting it to ${resolved.blocked.cat1WouldBeYear} would collide with another existing CAT 1. Resolve the CAT 1 records manually first.`,
+    });
+    return;
+  }
+
   const nextDueDate = resolved.nextDueDate;
   const typeLabel = inspectionType === "CAT5" ? "CAT 5" : "CAT 1";
 
@@ -505,9 +668,27 @@ router.put("/:id", asyncHandler(async (req, res) => {
     }
   }
 
-  await db.update(inspectionsTable)
-    .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspDateStr, nextDueDate, scheduledDate: scheduledDateStr, completionDate: status === "COMPLETED" ? completionDateStr : null, status: status ?? "NOT_STARTED", notes: notes ?? null })
-    .where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
+  const followUp: FollowUpResult = await db.transaction(async (tx) => {
+    await tx
+      .update(inspectionsTable)
+      .set({ elevatorId, inspectionType, recurrenceYears, lastInspectionDate: lastInspDateStr, nextDueDate, scheduledDate: scheduledDateStr, completionDate: status === "COMPLETED" ? completionDateStr : null, status: status ?? "NOT_STARTED", notes: notes ?? null })
+      .where(and(eq(inspectionsTable.id, params.data.id), eq(inspectionsTable.organizationId, orgId)));
+
+    if (resolved.cascadingCat1Adjustments && resolved.cascadingCat1Adjustments.length > 0) {
+      for (const adj of resolved.cascadingCat1Adjustments) {
+        await tx
+          .update(inspectionsTable)
+          .set({ nextDueDate: adj.adjustedDate })
+          .where(and(eq(inspectionsTable.id, adj.inspectionId), eq(inspectionsTable.organizationId, orgId)));
+      }
+    }
+
+    return await maybeCreateFollowUp(
+      { id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" },
+      orgId,
+      tx,
+    );
+  });
 
   const row = await fetchInspection(params.data.id, orgId);
   if (!row) {
@@ -515,7 +696,6 @@ router.put("/:id", asyncHandler(async (req, res) => {
     return;
   }
   const formatted = formatInspection(row);
-  const followUp = await maybeCreateFollowUp({ id: params.data.id, elevatorId, inspectionType, recurrenceYears, completionDate: completionDateStr, nextDueDate, status: status ?? "NOT_STARTED" }, orgId);
 
   const warnings: string[] = [];
   if (resolved.wasAdjusted) {
@@ -523,13 +703,32 @@ router.put("/:id", asyncHandler(async (req, res) => {
       `Next due date adjusted from ${resolved.originalDate} to ${resolved.adjustedDate}. A CAT 5 is already due in ${resolved.originalDate!.slice(0, 4)} on this unit, and a traction unit cannot have a CAT 1 and CAT 5 due in the same calendar year.`
     );
   }
+  if (resolved.cascadingCat1Adjustments && resolved.cascadingCat1Adjustments.length > 0) {
+    const n = resolved.cascadingCat1Adjustments.length;
+    const years = resolved.cascadingCat1Adjustments
+      .map((a) => `${a.originalDate.slice(0, 4)} → ${a.adjustedDate.slice(0, 4)}`)
+      .join(", ");
+    warnings.push(
+      `${n} existing CAT 1 record${n === 1 ? "" : "s"} on this unit ${n === 1 ? "was" : "were"} bumped forward by one year (${years}) to avoid sharing a calendar year with this CAT 5. A traction unit cannot have a CAT 1 and CAT 5 due in the same calendar year.`
+    );
+  }
   if (followUp.created === false && followUp.reason === "duplicate_year") {
     warnings.push(
       `A ${followUp.dueYear} ${typeLabel} inspection already exists for this unit and year, so a follow-up inspection record was not created. Go to the Inspections menu to verify the dates are correct and resolve any discrepancies.`
     );
+  } else if (followUp.created === false && followUp.reason === "cat1_chain_collision") {
+    warnings.push(
+      `The CAT 5 follow-up was not auto-created because it would collide with a CAT 1 that can't be bumped cleanly. Verify the inspection schedule manually.`
+    );
   } else if (followUp.created === true && followUp.adjusted) {
     warnings.push(
       `The follow-up CAT 1 record was created with a next due date of ${followUp.adjusted.adjustedDate} (one year later than the normal cycle) to avoid overlap with the CAT 5 due in ${followUp.adjusted.originalDate.slice(0, 4)}.`
+    );
+  }
+  if (followUp.created === true && followUp.cascadedCat1s) {
+    const n = followUp.cascadedCat1s;
+    warnings.push(
+      `${n} existing CAT 1 record${n === 1 ? "" : "s"} on this unit ${n === 1 ? "was" : "were"} bumped forward by one year to avoid colliding with the new CAT 5 follow-up record.`
     );
   }
   res.json({ ...formatted, _warning: warnings.length > 0 ? warnings.join(" ") : undefined });

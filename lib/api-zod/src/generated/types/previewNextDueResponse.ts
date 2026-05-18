@@ -5,6 +5,8 @@
  * Elevator Inspection Tracker API
  * OpenAPI spec version: 0.1.0
  */
+import type { PreviewNextDueResponseBlocked } from './previewNextDueResponseBlocked';
+import type { PreviewNextDueResponseCascadingCat1AdjustmentsItem } from './previewNextDueResponseCascadingCat1AdjustmentsItem';
 import type { PreviewNextDueResponseReason } from './previewNextDueResponseReason';
 
 export interface PreviewNextDueResponse {
@@ -13,4 +15,6 @@ export interface PreviewNextDueResponse {
   originalDate?: Date;
   adjustedDate?: Date;
   reason?: PreviewNextDueResponseReason;
+  cascadingCat1Adjustments?: PreviewNextDueResponseCascadingCat1AdjustmentsItem[];
+  blocked?: PreviewNextDueResponseBlocked;
 }

@@ -15,4 +15,5 @@ export interface PreviewNextDueBody {
   lastInspectionDate?: Date | null;
   manualNextDueDate?: Date | null;
   excludeInspectionId?: number;
+  companionCat5NextDueDate?: Date | null;
 }
