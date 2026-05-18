@@ -96,6 +96,7 @@ function ContactGroup({ type, contacts, defaultOpen, onRowClick, onDelete }: Con
                 email={c.email}
                 phone={c.phone}
                 size="lg"
+                showBadge={false}
                 onClick={() => onRowClick(c)}
                 rightDetail={
                   <div className="flex flex-col items-end gap-0.5 text-zinc-500 leading-tight">
@@ -212,24 +213,6 @@ export default function Contacts() {
   const totalShown = contacts?.length ?? 0;
   const totalAll = allContacts?.length ?? 0;
 
-  // Portfolio-wide stats (filter-agnostic).
-  const contactCount = allContacts?.length ?? 0;
-  const customersServed = useMemo(() => {
-    const set = new Set<number>();
-    for (const c of allContacts ?? []) {
-      for (const x of c.customers ?? []) set.add(x.id);
-    }
-    return set.size;
-  }, [allContacts]);
-  const buildingAssignments = useMemo(
-    () =>
-      (allContacts ?? []).reduce(
-        (sum, c) => sum + (c.buildingCount ?? c.buildings?.length ?? 0),
-        0,
-      ),
-    [allContacts],
-  );
-
   const hasActiveFilters =
     search !== "" ||
     customerFilter !== "all" ||
@@ -247,14 +230,14 @@ export default function Contacts() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-[24px] font-medium tracking-tight">Contacts</h1>
-          <p className="text-[14px] text-zinc-500 mt-1 max-w-[480px]">
-            Manage elevator companies, property managers, and other contacts. Assign them to buildings to receive inspection notifications.
+          <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
+          <p className="text-sm text-zinc-500 mt-1 max-w-[520px]">
+            Manage contacts and assign them to buildings to receive inspection notifications.
           </p>
         </div>
 
         <Button
-          className="h-10 px-[18px] bg-[#EF9F27] hover:bg-amber-600 text-[#412402] font-medium"
+          className="bg-amber-500 hover:bg-amber-600 text-zinc-900 font-semibold"
           onClick={() => setIsAddOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -268,23 +251,6 @@ export default function Contacts() {
         onSuccess={(c) => navigate(`/contacts/${c.id}`)}
       />
 
-      <div className="flex items-baseline gap-7 text-[15px] text-zinc-500">
-        <span>
-          <span className="text-[22px] font-medium text-zinc-900">{contactCount}</span>{" "}
-          contact{contactCount === 1 ? "" : "s"}
-        </span>
-        <span className="text-zinc-300" aria-hidden="true">·</span>
-        <span>
-          <span className="text-[22px] font-medium text-zinc-900">{customersServed}</span>{" "}
-          customer{customersServed === 1 ? "" : "s"} served
-        </span>
-        <span className="text-zinc-300" aria-hidden="true">·</span>
-        <span>
-          <span className="text-[22px] font-medium text-zinc-900">{buildingAssignments}</span>{" "}
-          building assignment{buildingAssignments === 1 ? "" : "s"}
-        </span>
-      </div>
-
       <div className="flex flex-wrap items-end gap-3">
         <div className="relative flex-1 min-w-[14rem] max-w-md">
           <Search className="absolute left-2.5 top-[9px] h-4 w-4 text-muted-foreground" />
@@ -296,66 +262,54 @@ export default function Contacts() {
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
-            Customer
-          </label>
-          <Select value={customerFilter} onValueChange={(v) => { setCustomerFilter(v); setBuildingFilter("all"); }}>
-            <SelectTrigger className="w-[12rem] h-9 text-[14px]">
-              <SelectValue placeholder="All customers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All customers</SelectItem>
-              {(customers ?? []).map((c) => (
-                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={customerFilter} onValueChange={(v) => { setCustomerFilter(v); setBuildingFilter("all"); }}>
+          <SelectTrigger className="w-[12rem] h-9 text-[14px]">
+            <SelectValue placeholder="All customers" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All customers</SelectItem>
+            {(customers ?? []).map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
-            Building
-          </label>
-          <Select value={buildingFilter} onValueChange={setBuildingFilter}>
-            <SelectTrigger className="w-[12rem] h-9 text-[14px]">
-              <SelectValue placeholder="All buildings" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All buildings</SelectItem>
-              {(buildings ?? []).map((b) => (
-                <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={buildingFilter} onValueChange={setBuildingFilter}>
+          <SelectTrigger className="w-[12rem] h-9 text-[14px]">
+            <SelectValue placeholder="All buildings" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All buildings</SelectItem>
+            {(buildings ?? []).map((b) => (
+              <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
-            Type
-          </label>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[12rem] h-9 text-[14px]">
-              <SelectValue placeholder="All types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              {CONTACT_TYPE_ORDER.map((t) => (
-                <SelectItem key={t} value={t}>{CONTACT_TYPE_META[t].singular}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[12rem] h-9 text-[14px]">
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            {CONTACT_TYPE_ORDER.map((t) => (
+              <SelectItem key={t} value={t}>{CONTACT_TYPE_META[t].singular}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {!hasActiveFilters && (
+          <span className="text-sm text-zinc-500 ml-auto">
+            {totalAll} contact{totalAll === 1 ? "" : "s"}
+          </span>
+        )}
       </div>
 
-      <div className="flex items-center justify-between text-[13px]">
-        <span className="text-zinc-500">
-          {hasActiveFilters
-            ? <>Showing <span className="font-medium text-zinc-700">{totalShown}</span> of {totalAll} contact{totalAll === 1 ? "" : "s"}</>
-            : <>{totalAll} contact{totalAll === 1 ? "" : "s"}</>
-          }
-        </span>
-        {hasActiveFilters && (
+      {hasActiveFilters && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-zinc-500">
+            Showing <span className="font-medium text-zinc-700">{totalShown}</span> of {totalAll} contact{totalAll === 1 ? "" : "s"}
+          </span>
           <button
             type="button"
             onClick={clearFilters}
@@ -364,8 +318,8 @@ export default function Contacts() {
             <X className="h-3.5 w-3.5" />
             Clear filters
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">

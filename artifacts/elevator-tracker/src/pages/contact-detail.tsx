@@ -34,6 +34,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPhone } from "@/lib/format-phone";
 import { useToast } from "@/hooks/use-toast";
 import {
   CONTACT_TYPE_META,
@@ -188,7 +189,7 @@ export default function ContactDetail() {
               {contact.phone && (
                 <span className="inline-flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5" />
-                  {contact.phone}
+                  {formatPhone(contact.phone)}
                 </span>
               )}
             </div>

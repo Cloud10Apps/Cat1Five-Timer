@@ -9,6 +9,7 @@ import {
   Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPhone } from "@/lib/format-phone";
 
 export type ContactType =
   | "elevator_company"
@@ -113,6 +114,8 @@ interface ContactRowProps {
   onClick?: () => void;
   /** Size variant: master list is denser; default for detail page. */
   size?: "default" | "lg";
+  /** When false, hides the type label badge next to the contact name. Default true. */
+  showBadge?: boolean;
 }
 
 export function ContactRow({
@@ -125,6 +128,7 @@ export function ContactRow({
   trailingActions,
   onClick,
   size = "default",
+  showBadge = true,
 }: ContactRowProps) {
   const meta = CONTACT_TYPE_META[contactType as ContactType] ?? CONTACT_TYPE_META.other;
   const Icon = meta.icon;
@@ -163,13 +167,15 @@ export function ContactRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="text-[16px] font-medium text-zinc-900 truncate">{primary}</div>
-          <span className={cn(
-            "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide shrink-0",
-            meta.badgeBgClass,
-            meta.badgeTextClass,
-          )}>
-            {meta.singular}
-          </span>
+          {showBadge && (
+            <span className={cn(
+              "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide shrink-0",
+              meta.badgeBgClass,
+              meta.badgeTextClass,
+            )}>
+              {meta.singular}
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] mt-0.5">
           {secondaryParts.map((p) => (
@@ -182,7 +188,7 @@ export function ContactRow({
           {phone && (
             <span className="inline-flex items-center gap-1 shrink-0">
               <Phone className="h-3 w-3 text-zinc-400" />
-              <span className="text-zinc-500">{phone}</span>
+              <span className="text-zinc-500">{formatPhone(phone)}</span>
             </span>
           )}
         </div>
