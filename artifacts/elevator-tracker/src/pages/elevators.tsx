@@ -829,6 +829,24 @@ export default function Elevators() {
                                       )}
                                     </div>
                                     <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                                    {previewCat1?.wasAdjusted && (
+                                      <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                        <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                        <span>Will be saved as {dayjs(previewCat1.adjustedDate).format("MM/DD/YYYY")} — a CAT 5 is already due in {previewCat1.originalDate?.slice(0, 4)} on this unit.</span>
+                                      </p>
+                                    )}
+                                    {previewCat1?.cascadingCat1Adjustments && previewCat1.cascadingCat1Adjustments.length > 0 && (
+                                      <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                        <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                        <span>Saving this CAT 5 will shift {previewCat1.cascadingCat1Adjustments.length} existing CAT 1 record{previewCat1.cascadingCat1Adjustments.length === 1 ? "" : "s"} forward by one year to avoid sharing a calendar year.</span>
+                                      </p>
+                                    )}
+                                    {previewCat1?.blocked && (
+                                      <p className="text-xs text-red-700 leading-snug flex items-start gap-1.5 mt-1">
+                                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                        <span>A CAT 1 is already due in {previewCat1.blocked.cat1OriginalYear}, and shifting it to {previewCat1.blocked.cat1WouldBeYear} would collide with another CAT 1. Resolve the CAT 1 records manually before saving.</span>
+                                      </p>
+                                    )}
                                     <FormMessage /></FormItem>
                                 )} />
                               )}
@@ -947,6 +965,18 @@ export default function Elevators() {
                                         )}
                                       </div>
                                       <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                                      {previewCat5?.cascadingCat1Adjustments && previewCat5.cascadingCat1Adjustments.length > 0 && (
+                                        <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                          <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                          <span>Saving this CAT 5 will shift {previewCat5.cascadingCat1Adjustments.length} existing CAT 1 record{previewCat5.cascadingCat1Adjustments.length === 1 ? "" : "s"} forward by one year to avoid sharing a calendar year.</span>
+                                        </p>
+                                      )}
+                                      {previewCat5?.blocked && (
+                                        <p className="text-xs text-red-700 leading-snug flex items-start gap-1.5 mt-1">
+                                          <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                          <span>A CAT 1 is already due in {previewCat5.blocked.cat1OriginalYear}, and shifting it to {previewCat5.blocked.cat1WouldBeYear} would collide with another CAT 1. Resolve the CAT 1 records manually before saving.</span>
+                                        </p>
+                                      )}
                                       <FormMessage /></FormItem>
                                   )} />
                                 )}
@@ -1033,6 +1063,12 @@ export default function Elevators() {
                                           ? "Suggested as one year after the CAT 5. Override anytime."
                                           : "Enter manually or add Last Inspection Date to auto-calculate"}
                                       </p>
+                                      {previewCat1?.wasAdjusted && (
+                                        <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                          <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                          <span>Will be saved as {dayjs(previewCat1.adjustedDate).format("MM/DD/YYYY")} — a CAT 5 is already due in {previewCat1.originalDate?.slice(0, 4)} on this unit.</span>
+                                        </p>
+                                      )}
                                       <FormMessage /></FormItem>
                                   )} />
                                 )}

@@ -740,15 +740,30 @@ export default function Inspections() {
                                 </button>
                               )}
                             </div>
-                            {preview?.wasAdjusted ? (
-                              <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5">
+                            <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                            {preview?.wasAdjusted && (
+                              <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
                                 <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
                                 <span>
                                   Will be saved as {dayjs(preview.adjustedDate).format("MM/DD/YYYY")} — a CAT 5 is already due in {preview.originalDate?.slice(0, 4)} on this unit.
                                 </span>
                               </p>
-                            ) : (
-                              <p className="text-xs text-zinc-400 leading-none">Enter manually or add Last Inspection Date to auto-calculate</p>
+                            )}
+                            {preview?.cascadingCat1Adjustments && preview.cascadingCat1Adjustments.length > 0 && (
+                              <p className="text-xs text-amber-700 leading-snug flex items-start gap-1.5 mt-1">
+                                <Info className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                <span>
+                                  Saving this CAT 5 will shift {preview.cascadingCat1Adjustments.length} existing CAT 1 record{preview.cascadingCat1Adjustments.length === 1 ? "" : "s"} forward by one year to avoid sharing a calendar year.
+                                </span>
+                              </p>
+                            )}
+                            {preview?.blocked && (
+                              <p className="text-xs text-red-700 leading-snug flex items-start gap-1.5 mt-1">
+                                <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" aria-hidden="true" />
+                                <span>
+                                  A CAT 1 is already due in {preview.blocked.cat1OriginalYear}, and shifting it to {preview.blocked.cat1WouldBeYear} would collide with another CAT 1. Resolve the CAT 1 records manually before saving.
+                                </span>
+                              </p>
                             )}
                             <FormMessage />
                           </FormItem>
