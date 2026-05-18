@@ -314,7 +314,7 @@ export default function Dashboard() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-widest text-zinc-700">{title}</p>
-                    <p className="text-sm text-zinc-400 font-normal italic mt-0.5">{subtitle}</p>
+                    <p className="text-sm text-zinc-500 font-normal italic mt-0.5">{subtitle}</p>
                   </div>
                   <TooltipProvider>
                     <Tooltip>
