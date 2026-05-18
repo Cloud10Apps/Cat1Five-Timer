@@ -817,9 +817,9 @@ export default function Elevators() {
                           <Form {...inspCat5Form}>
                             <div className="space-y-4">
                               {/* Row 1: Recurrence → Last Inspection Date → Next Due */}
-                              <div className="grid grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)] gap-4">
+                              <div className="grid grid-cols-[80px_1fr_1fr] gap-4">
                                 <FormField control={inspCat5Form.control} name="recurrenceYears" render={({ field }) => (
-                                  <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                  <FormItem><FormLabel>Years</FormLabel>
                                     <FormControl><Input type="number" min="1" {...field} /></FormControl>
                                     <FormMessage /></FormItem>
                                 )} />
@@ -893,9 +893,9 @@ export default function Elevators() {
                           <Form {...inspForm}>
                             <div className="space-y-4">
                               {/* Row 1: Recurrence → Last Inspection Date → Next Due */}
-                              <div className="grid grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)] gap-4">
+                              <div className="grid grid-cols-[80px_1fr_1fr] gap-4">
                                 <FormField control={inspForm.control} name="recurrenceYears" render={({ field }) => (
-                                  <FormItem><FormLabel>Recurrence (Years)</FormLabel>
+                                  <FormItem><FormLabel>Years</FormLabel>
                                     <FormControl><Input type="number" min="1" {...field} /></FormControl>
                                     <FormMessage /></FormItem>
                                 )} />
