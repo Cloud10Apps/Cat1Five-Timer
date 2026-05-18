@@ -383,7 +383,7 @@ export default function Buildings() {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-[1fr_100px_140px] gap-4">
           <FormField
             control={form.control}
             name="city"
@@ -405,6 +405,19 @@ export default function Buildings() {
                 <FormLabel>State</FormLabel>
                 <FormControl>
                   <Input placeholder="NY" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="zip"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Zip</FormLabel>
+                <FormControl>
+                  <Input placeholder="10001" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
