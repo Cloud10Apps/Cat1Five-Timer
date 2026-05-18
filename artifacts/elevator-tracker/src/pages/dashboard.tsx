@@ -313,7 +313,7 @@ export default function Dashboard() {
               <div className={`bg-white rounded-xl border border-zinc-200 border-l-4 ${isEmpty ? "border-l-zinc-300" : accentBorder(score)} shadow-sm p-6 flex flex-col gap-3`}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-widest text-zinc-900">{title}</p>
+                    <p className="text-sm font-bold uppercase tracking-widest text-zinc-700">{title}</p>
                     <p className="text-sm text-zinc-400 font-normal italic mt-0.5">{subtitle}</p>
                   </div>
                   <TooltipProvider>
