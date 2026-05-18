@@ -29,7 +29,6 @@ import {
   Plus,
   Mail,
   Phone,
-  UsersRound,
   Building2,
   X,
 } from "lucide-react";
@@ -150,6 +149,8 @@ export default function ContactDetail() {
   const hasContactName = contact.companyName && contact.contactName;
   const customerCount = contact.customers?.length ?? 0;
   const buildingCount = contact.buildings?.length ?? 0;
+  const buildings = (contact.buildings ?? []) as BuildingAssignment[];
+  const receivingCount = buildings.filter((b) => b.receivesNotifications).length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -161,15 +162,19 @@ export default function ContactDetail() {
       </div>
 
       {/* Header card */}
-      <div className="rounded-lg border bg-white px-[22px] py-5">
+      <div className="rounded-xl border bg-white p-6">
         <div className="flex items-start gap-4">
-          <div className={cn("flex items-center justify-center w-14 h-14 rounded-lg shrink-0", meta.iconBgClass, meta.iconColorClass)}>
+          <div className={cn(
+            "flex items-center justify-center w-14 h-14 rounded-xl shrink-0",
+            meta.iconBgClass,
+            meta.iconColorClass,
+          )}>
             <HeaderIcon className="h-7 w-7" />
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-[20px] font-medium text-zinc-900 leading-tight">{displayName}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 leading-tight">{displayName}</h1>
               <span className={cn(
                 "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide",
                 meta.badgeBgClass,
@@ -179,32 +184,25 @@ export default function ContactDetail() {
               </span>
             </div>
             {hasContactName && (
-              <div className="text-[14px] text-zinc-500 mt-0.5">{contact.contactName}</div>
+              <div className="text-sm text-zinc-500 mt-1">{contact.contactName}</div>
             )}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-zinc-500 mt-1.5">
-              <span className="inline-flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3">
+              <a
+                href={`mailto:${contact.email}`}
+                className="inline-flex items-center gap-1.5 text-sm text-blue-700 hover:underline"
+              >
                 <Mail className="h-3.5 w-3.5" />
                 {contact.email}
-              </span>
+              </a>
               {contact.phone && (
-                <span className="inline-flex items-center gap-1.5">
+                <a
+                  href={`tel:${contact.phone.replace(/\D/g, "")}`}
+                  className="inline-flex items-center gap-1.5 text-sm text-blue-700 hover:underline"
+                >
                   <Phone className="h-3.5 w-3.5" />
                   {formatPhone(contact.phone)}
-                </span>
+                </a>
               )}
-            </div>
-            <div className="mt-3 pt-3 border-t border-zinc-100">
-              <div className="flex items-center gap-3 text-[12px] text-zinc-400">
-                <span className="inline-flex items-center gap-1.5">
-                  <UsersRound className="h-3.5 w-3.5" />
-                  Serves {customerCount} customer{customerCount === 1 ? "" : "s"}
-                </span>
-                <span className="text-zinc-300">·</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Building2 className="h-3.5 w-3.5" />
-                  {buildingCount} building assignment{buildingCount === 1 ? "" : "s"}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -218,22 +216,42 @@ export default function ContactDetail() {
             <Pencil className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Stat tiles */}
+        <div className="grid grid-cols-3 gap-3 mt-5">
+          <div className="rounded-lg bg-zinc-50 px-4 py-3">
+            <div className="text-xs text-zinc-500">Customers served</div>
+            <div className="text-2xl font-bold text-zinc-900 mt-0.5">{customerCount}</div>
+          </div>
+          <div className="rounded-lg bg-zinc-50 px-4 py-3">
+            <div className="text-xs text-zinc-500">Building assignments</div>
+            <div className="text-2xl font-bold text-zinc-900 mt-0.5">{buildingCount}</div>
+          </div>
+          <div className="rounded-lg bg-zinc-50 px-4 py-3">
+            <div className="text-xs text-zinc-500">Receiving notifications</div>
+            <div className="mt-0.5">
+              <span className="text-2xl font-bold text-zinc-900">{receivingCount}</span>
+              <span className="text-sm text-zinc-400 font-normal"> / {buildingCount}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Building Assignments section */}
-      <div className="rounded-lg border bg-white">
-        <div className="flex items-center justify-between gap-4 px-[22px] py-[18px] border-b">
-          <div className="flex items-center gap-2 min-w-0">
-            <Building2 className="h-[18px] w-[18px] text-zinc-500 shrink-0" />
-            <h2 className="text-[15px] font-medium text-zinc-900">Building assignments</h2>
-            <span className="text-[12px] text-zinc-400 hidden sm:inline">— receives inspection notifications</span>
+      <div className="rounded-xl border bg-white overflow-hidden">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-b">
+          <div className="min-w-0">
+            <div className="text-base font-semibold text-zinc-900">Building assignments</div>
+            <div className="text-xs text-zinc-500 mt-0.5">
+              Each toggle controls whether this contact receives inspection notifications for that building.
+            </div>
           </div>
           <Button
             variant="outline"
             onClick={() => setPickerOpen(true)}
-            className="h-8 px-3 text-[13px] font-medium"
+            className="h-9 px-3 text-sm font-medium shrink-0"
           >
-            <Plus className="h-3.5 w-3.5 mr-1" />
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
             Assign building
           </Button>
         </div>
@@ -245,7 +263,7 @@ export default function ContactDetail() {
             <p className="text-xs text-zinc-400 mt-1">Click <span className="font-medium">Assign building</span> to add one.</p>
           </div>
         ) : (
-          <div className="px-[22px] py-4 space-y-4">
+          <div className="pb-2 divide-y divide-zinc-100">
             {groupedBuildings.map((group) => {
               const open = !collapsed.has(group.customerId);
               return (
@@ -258,48 +276,47 @@ export default function ContactDetail() {
                       else next.add(group.customerId);
                       return next;
                     })}
-                    className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-500 hover:text-zinc-900 mb-1.5"
+                    className="flex items-center gap-2 w-full text-left px-6 pt-4 pb-2 hover:bg-zinc-50 transition-colors"
                   >
-                    {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                    {group.customerName}
+                    {open
+                      ? <ChevronDown className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                      : <ChevronRight className="h-3.5 w-3.5 text-zinc-500 shrink-0" />}
+                    <span className="text-sm font-semibold text-zinc-900">{group.customerName}</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-600">
+                      {group.buildings.length}
+                    </span>
                   </button>
                   {open && (
-                    <div className="space-y-1">
-                      {group.buildings.map((b) => (
+                    <div className="px-6 pb-2">
+                      {group.buildings.map((b, idx) => (
                         <div
                           key={b.id}
-                          className="flex items-center gap-3 px-3 py-2 rounded-md bg-zinc-50/70 hover:bg-zinc-50"
+                          className={cn(
+                            "flex items-center gap-3 py-2 pl-6",
+                            idx > 0 && "border-t border-zinc-50",
+                          )}
                         >
-                          <Building2 className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                           <Link
                             href={`/buildings/${b.id}`}
-                            className="text-[14px] text-zinc-900 hover:text-amber-700 hover:underline truncate flex-1"
+                            className="flex-1 text-sm text-zinc-900 hover:text-amber-700 hover:underline truncate"
                           >
                             {b.name}
                           </Link>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Switch
-                              checked={b.receivesNotifications}
-                              onCheckedChange={(next) => toggleNotifications(b, next)}
-                              aria-label="Receives notifications"
-                              className="data-[state=checked]:bg-emerald-500"
-                            />
-                            <span className={cn(
-                              "text-[12px] hidden md:inline",
-                              b.receivesNotifications ? "text-emerald-700 font-medium" : "text-zinc-500",
-                            )}>
-                              {b.receivesNotifications ? "Notifications on" : "Notifications off"}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 ml-1"
-                              onClick={() => setUnassignTarget(b)}
-                              title="Unassign"
-                            >
-                              <X className="h-3.5 w-3.5 text-zinc-500" />
-                            </Button>
-                          </div>
+                          <Switch
+                            checked={b.receivesNotifications}
+                            onCheckedChange={(next) => toggleNotifications(b, next)}
+                            aria-label={`Notifications ${b.receivesNotifications ? "on" : "off"} for ${b.name}`}
+                            className="data-[state=checked]:bg-emerald-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setUnassignTarget(b)}
+                            className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
+                            title={`Unassign ${b.name}`}
+                            aria-label={`Unassign ${b.name}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       ))}
                     </div>
