@@ -40,23 +40,19 @@ export function useBuildingCompliance(
   ).length;
 
   let level: BuildingComplianceLevel;
-  let statusColorClass: string;
   if (elevatorCount === 0) {
     level = "no-units";
-    statusColorClass = "bg-zinc-100 text-zinc-400";
   } else if (inspections === undefined) {
     level = "loading";
-    statusColorClass = "bg-zinc-100 text-zinc-400";
   } else if (overdueCount > 0) {
     level = "overdue";
-    statusColorClass = "bg-red-100 text-red-600";
   } else if (dueSoonCount > 0) {
     level = "due-soon";
-    statusColorClass = "bg-amber-100 text-amber-600";
   } else {
     level = "compliant";
-    statusColorClass = "bg-green-100 text-green-600";
   }
+
+  const statusColorClass = "bg-zinc-100 text-zinc-500";
 
   return { overdueCount, dueSoonCount, statusColorClass, level };
 }

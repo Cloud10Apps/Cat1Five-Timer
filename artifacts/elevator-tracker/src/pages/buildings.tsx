@@ -11,9 +11,13 @@ import {
   useDeleteBuilding,
   useListCustomers,
   getListCustomersQueryKey,
+  useListBuildingContacts,
+  getListBuildingContactsQueryKey,
+  BuildingContact,
   Building,
 } from "@workspace/api-client-react";
 import { useBuildingCompliance } from "@/hooks/use-building-compliance";
+import { CONTACT_TYPE_META, contactDisplayName, type ContactType } from "@/components/contact-row";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Pencil, Trash2, Building2, MapPin, Users } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Building2, MapPin, Users, User, ChevronDown, ChevronUp, Info } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,14 +86,28 @@ interface BuildingCardProps {
   onEdit: () => void;
   onDelete: () => void;
   hideCustomer?: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
 }
 
-function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCardProps) {
+function BuildingCard({ building, onEdit, onDelete, hideCustomer, isExpanded, onToggleExpand }: BuildingCardProps) {
   const [, navigate] = useLocation();
   const address = formatAddress(building);
   const elevatorCount = building.elevatorCount ?? 0;
 
   const { overdueCount, statusColorClass, level } = useBuildingCompliance(building.id, elevatorCount);
+
+  const { data: buildingContacts } = useListBuildingContacts(
+    building.id,
+    {
+      query: {
+        queryKey: getListBuildingContactsQueryKey(building.id),
+        staleTime: 5 * 60 * 1000,
+        enabled: !!building.id,
+      },
+    },
+  );
+  const contactCount = buildingContacts?.length ?? 0;
 
   let complianceBadge: React.ReactNode = null;
   if (level === "overdue") {
@@ -190,13 +208,102 @@ function BuildingCard({ building, onEdit, onDelete, hideCustomer }: BuildingCard
           </div>
         )}
 
-        <div className="flex items-center pt-3 border-t">
-          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1 text-xs font-semibold shrink-0">
-            <Building2 className="h-3 w-3" />
-            {elevatorCount} {elevatorCount === 1 ? "Unit" : "Units"}
-          </span>
+        <div className="flex items-center justify-between gap-2 pt-3 border-t">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 bg-zinc-100 text-zinc-700 rounded-full px-2.5 py-1 text-xs font-semibold shrink-0">
+              <Building2 className="h-3 w-3" />
+              {elevatorCount} {elevatorCount === 1 ? "Unit" : "Units"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 bg-zinc-100 text-zinc-700 rounded-full px-2.5 py-1 text-xs font-semibold shrink-0">
+              <User className="h-3 w-3" />
+              {contactCount} {contactCount === 1 ? "Contact" : "Contacts"}
+            </span>
+          </div>
+
+          {contactCount > 0 ? (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
+              className={`inline-flex items-center gap-1 text-xs text-zinc-600 px-2.5 py-1 rounded-md border border-zinc-200 hover:bg-zinc-50 transition-colors ${isExpanded ? "bg-zinc-50" : "bg-transparent"}`}
+              aria-expanded={isExpanded}
+            >
+              {isExpanded ? "Hide contacts" : "View contacts"}
+              {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
+              className="inline-flex items-center gap-1 text-xs text-zinc-500 px-2.5 py-1 rounded-md border border-zinc-200 hover:bg-zinc-50 transition-colors"
+              aria-expanded={isExpanded}
+            >
+              {isExpanded ? "Hide" : "No contacts yet"}
+              {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          )}
         </div>
       </CardContent>
+
+      {isExpanded && (
+        <div
+          className="border-t bg-zinc-50/60 rounded-b-xl px-6 py-4 space-y-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-zinc-500" />
+            <span className="text-sm font-semibold text-zinc-700">Contacts</span>
+          </div>
+
+          {!buildingContacts ? (
+            <div className="flex items-center gap-2 text-sm text-zinc-500">
+              <Spinner /> Loading contacts...
+            </div>
+          ) : buildingContacts.length === 0 ? (
+            <p className="text-sm text-zinc-400">No Contacts assigned to this building.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-2">
+              {buildingContacts.map((bc: BuildingContact) => {
+                const meta = CONTACT_TYPE_META[bc.contactType as ContactType] ?? CONTACT_TYPE_META.other;
+                const displayName = contactDisplayName({
+                  companyName: bc.companyName,
+                  contactName: bc.contactName,
+                  email: bc.email,
+                });
+                const initials = displayName.slice(0, 2).toUpperCase();
+                return (
+                  <div key={bc.id} className="flex items-center gap-3 bg-white border border-zinc-200 rounded-md px-3 py-2">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-zinc-100 text-zinc-600 text-xs font-bold uppercase shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-zinc-900 truncate">{displayName}</div>
+                      <div className="text-xs text-zinc-500 truncate">
+                        {meta.label} · {bc.email}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); navigate(`/buildings/${building.id}`); }}
+            className="w-full flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 hover:bg-blue-100 transition-colors text-left"
+          >
+            <Info className="h-3.5 w-3.5 shrink-0 text-blue-500 mt-0.5" />
+            <span className="flex-1 text-xs text-blue-800 font-medium leading-snug">
+              {buildingContacts && buildingContacts.length === 0
+                ? "Open this building to add Contacts."
+                : "Open this building to add, remove, or change Contacts associated with the building."}
+            </span>
+            <span className="text-xs text-blue-700 font-semibold whitespace-nowrap">
+              Open building →
+            </span>
+          </button>
+        </div>
+      )}
     </Card>
   );
 }
@@ -208,6 +315,7 @@ export default function Buildings() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [expandedBuildingId, setExpandedBuildingId] = useState<number | null>(null);
 
   const customerIdFilter = selectedCustomerId !== "all" ? Number(selectedCustomerId) : undefined;
 
@@ -547,6 +655,8 @@ export default function Buildings() {
                     onEdit={() => openEdit(building)}
                     onDelete={() => setDeleteId(building.id)}
                     hideCustomer
+                    isExpanded={expandedBuildingId === building.id}
+                    onToggleExpand={() => setExpandedBuildingId(prev => prev === building.id ? null : building.id)}
                   />
                 ))}
               </div>
