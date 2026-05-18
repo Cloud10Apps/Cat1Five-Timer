@@ -362,6 +362,8 @@ export default function Dashboard() {
                   score={unitScore}
                   statLine={`${compliantUnits} of ${totalUnits} elevator units have no overdue inspections`}
                   tooltipText="Percentage of elevator units with no overdue inspections. A unit is compliant when all its CAT1 and CAT5 inspections are either completed or not yet due. This score only changes when an inspection becomes overdue or is completed — it does not fluctuate daily."
+                  isEmpty={totalUnits === 0}
+                  emptyMessage="No units entered yet"
                   pills={<>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
                       ✅ {compliantUnits} Compliant Units
@@ -398,6 +400,8 @@ export default function Dashboard() {
                   score={annualScore}
                   statLine={`${annualCompleted} of ${annualTotal} inspections due so far in ${year} are complete`}
                   tooltipText="Percentage of inspections that were due on or before today this calendar year that have been completed. Future inspections due later this year are not counted until they come due. This score increases throughout the year as inspections are completed on time. Resets on January 1st each year."
+                  isEmpty={annualTotal === 0}
+                  emptyMessage={`No inspections due in ${year}`}
                   statusMsgFn={(s) =>
                     s === 100 ? "Fully caught up — great work!"
                     : s >= 80 ? "On track for the year"
@@ -425,7 +429,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-5">
 
             {/* Onboarding banner — only shown when portfolio is completely empty */}
-            {!l1 && !l2 && !l3 && summary?.completedCount === 0 && overdueItems.length === 0 && upcoming.length === 0 && (
+            {!l1 && !l2 && !l3 && (summary?.totalUnits ?? 0) === 0 && summary?.completedCount === 0 && overdueItems.length === 0 && upcoming.length === 0 && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
                   <span className="text-xl">👋</span>
